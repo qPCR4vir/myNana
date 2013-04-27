@@ -1,10 +1,10 @@
 /*
  *	Paint Graphics Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/paint/graphics.cpp
  */
@@ -82,24 +82,24 @@ namespace paint
 		font::font(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 			: impl_(new impl_type)
 		{
-			this->make(name, size, bold, italic, underline, strike_out);
+			make(name, size, bold, italic, underline, strike_out);
 		}
 
 		font::~font()
 		{
 			delete impl_;
-			impl_ = 0;
+			impl_ = nullptr;
 		}
 
 		bool font::empty() const
 		{
-			return ((0 == impl_) || (nullptr == impl_->font_ptr));
+			return ((nullptr == impl_) || (nullptr == impl_->font_ptr));
 		}
 
 		void font::make(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 		{
 			size = nana::detail::platform_spec::instance().font_size_to_height(size);
-			this->make_raw(name, size, bold ? 700 : 400, italic, underline, strike_out);
+			make_raw(name, size, bold ? 700 : 400, italic, underline, strike_out);
 		}
 
 		void font::make_raw(const nana::char_t*name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
@@ -150,7 +150,7 @@ namespace paint
 
 		native_font_type font::handle() const
 		{
-			if(empty())	return 0;
+			if(empty())	return nullptr;
 			return reinterpret_cast<native_font_type>(impl_->font_ptr->handle);
 		}
 
@@ -164,7 +164,7 @@ namespace paint
 		{
 			if(impl_ && rhs.impl_ && (this != &rhs))
 				impl_->font_ptr = rhs.impl_->font_ptr;
-			
+
 			return *this;
 		}
 
@@ -193,7 +193,7 @@ namespace paint
 		graphics::graphics(unsigned width, unsigned height)
 			:handle_(nullptr), changed_(true)
 		{
-			this->make(width, height);
+			make(width, height);
 		}
 
 		graphics::graphics(const nana::size& sz)
@@ -251,11 +251,11 @@ namespace paint
 		{
 			if(handle_ == nullptr || size_ != nana::size(width, height))
 			{
-				nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
+				auto & spec = nana::detail::platform_spec::instance();
 
 				//The object will be delete while dwptr_ is performing a release.
 				drawable_type dw = new nana::detail::drawable_impl_type;
-				//Reuse the old font 
+				//Reuse the old font
 				if(dwptr_)
 				{
 					drawable_type reuse = dwptr_.get();
@@ -285,7 +285,7 @@ namespace paint
 					::DeleteDC(cdc);
 					delete dw;
 					dw = nullptr;
-					this->release();
+					release();
 				}
 
 				::ReleaseDC(0, hdc);
@@ -318,8 +318,8 @@ namespace paint
 		void graphics::resize(unsigned width, unsigned height)
 		{
 			graphics duplicate(*this);
-			this->make(width, height);
-			this->bitblt(0, 0, duplicate);
+			make(width, height);
+			bitblt(0, 0, duplicate);
 		}
 
 		void graphics::typeface(const font& f)
@@ -382,7 +382,7 @@ namespace paint
 			sz.height = extents.cy;
 			delete [] dx;
 #elif defined(NANA_X11)
-			sz = this->text_extent_size(str + begin, end - begin);
+			sz = text_extent_size(str + begin, end - begin);
 #endif
 			return sz;
 		}
@@ -441,7 +441,7 @@ namespace paint
 				bidi.linestr(str.c_str(), str.size(), reordered);
 				for(auto & i: reordered)
 				{
-					nana::size t = this->text_extent_size(i.begin, i.end - i.begin);
+					nana::size t = text_extent_size(i.begin, i.end - i.begin);
 					sz.width += t.width;
 					if(sz.height < t.height)
 						sz.height = t.height;
@@ -502,20 +502,20 @@ namespace paint
 			bidi.linestr(str, len, reordered);
 			for(auto & i : reordered)
 			{
-				this->string(x, y, col, i.begin, i.end - i.begin);
-				x += static_cast<int>(this->text_extent_size(i.begin, i.end - i.begin).width);
+				string(x, y, col, i.begin, i.end - i.begin);
+				x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
 			}
 			return static_cast<unsigned>(x - origin_x);
 		}
 
 		void graphics::string(int x, int y, color_t color, const nana::string& str, std::size_t len)
 		{
-			this->string(x, y, color, str.c_str(), len);
+			string(x, y, color, str.c_str(), len);
 		}
 
 		void graphics::string(int x, int y, color_t color, const nana::string& str)
 		{
-			this->string(x, y, color, str.c_str(), str.size());
+			string(x, y, color, str.c_str(), str.size());
 		}
 
 		void graphics::string(int x, int y, color_t color, const nana::char_t* str, std::size_t len)
@@ -538,7 +538,7 @@ namespace paint
 							x += detail::raw_text_extent_size(handle_, str, len).width;
 						}
 
-						str = i; 
+						str = i;
 						while(str != end && (*str == '\t'))
 							++str;
 
@@ -560,7 +560,7 @@ namespace paint
 
 		void graphics::string(int x, int y, color_t c, const nana::char_t* str)
 		{
-			this->string(x, y, c, str, nana::strlen(str));
+			string(x, y, c, str, nana::strlen(str));
 		}
 
 		void graphics::set_pixel(int x, int y, color_t color)
@@ -583,7 +583,7 @@ namespace paint
 			if((static_cast<int>(width) > -x) && (static_cast<int>(height) > -y) && width && height && handle_)
 			{
 #if defined(NANA_WINDOWS)
-				::RECT r = {x, y, x + width, y + height};
+				::RECT r = {x, y, static_cast<long>(x + width), static_cast<long>(y + height)};
 				handle_->brush.set(handle_->context, handle_->brush.Solid, color);
 				(solid ? ::FillRect : ::FrameRect)(handle_->context, &r, handle_->brush.handle);
 #elif defined(NANA_X11)
@@ -600,12 +600,12 @@ namespace paint
 
 		void graphics::rectangle(nana::color_t color, bool solid)
 		{
-			this->rectangle(0, 0, size_.width, size_.height, color, solid);
+			rectangle(0, 0, size_.width, size_.height, color, solid);
 		}
 
 		void graphics::rectangle(const nana::rectangle & r, color_t color, bool solid)
 		{
-			this->rectangle(r.x, r.y, r.width, r.height, color, solid);
+			rectangle(r.x, r.y, r.width, r.height, color, solid);
 		}
 
 		void graphics::round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t color, bool solid, color_t color_if_solid)
@@ -643,7 +643,7 @@ namespace paint
 
 		void graphics::round_rectangle(const nana::rectangle& r, unsigned radius_x, unsigned radius_y, color_t color, bool solid, color_t color_if_solid)
 		{
-			this->round_rectangle(r.x, r.y, r.width, r.height, radius_x, radius_y, color, solid, color_if_solid);
+			round_rectangle(r.x, r.y, r.width, r.height, radius_x, radius_y, color, solid, color_if_solid);
 		}
 
 		void graphics::shadow_rectangle(const nana::rectangle& r, color_t beg_color, color_t end_color, bool vertical)
@@ -834,14 +834,14 @@ namespace paint
 			{
 				nana::rectangle s_r(s_pos.x, s_pos.y, r.width, r.height);
 				nana::rectangle s_good_r, d_good_r;
-				if(nana::gui::overlap(s_r, size_, r, dst.size_, s_good_r, d_good_r) == false)
+				if(gui::overlap(s_r, size_, r, dst.size_, s_good_r, d_good_r) == false)
 					return;
 
 				pixel_buffer pixbuf(handle_, s_good_r.y, s_good_r.height);
 				pixbuf.blend(nana::point(s_good_r.x, 0), dst.handle_, d_good_r, fade_rate);
 
 				if(dst.changed_ == false) dst.changed_ = true;
-			}		
+			}
 		}
 
 		void graphics::blend(int x, int y, unsigned width, unsigned height, nana::color_t color, double fade_rate)
@@ -1015,7 +1015,7 @@ namespace paint
 		void graphics::release()
 		{
 			dwptr_.reset();
-			handle_ = 0;
+			handle_ = nullptr;
 			size_.width = size_.height = 0;
 		}
 
@@ -1026,7 +1026,7 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				int iWidth = static_cast<int>(size_.width);
 				int iHeight = static_cast<int>(size_.height);
-				BITMAPINFO bmpInfo = {0};
+				BITMAPINFO bmpInfo = {};
 				bmpInfo.bmiHeader.biSize = sizeof(bmpInfo.bmiHeader);
 				bmpInfo.bmiHeader.biWidth = static_cast<int>(size_.width);
 				bmpInfo.bmiHeader.biHeight = static_cast<int>(size_.height);
@@ -1034,7 +1034,7 @@ namespace paint
 				bmpInfo.bmiHeader.biBitCount = 24;
 
 				HDC hdcMem = ::CreateCompatibleDC(handle_->context);
-				BYTE *pData = 0;
+				BYTE *pData = nullptr;
 				HBITMAP hBmp = CreateDIBSection(hdcMem, &bmpInfo, DIB_RGB_COLORS, reinterpret_cast<void**>(&pData), 0, 0);
 
 				::SelectObject(hdcMem, hBmp);

@@ -1,19 +1,21 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/platform_spec.cpp
  *
  *	This file provides basis class and data structrue that required by nana
  */
 #include <nana/config.hpp>
+
 #include PLATFORM_SPEC_HPP
 #include <nana/gui/detail/eventinfo.hpp>
 #include <shellapi.h>
+#include <stdexcept>
 
 namespace nana
 {
@@ -142,7 +144,7 @@ namespace detail
 			if(fn_unin)
 				fn_unin();
 			::FreeLibrary(ole32_);
-		}	
+		}
 	}
 
 	platform_spec::platform_spec()
@@ -156,7 +158,7 @@ namespace detail
 		::GetVersionEx(&osvi);
 		if (osvi.dwMajorVersion < 6)
 			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-#endif 
+#endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
 		def_font_ptr_ = make_native_font(metrics.lfMessageFont.lfFaceName, font_size_to_height(9), 400, false, false, false);
 	}
@@ -189,10 +191,7 @@ namespace detail
 		::LOGFONT logfont;
 		memset(&logfont, 0, sizeof logfont);
 
-		if(0 == name || 0 == *name)
-			strcpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
-		else
-			strcpy(logfont.lfFaceName, name);
+		strcpy(logfont.lfFaceName, (name && *name ? name : def_font_ptr_->name.c_str()));
 
 		logfont.lfCharSet = DEFAULT_CHARSET;
 		HDC hdc = ::GetDC(0);
@@ -225,11 +224,11 @@ namespace detail
 
 	//event_register
 	//@brief: some event is needed to register for system.
-	void platform_spec::event_register_filter(nana::gui::native_window_type wd, unsigned eventid)
+	void platform_spec::event_register_filter(gui::native_window_type wd, unsigned eventid)
 	{
 		switch(eventid)
 		{
-		case nana::gui::detail::event_tag::mouse_drop:
+		case gui::detail::event_tag::mouse_drop:
 			::DragAcceptFiles(reinterpret_cast<HWND>(wd), true);
 			break;
 		}
@@ -241,12 +240,12 @@ namespace detail
 		return object;
 	}
 
-	void platform_spec::keep_window_icon(nana::gui::native_window_type wd, const nana::paint::image& img)
+	void platform_spec::keep_window_icon(gui::native_window_type wd, const paint::image& img)
 	{
 		iconbase_[wd] = img;
 	}
 
-	void platform_spec::release_window_icon(nana::gui::native_window_type wd)
+	void platform_spec::release_window_icon(gui::native_window_type wd)
 	{
 		iconbase_.erase(wd);
 	}

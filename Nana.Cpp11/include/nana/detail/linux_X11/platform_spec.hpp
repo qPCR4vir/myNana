@@ -1,10 +1,10 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/platform_spec.hpp
  *
@@ -130,6 +130,7 @@ namespace detail
 		Atom net_wm_state_fullscreen;
 		Atom net_wm_state_maximized_horz;
 		Atom net_wm_state_maximized_vert;
+		Atom net_wm_state_modal;
 		Atom net_wm_window_type;
 		Atom net_wm_window_type_normal;
 		Atom net_wm_window_type_utility;
@@ -216,8 +217,9 @@ namespace detail
 		void caret_close(nana::gui::native_window_type);
 		void caret_pos(nana::gui::native_window_type, int x, int y);
 		void caret_visible(nana::gui::native_window_type, bool);
-		void caret_flash(nana::gui::native_window_type);
-		void caret_reinstate(nana::gui::native_window_type);
+		void caret_flash(caret_tag&);
+		bool caret_update(nana::gui::native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);
+		static bool caret_reinstate(caret_tag&);
 		void set_error_handler();
 		int rev_error_handler();
 		void event_register_filter(nana::gui::native_window_type, unsigned eventid);

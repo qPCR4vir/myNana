@@ -1,10 +1,10 @@
 /*
  *	A CheckBox Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/checkbox.cpp
  */
@@ -133,11 +133,8 @@ namespace xcheckbox
 
 			void drawer::_m_draw_background(graph_reference graph)
 			{
-				window wd = *widget_;
-				if(API::glass_window(wd))
-					API::make_glass_background(wd);
-				else
-					graph.rectangle(API::background(wd), true);
+				if(false == API::glass_window(*widget_))
+					graph.rectangle(API::background(*widget_), true);
 			}
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
@@ -203,7 +200,7 @@ namespace xcheckbox
 
 		void checkbox::style(checker_t chk)
 		{
-			this->get_drawer_trigger().style(static_cast<drawer_trigger_t::check_renderer_t::checker_t>(chk));
+			get_drawer_trigger().style(static_cast<drawer_trigger_t::check_renderer_t::checker_t>(chk));
 			API::refresh_window(*this);
 		}
 
@@ -225,18 +222,13 @@ namespace xcheckbox
 
 		void checkbox::open_check_image(const nana::paint::image& img)
 		{
-			this->get_drawer_trigger().check_renderer().open_background_image(img);
+			get_drawer_trigger().check_renderer().open_background_image(img);
 		}
 
 		void checkbox::set_check_image(mouse_action act, checkbox::checker_t chk, bool checked, const nana::rectangle& r)
 		{
-			drawer_trigger_t::check_renderer_t::checker_t ichk;
-			if(checkbox::blocker == chk)
-				ichk = nana::paint::gadget::check_renderer::blocker;
-			else
-				ichk = nana::paint::gadget::check_renderer::clasp;
-
-			this->get_drawer_trigger().check_renderer().set_image_state(act, ichk, checked, r);
+			typedef nana::paint::gadget::check_renderer checks;
+			get_drawer_trigger().check_renderer().set_image_state(act, (checkbox::blocker == chk ? checks::blocker : checks::clasp), checked, r);
 		}
 	//end class checkbox
 
@@ -265,20 +257,20 @@ namespace xcheckbox
 
 		std::size_t radio_group::checked() const
 		{
-			auto i = std::find_if(ui_container_.begin(), ui_container_.end(), [](decltype(*ui_container_.begin())& x)
+			auto i = std::find_if(ui_container_.cbegin(), ui_container_.cend(), [](decltype(*ui_container_.cbegin())& x)
 				{
 					return (x.uiobj->checked());
 				});
-			return static_cast<std::size_t>(i - ui_container_.begin());
+			return static_cast<std::size_t>(i - ui_container_.cbegin());
 		}
 
-		void radio_group::_m_checked(const nana::gui::eventinfo& ei)
+		void radio_group::_m_checked(const eventinfo& ei)
 		{
 			for(auto & i : ui_container_)
 				i.uiobj->check(ei.window == i.uiobj->handle());
 		}
 
-		void radio_group::_m_destroy(const nana::gui::eventinfo& ei)
+		void radio_group::_m_destroy(const eventinfo& ei)
 		{
 			auto i = std::find_if(ui_container_.begin(), ui_container_.end(), [&ei](decltype(*ui_container_.begin()) & x)
 					{

@@ -1,10 +1,10 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.hpp
  */
@@ -49,7 +49,7 @@ namespace API
 			if(std::is_base_of<detail::event_type_tag, event_t>::value)
 			{
 				auto & wd_manager = bedrock::instance().wd_manager;
-				nana::gui::internal_scope_guard isg;
+				internal_scope_guard isg;
 				if(wd_manager.available(reinterpret_cast<bedrock::core_window_t*>(wd)))
 					return reinterpret_cast<bedrock::core_window_t*>(wd)->drawer.make_event(event_t::identifier, wd);
 			}
@@ -59,12 +59,15 @@ namespace API
 		void attach_drawer(window, drawer_trigger&);
 		void detach_drawer(window);
 		void umake_drawer_event(window);
+		nana::string window_caption(window);
 		void window_caption(window, const nana::string& str);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&);
 		window create_widget(window, const rectangle&);
 		window create_lite_widget(window, const rectangle&);
 		window create_frame(window, const rectangle&);
+
+		paint::graphics* window_graphics(window);
 	}//end namespace dev
 
 	void exit();
@@ -109,7 +112,7 @@ namespace API
 	}
 
 	template<typename Event>
-	void raise_event(window wd, const nana::gui::eventinfo& ei)
+	void raise_event(window wd, const eventinfo& ei)
 	{
 		typedef typename std::remove_pointer<typename std::remove_reference<Event>::type>::type event_t;
 		if(std::is_base_of<detail::event_type_tag, event_t>::value)
@@ -200,7 +203,6 @@ namespace API
 	
 	bool glass_window(window);
 	bool glass_window(window, bool);
-	void make_glass_background(window);
 
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
@@ -214,7 +216,7 @@ namespace API
 	bool calc_screen_point(window, point&);
 	bool calc_window_point(window, point&);
 
-	nana::gui::window find_window(const nana::point& mspos);
+	window find_window(const nana::point& mspos);
 
 	void register_menu_window(window, bool has_keyboard);
 	bool attach_menubar(window menubar);

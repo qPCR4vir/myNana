@@ -65,10 +65,18 @@ namespace nana{ namespace gui{
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)
 				{
+					nana::rectangle r = graph.size();
 					if(s.horizontal)
-						graph.round_rectangle(s.pos, 0, s.scale, graph.height(), 3, 3, 0x0, true, 0xF0F0F0);
+					{
+						r.x = s.pos;
+						r.width = s.scale;
+					}
 					else
-						graph.round_rectangle(0, s.pos, graph.width(), s.scale, 3, 3, 0x0, true, 0xF0F0F0);
+					{
+						r.y = s.pos;
+						r.height = s.scale;
+					}
+					graph.round_rectangle(r, 3, 3, 0x0, true, 0xF0F0F0);
 				}
 			};
 
@@ -117,7 +125,6 @@ namespace nana{ namespace gui{
 				{
 					other_.wd = wd.handle();
 					other_.widget = &wd;
-
 				}
 
 				window handle() const
@@ -173,22 +180,11 @@ namespace nana{ namespace gui{
 
 				void draw()
 				{
-					if(0 == other_.graph)
-						return;
-
-					nana::size graphsize = other_.graph->size();
-					if(graphsize.width == 0 || graphsize.height == 0)
-						return;
-
-					//Background, if the window is a glass window then initialize the background.
-					bool isglass = API::glass_window(other_.wd);
-					if(isglass)
+					if(other_.graph && !other_.graph->size().is_zero())
 					{
-						nana::gui::API::make_glass_background(other_.wd);
+						proto_.renderer->refer().background(other_.wd, *other_.graph, API::glass_window(other_.wd));
+						_m_draw_objects();
 					}
-					proto_.renderer->refer().background(other_.wd, *other_.graph, isglass);
-
-					_m_draw_objects();
 				}
 
 				void vertical(bool v)

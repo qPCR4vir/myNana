@@ -211,21 +211,6 @@ namespace nana{ namespace gui{
 					return false;
 				}
 
-				void remove_sub_menu(std::size_t pos)
-				{
-					if(root_.items.size() <= pos) return;
-
-					menu_item_type & item = root_.items[pos];
-					if(item.sub_menu)
-					{
-						auto i = std::find(item.sub_menu->owner.begin(), item.sub_menu->owner.end(), &root_);
-						if(i != item.sub_menu->owner.end())
-							item.sub_menu->owner.erase(i);
-
-						item.sub_menu = nullptr;
-					}
-				}
-
 				void destroy()
 				{
 					for(auto i : root_.owner)
@@ -493,7 +478,7 @@ namespace nana{ namespace gui{
 
 					const unsigned item_h_px = _m_item_height();
 					nana::rectangle item_r(2, 2, graph_->width() - 4, item_h_px);
-					
+
 					unsigned strpixels = item_r.width - 60;
 
 					int text_top_off = (item_h_px - graph_->text_extent_size(STR("jh({[")).height) / 2;
@@ -1007,7 +992,7 @@ namespace nana{ namespace gui{
 			drawerbase::menu::menu_builder	mbuilder;
 			drawerbase::menu::menu_window *	uiobj;
 			std::function<void()> destroy_answer;
-			std::map<std::size_t, info> sub_container;		
+			std::map<std::size_t, info> sub_container;
 		};
 
 		menu::menu()
@@ -1028,12 +1013,12 @@ namespace nana{ namespace gui{
 
 		void menu::append(const nana::string& text, const menu::event_fn_t& f)
 		{
-			impl_->mbuilder.data().items.push_back(drawerbase::menu::menu_item_type(text, f));
+			impl_->mbuilder.data().items.emplace_back(text, f);
 		}
 
 		void menu::append_splitter()
 		{
-			impl_->mbuilder.data().items.push_back(drawerbase::menu::menu_item_type());
+			impl_->mbuilder.data().items.emplace_back();
 		}
 
 		void menu::clear()
@@ -1178,7 +1163,7 @@ namespace nana{ namespace gui{
 
 		menu& menu::max_pixels(unsigned px)
 		{
-			impl_->mbuilder.data().max_pixels = (px < 100 ? px : 100);
+			impl_->mbuilder.data().max_pixels = (px > 100 ? px : 100);
 			return *this;
 		}
 

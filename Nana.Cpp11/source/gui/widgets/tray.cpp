@@ -1,10 +1,10 @@
 /*
  *	Tray Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/tray.cpp
  *
@@ -22,17 +22,17 @@ namespace nana{ namespace gui{
 			bool enabled;
 			event_handle closed;
 
-			void closed_helper(const nana::gui::eventinfo& ei)
+			void closed_helper(const eventinfo& ei)
 			{
 				API::tray_delete(wd);
-				wd = 0;
+				wd = nullptr;
 			}
 		};
 
 		tray::tray()
 			: impl_(new tray_impl)
 		{
-			impl_->wd = 0;
+			impl_->wd = nullptr;
 			impl_->enabled = false;
 		}
 
@@ -45,7 +45,7 @@ namespace nana{ namespace gui{
 
 		void tray::bind(window wd)
 		{
-			if(0 == impl_->wd)
+			if(nullptr == impl_->wd)
 			{
 				//The wd may not be the root category widget.
 				//The destroy event needs the root category widget
@@ -58,23 +58,19 @@ namespace nana{ namespace gui{
 		{
 			if(impl_->wd)
 			{
-				if(impl_->closed)
-				{
-					API::umake_event(impl_->closed);
-					impl_->closed = 0;
-				}
+				API::umake_event(impl_->closed);
+				impl_->closed = nullptr;
 
 				API::tray_delete(impl_->wd);
-				impl_->wd = 0;
+				impl_->wd = nullptr;
 			}
 		}
 
 		bool tray::add(const nana::char_t* tip, const nana::char_t* image) const
 		{
 			if(impl_->wd)
-			{
 				return (impl_->enabled = API::tray_insert(impl_->wd, tip, image));
-			}
+
 			return false;
 		}
 

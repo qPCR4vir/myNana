@@ -1,10 +1,10 @@
 /*
  *	A Form Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/form.cpp
  */
@@ -57,7 +57,7 @@ namespace nana{ namespace gui
 		{}
 
 		form::form(window owner, const appearance& apr)
-			: form_base_t(owner, false, API::make_center(owner, 300, 150), apr)
+			: form_base_t(owner, false, API::make_center(owner, 300, 200), apr)
 		{}
 
 		form::form(window owner, const rectangle& r, const appearance& apr)

@@ -1,10 +1,10 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.cpp
  */
@@ -76,15 +76,15 @@ namespace API
 
 	namespace dev
 	{
-		void attach_drawer(window wd, nana::gui::drawer_trigger& dr)
+		void attach_drawer(window wd, drawer_trigger& dr)
 		{
 			if(wd)
 			{
-				restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+				const auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 				internal_scope_guard isg;
 				if(restrict::window_manager.available(iwd))
 				{
-					iwd->drawer.graphics.make(iwd->rect.width, iwd->rect.height);
+					iwd->drawer.graphics.make(iwd->dimension.width, iwd->dimension.height);
 					iwd->drawer.graphics.rectangle(iwd->color.background, true);
 					iwd->drawer.attached(dr);
 					make_drawer_event<events::size>(wd);
@@ -106,6 +106,23 @@ namespace API
 		void umake_drawer_event(window wd)
 		{
 			restrict::bedrock.evt_manager.umake(wd, true);
+		}
+
+		nana::string window_caption(window wd)
+		{
+			if(wd)
+			{
+				restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+				internal_scope_guard isg;
+
+				if(restrict::window_manager.available(iwd))
+				{
+					if(iwd->other.category == category::root_tag::value)
+						return restrict::interface_type::window_caption(iwd->root);
+					return iwd->title;
+				}
+			}
+			return nana::string();
 		}
 
 		void window_caption(window wd, const nana::string& title)
@@ -144,11 +161,23 @@ namespace API
 		{
 			return reinterpret_cast<window>(restrict::window_manager.create_frame(reinterpret_cast<restrict::core_window_t*>(parent), r));
 		}
+
+		paint::graphics* window_graphics(window wd)
+		{
+			if(wd)
+			{
+				internal_scope_guard isg;
+				if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+					return &reinterpret_cast<restrict::core_window_t*>(wd)->drawer.graphics;
+			}
+			return nullptr;
+		}
 	}//end namespace dev
 
+	//exit
+	//close all windows in current thread
 	void exit()
 	{
-		//restrict::window_manager.exit();
 		internal_scope_guard isg;
 
 		std::vector<restrict::core_window_t*> v;
@@ -156,14 +185,14 @@ namespace API
 		if(v.size())
 		{
 			std::vector<native_window_type> roots;
-			native_window_type root = 0;
+			native_window_type root = nullptr;
 			unsigned tid = nana::system::this_thread_id();
 			for(auto wd : v)
 			{
 				if((wd->thread_id == tid) && (wd->root != root))
 				{
 					root = wd->root;
-					if(roots.end() == std::find(roots.begin(), roots.end(), root))
+					if(roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
 						roots.push_back(root);
 				}
 			}
@@ -206,12 +235,12 @@ namespace API
 		return text;
 	}
 
-	bool register_shortkey(nana::gui::window wd, unsigned long key)
+	bool register_shortkey(window wd, unsigned long key)
 	{
 		return restrict::window_manager.register_shortkey(reinterpret_cast<restrict::core_window_t*>(wd), key);
 	}
 
-	void unregister_shortkey(nana::gui::window wd)
+	void unregister_shortkey(window wd)
 	{
 		restrict::window_manager.unregister_shortkey(reinterpret_cast<restrict::core_window_t*>(wd));
 	}
@@ -412,12 +441,12 @@ namespace API
 	{
 		if(wd)
 		{
-			restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
 				return ( (iwd->other.category == category::root_tag::value) ?
-					restrict::interface_type::window_position(iwd->root) : nana::point(iwd->rect.x, iwd->rect.y));
+					restrict::interface_type::window_position(iwd->root) : iwd->pos_owner);
 			}
 		}
 		return nana::point();
@@ -496,7 +525,7 @@ namespace API
 		}
 	}
 
-	bool window_rectangle(window wd, rectangle& rect)
+	bool window_rectangle(window wd, rectangle& r)
 	{
 		if(wd)
 		{
@@ -504,13 +533,8 @@ namespace API
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
-				rect.x = iwd->rect.x;
-				rect.y = iwd->rect.y;
-				if(iwd->other.category == category::root_tag::value)
-					restrict::interface_type::get_window_rect(iwd->root, rect);
-
-				rect.width = iwd->rect.width;
-				rect.height = iwd->rect.height;
+				r = iwd->pos_owner;
+				r = iwd->dimension;
 				return true;
 			}
 		}
@@ -616,11 +640,7 @@ namespace API
 			restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
-			{
-				if(iwd->other.category == category::root_tag::value)
-					return restrict::interface_type::window_caption(iwd->root);
-				return iwd->title;
-			}
+				return restrict::window_manager.signal_fire_caption(iwd);
 		}
 		return nana::string();
 	}
@@ -662,7 +682,7 @@ namespace API
 		}
 	}
 
-	bool tray_insert(nana::gui::native_window_type wd, const nana::char_t* tip, const nana::char_t* ico)
+	bool tray_insert(native_window_type wd, const nana::char_t* tip, const nana::char_t* ico)
 	{
 		return restrict::interface_type::notify_icon_add(wd, tip, ico);
 	}
@@ -692,12 +712,12 @@ namespace API
 		restrict::window_manager.tray_umake_event(wd);
 	}
 
-	bool is_focus_window(nana::gui::window wd)
+	bool is_focus_window(window wd)
 	{
 		if(wd)
 		{
 			restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-			nana::gui::internal_scope_guard isg;
+			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 				return (iwd->root_widget->other.attribute.root->focus == iwd);
 		}
@@ -716,14 +736,14 @@ namespace API
 		restrict::window_manager.update(reinterpret_cast<restrict::core_window_t*>(wd), false, false);
 	}
 
-	nana::gui::window capture_window()
+	window capture_window()
 	{
-		return reinterpret_cast<nana::gui::window>(restrict::window_manager.capture_window());
+		return reinterpret_cast<window>(restrict::window_manager.capture_window());
 	}
 
-	nana::gui::window capture_window(nana::gui::window wd, bool value)
+	window capture_window(window wd, bool value)
 	{
-		return reinterpret_cast<nana::gui::window>(
+		return reinterpret_cast<window>(
 					restrict::window_manager.capture_window(reinterpret_cast<restrict::core_window_t*>(wd), value)
 		);
 	}
@@ -740,12 +760,15 @@ namespace API
 			restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
 
-			wd = 0;
+			wd = nullptr;
 			if(restrict::window_manager.available(iwd))
 			{
 				if((iwd->other.category == category::root_tag::value) && (iwd->flags.modal == false))
 				{
 					iwd->flags.modal = true;
+#if defined(NANA_X11)
+					restrict::interface_type::set_modal(iwd->root);
+#endif
 					restrict::window_manager.show(iwd, true);
 					wd = reinterpret_cast<window>(iwd);
 				}
@@ -830,7 +853,7 @@ namespace API
 			if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
 				return reinterpret_cast<restrict::core_window_t*>(wd)->color.active;
 		}
-		return 0;	
+		return 0;
 	}
 
 	color_t active(window wd, color_t col)
@@ -853,7 +876,7 @@ namespace API
 		return 0;
 	}
 
-	void create_caret(nana::gui::window wd, unsigned width, unsigned height)
+	void create_caret(window wd, unsigned width, unsigned height)
 	{
 		if(wd)
 		{
@@ -947,7 +970,7 @@ namespace API
 		}
 	}
 
-	bool caret_visible(nana::gui::window wd)
+	bool caret_visible(window wd)
 	{
 		if(wd)
 		{
@@ -959,14 +982,14 @@ namespace API
 		return false;
 	}
 
-	void tabstop(nana::gui::window wnd)
+	void tabstop(window wnd)
 	{
 		restrict::window_manager.tabstop(reinterpret_cast<restrict::core_window_t*>(wnd));
 	}
 
 	//eat_tabstop
 	//@brief: set a eating tab window that it processes a pressing of tab itself
-	void eat_tabstop(nana::gui::window wd, bool eat)
+	void eat_tabstop(window wd, bool eat)
 	{
 		if(wd)
 		{
@@ -982,7 +1005,7 @@ namespace API
 		}
 	}
 
-	nana::gui::window move_tabstop(nana::gui::window wd, bool next)
+	window move_tabstop(window wd, bool next)
 	{
 		restrict::core_window_t* ts_wd;
 		if(next)
@@ -993,7 +1016,7 @@ namespace API
 		restrict::window_manager.set_focus(ts_wd);
 		restrict::window_manager.update(ts_wd, false, false);
 
-		return reinterpret_cast<nana::gui::window>(ts_wd);
+		return reinterpret_cast<window>(ts_wd);
 	}
 
 	//glass_window
@@ -1009,14 +1032,9 @@ namespace API
 		return false;
 	}
 
-	bool glass_window(nana::gui::window wd, bool isglass)
+	bool glass_window(window wd, bool isglass)
 	{
 		return restrict::window_manager.glass_window(reinterpret_cast<restrict::core_window_t*>(wd), isglass);
-	}
-
-	void make_glass_background(nana::gui::window wd)
-	{
-		restrict::window_manager.make_glass_background(reinterpret_cast<restrict::core_window_t*>(wd));
 	}
 
 	void take_active(window wd, bool active, window take_if_active_false)
@@ -1037,12 +1055,12 @@ namespace API
 		}
 	}
 
-	bool window_graphics(nana::gui::window wd, nana::paint::graphics& graph)
+	bool window_graphics(window wd, nana::paint::graphics& graph)
 	{
 		return restrict::window_manager.get_graphics(reinterpret_cast<restrict::core_window_t*>(wd), graph);
 	}
 
-	bool root_graphics(nana::gui::window wd, nana::paint::graphics& graph)
+	bool root_graphics(window wd, nana::paint::graphics& graph)
 	{
 		if(wd)
 		{
@@ -1057,7 +1075,7 @@ namespace API
 		return false;
 	}
 
-	bool get_visual_rectangle(nana::gui::window wd, nana::rectangle& r)
+	bool get_visual_rectangle(window wd, nana::rectangle& r)
 	{
 		return restrict::window_manager.get_visual_rectangle(reinterpret_cast<restrict::core_window_t*>(wd), r);
 	}
@@ -1067,7 +1085,7 @@ namespace API
 		if(wd)
 		{
 			restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-			nana::gui::internal_scope_guard isg;
+			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
 				iwd->drawer.graphics.typeface(font);
@@ -1077,7 +1095,7 @@ namespace API
 		}
 	}
 
-	nana::paint::font typeface(nana::gui::window wd)
+	nana::paint::font typeface(window wd)
 	{
 		if(wd)
 		{
@@ -1097,15 +1115,15 @@ namespace API
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
-				pos.x += iwd->root_x;
-				pos.y += iwd->root_y;
+				pos.x += iwd->pos_root.x;
+				pos.y += iwd->pos_root.y;
 				return restrict::interface_type::calc_screen_point(iwd->root, pos);
 			}
 		}
 		return false;
 	}
 
-	bool calc_window_point(nana::gui::window wd, nana::point& pos)
+	bool calc_window_point(window wd, nana::point& pos)
 	{
 		return restrict::window_manager.calc_window_point(reinterpret_cast<restrict::core_window_t*>(wd), pos);
 	}
@@ -1123,7 +1141,7 @@ namespace API
 		return 0;
 	}
 
-	void register_menu_window(nana::gui::window wd, bool has_keyboard)
+	void register_menu_window(window wd, bool has_keyboard)
 	{
 		if(wd)
 		{
@@ -1148,7 +1166,7 @@ namespace API
 		return false;
 	}
 
-	void detach_menubar(nana::gui::window menubar)
+	void detach_menubar(window menubar)
 	{
 		if(menubar)
 		{
@@ -1173,7 +1191,7 @@ namespace API
 
 	bool is_window_zoomed(window wd, bool ask_for_max)
 	{
-		nana::gui::internal_scope_guard isg;
+		internal_scope_guard isg;
 		restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		if(restrict::window_manager.available(iwd))
 			return detail::bedrock::interface_type::is_window_zoomed(iwd->root, ask_for_max);
@@ -1182,11 +1200,11 @@ namespace API
 
 	nana::gui::mouse_action mouse_action(window wd)
 	{
-		nana::gui::internal_scope_guard isg;
+		internal_scope_guard isg;
 		restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		if(restrict::window_manager.available(iwd))
 			return iwd->flags.action;
-		return nana::gui::mouse_action::normal;
+		return gui::mouse_action::normal;
 	}
 }//end namespace API
 }//end namespace gui

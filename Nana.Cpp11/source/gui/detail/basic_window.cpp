@@ -122,8 +122,7 @@ namespace nana{	namespace gui{
 				if(0 == effective_range_.width || 0 == effective_range_.height)
 				{
 					rect.x = rect.y = 0;
-					rect.width = wd_->rect.width;
-					rect.height = wd_->rect.height;
+					rect = wd_->dimension;
 				}
 				else
 				{
@@ -182,7 +181,7 @@ namespace nana{	namespace gui{
 						paint_size_ = size;
 					}
 				
-					native_interface::caret_pos(wd_->root, wd_->root_x + pos.x, wd_->root_y + pos.y);
+					native_interface::caret_pos(wd_->root, wd_->pos_root.x + pos.x, wd_->pos_root.y + pos.y);
 				}
 			}
 		//end class caret_descriptor
@@ -249,8 +248,8 @@ namespace nana{	namespace gui{
 				if(category::root_tag::value == this->other.category)
 				{
 					this->root = wd;
-					this->rect.width = width;
-					this->rect.height = height;
+					dimension.width = width;
+					dimension.height = height;
 					this->extra_width = extra_width;
 					this->extra_height = extra_height;
 					this->root_widget = this;
@@ -266,41 +265,39 @@ namespace nana{	namespace gui{
 
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
-				this->rect.width = r.width;
-				this->rect.height = r.height;
-				this->rect.x = this->root_x = r.x;
-				this->rect.y = this->root_y = r.y;
+				pos_owner = pos_root = r;
+				dimension = r;
 
 				if(parent)
 				{
-					this->root_x += parent->root_x;
-					this->root_y += parent->root_y;
+					pos_root.x += parent->pos_root.x;
+					pos_root.y += parent->pos_root.y;
 				}
 			}
 
-			void basic_window::_m_initialize(basic_window* parent)
+			void basic_window::_m_initialize(basic_window* agrparent)
 			{
-				if(this->other.category == category::root_tag::value)
+				if(other.category == category::root_tag::value)
 				{
-					if(parent && (nana::system::this_thread_id() != parent->thread_id))
-						parent = 0;
+					if(agrparent && (nana::system::this_thread_id() != agrparent->thread_id))
+						agrparent = nullptr;
 
-					while(parent && (parent->other.category != nana::gui::category::root_tag::value))
-						parent = parent->parent;
+					while(agrparent && (agrparent->other.category != category::root_tag::value))
+						agrparent = agrparent->parent;
 				
-					this->owner = parent;
-					this->parent = 0;
-					this->index = 0;
+					owner = agrparent;
+					parent = nullptr;
+					index = 0;
 				}
 				else
 				{
-					this->parent = parent;
-					this->owner = 0;
-					this->root_widget = parent->root_widget;
-					this->root = parent->root;
-					this->root_graph = parent->root_graph;
-					this->index = static_cast<unsigned>(parent->children.size());
-					parent->children.push_back(this);
+					parent = agrparent;
+					owner = nullptr;
+					root_widget = agrparent->root_widget;
+					root = agrparent->root;
+					root_graph = agrparent->root_graph;
+					index = static_cast<unsigned>(agrparent->children.size());
+					agrparent->children.push_back(this);
 				}
 				this->predef_cursor = cursor::arrow;
 				this->flags.capture = false;
@@ -322,18 +319,17 @@ namespace nana{	namespace gui{
 
 				this->effect.edge_nimbus = effects::edge_nimbus::none;
 
-				this->together.caret = 0;
+				this->together.caret = nullptr;
 				this->flags.refreshing = false;
 				this->flags.destroying = false;
 
-				this->extra_width = 0;
-				this->extra_height = 0;
+				extra_width = extra_height = 0;
 
 				//The window must keep its thread_id same as its parent if it is a child.
 				//Otherwise, its root buffer would be mapped repeatly if it is in its parent thread.
-				this->thread_id = nana::system::this_thread_id();
-				if(parent && (this->thread_id != parent->thread_id))
-					this->thread_id = parent->thread_id;
+				thread_id = nana::system::this_thread_id();
+				if(agrparent && (thread_id != agrparent->thread_id))
+					thread_id = agrparent->thread_id;
 			}
 		//end struct basic_window
 	}//end namespace detail

@@ -1,10 +1,10 @@
 /*
  *	Graphics Gadget Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/paint/gadget.cpp
  */
@@ -495,13 +495,13 @@ namespace gadget
 
 					switch(act)
 					{
-					case nana::gui::mouse_action::normal:
+					case gui::mouse_action::normal:
 						colormap = (checked ? &bmp_checked : &bmp_unchecked);
 						break;
-					case nana::gui::mouse_action::over:
+					case gui::mouse_action::over:
 						colormap = (checked ? &bmp_checked_highlight : &bmp_unchecked_highlight);
 						break;
-					case nana::gui::mouse_action::pressed:
+					case gui::mouse_action::pressed:
 						colormap = &bmp_checked_press;
 						break;
 					default:

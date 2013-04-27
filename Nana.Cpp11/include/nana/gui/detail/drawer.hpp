@@ -1,10 +1,10 @@
 /*
  *	A Drawer Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/drawer.hpp
  */
@@ -36,9 +36,6 @@ namespace gui
 		virtual void attached(graph_reference);	//none-const
 		virtual void detached();	//none-const
 
-		//notify_background_change:
-		//@brief: If the widget is a glass window, and the widgets under the glass widget are changed, nana.gui will invoke a notify_background_change
-		virtual void notify_background_change(graph_reference);
 		virtual void typeface_changed(graph_reference);
 		virtual void refresh(graph_reference);
 
@@ -68,7 +65,6 @@ namespace gui
 			class object;
 		}
 
-		//class drawer
 		//@brief:	Every window has a drawer, the drawer holds a drawer_trigger for
 		//			a widget.
 		class drawer
@@ -78,8 +74,7 @@ namespace gui
 
 			drawer();
 			~drawer();
-			// the event is fired by window_layout
-			void notify_background_change();
+
 			void typeface_changed();
 			void click(const eventinfo&);
 			void dbl_click(const eventinfo&);
@@ -96,14 +91,15 @@ namespace gui
 			void key_char(const eventinfo&);
 			void key_up(const eventinfo&);
 			void shortkey(const eventinfo&);
-			void map(window, const nana::rectangle& vr);	//Copy the root buffer to screen
+			void map(window);	//Copy the root buffer to screen
 			void refresh();
 			drawer_trigger* realizer() const;
 			void attached(drawer_trigger&);
 			drawer_trigger* detached();
 		public:
 			void clear();
-			void draw(std::function<void(paint::graphics&)> &&);
+			void* draw(std::function<void(paint::graphics&)> &&, bool diehard);
+			void erase(void* diehard);
 			void string(int x, int y, unsigned color, const nana::char_t*);
 			void line(int x, int y, int x2, int y2, unsigned color);
 			void rectangle(int x, int y, unsigned width, unsigned height, unsigned color, bool issolid);
@@ -118,7 +114,7 @@ namespace gui
 		public:
 			nana::paint::graphics graphics;
 		private:
-			std::vector<nana::gui::detail::dynamic_drawing::object*>	dynamic_drawing_objects_;
+			std::vector<dynamic_drawing::object*>	dynamic_drawing_objects_;
 			drawer_trigger* realizer_;
 			bool refreshing_;
 		};

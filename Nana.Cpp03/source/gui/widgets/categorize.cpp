@@ -1,10 +1,10 @@
 /*
  *	A Categorize Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/categorize.cpp
  */
@@ -114,11 +114,8 @@ namespace nana{	namespace gui{
 							graph.line(left, top, left, r.y + height, 0x3C7FB1);
 						}
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
-
 						graph.rectangle(r, 0x3C7FB1, false);
 					}
-
-
 					graph.string(strpos.x, strpos.y, style_.fgcolor, name);
 
 					if(has_child)
@@ -577,7 +574,7 @@ namespace nana{	namespace gui{
 					style_.listbox = &(form_loader<nana::gui::float_listbox>()(window_, r));
 					style_.listbox->set_module(style_.module, 16);
 					style_.listbox->show();
-					style_.listbox->make_event<events::unload>(*this, &scheme::_m_list_closed);
+					style_.listbox->make_event<events::destroy>(*this, &scheme::_m_list_closed);
 				}
 
 				void _m_list_closed()

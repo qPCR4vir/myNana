@@ -1,10 +1,10 @@
 /*
  *	A text editor implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/skeletons/text_editor.hpp
  *	@description: 
@@ -40,6 +40,8 @@ namespace nana{	namespace gui{	namespace widgets
 
 			void border_renderer(std::function<void(nana::paint::graphics&)>);
 
+			void load(const char*);
+
 			//text_area
 			//@return: Returns true if the area of text is changed.
 			bool text_area(const nana::rectangle&);
@@ -55,10 +57,9 @@ namespace nana{	namespace gui{	namespace widgets
 
 			unsigned line_height() const;
 			unsigned screen_lines() const;
-			std::size_t text_lines() const;
 
-			bool getline(std::size_t n, nana::string&) const;
-			void setline(std::size_t n, const nana::string&);
+			bool getline(std::size_t pos, nana::string&) const;
+			void setline(std::size_t pos, const nana::string&);
 			void text(const nana::string&);
 			nana::string text() const;
 
@@ -101,12 +102,12 @@ namespace nana{	namespace gui{	namespace widgets
 			bool mouse_down(bool left_button, int screen_x, int screen_y);
 			bool mouse_move(bool left_button, int screen_x, int screen_y);
 			bool mouse_up(bool left_button, int screen_x, int screen_y);
+			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
 			bool _m_scroll_text(bool vertical);
-			void _m_on_scroll(const nana::gui::eventinfo& ei);
+			void _m_on_scroll(const eventinfo& ei);
 			void _m_scrollbar();
-			unsigned _m_get_text_area_width() const;
-			unsigned _m_get_text_area_height() const;
+			nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
 			void _m_reset();
 			nana::upoint _m_put(nana::string);
@@ -162,7 +163,7 @@ namespace nana{	namespace gui{	namespace widgets
 		private:
 			nana::gui::window window_;
 			graph_reference graph_;
-			textbase<nana::char_t> textbase_;
+			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_;
 
 			mutable ext_renderer_tag ext_renderer_;

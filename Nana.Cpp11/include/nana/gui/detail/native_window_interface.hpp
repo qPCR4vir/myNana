@@ -1,10 +1,10 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/native_window_interface.hpp
  */
@@ -39,6 +39,9 @@ namespace detail
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static nana::gui::native_window_type create_child_window(native_window_type, const rectangle&);
 
+#if defined(NANA_X11)
+		static void set_modal(native_window_type);
+#endif
 		static bool window_icon(native_window_type, const paint::image&);
 		static void	active_owner(native_window_type);
 		static void	close_window(native_window_type);

@@ -1,10 +1,10 @@
 /*
  *	Basis Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/basis.hpp
  *
@@ -49,18 +49,18 @@ namespace gui
 	typedef detail::window_handle_impl*	window;
 	typedef detail::event_handle_impl*	event_handle;
 
-	namespace keyboard
+
+	struct keyboard
 	{
-		enum
-		{
-			select_all = 0x1,
-			alt = 18,
-			backspace = 0x8, tab = 0x9,
-			esc = 0x1B, enter = 0xD,
-			cancel = 0x3, sync = 0x16,
-			pageup = 33, pagedown,
-			left = 37, up, right, down,
-			insert = 45, del,
+		enum t{
+		select_all = 0x1,
+		alt = 18,
+		backspace = 0x8, tab = 0x9,
+		esc = 0x1B, enter = 0xD,
+		cancel = 0x3, sync = 0x16,
+		pageup = 33, pagedown,
+		left = 37, up, right, down,
+		insert = 45, del
 		};
 	};
 

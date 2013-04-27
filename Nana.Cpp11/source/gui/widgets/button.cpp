@@ -1,10 +1,10 @@
 /*
  *	A Button Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/button.cpp
  */
@@ -129,16 +129,11 @@ namespace drawerbase
 				{
 					if(blockptr->enable && (blockptr->who == static_cast<state>(i)))
 					{
+						blockptr->pos = nana::point(valid_area.x, valid_area.y);
 						if(arrange == nana::arrange::horizontal)
-						{
-							blockptr->pos.x = valid_area.x + pos;
-							blockptr->pos.y = valid_area.y;
-						}
+							blockptr->pos.x += pos;
 						else
-						{
-							blockptr->pos.x = valid_area.x;
-							blockptr->pos.y = valid_area.y + pos;
-						}
+							blockptr->pos.y += pos;
 						pos += static_cast<int>(each_pixels);
 					}
 				}
@@ -203,18 +198,17 @@ namespace drawerbase
 			if(pshd != attr_.pressed)
 			{
 				attr_.pressed = pshd;
-				if(pshd)
-				{
-					attr_.act_state = state::pressed;
-				}
-				else
+				if(false == pshd)
 				{
 					window wd = API::find_window(API::cursor_position());
-					if(wd == this->widget_->handle())
+					if(wd == widget_->handle())
 						attr_.act_state = state::highlight;
 					else
 						attr_.act_state = (attr_.focused ? state::focused : state::normal);
 				}
+				else
+					attr_.act_state = state::pressed;
+
 				return true;
 			}
 			return false;
@@ -256,7 +250,7 @@ namespace drawerbase
 		{
 			if(attr_.enable_pushed && attr_.pressed)
 				return;
-			
+
 			attr_.act_state = (attr_.focused ? state::focused : state::normal);
 			_m_draw(graph);
 			API::lazy_refresh();
@@ -290,7 +284,7 @@ namespace drawerbase
 
 		void trigger::key_char(graph_reference, const eventinfo& ei)
 		{
-			if(ei.keyboard.key == gui::keyboard::enter)
+			if(ei.keyboard.key == static_cast<char_t>(gui::keyboard::enter))
 			{
 				eventinfo e;
 				e.mouse.ctrl = false;
@@ -335,6 +329,7 @@ namespace drawerbase
 			nana::string str = API::transform_shortkey_text(text, shortkey, &shortkey_pos);
 
 			nana::size ts = graph.text_extent_size(str);
+			nana::size gsize = graph.size();
 
 			nana::size icon_sz;
 			if(attr_.icon)
@@ -343,13 +338,13 @@ namespace drawerbase
 				icon_sz.width += 5;
 			}
 
-			int x = (static_cast<int>(graph.width()  - 1  - ts.width) >> 1);
-			int y = (static_cast<int>(graph.height() - 1 - ts.height) >> 1);
+			int x = (static_cast<int>(gsize.width  - 1  - ts.width) >> 1);
+			int y = (static_cast<int>(gsize.height - 1 - ts.height) >> 1);
 
 			if(x < static_cast<int>(icon_sz.width))
 				x = static_cast<int>(icon_sz.width);
 
-			unsigned omitted_pixels = graph.width() - icon_sz.width;
+			unsigned omitted_pixels = gsize.width - icon_sz.width;
 			std::size_t txtlen = str.size();
 			const nana::char_t* txtptr = str.c_str();
 			if(ts.width)
@@ -393,7 +388,7 @@ namespace drawerbase
 			}
 
 			if(attr_.icon)
-				attr_.icon->paste(graph, 3, (graph.height() - icon_sz.height) / 2);
+				attr_.icon->paste(graph, 3, (gsize.height - icon_sz.height) / 2);
 		}
 
 		void trigger::_m_draw(graph_reference graph)
@@ -452,14 +447,14 @@ namespace drawerbase
 		{
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
-			unsigned color_start = color::button_face_shadow_start, color_end = gui::color::button_face_shadow_end;
+			nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor, 0xFFFFFF, 0.2);
+			nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor, 0x0, 0.95);
+
 			if(attr_.act_state == state::pressed)
 			{
 				r.x = r.y = 2;
-				color_start = gui::color::button_face_shadow_end;
-				color_end = gui::color::button_face_shadow_start;
+				std::swap(color_start, color_end);
 			}
-
 			graph.shadow_rectangle(r, color_start, color_end, true);
 		}
 
@@ -483,19 +478,15 @@ namespace drawerbase
 			graph.set_pixel(0, bottom, gui::color::button_face);
 			graph.set_pixel(right, bottom, gui::color::button_face);
 
-
 			if(attr_.act_state == state::pressed)
-			{
-				r.pare_off(1);
-				graph.rectangle(r, 0xC3C3C3, false);
-			}
+				graph.rectangle(r.pare_off(1), 0xC3C3C3, false);
 		}
 
 		void trigger::icon(const nana::paint::image& img)
 		{
 			if(img.empty())	return;
 
-			if(0 == attr_.icon)
+			if(nullptr == attr_.icon)
 				attr_.icon = new paint::image;
 			*attr_.icon = img;
 		}
@@ -503,9 +494,9 @@ namespace drawerbase
 		void trigger::image(const nana::paint::image& img)
 		{
 			delete bgimage_;
-			bgimage_ = 0;
+			bgimage_ = nullptr;
 
-			if(img.empty() == false)
+			if(img)
 			{
 				bgimage_ = new bgimage_tag;
 				bgimage_->image = img;
@@ -563,19 +554,19 @@ namespace drawerbase
 			void button::image_enable(state sta, bool eb)
 			{
 				internal_scope_guard isg;
-				drawerbase::button::trigger::bgimage_tag * bgi = get_drawer_trigger().ref_bgimage();
-				if(bgi && bgi->enable(sta, eb))
+				auto p = get_drawer_trigger().ref_bgimage();
+				if(p && p->enable(sta, eb))
 					API::refresh_window(handle());
 			}
 
 			void button::image_valid_area(nana::arrange arg, const nana::rectangle& r)
 			{
 				internal_scope_guard isg;
-				drawerbase::button::trigger::bgimage_tag * bgi = get_drawer_trigger().ref_bgimage();
-				if(bgi)
+				auto p = get_drawer_trigger().ref_bgimage();
+				if(p)
 				{
-					bgi->set_valid_area(arg, r);
-					bgi->update_blocks();
+					p->set_valid_area(arg, r);
+					p->update_blocks();
 					API::refresh_window(handle());
 				}
 			}
@@ -583,18 +574,18 @@ namespace drawerbase
 			void button::image_join(state target, state from)
 			{
 				internal_scope_guard isg;
-				drawerbase::button::trigger::bgimage_tag * bgi = get_drawer_trigger().ref_bgimage();
-				if(bgi && bgi->join(target, from))
+				auto p = get_drawer_trigger().ref_bgimage();
+				if(p && p->join(target, from))
 					API::refresh_window(handle());
 			}
 
 			void button::image_stretch(nana::arrange arg, int beg, int end)
 			{
 				internal_scope_guard isg;
-				drawerbase::button::trigger::bgimage_tag * bgi = get_drawer_trigger().ref_bgimage();
-				if(bgi)
+				auto p = get_drawer_trigger().ref_bgimage();
+				if(p)
 				{
-					bgi->set_stretch(arg, beg, end);
+					p->set_stretch(arg, beg, end);
 					API::refresh_window(handle());
 				}
 			}
@@ -635,19 +626,19 @@ namespace drawerbase
 			void button::_m_shortkey()
 			{
 				eventinfo ei;
-				API::raise_event<nana::gui::events::click>(handle(), ei);
+				API::raise_event<events::click>(handle(), ei);
 			}
 
 			void button::_m_complete_creation()
 			{
-				this->make_event<events::shortkey>(*this, &button::_m_shortkey);
+				make_event<events::shortkey>(*this, &button::_m_shortkey);
 			}
 
 			void button::_m_caption(const nana::string& text)
 			{
 				API::unregister_shortkey(handle());
 
-				nana::string::value_type shortkey;
+				nana::char_t shortkey;
 				API::transform_shortkey_text(text, shortkey, 0);
 				if(shortkey)
 					API::register_shortkey(handle(), shortkey);

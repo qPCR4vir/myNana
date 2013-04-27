@@ -1,10 +1,10 @@
 /*
  *	A Basic Window Widget Definition
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/basic_window.hpp
  */
@@ -69,8 +69,7 @@ namespace detail
 	//@brief: a window data structure descriptor 
 	struct basic_window
 	{
-		typedef std::vector<basic_window*> container_type;
-		typedef std::vector<basic_window*> tabstop_container_type;
+		typedef std::vector<basic_window*> container;
 
 		struct root_context
 		{
@@ -101,7 +100,7 @@ namespace detail
 			if(parent)
 			{
 				_m_init_pos_and_size(parent, r);
-				this->_m_initialize(parent);
+				_m_initialize(parent);
 			}
 		}
 
@@ -116,15 +115,12 @@ namespace detail
 		void _m_init_pos_and_size(basic_window* parent, const rectangle&);
 		void _m_initialize(basic_window* parent);
 	public:
-		typedef nana::color_t color_t;
-		typedef std::vector<basic_window*> cont_type;
-
-		nana::rectangle	rect;
+		point	pos_root;	//coordinate for root window
+		point	pos_owner;
+		size	dimension;
 		nana::size	min_track_size;
 		nana::size	max_track_size;
 
-		int	root_x;			//coordinate for root window
-		int	root_y;			//coordinate for root window
 		bool	visible;
 
 		unsigned extra_width;
@@ -183,8 +179,8 @@ namespace detail
 
 			struct	attr_root_tag
 			{
-				std::vector<basic_window*>	frames;	//initialization is null, it will be created while creating a frame widget. Refer to WindowManager::create_frame
-				std::vector<basic_window*>	tabstop;
+				container	frames;	//initialization is null, it will be created while creating a frame widget. Refer to WindowManager::create_frame
+				container	tabstop;
 				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window	*focus;
 				basic_window	*menubar;
@@ -193,7 +189,6 @@ namespace detail
 			};
 
 			category::flags category;
-
 			basic_window *active_window;	//if flags.take_active is false, the active_window still keeps the focus,
 											//if the active_window is null, the parent of this window keeps focus.
 			paint::graphics glass_buffer;	//if flags.glass is true. Refer to window_layout::make_glass_background.
@@ -212,7 +207,7 @@ namespace detail
 		native_window_type	root;		//root Window handle
 		unsigned			thread_id;		//the identifier of the thread that created the window.
 		unsigned			index;
-		cont_type			children;
+		container			children;
 	};
 
 }//end namespace detail

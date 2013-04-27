@@ -1,10 +1,10 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
@@ -13,9 +13,13 @@
 #include PLATFORM_SPEC_HPP
 #include <nana/gui/detail/native_window_interface.hpp>
 #if defined(NANA_WINDOWS)
-	#include <nana/paint/detail/image_ico.hpp>
-	#include <mutex>
+	#if defined(NANA_MINGW)
+        #include <nana/std_mutex.hpp>
+    #else
+        #include <mutex>
+	#endif
 	#include <map>
+	#include <nana/paint/detail/image_ico.hpp>
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 	#include GUI_BEDROCK_HPP
@@ -45,7 +49,7 @@ namespace nana{
 #endif
 		};
 	}
-	
+
 	namespace gui{	namespace detail{
 
 #if defined(NANA_WINDOWS)
@@ -77,8 +81,8 @@ namespace nana{
 		{
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			map_t::iterator i = map_.find(wd);
-			if(i != map_.end())
+			auto i = const_cast<const map_t&>(map_).find(wd);
+			if(i != map_.cend())
 			{
 				ext = i->second;
 				map_.erase(i);
@@ -91,7 +95,7 @@ namespace nana{
 		{
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			map_t::iterator i = map_.find(wd);
+			auto i = map_.find(wd);
 			if(i != map_.end())
 			{
 				HICON ret = i->second.ico;
@@ -179,16 +183,14 @@ namespace nana{
 			wd_area.bottom -= wd_area.top;
 
 			window_result result = {reinterpret_cast<native_window_type>(wnd),
-										client.right, client.bottom,
-										wd_area.right - client.right, wd_area.bottom - client.bottom};
+										static_cast<unsigned>(client.right), static_cast<unsigned>(client.bottom),
+										static_cast<unsigned>(wd_area.right - client.right), static_cast<unsigned>(wd_area.bottom - client.bottom)};
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
 			XSetWindowAttributes win_attr;
-			unsigned long attr_mask =	CWBackPixmap | CWBackPixel |
-										CWBorderPixel |
-										CWWinGravity | CWBitGravity |
-										CWColormap | CWEventMask;
+			unsigned long attr_mask = CWBackPixmap | CWBackPixel | CWBorderPixel |
+							CWWinGravity | CWBitGravity | CWColormap | CWEventMask;
 
 			Display * disp = restrict::spec.open_display();
 			win_attr.colormap = restrict::spec.colormap();
@@ -220,7 +222,7 @@ namespace nana{
 				calc_screen_point(owner, pos);
 			}
 
-			win_attr.event_mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask | KeyReleaseMask | ExposureMask | StructureNotifyMask | LeaveWindowMask | FocusChangeMask;
+			win_attr.event_mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask | KeyReleaseMask | ExposureMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask;
 
 			Window handle = ::XCreateWindow(disp, parent,
 							pos.x, pos.y, (r.width ? r.width : 1), (r.height ? r.height : 1), 0,
@@ -321,8 +323,9 @@ namespace nana{
 
 		native_window_type native_interface::create_child_window(native_window_type parent, const rectangle& r)
 		{
+			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
-			HWND wd = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
+			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
 										STR("NanaWindowInternal"),
 										STR("Nana Child Window"),	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
@@ -330,10 +333,102 @@ namespace nana{
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
 										0, ::GetModuleHandle(0), 0);
 #elif defined(NANA_X11)
-			Window wd = 0;
+			nana::detail::platform_scope_guard psg;
+
+			XSetWindowAttributes win_attr;
+			unsigned long attr_mask = CWBackPixmap | CWBackPixel | CWBorderPixel |
+							CWWinGravity | CWBitGravity | CWColormap | CWEventMask;
+
+			Display * disp = restrict::spec.open_display();
+			win_attr.colormap = restrict::spec.colormap();
+
+			win_attr.background_pixmap = None;
+			win_attr.background_pixel = 0xFFFFFF;
+			win_attr.border_pixmap = None;
+			win_attr.border_pixel = 0x0;
+			win_attr.bit_gravity = 0;
+			win_attr.win_gravity = NorthWestGravity;
+			win_attr.backing_store = 0;
+			win_attr.backing_planes = 0;
+			win_attr.backing_pixel = 0;
+			win_attr.colormap = restrict::spec.colormap();
+
+			win_attr.override_redirect = True;
+			attr_mask |= CWOverrideRedirect;
+
+			nana::point pos(r.x, r.y);
+			win_attr.event_mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask | KeyReleaseMask | ExposureMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask;
+
+			Window handle = ::XCreateWindow(disp, reinterpret_cast<Window>(parent),
+							pos.x, pos.y, (r.width ? r.width : 1), (r.height ? r.height : 1), 0,
+							restrict::spec.screen_depth(), InputOutput, restrict::spec.screen_visual(),
+							attr_mask, &win_attr);
+
+			if(handle)
+			{
+				restrict::spec.make_owner(parent, reinterpret_cast<native_window_type>(handle));
+
+				XTextProperty name;
+				char text[] = "Nana Child Window";
+				char * str = text;
+				::XStringListToTextProperty(&str, 1, &name);
+				::XSetWMName(disp, handle, &name);
+
+				const nana::detail::atombase_tag & ab = restrict::spec.atombase();
+				::XSetWMProtocols(disp, handle, const_cast<Atom*>(&ab.wm_delete_window), 1);
+
+				struct
+				{
+					long flags;
+					long functions;
+					long decorations;
+					long input;
+					long status;
+				}motif;
+				//MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS;// | MWM_HINTS_INPUT_MODE;
+				motif.flags = 1 | 2; //| 4;
+				motif.functions = 4;//MWM_FUNC_MOVE;
+				motif.decorations = 0;
+				motif.input = 0;//MWM_INPUT_MODELESS;
+				motif.status = 0;
+
+				XSizeHints hints;
+				hints.flags = USPosition;
+				hints.x = pos.x;
+				hints.y = pos.y;
+				hints.min_width = hints.max_width = r.width;
+				hints.min_height = hints.max_height = r.height;
+				hints.flags |= (PMinSize | PMaxSize);
+				::XSetWMNormalHints(disp, handle, &hints);
+
+				::XChangeProperty(disp, handle, ab.motif_wm_hints, ab.motif_wm_hints, 32, PropModeReplace,
+									reinterpret_cast<unsigned char*>(&motif), sizeof(motif)/sizeof(long));
+
+				::XChangeProperty(disp, handle, ab.net_wm_state, XA_ATOM, 32, PropModeAppend,
+						reinterpret_cast<unsigned char*>(const_cast<Atom*>(&ab.net_wm_state_skip_taskbar)), 1);
+			}
 #endif
-			return reinterpret_cast<native_window_type>(wd);
+			return reinterpret_cast<native_window_type>(handle);
 		}
+
+#if defined(NANA_X11)
+		void native_interface::set_modal(native_window_type wd)
+		{
+			Window owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
+			if(wd && owner)
+			{
+				if(is_window_visible(wd))
+					show_window(wd, false, true);
+				auto disp = restrict::spec.open_display();
+				auto & atombase = restrict::spec.atombase();
+				::XSetTransientForHint(disp, reinterpret_cast<Window>(wd), owner);
+				::XChangeProperty(disp, reinterpret_cast<Window>(wd),
+								atombase.net_wm_state, XA_ATOM, sizeof(int) * 8, 
+								PropModeReplace,
+								reinterpret_cast<const unsigned char*>(&atombase.net_wm_state_modal), 1);
+			}
+		}
+#endif
 
 		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& img)
 		{
@@ -349,7 +444,7 @@ namespace nana{
 #elif defined(NANA_X11)
 			if(wd && (false == img.empty()))
 			{
-				
+
 				const nana::paint::graphics & graph = restrict::spec.keep_window_icon(wd, img);
 				XWMHints hints;
 				hints.flags = IconPixmapHint;
@@ -396,18 +491,28 @@ namespace nana{
 					::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_destroy_window, 0, 0);
 			}
 #elif defined(NANA_X11)
-			//Under X, XDestroyWindow destroy the specified window and generats a DestroyNotify
+			//Under X, XDestroyWindow destroys the specified window and generats a DestroyNotify
 			//event, when the client receives the event, the specified window has been already
 			//destroyed. This is a feature which is different from Windows. So the following
 			//works should be handled before calling XDestroyWindow.
-			nana::gui::detail::bedrock & bedrock = nana::gui::detail::bedrock::instance();
+			auto & bedrock = bedrock::instance();
 			if(wd == bedrock.get_menu())
 				bedrock.empty_menu();
 
+			Display* disp = restrict::spec.open_display();
 			restrict::spec.remove(wd);
-			nana::gui::detail::bedrock::core_window_t * iwd = bedrock.wd_manager.root(wd);
+			auto iwd = bedrock.wd_manager.root(wd);
 			if(iwd)
 			{
+				{
+					//Before calling window_manager::destroy, make sure the window is invisible.
+					//It is a behavior like Windows.
+					nana::detail::platform_scope_guard psg;
+					restrict::spec.set_error_handler();
+					::XUnmapWindow(disp, reinterpret_cast<Window>(wd));
+					::XFlush(disp);
+					restrict::spec.rev_error_handler();
+				}
 				bedrock.wd_manager.destroy(iwd);
 				bedrock.evt_manager.umake(reinterpret_cast<gui::window>(iwd), false);
 				bedrock.rt_manager.remove_if_exists(iwd);
@@ -416,7 +521,7 @@ namespace nana{
 
 			nana::detail::platform_scope_guard psg;
 			restrict::spec.set_error_handler();
-			::XDestroyWindow(restrict::spec.open_display(), reinterpret_cast<Window>(wd));
+			::XDestroyWindow(disp, reinterpret_cast<Window>(wd));
 			restrict::spec.rev_error_handler();
 #endif
 		}
@@ -645,7 +750,7 @@ namespace nana{
 				hints.y = y;
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 			}
-			
+
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
 #endif
 		}
@@ -655,7 +760,7 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
-				nana::detail::messages::move_window * mw = new nana::detail::messages::move_window;
+				auto * mw = new nana::detail::messages::move_window;
 				mw->x = x;
 				mw->y = y;
 				mw->width = width;
@@ -711,7 +816,7 @@ namespace nana{
 				hints.width = width;
 				hints.height = height;
 			}
-			
+
 			if(hints.flags)
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 
@@ -778,7 +883,7 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
-				nana::detail::messages::move_window * mw = new nana::detail::messages::move_window;
+				auto * mw = new nana::detail::messages::move_window;
 				mw->width = width;
 				mw->height = height;
 				mw->ignore = mw->Pos;
@@ -800,7 +905,7 @@ namespace nana{
 				::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(width), static_cast<int>(height), true);
 			}
 #elif defined(NANA_X11)
-			Display * disp = restrict::spec.open_display();
+			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
 
 			//Check the XSizeHints for testing whether the window is sizable.
@@ -981,10 +1086,10 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				nana::detail::messages::caret* c = new nana::detail::messages::caret;
-				c->x = x;
-				c->y = y;
-				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::operate_caret, 2, reinterpret_cast<LPARAM>(c));
+				auto cp = new nana::detail::messages::caret;
+				cp->x = x;
+				cp->y = y;
+				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::operate_caret, 2, reinterpret_cast<LPARAM>(cp));
 			}
 			else
 				::SetCaretPos(x, y);
@@ -1202,7 +1307,7 @@ namespace nana{
 				if(static_cast<unsigned>(x) > sz.width + ext_width)
 					sz.width = static_cast<unsigned>(x);
 				if(static_cast<unsigned>(y) > sz.height + ext_height)
-					sz.height = static_cast<unsigned>(y);			
+					sz.height = static_cast<unsigned>(y);
 			}
 #endif
 			return sz;

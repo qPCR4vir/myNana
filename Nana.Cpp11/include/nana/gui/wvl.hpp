@@ -1,10 +1,10 @@
 /*
  *	Nana GUI Library Definition
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/wvl.hpp
  *	@description:
@@ -39,9 +39,9 @@ namespace gui
 			return *res;
 		}
 
-		Form& operator()(nana::gui::widget& owner)	const
+		Form& operator()(widget& owner)	const
 		{
-			Form* res = detail::bedrock::instance().rt_manager.create_form<Form, nana::gui::widget&>(owner);
+			Form* res = detail::bedrock::instance().rt_manager.create_form<Form, widget&>(owner);
 			if(res == 0)
 				throw nana::bad_window("form_loader.operator(): failed to create a window");
 			if(IsMakeVisible) res->show();
@@ -49,9 +49,9 @@ namespace gui
 			return *res;
 		}
 
-		Form& operator()(nana::gui::window owner) const
+		Form& operator()(window owner) const
 		{
-			Form* res = detail::bedrock::instance().rt_manager.create_form<Form, nana::gui::window>(owner);
+			Form* res = detail::bedrock::instance().rt_manager.create_form<Form, window>(owner);
 			if(res == 0)
 				throw nana::bad_window("form_loader.operator(): failed to create a window");
 			if(IsMakeVisible) res->show();

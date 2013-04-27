@@ -1,10 +1,10 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/widget.cpp
  */
@@ -159,7 +159,7 @@ namespace gui
 
 		nana::string widget::_m_caption() const
 		{
-			return API::window_caption(handle());
+			return API::dev::window_caption(handle());
 		}
 		
 		void widget::_m_caption(const nana::string& str)

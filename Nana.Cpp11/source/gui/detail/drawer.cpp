@@ -1,10 +1,10 @@
 /*
  *	A Drawer Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/drawer.cpp
  */
@@ -14,6 +14,10 @@
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/detail/dynamic_drawing_object.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
+
+#if defined(NANA_X11)
+	#include <nana/detail/linux_X11/platform_spec.hpp>
+#endif
 
 namespace nana
 {
@@ -26,7 +30,6 @@ namespace gui
 		void drawer_trigger::bind_window(widget_reference){}
 		void drawer_trigger::attached(graph_reference){}	//none-const
 		void drawer_trigger::detached(){}	//none-const
-		void drawer_trigger::notify_background_change(graph_reference){}
 		void drawer_trigger::typeface_changed(graph_reference){}
 		void drawer_trigger::refresh(graph_reference){}
 
@@ -74,22 +77,15 @@ namespace gui
 			};
 
 		//class drawer
-		drawer::drawer():realizer_(0), refreshing_(false)
+		drawer::drawer():realizer_(nullptr), refreshing_(false)
 		{
 		}
 
 		drawer::~drawer()
 		{
-			clear();
-		}
-
-			// the event is fired by window_layout
-		void drawer::notify_background_change()
-		{
-			if(realizer_)
+			for(auto p : dynamic_drawing_objects_)
 			{
-				realizer_->notify_background_change(graphics);
-				_m_draw_dynamic_drawing_object();
+				delete p;
 			}
 		}
 
@@ -234,18 +230,43 @@ namespace gui
 			}
 		}
 
-		void drawer::map(window wd, const nana::rectangle& vr)	//Copy the root buffer to screen
+		void drawer::map(window wd)	//Copy the root buffer to screen
 		{
 			if(wd)
 			{
 				bedrock_type::core_window_t* iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				const bool caret = (iwd->together.caret && iwd->together.caret->visible());
-				if(caret) iwd->together.caret->visible(false);
+				bedrock_type::core_window_t * caret_wd = iwd->root_widget->other.attribute.root->focus;
 
+				bool owns_caret = (caret_wd && (caret_wd->together.caret) && (caret_wd->together.caret->visible()));
+				
+				//The caret in X11 is implemented by Nana, it is different from Windows'
+				//the caret in X11 is asynchronous, it is hard to hide and show the caret
+				//immediately, and therefore the caret always be flickering when the graphics
+				//buffer is mapping to the window.
+				if(owns_caret)
+				{
+#ifndef NANA_X11
+					caret_wd->together.caret->visible(false);
+#else
+					owns_caret = nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, false);
+#endif
+				}
+				
 				if(false == edge_nimbus_renderer_t::instance().render(iwd))
-					iwd->root_graph->paste(iwd->root, vr, vr.x, vr.y);
-
-				if(caret) iwd->together.caret->visible(true);
+				{
+					nana::rectangle vr;
+					if(bedrock_type::window_manager_t::wndlayout_type::read_visual_rectangle(iwd, vr))
+						iwd->root_graph->paste(iwd->root, vr, vr.x, vr.y);
+				}
+				
+				if(owns_caret)
+				{
+#ifndef NANA_X11
+					caret_wd->together.caret->visible(true);
+#else
+					nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, true);
+#endif
+				}
 			}
 		}
 
@@ -276,26 +297,47 @@ namespace gui
 		{
 			if(realizer_)
 			{
-				drawer_trigger * old = realizer_;
-				realizer_ = 0;
-				old->detached();
-				return old;
+				auto rmp = realizer_;
+				realizer_ = nullptr;
+				rmp->detached();
+				return rmp;
 			}
-			return 0;
+			return nullptr;
 		}
 
 		void drawer::clear()
 		{
+			std::vector<dynamic_drawing::object*> then;
 			for(auto p : dynamic_drawing_objects_)
-				delete p;
+			{
+				if(p->diehard())
+					then.push_back(p);
+				else
+					delete p;
+			}
 
-			std::vector<dynamic_drawing::object*>().swap(dynamic_drawing_objects_);
+			then.swap(dynamic_drawing_objects_);
 		}
 
-		void drawer::draw(std::function<void(paint::graphics&)> && f)
+		void* drawer::draw(std::function<void(paint::graphics&)> && f, bool diehard)
 		{
 			if(f)
-				dynamic_drawing_objects_.push_back(new dynamic_drawing::user_draw_function(std::move(f)));
+			{
+				auto p = new dynamic_drawing::user_draw_function(std::move(f), diehard);
+				dynamic_drawing_objects_.push_back(p);
+				return (diehard ? p : nullptr);
+			}
+			return nullptr;
+		}
+
+		void drawer::erase(void * p)
+		{
+			if(p)
+			{
+				auto i = std::find(dynamic_drawing_objects_.begin(), dynamic_drawing_objects_.end(), p);
+				if(i != dynamic_drawing_objects_.end())
+					dynamic_drawing_objects_.erase(i);
+			}
 		}
 
 		void drawer::string(int x, int y, unsigned color, const nana::char_t* text)

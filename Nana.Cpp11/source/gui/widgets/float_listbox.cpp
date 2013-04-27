@@ -1,10 +1,10 @@
 /*
  *	A float_listbox Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/float_listbox.cpp
  */
@@ -121,7 +121,7 @@ namespace nana{ namespace gui{
 			class drawer_impl
 			{
 			public:
-				typedef nana::gui::widget& widget_reference;
+				typedef widget& widget_reference;
 				typedef nana::paint::graphics& graph_reference;
 
 				static const unsigned npos = static_cast<unsigned>(-1);
@@ -242,7 +242,7 @@ namespace nana{ namespace gui{
 
 				void detach()
 				{
-					graph_ = 0;
+					graph_ = nullptr;
 				}
 
 				void resize()
@@ -304,7 +304,6 @@ namespace nana{ namespace gui{
 							items += state_.offset_y;
 
 							const unsigned item_pixels = state_.renderer->item_pixels(*graph_);
-
 							nana::rectangle item_r(2, 2, graph_->width() - outter_w, item_pixels);
 
 							state_.renderer->image(_m_image_enabled(), image_pixels_);
@@ -320,9 +319,7 @@ namespace nana{ namespace gui{
 						_m_open_scrollbar(*widget_, pages);
 					}
 					else
-					{
 						graph_->string(4, 4, 0x808080, STR("Empty Listbox, No Module!"));
-					}
 
 					//Draw border
 					graph_->rectangle(0x0, false);
@@ -425,7 +422,7 @@ namespace nana{ namespace gui{
 
 				void trigger::bind_window(widget_reference widget)
 				{
-					drawer_->attach(&widget, 0);
+					drawer_->attach(&widget, nullptr);
 				}
 
 				void trigger::attached(graph_reference graph)

@@ -213,6 +213,10 @@
 					Name="gui"
 					>
 					<File
+						RelativePath="..\..\source\gui\animation.cpp"
+						>
+					</File>
+					<File
 						RelativePath="..\..\source\gui\basis.cpp"
 						>
 					</File>
@@ -238,6 +242,10 @@
 					</File>
 					<File
 						RelativePath="..\..\source\gui\msgbox.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\source\gui\place.cpp"
 						>
 					</File>
 					<File

@@ -1,10 +1,10 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *
  *	@file: nana/threads/pool.hpp
@@ -76,6 +76,7 @@ namespace threads
 
 		void signal();
 		void wait_for_signal();
+		void wait_for_finished();
 	private:
 		void _m_push(task* task_ptr);
 	private:

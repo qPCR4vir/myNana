@@ -163,6 +163,7 @@
     <ClCompile Include="..\..\source\exceptions.cpp" />
     <ClCompile Include="..\..\source\filesystem\file_iterator.cpp" />
     <ClCompile Include="..\..\source\filesystem\fs_utility.cpp" />
+    <ClCompile Include="..\..\source\gui\animation.cpp" />
     <ClCompile Include="..\..\source\gui\basis.cpp" />
     <ClCompile Include="..\..\source\gui\detail\drawer.cpp" />
     <ClCompile Include="..\..\source\gui\detail\event_manager.cpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="..\..\source\gui\layout.cpp" />
     <ClCompile Include="..\..\source\gui\layout_utility.cpp" />
     <ClCompile Include="..\..\source\gui\msgbox.cpp" />
+    <ClCompile Include="..\..\source\gui\place.cpp" />
     <ClCompile Include="..\..\source\gui\programming_interface.cpp" />
     <ClCompile Include="..\..\source\gui\timer.cpp" />
     <ClCompile Include="..\..\source\gui\tooltip.cpp" />

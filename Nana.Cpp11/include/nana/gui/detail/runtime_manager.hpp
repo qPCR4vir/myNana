@@ -1,10 +1,10 @@
 /*
  *	A Runtime Manager Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/runtime_manager.hpp
  *
@@ -21,7 +21,6 @@ namespace gui
 {
 	namespace detail
 	{
-
 		template<typename Window, typename Bedrock>
 		class runtime_manager
 		{
@@ -76,13 +75,13 @@ namespace gui
 				return _m_manage<Form>(holder);
 			}
 
-			void remove_if_exists(wnd_type wnd)
+			void remove_if_exists(wnd_type wd)
 			{
-				typename std::map<wnd_type, widget_holder*>::iterator it = holder_.find(wnd);
-				if(it != holder_.end())
+				auto i = holder_.find(wd);
+				if(i != holder_.cend())
 				{
-					delete it->second;
-					holder_.erase(it);
+					delete i->second;
+					holder_.erase(i);
 				}
 			}
 		private:
@@ -177,16 +176,13 @@ namespace gui
 			Form* _m_manage(widget_holder* entity)
 			{
 				Form * f = reinterpret_cast<Form*>(entity->read());
-	
 				wnd_type handle = reinterpret_cast<wnd_type>(f->handle());
-				if(handle == 0)
+				if(nullptr == handle)
 				{
-					f = 0;
 					delete entity;
+					return nullptr;
 				}
-				else
-					holder_[handle] = entity;
-				
+				holder_[handle] = entity;
 				return f;
 			}
 

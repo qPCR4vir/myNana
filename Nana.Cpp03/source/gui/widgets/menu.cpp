@@ -209,21 +209,6 @@ namespace nana{ namespace gui{
 					return false;
 				}
 
-				void remove_sub_menu(std::size_t pos)
-				{
-					if(root_.items.size() <= pos) return;
-
-					menu_item_type & item = root_.items[pos];
-					if(item.sub_menu)
-					{
-						std::vector<menu_type*>::iterator it = std::find(item.sub_menu->owner.begin(), item.sub_menu->owner.end(), &root_);
-						if(it != item.sub_menu->owner.end())
-							item.sub_menu->owner.erase(it);
-
-						item.sub_menu = 0;
-					}
-				}
-
 				void destroy()
 				{
 					for(std::vector<menu_type*>::iterator i = root_.owner.begin(); i != root_.owner.end(); ++i)
@@ -1186,7 +1171,7 @@ namespace nana{ namespace gui{
 
 		menu& menu::max_pixels(unsigned px)
 		{
-			impl_->mbuilder.data().max_pixels = (px < 100 ? px : 100);
+			impl_->mbuilder.data().max_pixels = (px > 100 ? px : 100);
 			return *this;
 		}
 

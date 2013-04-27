@@ -1,10 +1,10 @@
 /*
  *	Basic Types definition
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.hpp
  */
@@ -59,10 +59,14 @@ namespace nana
 		}u;
 	};
 
+	struct rectangle;
+
 	struct point
 	{
 		point();
 		point(int x, int y);
+
+		point& operator=(const rectangle&);
 		bool operator==(const point&) const;
 		bool operator!=(const point&) const;
 		bool operator<(const point&) const;
@@ -96,6 +100,8 @@ namespace nana
 		size();
 		size(unsigned width, unsigned height);
 
+		size& operator=(const rectangle&);
+		bool is_zero() const;
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
 
@@ -127,6 +133,12 @@ namespace nana
 	enum class arrange
 	{
 		unknown, horizontal, vertical, horizontal_vertical
+	};
+
+	//The definition of text alignment
+	enum class align
+	{
+		left, center, right
 	};
 }//end namespace nana
 

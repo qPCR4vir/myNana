@@ -1,10 +1,10 @@
 /*
  *	A Tree Box Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/treebox.hpp
  *	@brief:
@@ -49,7 +49,7 @@ namespace gui
 			};
 
 			class trigger
-				:public nana::gui::drawer_trigger
+				:public drawer_trigger
 			{
 			public:
 				struct treebox_node_type
@@ -182,7 +182,7 @@ namespace gui
 				};
 			private:
 				nana::paint::graphics	*graph_;
-				nana::gui::widget		*widget_;
+				widget		*widget_;
 
 				struct drawing_flags
 				{
@@ -262,7 +262,7 @@ namespace gui
 
 	template<typename UserData>
 	class treebox
-		:public widget_object<nana::gui::category::widget_tag, drawerbase::treebox::trigger>
+		:public widget_object<category::widget_tag, drawerbase::treebox::trigger>
 	{
 	public:
 		typedef UserData value_type;

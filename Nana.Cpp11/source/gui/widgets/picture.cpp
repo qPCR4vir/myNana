@@ -1,10 +1,10 @@
 /*
  *	A Picture Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/picture.cpp
  *	@description:
@@ -69,7 +69,7 @@ namespace gui
 
 			bool picture_drawer::bgstyle(bool is_stretch, nana::arrange arg, int beg, int end)
 			{
-				if(backimg_.image.empty() == false)
+				if(backimg_.image)
 				{
 					backimg_.is_stretch = is_stretch;
 					backimg_.arg = arg;
@@ -110,7 +110,7 @@ namespace gui
 					if(backimg_.image.empty() == false)
 					{
 						nana::size imgsize = backimg_.image.size();
-						nana::size gsize(graph.width(), graph.height());
+						nana::size gsize = graph.size();
 
 						switch(backimg_.arg)
 						{
@@ -254,19 +254,12 @@ namespace gui
 
 			void picture_drawer::_m_draw_background()
 			{
-				if(graph_)
+				if(graph_ && (false == API::glass_window(*widget_)))
 				{
-					if(false == API::glass_window(*widget_))
-					{
-						unsigned bkcolor = widget_->background();
-
-						if(runtime_.background_shadow_end == runtime_.background_shadow_start)
-							graph_->rectangle((runtime_.background_shadow_end ? runtime_.background_shadow_end : bkcolor), true);
-						else
-							graph_->shadow_rectangle(graph_->size(), runtime_.background_shadow_start, runtime_.background_shadow_end, !runtime_.horizontal);
-					}
+					if(runtime_.background_shadow_end == runtime_.background_shadow_start)
+						graph_->rectangle((runtime_.background_shadow_end ? runtime_.background_shadow_end : widget_->background()), true);
 					else
-						API::make_glass_background(*widget_);
+						graph_->shadow_rectangle(graph_->size(), runtime_.background_shadow_start, runtime_.background_shadow_end, !runtime_.horizontal);
 				}
 			}
 		//end class picture_drawer
@@ -293,7 +286,7 @@ namespace gui
 
 		void picture::bgstyle(bool stretchable, nana::arrange arg, int beg, int end)
 		{
-			if(this->get_drawer_trigger().bgstyle(stretchable, arg, beg, end))
+			if(get_drawer_trigger().bgstyle(stretchable, arg, beg, end))
 				API::refresh_window(*this);
 		}
 

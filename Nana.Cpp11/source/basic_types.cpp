@@ -1,10 +1,10 @@
 /*
  *	Basic Types definition
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.cpp
  */
@@ -17,26 +17,38 @@ namespace nana
 		point::point():x(0), y(0){}
 		point::point(int x, int y):x(x), y(y){}
 
+		point& point::operator=(const rectangle& r)
+		{
+			x = r.x;
+			y = r.y;
+			return *this;
+		}
+
 		bool point::operator==(const point& rhs) const
 		{
 			return ((x == rhs.x) && (y == rhs.y));
 		}
+
 		bool point::operator!=(const point& rhs) const
 		{
 			return ((x != rhs.x) || (y != rhs.y));
 		}
+
 		bool point::operator<(const point& rhs) const
 		{
 			return ((y < rhs.y) || (y == rhs.y && x < rhs.x));
 		}
+
 		bool point::operator<=(const point& rhs) const
 		{
 			return ((y < rhs.y) || (y == rhs.y && x <= rhs.x));
 		}
+
 		bool point::operator>(const point& rhs) const
 		{
 			return ((y > rhs.y) || (y == rhs.y && x > rhs.x));
 		}
+
 		bool point::operator>=(const point& rhs) const
 		{
 			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
@@ -46,26 +58,32 @@ namespace nana
 	//struct upoint
 		upoint::upoint():x(0), y(0){}
 		upoint::upoint(unsigned x, unsigned y):x(x), y(y){}
+
 		bool upoint::operator==(const upoint& rhs) const
 		{
 			return ((x == rhs.x) && (y == rhs.y));
 		}
+
 		bool upoint::operator!=(const upoint& rhs) const
 		{
 			return ((x != rhs.x) || (y != rhs.y));
 		}
+
 		bool upoint::operator<(const upoint& rhs) const
 		{
 			return ((y < rhs.y) || (y == rhs.y && x < rhs.x));
 		}
+
 		bool upoint::operator<=(const upoint& rhs) const
 		{
 			return ((y < rhs.y) || (y == rhs.y && x <= rhs.x));
 		}
+
 		bool upoint::operator>(const upoint& rhs) const
 		{
 			return ((y > rhs.y) || (y == rhs.y && x > rhs.x));
 		}
+
 		bool upoint::operator>=(const upoint& rhs) const
 		{
 			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
@@ -75,6 +93,18 @@ namespace nana
 	//struct size
 		size::size():width(0), height(0){}
 		size::size(unsigned width, unsigned height):width(width), height(height){}
+
+		size& size::operator=(const rectangle& r)
+		{
+			width = r.width;
+			height = r.height;
+			return *this;
+		}
+
+		bool size::is_zero() const
+		{
+			return (width == 0 || height == 0);
+		}
 
 		bool size::operator==(const size& rhs) const
 		{

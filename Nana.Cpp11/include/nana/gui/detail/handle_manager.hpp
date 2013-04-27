@@ -1,10 +1,10 @@
 /*
  *	Handle Manager Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/handle_manager.hpp
  *
@@ -15,9 +15,15 @@
 #ifndef NANA_GUI_DETAIL_HANDLE_MANAGER_HPP
 #define NANA_GUI_DETAIL_HANDLE_MANAGER_HPP
 #include <map>
-#include <nana/traits.hpp>
 #include <iterator>
-#include <mutex>
+
+#include <nana/traits.hpp>
+#include <nana/config.hpp>
+#if defined(NANA_MINGW)
+    #include <nana/std_mutex.hpp>
+#else
+    #include <mutex>
+#endif
 
 namespace nana
 {
@@ -33,9 +39,9 @@ namespace gui
 			typedef Value value_type;
 			typedef std::pair<key_type, value_type> pair_type;
 			typedef std::size_t size_type;
-			
+
 			static const size_type npos = -1;
-			
+
 			cache()
 				:addr_(reinterpret_cast<pair_type*>(place_))
 			{
@@ -45,16 +51,16 @@ namespace gui
 					seq_[i] = npos;
 				}
 			}
-			
+
 			~cache()
 			{
 				for(int i = 0; i < CacheSize; ++i)
 				{
 					if(bitmap_[i])
 						addr_[i].~pair_type();
-				}	
+				}
 			}
-			
+
 			bool insert(key_type k, value_type v)
 			{
 				size_type pos = _m_find_key(k);
@@ -66,19 +72,19 @@ namespace gui
 				{
 					//No key exists
 					pos = _m_find_pos();
-					
+
 					if(pos == npos)
 					{	//No room, and remove the last pair
 						pos = seq_[CacheSize - 1];
 						(addr_ + pos)->~pair_type();
 					}
-					
+
 					if(seq_[0] != npos)
 					{//Need to move
 						for(int i = CacheSize - 1; i > 0; --i)
 							seq_[i] = seq_[i - 1];
 					}
-					
+
 					seq_[0] = pos;
 
 					new (addr_ + pos) pair_type(k, v);
@@ -86,17 +92,17 @@ namespace gui
 				}
 				return v;
 			}
-			
+
 			void erase(key_type k)
 			{
 				size_type pos = _m_find_key(k);
 				if(pos != npos)
 				{
 					(addr_+pos)->~pair_type;
-					bitmap_[pos] = 0;	
+					bitmap_[pos] = 0;
 				}
 			}
-			
+
 			value_type * get(key_type k)
 			{
 				size_type pos = _m_find_key(k);
@@ -114,13 +120,13 @@ namespace gui
 				}
 				return npos;
 			}
-			
+
 			size_type _m_find_pos() const
 			{
 				for(int i = 0; i < CacheSize; ++i)
 				{
 					if(bitmap_[i] == 0)
-						return i;	
+						return i;
 				}
 				return npos;
 			}
@@ -168,12 +174,12 @@ namespace gui
 			typedef HandleType	handle_type;
 			typedef Condition	cond_type;
 			typedef Deleter		deleter_type;
-			typedef std::map<handle_type, unsigned>	holder_map;
+			typedef std::map<handle_type, unsigned>	handle_map_t;
 			typedef std::pair<handle_type, unsigned>	holder_pair;
 
 			~handle_manager()
 			{
-				this->delete_trash(0);
+				delete_trash(0);
 			}
 
 			void insert(handle_type handle, unsigned tid)
@@ -195,12 +201,12 @@ namespace gui
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-				typename holder_map::iterator i = holder_.find(handle);
-				if(holder_.end() != i)
+				auto i = static_cast<const handle_map_t&>(holder_).find(handle);
+				if(holder_.cend() != i)
 				{
 					is_queue<std::is_same<cond_type, nana::null_type>::value, std::vector<handle_type> >::erase(handle, queue_);
 					cacher_.insert(handle, false);
-					trash_.push_back(holder_pair(i->first, i->second));
+					trash_.emplace_back(i->first, i->second);
 					holder_.erase(i);
 				}
 			}
@@ -214,18 +220,19 @@ namespace gui
 					deleter_type del_functor;
 					if(tid == 0)
 					{
-						for(typename std::vector<holder_pair>::iterator i = trash_.begin(); i != trash_.end(); ++i)
-							del_functor(i->first);
+						for(auto & m : trash_)
+							del_functor(m.first);
 						trash_.clear();
 					}
 					else
 					{
-						for(typename std::vector<holder_pair>::iterator i = trash_.begin(); i != trash_.end();)
+						for(auto i = trash_.begin(), end = trash_.end(); i != end;)
 						{
 							if(tid == i->second)
 							{
 								del_functor(i->first);
 								i = trash_.erase(i);
+								end = trash_.end();
 							}
 							else
 								++i;
@@ -238,8 +245,7 @@ namespace gui
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if(queue_.size())
-					return *(queue_.end() - 1);
-
+					return queue_.back();
 				return handle_type();
 			}
 
@@ -252,7 +258,7 @@ namespace gui
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if(index < queue_.size())
-					return *(queue_.begin() + index);
+					return queue_[index];
 				return handle_type();
 			}
 
@@ -267,10 +273,10 @@ namespace gui
 			void all(std::vector<handle_type> & v) const
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				std::copy(queue_.begin(), queue_.end(), std::back_inserter(v));
+				std::copy(queue_.cbegin(), queue_.cend(), std::back_inserter(v));
 			}
 		private:
-			
+
 			template<bool IsQueueOperation, typename Container>
 			struct is_queue
 			{
@@ -285,9 +291,9 @@ namespace gui
 				{
 					if(cond_type::is_queue(handle))
 					{
-						typename std::vector<handle_type>::iterator it = std::find(queue.begin(), queue.end(), handle);
-						if(it != queue.end())
-							queue.erase(it);
+						auto i = std::find(queue.begin(), queue.end(), handle);
+						if(i != queue.end())
+							queue.erase(i);
 					}
 				}
 			};
@@ -299,11 +305,11 @@ namespace gui
 				static void insert(handle_type handle, Container& queue){}
 				static void erase(handle_type handle, Container& queue){}
 			};
-			
+
 		private:
 			mutable std::recursive_mutex mutex_;
 			mutable cache<const handle_type, bool, 5> cacher_;
-			std::map<handle_type, unsigned>	holder_;
+			handle_map_t	holder_;
 			std::vector<handle_type>	queue_;
 			std::vector<holder_pair>	trash_;
 		};//end class handle_manager

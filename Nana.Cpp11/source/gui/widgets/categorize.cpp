@@ -1,10 +1,10 @@
 /*
  *	A Categorize Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/categorize.cpp
  */
@@ -114,10 +114,8 @@ namespace nana{	namespace gui{
 							graph.line(left, top, left, r.y + height, 0x3C7FB1);
 						}
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
-
 						graph.rectangle(r, 0x3C7FB1, false);
 					}
-
 					graph.string(strpos.x, strpos.y, style_.fgcolor, name);
 
 					if(has_child)
@@ -201,9 +199,7 @@ namespace nana{	namespace gui{
 
 				bool seq(std::size_t index, std::vector<node_handle> & seqv) const
 				{
-					node_handle root = tree_.get_root();
-					for(node_handle i = cur_; i && (i != root); i = i->owner)
-						seqv.insert(seqv.begin(), i);
+					_m_read_node_path(seqv);
 
 					if(index < seqv.size())
 					{
@@ -228,9 +224,7 @@ namespace nana{	namespace gui{
 				nana::string path() const
 				{
 					std::vector<node_handle> v;
-					node_handle root = tree_.get_root();
-					for(node_handle i = cur_; i && (i != root); i = i->owner)
-						v.insert(v.begin(), i);
+					_m_read_node_path(v);
 
 					nana::string str;
 					bool not_head = false;
@@ -242,7 +236,7 @@ namespace nana{	namespace gui{
 							not_head = true;
 						str += i->value.first;
 					}
-					return str;
+					return std::move(str);
 				}
 
 				void path(const nana::string& key)
@@ -253,10 +247,7 @@ namespace nana{	namespace gui{
 				node_handle at(std::size_t index) const
 				{
 					std::vector<node_handle> v;
-					node_handle root = tree_.get_root();
-					for(node_handle i = cur_; i && (i != root); i = i->owner)
-						v.insert(v.begin(), i);
-
+					_m_read_node_path(v);
 					return (index < v.size() ? v[index] : nullptr);
 				}
 
@@ -337,6 +328,13 @@ namespace nana{	namespace gui{
 					return false;
 				}
 			private:
+				void _m_read_node_path(std::vector<node_handle>& v) const
+				{
+					node_handle root = tree_.get_root();
+					for(node_handle i = cur_; i && (i != root); i = i->owner)
+						v.insert(v.begin(), i);
+				}
+			private:
 				container tree_;
 				nana::string splitstr_;
 				node_handle cur_;
@@ -348,7 +346,6 @@ namespace nana{	namespace gui{
 			public:
 				typedef tree_wrapper container;
 				typedef container::node_handle node_handle;
-
 				typedef renderer::ui_element	ui_element;
 
 				enum class mode
@@ -405,7 +402,7 @@ namespace nana{	namespace gui{
 
 					renderer & rd = proto_.ui_renderer->refer();
 					rd.background(*graph_, window_, r, ui_el_);
-					if(this->head_)
+					if(head_)
 						rd.root_arrow(*graph_, _m_make_root_rectangle(), style_.state);
 					_m_draw_items(r);
 					rd.border(*graph_);
@@ -450,16 +447,13 @@ namespace nana{	namespace gui{
 									r.y += r.height;
 								}
 
-								if(nana::gui::is_hit_the_rectangle(r, x, y))
+								if(is_hit_the_rectangle(r, x, y))
 								{
 									style_.active_item_rectangle = r;
 									std::size_t index = seq_index + head_;
 
-									ui_element::t what;
-									if(i->child && (r.x + static_cast<int>(r.width) - 16 < x))
-										what = ui_el_.item_arrow;
-									else
-										what = ui_el_.item_name;
+									ui_element::t what = ((i->child && (r.x + static_cast<int>(r.width) - 16 < x))
+															? ui_el_.item_arrow : ui_el_.item_name);
 									if(what == ui_el_.what && index == ui_el_.index)
 										return false;
 
@@ -568,15 +562,15 @@ namespace nana{	namespace gui{
 						std::vector<node_handle> v;
 						if(treebase_.seq(0, v))
 						{
-							auto end = v.begin() + head_;
-							for(auto i = v.begin(); i != end; ++i)
+							auto end = v.cbegin() + head_;
+							for(auto i = v.cbegin(); i != end; ++i)
 								style_.module.items.push_back((*i)->value.first);
 						}
 						r = style_.active_item_rectangle;
 					}
 					r.y += r.height;
 					r.width = r.height = 100;
-					style_.listbox = &(form_loader<nana::gui::float_listbox>()(window_, r));
+					style_.listbox = &(form_loader<gui::float_listbox>()(window_, r));
 					style_.listbox->set_module(style_.module, 16);
 					style_.listbox->show();
 					style_.listbox->make_event<events::destroy>(*this, &scheme::_m_list_closed);
@@ -596,7 +590,6 @@ namespace nana{	namespace gui{
 							{
 								treebase_.tail(style_.active);
 								nana::string name = style_.module.items[style_.module.index].text;
-								nana::any value;
 								node_handle node = treebase_.find_child(name);
 								if(node)
 								{
@@ -619,10 +612,10 @@ namespace nana{	namespace gui{
 
 					if(is_draw)
 					{
-						this->draw();
+						draw();
 						API::update_window(window_);
 					}
-					style_.listbox = 0;
+					style_.listbox = nullptr;
 				}
 			private:
 				unsigned _m_item_fix_scale() const
@@ -765,7 +758,7 @@ namespace nana{	namespace gui{
 					}
 				}
 			private:
-				nana::gui::window	window_;
+				window	window_;
 				nana::paint::graphics * graph_;
 				nana::string splitstr_;
 				std::size_t	head_;
@@ -872,9 +865,9 @@ namespace nana{	namespace gui{
 
 				void trigger::_m_attach_adapter_to_drawer() const
 				{
-					if(this->ext_event_adapter_)
+					if(ext_event_adapter_)
 					{
-						drawerbase::categorize::ext_event_raw_tag & ee = scheme_->ext_event();
+						auto & ee = scheme_->ext_event();
 						if(ee.selected == nullptr)
 							ee.selected = nana::make_fun(*ext_event_adapter_, &ext_event_adapter_if::selected);
 					}

@@ -1,10 +1,10 @@
 /*
  *	A Frame Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/frame.cpp
  *
@@ -17,8 +17,6 @@ namespace nana
 {
 namespace gui
 {
-
-	
 	//class frame:: public widget_object<category::frame_tag>
 		frame::frame(){}
 
@@ -34,19 +32,18 @@ namespace gui
 
 		bool frame::insert(native_window_type wd)
 		{
-			return API::insert_frame(this->handle(), wd);
+			return API::insert_frame(handle(), wd);
 		}
 
 		native_window_type frame::element(unsigned index)
 		{
-			return API::frame_element(this->handle(), index);
+			return API::frame_element(handle(), index);
 		}
 
 		native_window_type frame::container() const
 		{
-			return API::frame_container(this->handle());
+			return API::frame_container(handle());
 		}
-
 	//end class frame
 }//end namespace gui
 }//end namespace nana

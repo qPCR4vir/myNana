@@ -1,10 +1,10 @@
 /*
  *	A Textbox Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/textbox.hpp
  */
@@ -44,12 +44,12 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			return editor_;
 		}
 	//private:
-		void drawer::bind_window(nana::gui::widget& widget)
+		void drawer::bind_window(widget_reference widget)
 		{
 			widget_ = &widget;
 		}
 
-		void drawer::attached(nana::paint::graphics& graph)
+		void drawer::attached(graph_reference graph)
 		{
 			window wd = widget_->handle();
 			editor_ = new text_editor(wd, graph);
@@ -78,15 +78,15 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		{
 			delete editor_;
 			editor_ = 0;
-			API::dev::umake_drawer_event(widget_->handle());
+			API::dev::umake_drawer_event(*widget_);
 		}
 
-		void drawer::refresh(nana::paint::graphics& graph)
+		void drawer::refresh(graph_reference graph)
 		{
 			editor_->redraw(status_.has_focus);
 		}
 
-		void drawer::focus(nana::paint::graphics& graph, const nana::gui::eventinfo& ei)
+		void drawer::focus(graph_reference graph, const eventinfo& ei)
 		{
 			status_.has_focus = ei.focus.getting;
 			refresh(graph);
@@ -146,8 +146,6 @@ namespace nana{ namespace gui{ namespace drawerbase {
 
 		void drawer::key_char(graph_reference graph, const nana::gui::eventinfo& ei)
 		{
-			using namespace nana::gui;
-
 			if(editor_->attr().editable)
 			{
 				switch(ei.keyboard.key)
@@ -227,6 +225,30 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		textbox::textbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
+		}
+
+		void textbox::load(const nana::char_t* file)
+		{
+			internal_scope_guard isg;
+			drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
+		}
+
+		void textbox::store(const nana::char_t* file) const
+		{
+			internal_scope_guard isg;
+			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str());
+		}
+
+		void textbox::store(const nana::char_t* file, nana::unicode::t encoding) const
+		{
+			internal_scope_guard isg;
+			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
 		}
 
 		bool textbox::getline(std::size_t n, nana::string& text) const

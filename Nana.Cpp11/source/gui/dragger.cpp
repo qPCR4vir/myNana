@@ -121,7 +121,7 @@ namespace nana{ namespace gui{
 				break;
 			}
 		}
-		
+
 	private:
 		bool dragging_;
 		nana::point origin_;

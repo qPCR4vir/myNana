@@ -1,10 +1,10 @@
 /*
  *	Basic Types definition
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.cpp
  */
@@ -76,6 +76,10 @@ namespace nana
 		size::size():width(0), height(0){}
 		size::size(unsigned width, unsigned height):width(width), height(height){}
 
+		bool size::is_zero() const
+		{
+			return (width == 0 || height == 0);
+		}
 		bool size::operator==(const size& rhs) const
 		{
 			return (width == rhs.width) && (height == rhs.height);

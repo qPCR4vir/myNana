@@ -1,10 +1,10 @@
 /*
  *	A Timer Trigger Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/timer_trigger.cpp
  *	@description:
@@ -47,7 +47,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			if(_m_find_by_timer_object(timer) == 0)
+			if(nullptr == _m_find_by_timer_object(timer))
 			{
 #if defined(NANA_WINDOWS)
 				timer_handle handle = reinterpret_cast<timer_handle>(::SetTimer(0, 0, interval, timer_trigger_proc));
@@ -83,7 +83,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			timer_handle* old = _m_find_by_timer_object(timer);
+			auto old = _m_find_by_timer_object(timer);
 			if(old)
 			{
 #if defined(NANA_WINDOWS)
@@ -103,14 +103,16 @@ namespace detail
 		{
 			eventinfo ei;
 			ei.elapse.timer = object;
-			nana::gui::detail::bedrock::instance().evt_manager.answer(
+			bedrock::instance().evt_manager.answer(
 				detail::event_tag::elapse,
-				reinterpret_cast<nana::gui::window>(object), ei,
+				reinterpret_cast<window>(object), ei,
 				event_manager::event_kind::user);
 		}
 
 		timer_trigger::timer_handle* timer_trigger::_m_find_by_timer_object(timer_object t)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			auto i = holder_timer_.find(t);
 			return (i != holder_timer_.end() ? &(i->second) : nullptr);
 		}

@@ -1,10 +1,10 @@
 /*
  *	A CheckBox Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/checkbox.cpp
  */
@@ -134,11 +134,8 @@ namespace xcheckbox
 
 			void drawer::_m_draw_background(graph_reference graph)
 			{
-				window wd = *widget_;
-				if(API::glass_window(wd))
-					API::make_glass_background(wd);
-				else
-					graph.rectangle(API::background(wd), true);
+				if(false == API::glass_window(*widget_))
+					graph.rectangle(API::background(*widget_), true);
 			}
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)

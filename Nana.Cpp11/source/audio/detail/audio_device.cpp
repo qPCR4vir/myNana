@@ -1,11 +1,8 @@
 #include <nana/audio/detail/audio_device.hpp>
 #include <nana/system/platform.hpp>
 
-#if defined(NANA_WINDOWS)
-	#include <windows.h>
-#elif defined(NANA_LINUX)
+#if defined(NANA_LINUX)
 	#include <pthread.h>
-	#include <alsa/asoundlib.h>
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <errno.h>
@@ -123,7 +120,7 @@ namespace nana{namespace audio
 					case 32:
 						format = SND_PCM_FORMAT_S32_LE;	break;
 					}
-					
+
 					if(::snd_pcm_hw_params_set_format(handle_, params, format) < 0)
 					{
 						close();
@@ -172,7 +169,7 @@ namespace nana{namespace audio
 #endif
 					handle_ = nullptr;
 				}
-			}	
+			}
 
 			void audio_device::prepare(buffer_preparation & buf_prep)
 			{

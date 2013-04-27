@@ -1,10 +1,10 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *
  *	@file: nana/threads/pool.cpp
@@ -15,7 +15,12 @@
 #include <time.h>
 #include <deque>
 #include <vector>
-#include <condition_variable>
+
+#if defined(NANA_MINGW)
+    #include <nana/std_condition_variable.hpp>
+#else
+    #include <condition_variable>
+#endif
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -110,7 +115,7 @@ namespace threads
 
 					if(all_finished)
 						break;
-					
+
 					while(true)
 					{
 						auto idle_thr = _m_pick_up_an_idle();
@@ -151,7 +156,7 @@ namespace threads
 				}
 
 				pool_throbj * pto = _m_pick_up_an_idle();
-				
+
 				if(pto)
 				{
 					pto->task_ptr = taskptr;
@@ -168,6 +173,31 @@ namespace threads
 			{
 				std::unique_lock<std::mutex> lock(signal_.mutex);
 				signal_.cond.wait(lock);
+			}
+
+			void wait_for_finished()
+			{
+				while(true)
+				{
+					{
+						std::lock_guard<decltype(mutex_)> lock(mutex_);
+						if(container_.tasks.empty())
+						{
+							bool finished = true;
+							for(auto thr : container_.threads)
+							{
+								if(state::run == thr->thr_state)
+								{
+									finished = false;
+									break;
+								}
+							}
+							if(finished)
+								return;
+						}
+					}
+					nana::system::sleep(100);
+				}
 			}
 		private:
 			pool_throbj* _m_pick_up_an_idle()
@@ -224,7 +254,7 @@ namespace threads
 					if(container_.tasks.size())
 					{
 						pto->task_ptr = container_.tasks.front();
-						container_.tasks.erase(container_.tasks.begin());
+						container_.tasks.pop_front();
 					}
 				}
 				else
@@ -350,6 +380,11 @@ namespace threads
 		void pool::wait_for_signal()
 		{
 			impl_->wait_for_signal();
+		}
+
+		void pool::wait_for_finished()
+		{
+			impl_->wait_for_finished();
 		}
 
 		void pool::_m_push(task* task_ptr)

@@ -1,10 +1,10 @@
 /*
  *	A Toolbar Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/toolbar.hpp
  */
@@ -55,19 +55,19 @@ namespace nana{ namespace gui{
 				void refresh(graph_reference);
 				void attached(graph_reference);
 				void detached();
-				void mouse_move(graph_reference, const nana::gui::eventinfo&);
-				void mouse_leave(graph_reference, const nana::gui::eventinfo&);
-				void mouse_down(graph_reference, const nana::gui::eventinfo&);
-				void mouse_up(graph_reference, const nana::gui::eventinfo&);
+				void mouse_move(graph_reference, const eventinfo&);
+				void mouse_leave(graph_reference, const eventinfo&);
+				void mouse_down(graph_reference, const eventinfo&);
+				void mouse_up(graph_reference, const eventinfo&);
 			private:
 				size_type _m_which(int x, int y, bool want_if_disabled) const;
 				void _m_draw_background(nana::color_t color);
 				void _m_draw();
-				void _m_owner_sized(const nana::gui::eventinfo& ei);
+				void _m_owner_sized(const eventinfo& ei);
 			private:
 				void _m_fill_pixels(item_type*, bool force);
 			private:
-				nana::gui::widget*	widget_;
+				widget*	widget_;
 				nana::paint::graphics* graph_;
 				drawer_impl_type	*impl_;
 			};
@@ -76,7 +76,7 @@ namespace nana{ namespace gui{
 	}//end namespace drawerbase
 
 	class toolbar
-		: public nana::gui::widget_object<category::widget_tag, drawerbase::toolbar::drawer>
+		: public widget_object<category::widget_tag, drawerbase::toolbar::drawer>
 	{
 	public:
 		typedef std::size_t size_type;

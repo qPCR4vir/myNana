@@ -1,10 +1,10 @@
 /*
  *	Window Layout Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_layout.hpp
  *
@@ -38,23 +38,7 @@ namespace detail
 	public:
 		static void paint(core_window_t* wd, bool is_redraw)
 		{
-			if(wd->flags.glass)
-			{
-				if(is_redraw)
-				{
-					for(wd = wd->parent; wd; wd = wd->parent) //to avoid recursion
-					{
-						if(false == wd->flags.glass)
-						{
-							paint(wd, true);
-							return;
-						}
-					}
-				}
-				else
-					_m_paint_glass_window(wd, false);
-			}
-			else
+			if(false == wd->flags.glass)
 			{
 				if(is_redraw)
 				{
@@ -67,6 +51,8 @@ namespace detail
 				}
 				maproot(wd);
 			}
+			else
+				_m_paint_glass_window(wd, is_redraw, false);
 		}
 
 		static bool maproot(core_window_t* wd)
@@ -163,25 +149,28 @@ namespace detail
 			nana::rectangle rect;
 			while(wd->parent)
 			{
-				typename core_window_t::cont_type::value_type *end = &(wd->parent->children[0]) + wd->parent->children.size();
-				typename core_window_t::cont_type::value_type *i = std::find(&(wd->parent->children[0]), end, wd);
+				typename core_window_t::container::value_type *end = &(wd->parent->children[0]) + wd->parent->children.size();
+				typename core_window_t::container::value_type *i = std::find(&(wd->parent->children[0]), end, wd);
 
-				++i;	//move to the next widget
-				for(; i != end; ++i)
+				if(i != end)
 				{
-					core_window_t* cover = *i;
-
-					if(cover->visible && (cover->flags.glass == false))
+					//move to the widget that next to wd
+					for(++i; i != end; ++i)
 					{
-						rect.x = cover->root_x;
-						rect.y = cover->root_y;
-						rect.width = cover->rect.width;
-						rect.height = cover->rect.height;
+						core_window_t* cover = *i;
 
-						if(nana::gui::overlap(vis_rect, rect, block.r))
+						if(cover->visible && (cover->flags.glass == false))
 						{
-							block.window = cover;
-							blocks.push_back(block);
+							rect.x = cover->root_x;
+							rect.y = cover->root_y;
+							rect.width = cover->rect.width;
+							rect.height = cover->rect.height;
+
+							if(overlap(vis_rect, rect, block.r))
+							{
+								block.window = cover;
+								blocks.push_back(block);
+							}
 						}
 					}
 				}
@@ -195,6 +184,7 @@ namespace detail
 		{
 			if((wd->other.category == category::widget_tag::value) && (wd->flags.glass != isglass))
 			{
+				wd->flags.glass = isglass;
 				typename std::vector<core_window_t*>::iterator i = std::find(data_sect.glass_window_cont.begin(),
 																		data_sect.glass_window_cont.end(),
 																		wd);
@@ -205,110 +195,87 @@ namespace detail
 					{
 						data_sect.glass_window_cont.erase(i);
 						wd->other.glass_buffer.release();
+						return true;
 					}
-					else
-						wd->flags.glass = true;
-					return true;
 				}
+				else if(isglass)
+					data_sect.glass_window_cont.push_back(wd);
 
-				data_sect.glass_window_cont.push_back(wd);
-				wd->flags.glass = true;
+				if(isglass)
+					wd->other.glass_buffer.make(wd->rect.width, wd->rect.height);
 				return true;
 			}
 			return false;
 		}
 
 		//make_glass
-		//		Used for making a transparent background window.
-		//	@copy_from_buffer: To enhance the performance, the background graphics would not be re-evaluated if copying from buffer.
-		//	@final_copy: Let wd background update from buffer if it is true. Generally, final_copy always is true, but when window manager is
-		//				notifying a glass window whose parent or slibing windows was changed, the argument is false for performance.
-		//				That because there is a copying from buffer while notifying in the trigger of widgets.
-		static void make_glass(core_window_t* wd, bool copy_from_buffer, bool final_copy)
+		//		update the glass buffer of a glass window
+		static void make_glass(core_window_t* wd)
 		{
-			if(wd && wd->parent && wd->flags.glass)
+			nana::paint::graphics & glass_buffer = wd->other.glass_buffer;
+			nana::point rpos(wd->root_x, wd->root_y);
+
+			if(wd->parent->other.category == category::lite_widget_tag::value)
 			{
-				nana::paint::graphics & glass_buffer = wd->other.glass_buffer;
-				if(glass_buffer.empty() || glass_buffer.size() != nana::size(wd->rect.width, wd->rect.height))
+				std::vector<core_window_t*> layers;
+				core_window_t * beg = wd->parent;
+				while(beg && (beg->other.category == category::lite_widget_tag::value))
 				{
-					glass_buffer.make(wd->rect.width, wd->rect.height);
-					copy_from_buffer = false;
+					layers.push_back(beg);
+					beg = beg->parent;
 				}
 
-				if(false == copy_from_buffer)
+				glass_buffer.bitblt(nana::rectangle(0, 0, wd->rect.width, wd->rect.height), beg->drawer.graphics, nana::point(wd->root_x - beg->root_x, wd->root_y - beg->root_y));
+
+				nana::rectangle r = wd->rect;
+				typename std::vector<core_window_t*>::reverse_iterator layers_rend = layers.rend();
+
+				for(typename std::vector<core_window_t*>::reverse_iterator i = layers.rbegin(); i != layers_rend; ++i)
 				{
-					nana::point rpos(wd->root_x, wd->root_y);
-
-					if(wd->parent->other.category == category::lite_widget_tag::value)
+					core_window_t * pre = *i;
+					if(pre->visible)
 					{
-						std::vector<core_window_t*> layers;
-						core_window_t * beg = wd->parent;
-						while(beg && (beg->other.category == category::lite_widget_tag::value))
+						core_window_t * term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
+						r.x = wd->root_x - pre->root_x;
+						r.y = wd->root_y - pre->root_y;
+						for(typename std::vector<core_window_t*>::iterator u = pre->children.begin(); u != pre->children.end(); ++u)
 						{
-							layers.push_back(beg);
-							beg = beg->parent;
-						}
+							core_window_t * x = *u;
+							if(x->index >= term->index)
+								break;
 
-						glass_buffer.bitblt(nana::rectangle(0, 0, wd->rect.width, wd->rect.height), beg->drawer.graphics, nana::point(wd->root_x - beg->root_x, wd->root_y - beg->root_y));
-
-						nana::rectangle r = wd->rect;
-						typename std::vector<core_window_t*>::reverse_iterator layers_rend = layers.rend();
-
-						for(typename std::vector<core_window_t*>::reverse_iterator i = layers.rbegin(); i != layers_rend; ++i)
-						{
-							core_window_t * pre = *i;
-							if(pre->visible)
-							{
-								core_window_t * term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
-								r.x = wd->root_x - pre->root_x;
-								r.y = wd->root_y - pre->root_y;
-								for(typename std::vector<core_window_t*>::iterator u = pre->children.begin(); u != pre->children.end(); ++u)
-								{
-									core_window_t * x = *u;
-									if(x->index < term->index)
-									{
-										nana::rectangle ovlp;
-										if(x->visible && nana::gui::overlap(r, x->rect, ovlp))
-										{
-											if(x->other.category != category::lite_widget_tag::value)
-												glass_buffer.bitblt(nana::rectangle(ovlp.x - pre->rect.x, ovlp.y - pre->rect.y, ovlp.width, ovlp.height), x->drawer.graphics, nana::point(ovlp.x - x->rect.x, ovlp.y - x->rect.y));
-											ovlp.x += pre->root_x;
-											ovlp.y += pre->root_y;
-											_m_paste_children(x, ovlp, glass_buffer, rpos);
-										}
-									}
-									else
-										break;
-								}
-							}
-						}
-					}
-					else
-						glass_buffer.bitblt(nana::rectangle(0, 0, wd->rect.width, wd->rect.height), wd->parent->drawer.graphics, nana::point(wd->rect.x, wd->rect.y));
-
-					for(typename core_window_t::cont_type::iterator i = wd->parent->children.begin(); i != wd->parent->children.end(); ++i)
-					{
-						core_window_t * x = *i;
-						if(x->index < wd->index)
-						{
 							nana::rectangle ovlp;
-							if(x->visible && nana::gui::overlap(wd->rect, x->rect, ovlp))
+							if(x->visible && nana::gui::overlap(r, x->rect, ovlp))
 							{
 								if(x->other.category != category::lite_widget_tag::value)
-									glass_buffer.bitblt(nana::rectangle(ovlp.x - wd->rect.x, ovlp.y - wd->rect.y, ovlp.width, ovlp.height), x->drawer.graphics, nana::point(ovlp.x - x->rect.x, ovlp.y - x->rect.y));
-
-								ovlp.x += wd->root_x;
-								ovlp.y += wd->root_y;
+									glass_buffer.bitblt(nana::rectangle(ovlp.x - pre->rect.x, ovlp.y - pre->rect.y, ovlp.width, ovlp.height), x->drawer.graphics, nana::point(ovlp.x - x->rect.x, ovlp.y - x->rect.y));
+								ovlp.x += pre->root_x;
+								ovlp.y += pre->root_y;
 								_m_paste_children(x, ovlp, glass_buffer, rpos);
 							}
 						}
-						else
-							break;
 					}
 				}
+			}
+			else
+				glass_buffer.bitblt(nana::rectangle(0, 0, wd->rect.width, wd->rect.height), wd->parent->drawer.graphics, nana::point(wd->rect.x, wd->rect.y));
 
-				if(final_copy)
-					wd->drawer.graphics.bitblt(0, 0, glass_buffer);
+			for(typename core_window_t::container::iterator i = wd->parent->children.begin(); i != wd->parent->children.end(); ++i)
+			{
+				core_window_t * x = *i;
+				if(x->index >= wd->index)
+					break;
+
+				nana::rectangle ovlp;
+				if(x->visible && nana::gui::overlap(wd->rect, x->rect, ovlp))
+				{
+					if(x->other.category != category::lite_widget_tag::value)
+						glass_buffer.bitblt(nana::rectangle(ovlp.x - wd->rect.x, ovlp.y - wd->rect.y, ovlp.width, ovlp.height), x->drawer.graphics, nana::point(ovlp.x - x->rect.x, ovlp.y - x->rect.y));
+
+					ovlp.x += wd->root_x;
+					ovlp.y += wd->root_y;
+					_m_paste_children(x, ovlp, glass_buffer, rpos);
+				}
 			}
 		}
 	private:
@@ -320,7 +287,7 @@ namespace detail
 			nana::rectangle rect;
 			nana::rectangle child_rect;
 
-			for(typename core_window_t::container_type::iterator i = wd->children.begin(), end = wd->children.end(); i != end; ++i)
+			for(typename core_window_t::container::iterator i = wd->children.begin(), end = wd->children.end(); i != end; ++i)
 			{
 				core_window_t * child = *i;
 
@@ -348,22 +315,23 @@ namespace detail
 					}
 				}
 				else
-					_m_paint_glass_window(child, true);
+					_m_paint_glass_window(child, false, false);
 			}
 		}
 
-		static void _m_paint_glass_window(core_window_t* wd, bool is_redraw)
+		static void _m_paint_glass_window(core_window_t* wd, bool is_redraw, bool called_by_notify)
 		{
 			if(wd->flags.refreshing && is_redraw)	return;
 
-			nana::rectangle vis_rect;
-			if(read_visual_rectangle(wd, vis_rect))
+			nana::rectangle vr;
+			if(read_visual_rectangle(wd, vr))
 			{
-				if(is_redraw)
+				if(is_redraw || called_by_notify)
 				{
+					if(called_by_notify)
+						make_glass(wd);
 					wd->flags.refreshing = true;
-					make_glass(wd, false, false);
-					wd->drawer.notify_background_change();
+					wd->other.glass_buffer.paste(wd->drawer.graphics, 0, 0);
 					wd->drawer.refresh();
 					wd->flags.refreshing = false;
 				}
@@ -371,13 +339,13 @@ namespace detail
 				nana::paint::graphics& root_graph = *(wd->root_graph);
 
 				//Map Root
-				root_graph.bitblt(vis_rect, wd->drawer.graphics, nana::point(vis_rect.x - wd->root_x, vis_rect.y - wd->root_y));
-				_m_paste_children(wd, vis_rect, root_graph, nana::point());
+				root_graph.bitblt(vr, wd->drawer.graphics, nana::point(vr.x - wd->root_x, vr.y - wd->root_y));
+				_m_paste_children(wd, vr, root_graph, nana::point());
 
 				if(wd->parent)
 				{
 					std::vector<wd_rectangle>	blocks;
-					read_overlaps(wd, vis_rect, blocks);
+					read_overlaps(wd, vr, blocks);
 					typename std::vector<wd_rectangle>::iterator i = blocks.begin(), end = blocks.end();
 					for(; i != end; ++i)
 					{
@@ -385,57 +353,46 @@ namespace detail
 						root_graph.bitblt(wr.r, (wr.window->drawer.graphics), nana::point(wr.r.x - wr.window->root_x, wr.r.y - wr.window->root_y));
 					}
 				}
+				_m_notify_glasses(wd, vr);
 			}
 		}
 
 		//_m_notify_glasses
 		//@brief:	Notify the glass windows that are overlapped with the specified vis_rect
-		static void _m_notify_glasses(core_window_t* const sigwnd, const nana::rectangle& r_visual)
+		static void _m_notify_glasses(core_window_t* const sigwd, const nana::rectangle& r_visual)
 		{
-			if(0 == data_sect.glass_window_cont.size())
-				return;
-
-			typename std::vector<core_window_t*>::iterator i = data_sect.glass_window_cont.begin(), end = data_sect.glass_window_cont.end();
-			for(; i != end; ++i)
+			nana::rectangle r_of_sigwd(sigwd->root_x, sigwd->root_y, sigwd->rect.width, sigwd->rect.height);
+			for(typename std::vector<core_window_t*>::iterator i = data_sect.glass_window_cont.begin(), end = data_sect.glass_window_cont.end();
+				i != end; ++i)
 			{
 				core_window_t* x = *i;
-				if(	x == sigwnd || !x->visible ||
-					(false == nana::gui::overlap(x->root_x, x->root_y, x->rect.width, x->rect.height, sigwnd->root_x, sigwnd->root_y, sigwnd->rect.width, sigwnd->rect.height)))
+				if(	x == sigwd || !x->visible ||
+					(false == nana::gui::overlap(nana::rectangle(x->root_x, x->root_y, x->rect.width, x->rect.height), r_of_sigwd)))
 					continue;
 
 				//Test a parent of the glass window is invisible.
-				bool visible = true;
 				for(core_window_t *p = x->parent; p; p = p->parent)
-				{
 					if(false == p->visible)
-					{
-						visible = false;
-						break;
-					}
-				}
+						return;
 
-				if(visible)
+				if(sigwd->parent == x->parent)
 				{
-					if(sigwnd->parent == x->parent)
-					{
-						if(sigwnd->index < x->index)
-							_m_paint_glass_window(x, true);
-					}
-					else if(sigwnd == x->parent)
-					{
-						_m_paint_glass_window(x, true);
-					}
-					else
-					{
-						//test if sigwnd is a parent of glass window x, or a slibing of the glass window, or a child of the slibing of the glass window.
-						core_window_t *p = x->parent;
-						core_window_t * signode = sigwnd;
-						while(signode->parent && (signode->parent != p))
-							signode = signode->parent;
+					if(sigwd->index < x->index)
+						_m_paint_glass_window(x, true, true);
+				}
+				else if(sigwd == x->parent)
+				{
+					_m_paint_glass_window(x, true, true);
+				}
+				else
+				{
+					//test if sigwnd is a parent of glass window x, or a slibing of the glass window, or a child of the slibing of the glass window.
+					core_window_t *p = x->parent, *signode = sigwd;
+					while(signode->parent && (signode->parent != p))
+						signode = signode->parent;
 
-						if(signode->parent && (signode->index < x->index))// || (signode->other.category != category::widget_tag::value))
-							_m_paint_glass_window(x, true);
-					}
+					if(signode->parent && (signode->index < x->index))// || (signode->other.category != category::widget_tag::value))
+						_m_paint_glass_window(x, true, true);
 				}
 			}
 		}

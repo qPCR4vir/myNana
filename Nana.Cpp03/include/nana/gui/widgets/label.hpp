@@ -1,10 +1,10 @@
 /*
  *	A Label Control Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/label.hpp
  */
@@ -39,7 +39,6 @@ namespace nana{ namespace gui{
 				void attached(graph_reference);
 				void detached();
 				void refresh(graph_reference);
-				void notify_background_change(graph_reference);
 				void mouse_move(graph_reference, const eventinfo&);
 				void mouse_leave(graph_reference, const eventinfo&);
 				void click(graph_reference, const eventinfo&);
@@ -66,6 +65,7 @@ namespace nana{ namespace gui{
 		void add_format_listener(const nana::functor<void(command::t, const nana::string&)> &);
 		nana::size measure() const;
 		unsigned extent_size() const;
+		void text_align(align::t);
 	private:
 		void _m_caption(const nana::string&);
 	};

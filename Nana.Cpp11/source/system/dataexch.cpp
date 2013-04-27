@@ -1,17 +1,16 @@
 /*
  *	Data Exchanger Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file:			nana/system/dataexch.cpp
  *	@description:	An implementation of a data exchange mechanism through Windows Clipboard, X11 Selection.
  */
 
 #include <nana/system/dataexch.hpp>
-#include <nana/auto_buf.hpp>
 #include <nana/traits.hpp>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -85,10 +84,10 @@ namespace nana{ namespace system{
 			}
 #elif defined(NANA_X11)
 			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
-			nana::gui::native_window_type owner = 0;
+			gui::native_window_type owner = 0;
 			{
-				nana::gui::internal_scope_guard isg;
-				nana::gui::detail::bedrock::core_window_t * wd = nana::gui::detail::bedrock::instance().focus();
+				gui::internal_scope_guard isg;
+				gui::detail::bedrock::core_window_t * wd = gui::detail::bedrock::instance().focus();
 				if(wd)	owner = wd->root;
 			}
 
@@ -140,12 +139,12 @@ namespace nana{ namespace system{
 			}
 #elif defined(NANA_X11)
 			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
-			nana::gui::native_window_type requester = 0;
+			gui::native_window_type requester = nullptr;
 			spec.lock_xlib();
 			
 			{
-				nana::gui::internal_scope_guard isg;
-				nana::gui::detail::bedrock::core_window_t * wd = nana::gui::detail::bedrock::instance().focus();
+				gui::internal_scope_guard isg;
+				gui::detail::bedrock::core_window_t * wd = gui::detail::bedrock::instance().focus();
 				if(wd)	requester = wd->root;
 			}
 			spec.unlock_xlib();

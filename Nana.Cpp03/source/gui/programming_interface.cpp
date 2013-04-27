@@ -1,10 +1,10 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.cpp
  */
@@ -111,6 +111,23 @@ namespace API
 			restrict::bedrock.evt_manager.umake(wd, true);
 		}
 
+		nana::string window_caption(window wd)
+		{
+			if(wd)
+			{
+				restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+				internal_scope_guard isg;
+
+				if(restrict::window_manager.available(iwd))
+				{
+					if(iwd->other.category == category::root_tag::value)
+						return restrict::interface_type::window_caption(iwd->root);
+					return iwd->title;
+				}
+			}
+			return nana::string();
+		}
+
 		void window_caption(window wd, const nana::string& title)
 		{
 			if(wd)
@@ -147,11 +164,23 @@ namespace API
 		{
 			return reinterpret_cast<window>(restrict::window_manager.create_frame(reinterpret_cast<restrict::core_window_t*>(parent), r));
 		}
+
+		paint::graphics * window_graphics(window wd)
+		{
+			if(wd)
+			{
+				internal_scope_guard isg;
+				if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+					return &reinterpret_cast<restrict::core_window_t*>(wd)->drawer.graphics;
+			}
+			return 0;		
+		}
 	}//end namespace dev
 
+	//exit
+	//close all windows in current thread
 	void exit()
 	{
-		//restrict::window_manager.exit();
 		internal_scope_guard isg;
 
 		std::vector<restrict::core_window_t*> v;
@@ -172,10 +201,7 @@ namespace API
 				}
 			}
 
-			for(std::vector<native_window_type>::iterator i = roots.begin(), end = roots.end(); i != end; ++i)
-			{
-				restrict::interface_type::close_window(*i);
-			}
+			std::for_each(roots.begin(), roots.end(), restrict::interface_type::close_window);
 		}
 	}
 
@@ -622,11 +648,7 @@ namespace API
 			restrict::core_window_t * const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
-			{
-				if(iwd->other.category == category::root_tag::value)
-					return restrict::interface_type::window_caption(iwd->root);
-				return iwd->title;
-			}
+				return restrict::window_manager.signal_fire_caption(iwd);
 		}
 		return nana::string();
 	}
@@ -752,6 +774,9 @@ namespace API
 				if((iwd->other.category == category::root_tag::value) && (iwd->flags.modal == false))
 				{
 					iwd->flags.modal = true;
+#if defined(NANA_X11)
+					restrict::interface_type::set_modal(iwd->root);
+#endif
 					restrict::window_manager.show(iwd, true);
 					wd = reinterpret_cast<window>(iwd);
 				}
@@ -1018,11 +1043,6 @@ namespace API
 	bool glass_window(nana::gui::window wd, bool isglass)
 	{
 		return restrict::window_manager.glass_window(reinterpret_cast<restrict::core_window_t*>(wd), isglass);
-	}
-
-	void make_glass_background(nana::gui::window wd)
-	{
-		restrict::window_manager.make_glass_background(reinterpret_cast<restrict::core_window_t*>(wd));
 	}
 
 	void take_active(window wd, bool active, window take_if_active_false)

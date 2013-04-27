@@ -1,10 +1,10 @@
 /*
  *	A FileSystem Utility Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/filesystem/fs_utility.cpp
  *	@description:
@@ -15,7 +15,14 @@
 #include <nana/filesystem/file_iterator.hpp>
 #include <vector>
 #if defined(NANA_WINDOWS)
-	#include <windows.h>
+    #include <windows.h>
+
+    #if defined(NANA_MINGW)
+        #ifndef _WIN32_IE
+            #define _WIN32_IE 0x0500
+        #endif
+    #endif
+
 	#include <shlobj.h>
 	#include <nana/datetime.hpp>
 #elif defined(NANA_LINUX)
@@ -53,8 +60,8 @@ namespace filesystem
 			:text_(nana::charset(text))
 		{
 #endif
-			string_t::size_type pos = text_.find_last_of(splstr);
-			for(; pos != string_t::npos && (pos + 1 == text_.size()); pos = text_.find_last_of(splstr))
+			auto pos = text_.find_last_of(splstr);
+			for(; (pos != string_t::npos) && (pos + 1 == text_.size()); pos = text_.find_last_of(splstr))
 				text_.erase(pos);
 		}
 

@@ -1,10 +1,10 @@
 /*
  *	Window Manager Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.hpp
  *
@@ -79,11 +79,12 @@ namespace detail
 
 	struct signals
 	{
-		enum{caption, destroy, size, count};
+		enum{caption, read_caption, destroy, size, count};
 
 		union
 		{
 			const nana::char_t* caption;
+			nana::string * str;
 			struct
 			{
 				unsigned width;
@@ -280,6 +281,7 @@ namespace detail
 
 		void detach_signal(core_window_t*);
 		void signal_fire_caption(core_window_t*, const nana::char_t*);
+		nana::string signal_fire_caption(core_window_t*);
 		void event_filter(core_window_t*, bool is_make, unsigned eventid);
 		void default_icon(const nana::paint::image&);
 
@@ -350,7 +352,6 @@ namespace detail
 		void remove_trash_handle(unsigned tid);
 
 		bool glass_window(core_window_t*, bool isglass);
-		void make_glass_background(core_window_t *);
 
 		bool calc_window_point(core_window_t*, nana::point& pos);
 

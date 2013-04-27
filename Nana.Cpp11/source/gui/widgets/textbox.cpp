@@ -1,10 +1,10 @@
 /*
  *	A Textbox Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0.
+ *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/textbox.hpp
  */
@@ -49,7 +49,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			widget_ = &wd;
 		}
 
-		void drawer::attached(nana::paint::graphics& graph)
+		void drawer::attached(graph_reference graph)
 		{
 			window wd = widget_->handle();
 			editor_ = new text_editor(wd, graph);
@@ -77,16 +77,16 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		void drawer::detached()
 		{
 			delete editor_;
-			editor_ = 0;
-			API::dev::umake_drawer_event(widget_->handle());
+			editor_ = nullptr;
+			API::dev::umake_drawer_event(*widget_);
 		}
 
-		void drawer::refresh(nana::paint::graphics& graph)
+		void drawer::refresh(graph_reference graph)
 		{
 			editor_->redraw(status_.has_focus);
 		}
 
-		void drawer::focus(nana::paint::graphics& graph, const eventinfo& ei)
+		void drawer::focus(graph_reference graph, const eventinfo& ei)
 		{
 			status_.has_focus = ei.focus.getting;
 			refresh(graph);
@@ -108,7 +108,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_up(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::mouse_up(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->mouse_up(ei.mouse.left_button, ei.mouse.x, ei.mouse.y))
 				API::lazy_refresh();
@@ -129,7 +129,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_leave(graph_reference, const nana::gui::eventinfo&)
+		void drawer::mouse_leave(graph_reference, const eventinfo&)
 		{
 			if(editor_->mouse_enter(false))
 				API::lazy_refresh();
@@ -146,8 +146,6 @@ namespace nana{ namespace gui{ namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const eventinfo& ei)
 		{
-			using namespace nana::gui;
-
 			if(editor_->attr().editable)
 			{
 				switch(ei.keyboard.key)
@@ -161,7 +159,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				case keyboard::sync:
 					editor_->paste();	break;
 				case keyboard::tab:
-					editor_->put(keyboard::tab); break;
+					editor_->put(static_cast<char_t>(keyboard::tab)); break;
 				default:
 					if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126))
 						editor_->put(ei.keyboard.key);
@@ -174,7 +172,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor_->reset_caret();
 				API::lazy_refresh();
 			}
-			else if(ei.keyboard.key == keyboard::cancel)
+			else if(ei.keyboard.key == static_cast<char_t>(keyboard::cancel))
 				editor_->copy();
 		}
 
@@ -227,6 +225,31 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		{
 			create(wd, r, visible);
 		}
+
+		void textbox::load(const nana::char_t* file)
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
+		}
+
+		void textbox::store(const nana::char_t* file) const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
+		}
+
+		void textbox::store(const nana::char_t* file, nana::unicode encoding) const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
+		}
+
 
 		bool textbox::getline(std::size_t n, nana::string& text) const
 		{

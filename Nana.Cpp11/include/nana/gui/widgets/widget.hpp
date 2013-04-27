@@ -1,10 +1,10 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/widget.hpp
  */
@@ -97,7 +97,7 @@ namespace gui
 
 		void umake_event(event_handle eh) const;
 		operator dummy_bool_type() const;
-		operator nana::gui::window() const;
+		operator window() const;
 	protected:
 		//protected members, a derived class must call this implementation if it overrides an implementation
 		virtual void _m_complete_creation();
@@ -152,9 +152,7 @@ namespace gui
 			if(wd && this->empty())
 			{
 				handle_ = API::dev::create_widget(wd, r);
-				
 				API::dev::attach_signal(handle_, *this, &widget_object::signal);
-
 				static_cast<drawer_trigger&>(trigger_).bind_window(*this);
 				API::dev::attach_drawer(handle_, trigger_);
 				if(visible)
@@ -187,8 +185,11 @@ namespace gui
 			case detail::signals::caption:
 				this->_m_caption(sig.info.caption);
 				break;
+			case detail::signals::read_caption:
+				*sig.info.str = this->_m_caption();
+				break;
 			case detail::signals::destroy:
-				handle_ = 0; break;
+				handle_ = nullptr; break;
 			}
 		}
 	private:
@@ -241,6 +242,9 @@ namespace gui
 			{
 			case detail::signals::caption:
 				this->_m_caption(sig.info.caption);
+				break;
+			case detail::signals::read_caption:
+				*sig.info.str = this->_m_caption();
 				break;
 			case detail::signals::destroy:
 				handle_ = 0; break;
@@ -313,6 +317,9 @@ namespace gui
 			case detail::signals::caption:
 				this->_m_caption(sig.info.caption);
 				break;
+			case detail::signals::read_caption:
+				*sig.info.str = this->_m_caption();
+				break;
 			case detail::signals::destroy:
 				handle_ = 0; break;
 			}
@@ -381,6 +388,9 @@ namespace gui
 			{
 			case detail::signals::caption:
 				this->_m_caption(sig.info.caption);
+				break;
+			case detail::signals::read_caption:
+				*sig.info.str = this->_m_caption();
 				break;
 			case detail::signals::destroy:
 				handle_ = 0; break;

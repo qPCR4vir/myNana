@@ -1,10 +1,10 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Nana Software License, Version 1.0. 
+ *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
- *	http://stdex.sourceforge.net/LICENSE_1_0.txt)
+ *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.hpp
  */
@@ -58,12 +58,15 @@ namespace API
 		void attach_drawer(window, nana::gui::drawer_trigger&);
 		void detach_drawer(window);
 		void umake_drawer_event(window);
+		nana::string window_caption(window);
 		void window_caption(window, const nana::string& str);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&);
 		window create_widget(window, const rectangle&);
 		window create_lite_widget(window, const rectangle&);
 		window create_frame(window, const rectangle&);
+
+		paint::graphics * window_graphics(window);
 	}//end namespace dev
 
 	void exit();
@@ -204,7 +207,6 @@ namespace API
 	
 	bool glass_window(window);
 	bool glass_window(window, bool);
-	void make_glass_background(window);
 
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
