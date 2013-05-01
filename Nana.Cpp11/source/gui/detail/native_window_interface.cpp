@@ -980,8 +980,9 @@ namespace nana{
 			if(length > 0)
 			{
 				nana::string str;
+				str.reserve(length+1);
 				str.resize(length);
-				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), length);
+				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), length+1);
 				return str;
 			}
 			return nana::string();
