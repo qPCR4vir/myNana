@@ -278,17 +278,6 @@
     <Import Project="..\..\..\..\Nana.PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-<<<<<<< HEAD
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>../bin/vc2012/</OutDir>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>../bin/vc2012/</OutDir>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-=======
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MTdebug|Win32'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_deb_Nov12|Win32'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MDdebug|Win32'" />
@@ -396,7 +385,6 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MD_deb_Nov12|Win32'">
->>>>>>> FromWWW
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
