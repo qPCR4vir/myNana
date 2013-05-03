@@ -253,18 +253,9 @@ namespace nana{	namespace gui
 		}
 
 		const char* _m_eat_whitespace(const char* sp)
-		{   
-			while (*sp && !isgraph(*sp)) ++sp;  // fast and universal
-			//while(*sp)
-			//{
-			//	switch(*sp)
-			//	{
-			//	case ' ': case '\t': case '\r': case '\n':
-			//		++sp;	break;
-			//	default:
-			//		return sp;
-			//	}
-			//}
+		{
+			while (*sp && !isgraph(*sp))
+				++sp;
 			return sp;
 		}
 

@@ -840,6 +840,11 @@ namespace nana{	namespace gui
 			return impl_->file;
 		}
 
+		bool filebox::show() const
+		{
+			return operator()();
+		}
+
 		bool filebox::operator()() const
 		{
 #if defined(NANA_WINDOWS)
@@ -850,7 +855,7 @@ namespace nana{	namespace gui
 			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
 			ofn.lpstrFile = buffer;
 			ofn.lpstrFile[0] = '\0';
-			ofn.nMaxFile = sizeof(buffer) / sizeof(nana::char_t) - 1;
+			ofn.nMaxFile = sizeof(buffer) / sizeof(*buffer) - 1;
 
 			//Filter
 			nana::string filter;
