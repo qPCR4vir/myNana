@@ -579,10 +579,12 @@ namespace nana{	namespace gui{	namespace widgets
 
 			_m_scrollbar();
 		}
+
 		void text_editor::del()
 		{
 			bool has_erase = true;
 
+			if(select_.a == select_.b)
 			{
 				if(textbase_.getline(points_.caret.y).size() > points_.caret.x)
 				{
