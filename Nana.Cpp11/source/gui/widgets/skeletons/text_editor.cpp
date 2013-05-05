@@ -579,12 +579,6 @@ namespace nana{	namespace gui{	namespace widgets
 
 			_m_scrollbar();
 		}
-		void text_editor::cut()
-		{
-			copy();
-			del();
-		}
-
 		void text_editor::del()
 		{
 			bool has_erase = true;

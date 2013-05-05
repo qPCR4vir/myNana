@@ -351,11 +351,6 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			if(editor)
 				editor->copy();
 		}
-		void textbox::cut() 
-		{
-			copy();
-			del();
-		}
 		void textbox::paste()
 		{
 			internal_scope_guard isg;
