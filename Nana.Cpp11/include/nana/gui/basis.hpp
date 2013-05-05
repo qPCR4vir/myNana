@@ -53,14 +53,17 @@ namespace gui
 	struct keyboard
 	{
 		enum t{
-		select_all = 0x1,
-		alt = 18,
-		backspace = 0x8, tab = 0x9,
-		esc = 0x1B, enter = 0xD,
-		cancel = 0x3, sync = 0x16,
-		pageup = 33, pagedown,
-		left = 37, up, right, down,
-		insert = 45, del
+		select_all	= 0x1,
+		cancel		= 0x3,
+		backspace	= 0x8,	tab		= 0x9,
+		enter		= 0xD,	// 13
+		alt			= 18,
+		sync		= 0x16,	// 22
+		ctr_x       = 0x18, // 24  cut. cancel?  http://en.wikipedia.org/wiki/Control-X
+		esc			= 0x1B, // 27
+		pageup		= 33,	pagedown,
+		left		= 37,	up, right, down,
+		insert		= 45,	del
 		};
 	};
 

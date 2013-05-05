@@ -86,6 +86,7 @@ namespace nana{	namespace gui{	namespace widgets
 			void put(const nana::string&);
 			void put(nana::char_t);
 			void copy() const;
+		    void cut();
 			void paste();
 			void enter();
 			void del();

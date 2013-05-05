@@ -156,6 +156,8 @@ namespace nana{ namespace gui{ namespace drawerbase {
 					editor_->enter();	break;
 				case keyboard::cancel:
 					editor_->copy();	break;
+				case keyboard::ctr_x:
+					editor_->cut();	break;
 				case keyboard::sync:
 					editor_->paste();	break;
 				case keyboard::tab:
@@ -349,7 +351,11 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			if(editor)
 				editor->copy();
 		}
-
+		void textbox::cut() 
+		{
+			copy();
+			del();
+		}
 		void textbox::paste()
 		{
 			internal_scope_guard isg;

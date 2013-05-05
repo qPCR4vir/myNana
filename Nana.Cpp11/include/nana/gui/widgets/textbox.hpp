@@ -82,6 +82,7 @@ namespace nana{ namespace gui{
 		void select(bool);
 
 		void copy() const;
+		void cut();
 		void paste();
 		void del();
 	protected:
