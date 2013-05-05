@@ -157,7 +157,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				case keyboard::cancel:
 					editor_->copy();	break;
 				case keyboard::ctr_x:
-					editor_->cut();	break;
+					editor_->copy(); editor_->del();	break;
 				case keyboard::sync:
 					editor_->paste();	break;
 				case keyboard::tab:

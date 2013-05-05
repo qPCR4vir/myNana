@@ -641,7 +641,7 @@ namespace nana{ namespace gui{
 						case keyboard::cancel:
 							editor->copy();	break;
 				        case keyboard::ctr_x:
-					        editor->cut();	break;
+					        editor->copy();	editor->del(); break;
 						case keyboard::sync:
 							editor->paste();	break;
 						case keyboard::tab:
