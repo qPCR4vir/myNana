@@ -124,7 +124,7 @@ namespace nana{ namespace gui{
 					for(auto p : anyobj_)
 						delete p;
 					anyobj_.clear();
-					module_.items.clear();  // Add:  
+					module_.items.clear();  // Add:
                     module_.index=module_.npos; //    =0;    ?????
 				}
 
@@ -217,7 +217,7 @@ namespace nana{ namespace gui{
 						state_.lister->scroll_items(upwards);
 				}
 
-				void move_items(bool upwards, bool recycle)   // before call this check   if module_.index != npos   ??? 
+				void move_items(bool upwards, bool recycle)   // before call this check   if module_.index != npos   ???
 				{				//   if module_.index == npos  return;    ???  // if module_.items.size()==0 module_.index = npos  ;
 					if ( module_.index >= module_.items.size() ) return  ;  // defensive programming??? allways return if size=0
 
@@ -237,7 +237,7 @@ namespace nana{ namespace gui{
 							if(module_.index != module_.items.size() - 1)    //   if module_.index < size-1   ???
 								++(module_.index);							 //  Posible original source of error
 							else if(recycle)
-								module_.index = 0;     
+								module_.index = 0;
 						}
 
 						if(orig_i != module_.index) //  && if module_.index != npos   ???
@@ -282,7 +282,7 @@ namespace nana{ namespace gui{
 
 					std::size_t old_index = module_.index;
 					module_.index = index;
- 					//Test if the current item or text is different from selected.
+					//Test if the current item or text is different from selected.
 					if(ignore_condition || (old_index != index) || (module_.items[index].text != widget_->caption()))
 					{
 						auto pos = API::cursor_position();
@@ -334,12 +334,12 @@ namespace nana{ namespace gui{
 				void _m_lister_close_sig()
 				{
 					state_.lister = nullptr;	//The lister closes by itself.
-					if(module_.index != module_.npos && module_.index != state_.item_index_before_selection) 
+					if(module_.index != module_.npos && module_.index != state_.item_index_before_selection)
 					{
-						option(module_.index, true); 
+						option(module_.index, true);
 						API::update_window(*widget_);
 					}
-				} 
+				}
 
 				void _m_draw_background(graph_reference graph, const nana::rectangle&, nana::color_t)
 				{
@@ -391,12 +391,12 @@ namespace nana{ namespace gui{
 
 				void _m_draw_image()
 				{
-					//if(module_.index != module_.npos) return;  //  
-					if(module_.index >= module_.items.size())   return; //	??? 
+					//if(module_.index != module_.npos) return;  //
+					if(module_.index >= module_.items.size())   return; //	???
 					nana::paint::image img = module_.items[module_.index].img;    // (nana crash here !!!) because module_.index is not initialized when size()==0
 
 					if( ! img) return;
- 
+
 					unsigned vpix = editor_->line_height();
 					nana::size imgsz = img.size();
 					if(imgsz.width > image_pixels_)
@@ -643,7 +643,7 @@ namespace nana{ namespace gui{
 						case keyboard::tab:
 							editor->put(static_cast<char_t>(keyboard::tab)); break;
 						default:
-							if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126)) // include left and rigth
+							if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126))
 								editor->put(ei.keyboard.key);
 							else if(sizeof(nana::char_t) == sizeof(char))
 							{	//Non-Unicode Version for Non-English characters

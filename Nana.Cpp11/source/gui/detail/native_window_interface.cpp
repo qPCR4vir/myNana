@@ -983,7 +983,7 @@ namespace nana{
 				str.resize(length+1);  //reduce some redundancies :-)
                 //One for NULL terminator which GetWindowText will writte.
 				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), str.size());
-
+				
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(str.size()-1);
 

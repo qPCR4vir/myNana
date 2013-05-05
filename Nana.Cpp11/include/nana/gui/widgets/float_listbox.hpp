@@ -35,7 +35,7 @@ namespace nana{ namespace gui{
 				std::size_t max_items;			/// the number of items display.
 				mutable std::size_t index;		/// the result of the selection.
 
-				static const std::size_t npos =  static_cast<std::size_t>(-1);  /// index==npos --> No selection.   
+				static const std::size_t npos =  static_cast<std::size_t>(-1);  /// index==npos --> No selection.
 				module_def();
 			};
 
