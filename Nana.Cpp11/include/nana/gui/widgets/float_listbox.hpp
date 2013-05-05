@@ -32,10 +32,10 @@ namespace nana{ namespace gui{
 				};
 
 				std::vector<item_type> items;
-				std::size_t max_items;	//the number of items display.
-				mutable std::size_t index;		//the result of the selection.
+				std::size_t max_items;			/// the number of items display.
+				mutable std::size_t index;		/// the result of the selection.
 
-				static const std::size_t npos = static_cast<std::size_t>(-1);
+				static const std::size_t npos =  static_cast<std::size_t>(-1);  /// index==npos --> No selection.   
 				module_def();
 			};
 

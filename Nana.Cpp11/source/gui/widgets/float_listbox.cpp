@@ -113,7 +113,7 @@ namespace nana{ namespace gui{
 				{}
 
 				module_def::module_def()
-					:max_items(10), index(npos)
+					:max_items(10), index(npos)   //  OK !!!!
 				{}
 			//end struct module_def
 

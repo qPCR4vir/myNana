@@ -89,14 +89,12 @@ namespace nana{ namespace gui{
 
 				nana::any * anyobj(std::size_t i, bool allocate_if_empty) const
 				{
-					if(i < anyobj_.size())
-					{
-						nana::any * p = anyobj_[i];
-						if(allocate_if_empty && (nullptr == p))
-							anyobj_[i] = p = new nana::any;
-						return p;
-					}
-					return nullptr;
+					if(i >= anyobj_.size())		return nullptr;
+
+					nana::any * p = anyobj_[i];
+					if(allocate_if_empty && (nullptr == p))
+						anyobj_[i] = p = new nana::any;
+					return p;
 				}
 
 				void text_area(const nana::size& s)
@@ -126,7 +124,8 @@ namespace nana{ namespace gui{
 					for(auto p : anyobj_)
 						delete p;
 					anyobj_.clear();
-					module_.items.clear();
+					module_.items.clear();  // Add:  
+                    module_.index=module_.npos; //    =0;    ?????
 				}
 
 				void editable(bool enb)
@@ -204,7 +203,7 @@ namespace nana{ namespace gui{
 						state_.lister = &form_loader<nana::gui::float_listbox>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10));
 						state_.lister->renderer(item_renderer_);
 						state_.lister->set_module(module_, image_pixels_);
-						state_.item_index_before_selection = module_.index;
+						state_.item_index_before_selection = module_.index;   // if module_.index != npos   ???
 						//The lister window closes by itself. I just take care about the destroy event.
 						//The event should be destroy rather than unload. Because the unload event is invoked while
 						//the lister is not closed, if popuping a message box, the lister will cover the message box.
@@ -218,27 +217,30 @@ namespace nana{ namespace gui{
 						state_.lister->scroll_items(upwards);
 				}
 
-				void move_items(bool upwards, bool recycle)
-				{
+				void move_items(bool upwards, bool recycle)   // before call this check   if module_.index != npos   ??? 
+				{				//   if module_.index == npos  return;    ???  // if module_.items.size()==0 module_.index = npos  ;
+					if ( module_.index >= module_.items.size() ) return  ;  // defensive programming??? allways return if size=0
+
 					if(nullptr == state_.lister)
 					{
-						std::size_t orig_i = module_.index;
+						std::size_t orig_i = module_.index;  // if module_.index != npos   ???
 						if(upwards)
 						{
-							if(module_.index)
-								--(module_.index);
+							if(module_.index )			// && module_.index != module_.npos  ???
+								--(module_.index);      //  Posible original source of error
 							else if(recycle)
-								module_.index = static_cast<unsigned>(module_.items.size() - 1);
+								module_.index = static_cast<unsigned>(module_.items.size() - 1 );
+								// module_.index = module_.items.size()? static_cast<unsigned>(module_.items.size() - 1 ): module_.npos ; // more readable??
 						}
 						else
 						{
-							if(module_.index != module_.items.size() - 1)
-								++(module_.index);
+							if(module_.index != module_.items.size() - 1)    //   if module_.index < size-1   ???
+								++(module_.index);							 //  Posible original source of error
 							else if(recycle)
-								module_.index = 0;
+								module_.index = 0;     
 						}
 
-						if(orig_i != module_.index)
+						if(orig_i != module_.index) //  && if module_.index != npos   ???
 							option(module_.index, false);
 					}
 					else
@@ -270,39 +272,36 @@ namespace nana{ namespace gui{
 
 				std::size_t option() const
 				{
-					return module_.index;
+					return module_.index;      // Document this !  module_.index == npos  --> no option ! ??? better =0??
 				}
 
 				void option(std::size_t index, bool ignore_condition)
 				{
-					if(index < module_.items.size())
+					if(index >= module_.items.size())	return;   // only for readability
+					if(! widget_)						return;   // only for readability
+
+					std::size_t old_index = module_.index;
+					module_.index = index;
+ 					//Test if the current item or text is different from selected.
+					if(ignore_condition || (old_index != index) || (module_.items[index].text != widget_->caption()))
 					{
-						std::size_t old_index = module_.index;
-						module_.index = index;
-						if(widget_)
-						{
-							//Test if the current item or text is different from selected.
-							if(ignore_condition || (old_index != index) || (module_.items[index].text != widget_->caption()))
-							{
-								auto pos = API::cursor_position();
-								API::calc_window_point(widget_->handle(), pos);
-								if(calc_where(*graph_, pos.x, pos.y))
-									state_.state = state_t::none;
+						auto pos = API::cursor_position();
+						API::calc_window_point(widget_->handle(), pos);
+						if(calc_where(*graph_, pos.x, pos.y))
+							state_.state = state_t::none;
 
-								editor_->text(module_.items[index].text);
-								_m_draw_push_button(widget_->enabled());
-								_m_draw_image();
+						editor_->text(module_.items[index].text);
+						_m_draw_push_button(widget_->enabled());
+						_m_draw_image();
 
-								//Yes, it's safe to static_cast here!
-								ext_event.selected(*static_cast<nana::gui::combox*>(widget_));
-							}
-						}
+						//Yes, it's safe to static_cast here!
+						ext_event.selected(*static_cast<nana::gui::combox*>(widget_));
 					}
 				}
 
 				const item_type & at(std::size_t i) const
 				{
-					return module_.items.at(i);
+					return module_.items.at(i);  // posible trowing. OK.   document it?
 				}
 
 				void text(const nana::string& str)
@@ -313,36 +312,34 @@ namespace nana{ namespace gui{
 
 				void image(std::size_t i, const nana::paint::image& img)
 				{
-					if(i < module_.items.size())
+					if(i >= module_.items.size()) return;
+
+					module_.items[i].img = img;
+					if(! image_enabled_  && img)
 					{
-						module_.items[i].img = img;
-						if((false == image_enabled_) && img)
-						{
-							image_enabled_ = true;
-							draw();
-						}
+						image_enabled_ = true;
+						draw();
 					}
 				}
 
 				bool image_pixels(unsigned px)
 				{
-					if(image_pixels_ != px)
-					{
-						image_pixels_ = px;
-						return true;
-					}
-					return false;
+					if(image_pixels_ == px)
+						return false;
+
+					image_pixels_ = px;
+					return true;
 				}
 			private:
 				void _m_lister_close_sig()
 				{
 					state_.lister = nullptr;	//The lister closes by itself.
-					if(module_.index != module_.npos && module_.index != state_.item_index_before_selection)
+					if(module_.index != module_.npos && module_.index != state_.item_index_before_selection) 
 					{
-						option(module_.index, true);
+						option(module_.index, true); 
 						API::update_window(*widget_);
 					}
-				}
+				} 
 
 				void _m_draw_background(graph_reference graph, const nana::rectangle&, nana::color_t)
 				{
@@ -394,49 +391,48 @@ namespace nana{ namespace gui{
 
 				void _m_draw_image()
 				{
-					if(module_.index != module_.npos)
-					{
-						nana::paint::image img = module_.items[module_.index].img;
-						if(img)
-						{
-							unsigned vpix = editor_->line_height();
-							nana::size imgsz = img.size();
-							if(imgsz.width > image_pixels_)
-							{
-								unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
-								if(new_h > vpix)
-								{
-									imgsz.width = vpix * imgsz.width / imgsz.height;
-									imgsz.height = vpix;
-								}
-								else
-								{
-									imgsz.width = image_pixels_;
-									imgsz.height = new_h;
-								}
-							}
-							else if(imgsz.height > vpix)
-							{
-								unsigned new_w = vpix * imgsz.width / imgsz.height;
-								if(new_w > image_pixels_)
-								{
-									imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
-									imgsz.width = image_pixels_;
-								}
-								else
-								{
-									imgsz.height = vpix;
-									imgsz.width = new_w;
-								}
-							}
+					//if(module_.index != module_.npos) return;  //  
+					if(module_.index >= module_.items.size())   return; //	??? 
+					nana::paint::image img = module_.items[module_.index].img;    // (nana crash here !!!) because module_.index is not initialized when size()==0
 
-							nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
-							img.stretch(img.size(), *graph_, nana::rectangle(pos, imgsz));
+					if( ! img) return;
+ 
+					unsigned vpix = editor_->line_height();
+					nana::size imgsz = img.size();
+					if(imgsz.width > image_pixels_)
+					{
+						unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
+						if(new_h > vpix)
+						{
+							imgsz.width = vpix * imgsz.width / imgsz.height;
+							imgsz.height = vpix;
+						}
+						else
+						{
+							imgsz.width = image_pixels_;
+							imgsz.height = new_h;
 						}
 					}
+					else if(imgsz.height > vpix)
+					{
+						unsigned new_w = vpix * imgsz.width / imgsz.height;
+						if(new_w > image_pixels_)
+						{
+							imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
+							imgsz.width = image_pixels_;
+						}
+						else
+						{
+							imgsz.height = vpix;
+							imgsz.width = new_w;
+						}
+					}
+
+					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
+					img.stretch(img.size(), *graph_, nana::rectangle(pos, imgsz));
 				}
 			private:
-				nana::gui::float_listbox::module_type module_;
+				nana::gui::float_listbox::module_type module_;   // initialized index. OK
 				mutable std::vector<nana::any*>	anyobj_;
 				widget * widget_;
 				nana::paint::graphics * graph_;
@@ -616,11 +612,11 @@ namespace nana{ namespace gui{
 						switch(ei.keyboard.key)
 						{
 						case keyboard::up:
-						case keyboard::left:
+						//case keyboard::left:     //  if editable?? I want to move the caret to left
 							drawer_->move_items(true, true);
 							break;
 						case keyboard::down:
-						case keyboard::right:
+						//case keyboard::right:    //  if editable?? I want to move the caret to rigth
 							drawer_->move_items(false, true);
 							break;
 						}
@@ -647,7 +643,7 @@ namespace nana{ namespace gui{
 						case keyboard::tab:
 							editor->put(static_cast<char_t>(keyboard::tab)); break;
 						default:
-							if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126))
+							if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126)) // include left and rigth
 								editor->put(ei.keyboard.key);
 							else if(sizeof(nana::char_t) == sizeof(char))
 							{	//Non-Unicode Version for Non-English characters
