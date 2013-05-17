@@ -2,57 +2,68 @@
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
-
-CompoWidget::CompoWidget (	const nana::string &caption_, 
-							const std::string& fieldName, 
-							const std::string& layot,
-							const nana::string& fileName)
-				: _caption	(caption_ ), 
-				  _lay		(layot),
-				  _fieldname (fieldName!=""? fieldName : std::string(nana::charset(caption_)))
-{
-	size_t len=0;
-	for(char c: _fieldname) 
-		if (c=='_' || iswalnum(c))
-			_fieldname[len++]=c;
-	_fieldname.resize(len); 
-}
-nana::gui::place::field_reference operator<<(nana::gui::place::field_reference f, CompoWidget& cw)
-{
-	return cw.put(f); 
-}
-nana::gui::place& operator<<(nana::gui::place&pl, CompoWidget& cw)
-{
-	return cw.put(pl); 
-}	
+//
+//CompoWidgetP::CompoWidgetP (	const nana::string &caption_, 
+//							const std::string& fieldName, 
+//							const std::string& layot,
+//							const nana::string& fileName)
+//				: _caption	(caption_ ), 
+//				  _lay		(layot),
+//				  _fieldname (fieldName!=""? fieldName : std::string(nana::charset(caption_)))
+//{
+//	size_t len=0;
+//	for(char c: _fieldname) 
+//		if (c=='_' || iswalnum(c))
+//			_fieldname[len++]=c;
+//	_fieldname.resize(len); 
+//}
+//nana::gui::place::field_reference operator<<(nana::gui::place::field_reference f, CompoWidgetP& cw)
+//{
+//	return cw.put(f); 
+//}
+//nana::gui::place& operator<<(nana::gui::place&pl, CompoWidgetP& cw)
+//{
+//	return cw.put(pl); 
+//}	
 
 OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm, 
 								const nana::string   &label,
 								const nana::string   &DefFileName )
-							:	CompoWidget(	label  ),
+							:	nana::gui::panel<false>    (	fm  ),
 								Open(fm), Save(fm), Pick(fm),_fileName(fm),_label(fm),
 								fb_o(fm,true ),fb_s(fm,false ),fb_p(fm,true ),
                                 _user_selected(false),
                                 _canceled(true)
 {
-	//caption(label);  // or def as FileName  ??
-	_label.caption (caption()  ); 
+    caption  (label)  ; 
+	_label.caption (  caption  ()  ); 
+    _label.text_align(nana::align::right  ); 
 	Open.caption	(STR("Open"		));
 	Save.caption	(STR("Save"		));
 	Pick.caption	(STR("..."		));
-    ly ( "<weight=2>\n\t<"); 
-    ly ( (std::string(ly())+ fn()) + " gap=2 weight=19>\n\t<weight=2>");
 
-//		ly( "        <weight=2>\n"
-//"        < weight=25 <weight=5><   vertical weight=45 <><label weight=15><>     >\n"
-//"		                             <proj_buttons weight=74 gap=1> \n"
-//"									 <proj_txt> \n"
-//"									 <pick weight=30>\n"
-//"									 <weight=4> 	>" );  // an interesante idea, but allow only one instantition of a CompoWidwet of this type 
+    _myLayout= 
+        "vertical   <weight=2>    \n"
+        "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
+        "		               <proj_buttons weight=74 gap=1>     \n"
+        "					   <proj_txt>        \n"
+        "					   <pick weight=30>  \n"
+        "					   <weight=3> 	>" 
+        "            <weight=2>    \n"          ;  // an interesante idea, but allow only one instantition of a CompoWidwet of this type 
+
+	nana::gui::place	place(*this);
+	place.div(_myLayout.c_str ());    
+
+	place.field("label"       ) << _label;
+	place.field("proj_buttons") << Open , Save;
+	place.field("proj_txtb3"  ) << _fileName;
+	place.field("pick"        ) << Pick;
+	place.collocate ();
 
 	Open.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::open	);
 	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);
 	Save.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::save	);
+
 	//_fileName.ext_event().selected = [&](nana::gui::combox&cb)
 	//{
 	//	SaveFile();  // save only is edited, changed ??? but how to know??	;
@@ -112,10 +123,10 @@ void OpenSaveBox::pick()
     }
     _canceled= true;
 }
-OpenSaveBox::p::field_reference	OpenSaveBox::put(p::field_reference f)
-{
-	return f << p::fixed(_label,49) << p::fixed(Open,40) << p::fixed(Save,35) <<_fileName << p::fixed(Pick,25); 
-}
+//OpenSaveBox::p::field_reference	OpenSaveBox::put(p::field_reference f)
+//{
+//	return f << p::fixed(_label,49) << p::fixed(Open,40) << p::fixed(Save,35) <<_fileName << p::fixed(Pick,25); 
+//}
 	//virtual p&	put(p&   pl) override
 	//{	
 	//	pl.field (fn ())<<*this;

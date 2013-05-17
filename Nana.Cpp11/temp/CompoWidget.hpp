@@ -7,40 +7,41 @@
 #include <nana/gui/widgets/combox.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/filebox.hpp>       
+#include <nana/gui/widgets/panel.hpp>
 
+//
+//class CompoWidgetP : public nana::gui::panel<false>
+//{
+//  public:
+//	CompoWidgetP (	const nana::string &caption_, 
+//					const std::string& fieldName="", 
+//					const std::string& layot="",
+//					const nana::string& fileName=STR(""));
+//
+//	void caption(const nana::string &caption_)	{ _caption=caption_;}
+//	const nana::string &caption() const			{return _caption;   }
+//	const char *ly(const std::string& layot )	{return (_lay=layot).c_str ();}
+//	const char *ly()const						{return _lay.c_str ();}
+//	const char *fn()const						{return _fieldname.c_str();}
+//	virtual ~CompoWidgetP ()						{}
+//
+//	friend nana::gui::place::field_reference	operator<<(nana::gui::place::field_reference f, CompoWidgetP& osb);
+//	friend nana::gui::place&					operator<<(nana::gui::place& pl,				CompoWidgetP& osb);
+//
+//protected:
+//	typedef nana::gui::place p ;
+//	virtual p::field_reference	put(p::field_reference f)=0;
+//	virtual p&					put(p&				  pl)
+//	{	pl.field (fn ())<<*this;
+//		return pl;			
+//	}
+//
+//private:
+//	nana::string _caption;
+//	std::string  _lay, _fieldname;
+//};
 
-class CompoWidget 
-{
-  public:
-	CompoWidget (	const nana::string &caption_, 
-					const std::string& fieldName="", 
-					const std::string& layot="",
-					const nana::string& fileName=STR(""));
-
-	void caption(const nana::string &caption_)	{ _caption=caption_;}
-	const nana::string &caption() const			{return _caption;   }
-	const char *ly(const std::string& layot )	{return (_lay=layot).c_str ();}
-	const char *ly()const						{return _lay.c_str ();}
-	const char *fn()const						{return _fieldname.c_str();}
-	virtual ~CompoWidget ()						{}
-
-	friend nana::gui::place::field_reference	operator<<(nana::gui::place::field_reference f, CompoWidget& osb);
-	friend nana::gui::place&					operator<<(nana::gui::place& pl,				CompoWidget& osb);
-
-protected:
-	typedef nana::gui::place p ;
-	virtual p::field_reference	put(p::field_reference f)=0;
-	virtual p&					put(p&				  pl)
-	{	pl.field (fn ())<<*this;
-		return pl;			
-	}
-
-private:
-	nana::string _caption;
-	std::string  _lay, _fieldname;
-};
-
-class OpenSaveBox : public  CompoWidget    
+class OpenSaveBox : public  nana::gui::panel<false>    
 {public:
 	nana::gui::button	Open, Save, Pick;
 	nana::gui::combox	_fileName;
@@ -65,12 +66,13 @@ class OpenSaveBox : public  CompoWidget
 
 
  protected:
-	virtual p::field_reference	put(p::field_reference f)override;
+	//virtual p::field_reference	put(p::field_reference f)override;
 	//virtual p&	put(p&   pl) override
 
  private:
 	nana::gui::label	_label;
     bool _user_selected, _canceled;
+    std::string         _myLayout;
 };
 
 #endif 

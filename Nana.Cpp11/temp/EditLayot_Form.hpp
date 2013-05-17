@@ -32,6 +32,7 @@ class EditLayot_Form : public nana::gui::form
 	void SaveFileN(const nana::string   &fileTip=STR(""));
 	void EditMyLayot();
     static const char* readLayot(const nana::string& FileName, std::string& layot);
+    std::string         _myLayout;
 
 }	;
 #endif 

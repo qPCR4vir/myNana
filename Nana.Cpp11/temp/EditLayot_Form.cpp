@@ -75,9 +75,16 @@ void EditLayot_Form::InitMyLayot()
 		std::string layot;
         readLayot( STR("Layot_Form.lay.txt"), layot ="");
         if (layot.empty() )
-            layot="vertical\n\t	<weight=25>\n\t<weight=2>\n\t<Layot gap=2 weight=19>\n\t<weight=2>\n\t<textBox>\n\t< weight=25 <weight=5> <re weight=50 gap=1>>\n\t<weight=5>";
-        _place.div( layot.c_str () );
-		_place						<< _OSbx;
+            _myLayout= "vertical                                            \n\t"
+                                   "<weight=25>                             \n\t"
+                                   "<weight=25  OpenSave>                   \n\t"
+                                   "<textBox>                               \n\t"
+                                   "<weight=25 <weight=5> <re weight=50 gap=1>>\n\t"
+                                   "<weight=5>                              \n\t";
+        else _myLayout=layot;
+
+        _place.div( _myLayout.c_str () );
+		_place.field("OpenSave"	   )<< _OSbx;
 		_place.field("textBox"	   )<< _textBox;
 		_place.field("re"		   )<< _ReCollocate ;
 		_place.collocate ();
@@ -126,8 +133,7 @@ void EditLayot_Form::SaveFile()
 void EditLayot_Form::EditMyLayot()
 		{
 			if (!_myEdLayForm) 
-				_myEdLayForm.reset (new EditLayot_Form (_place,"vertical\n\t	<weight=25>\n\t<weight=2>\n\t<Layot gap=2 weight=19>\n\t<weight=2>\n\t<textBox>\n\t< weight=25 <weight=5> <re weight=50 gap=1>>\n\t<weight=5>",
-                STR("Layot_Form.lay.txt") , this ));
+				_myEdLayForm.reset (new EditLayot_Form (_place, _myLayout.c_str (),   STR("Layot_Form.lay.txt") , this ));
 			_myEdLayForm->show ();
 		}
 const char* EditLayot_Form::readLayot(const nana::string& FileName, std::string& layot)
