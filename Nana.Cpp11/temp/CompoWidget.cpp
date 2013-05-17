@@ -30,10 +30,10 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 								const nana::string   &label,
 								const nana::string   &DefFileName )
 							:	nana::gui::panel<false>    (	fm  ),
-								Open(fm), Save(fm), Pick(fm),_fileName(fm),_label(fm),
-								fb_o(fm,true ),fb_s(fm,false ),fb_p(fm,true ),
+								Open(*this), Save(*this), Pick(*this),_fileName(*this),_label(*this),
+								fb_o(*this,true ),fb_s(*this,false ),fb_p(*this,true ),_place(*this),
                                 _user_selected(false),
-                                _canceled(true)
+                                _canceled(false)
 {
     caption  (label)  ; 
 	_label.caption (  caption  ()  ); 
@@ -43,22 +43,23 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 	Pick.caption	(STR("..."		));
 
     _myLayout= 
-        "vertical   <weight=2>    \n"
+        "vertical   <weight=1>    \n"
         "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
         "		               <proj_buttons weight=74 gap=1>     \n"
-        "					   <proj_txt>        \n"
+        "					   <cbFL >       \n"
         "					   <pick weight=30>  \n"
         "					   <weight=3> 	>" 
         "            <weight=2>    \n"          ;  // an interesante idea, but allow only one instantition of a CompoWidwet of this type 
 
-	nana::gui::place	place(*this);
-	place.div(_myLayout.c_str ());    
+	_place.div(_myLayout.c_str ());    
 
-	place.field("label"       ) << _label;
-	place.field("proj_buttons") << Open , Save;
-	place.field("proj_txtb3"  ) << _fileName;
-	place.field("pick"        ) << Pick;
-	place.collocate ();
+	_place.field("cbFL"        ) <<  _fileName ;
+	_place.field("label"       ) << _label;
+	_place.field("proj_buttons") << Open << Save;
+	_place.field("pick"        ) << Pick;
+	_place.collocate ();
+
+
 
 	Open.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::open	);
 	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);

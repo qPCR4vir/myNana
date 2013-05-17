@@ -73,6 +73,8 @@ class OpenSaveBox : public  nana::gui::panel<false>
 	nana::gui::label	_label;
     bool _user_selected, _canceled;
     std::string         _myLayout;
+    nana::gui::place	_place;
+
 };
 
 #endif 

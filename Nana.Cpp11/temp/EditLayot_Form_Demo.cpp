@@ -22,19 +22,19 @@ int main()
 	std::stringstream   lay;
 	lay << "vertical                          \n\t"
                     "<weight=25>              \n\t" 
-                    "<Project weight=25>      \n\t" 
+                    "<Project >      \n\t" 
                     "<gap=2 <b1> <b2> <b3> >  \n\t"
                     "<b4>                     \n\t"
-                    "<Project2 weight=25>     \n\t" ;
+                    "<Project2 >     \n\t" ;
 
 	place.div(lay.str().c_str ());     // try std::runtime_error msgbox
 
+	place.field("Project" )<<osb;
+	place.field("Project2")<<osb2;
 	place.field("b1")<<but1;
 	place.field("b2")<<but2;
 	place.field("b3")<<but3;
 	place.field("b4")<<but4;
-	place.field("Project" )<<osb;
-	place.field("Project2")<<osb2;
 
 	place.collocate ();
 

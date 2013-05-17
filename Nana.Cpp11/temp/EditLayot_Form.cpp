@@ -50,8 +50,8 @@ void EditLayot_Form::InitCaptions()
 	}
 void EditLayot_Form::MakeResponsive()
 	{
-		_menuFile.append  (STR("&Open..."),[&](nana::gui::menu::item_proxy& ip){OpenFile();});
-		_menuFile.append  (STR("&Save..."),[&](nana::gui::menu::item_proxy& ip){SaveFile();});
+		_menuFile.append  (STR("&Open..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.open();OpenFile();});
+		_menuFile.append  (STR("&Save..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.save();SaveFile();});
 		_menuProgram.append (STR("&Apply Layot to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayot();});
 		_menuProgram.append (STR("&Edit this windows Layot"       ),[&](nana::gui::menu::item_proxy& ip){EditMyLayot();});
 
