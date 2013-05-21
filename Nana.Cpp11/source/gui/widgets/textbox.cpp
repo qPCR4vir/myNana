@@ -238,20 +238,20 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file) // const
+		void textbox::store(const nana::char_t* file)  
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file, nana::unicode encoding) /*const*/
+		void textbox::store(const nana::char_t* file, nana::unicode encoding) 
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
 		}
 
 
