@@ -221,7 +221,7 @@ namespace nana{	namespace gui{	namespace widgets
 			return do_draw;
 		}
 
-		const textbase<nana::char_t> & text_editor::textbase() const
+		/*const*/ textbase<nana::char_t> & text_editor::textbase() 
 		{
 			return textbase_;
 		}

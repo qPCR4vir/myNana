@@ -238,7 +238,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file) const
+		void textbox::store(const nana::char_t* file) // const
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
@@ -246,7 +246,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file, nana::unicode encoding) const
+		void textbox::store(const nana::char_t* file, nana::unicode encoding) /*const*/
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
