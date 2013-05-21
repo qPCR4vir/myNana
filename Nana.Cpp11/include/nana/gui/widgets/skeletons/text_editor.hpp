@@ -102,7 +102,7 @@ namespace nana{	namespace gui{	namespace widgets
 			bool mouse_down(bool left_button, int screen_x, int screen_y);
 			bool mouse_move(bool left_button, int screen_x, int screen_y);
 			bool mouse_up(bool left_button, int screen_x, int screen_y);
-			const skeletons::textbase<nana::char_t>& textbase() const;
+			/*const*/ skeletons::textbase<nana::char_t>& textbase() ;
 		private:
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const eventinfo& ei);
