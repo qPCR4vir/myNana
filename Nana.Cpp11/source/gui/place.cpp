@@ -421,6 +421,31 @@ namespace nana{	namespace gui
 				}
 			}
 
+			element_t& operator=(const element_t& rhs)
+			{
+			    if(this != &rhs)
+                {
+                    kind_of_element = rhs.kind_of_element;
+
+                    switch(kind_of_element)
+                    {
+                    case kind::fixed:
+                        u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+                        break;
+                    case kind::percent:
+                        u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
+                        break;
+                    case kind::room:
+                        u.room_ptr = new room_t(*rhs.u.room_ptr);
+                        break;
+                    default:
+                        u = rhs.u;
+                        break;
+                    }
+                }
+                return *this;
+			}
+
 			element_t(element_t && rv)
 				: kind_of_element(rv.kind_of_element), u(rv.u)
 			{
@@ -438,6 +463,27 @@ namespace nana{	namespace gui
 				}
 			}
 				
+			element_t& operator=(element_t && rv)
+			{
+                if(this != &rv)
+                {
+                    kind_of_element = rv.kind_of_element;
+                    switch(kind_of_element)
+                    {
+                    case kind::fixed:
+                        rv.u.fixed_ptr = nullptr;
+                        break;
+                    case kind::percent:
+                        rv.u.percent_ptr = nullptr;
+                        break;
+                    case kind::room:
+                        rv.u.room_ptr = nullptr;
+                    default:	break;
+                    }
+                }
+                return *this;
+			}
+
 			~element_t()
 			{
 				switch(kind_of_element)
@@ -476,7 +522,8 @@ namespace nana{	namespace gui
 		typedef std::vector<element_t>::const_iterator const_iterator;
 
 		field_impl(place * p)
-			: place_ptr_(p), attached(false)
+			:	attached(false),
+				place_ptr_(p)
 		{}
 	private:
 		//Listen to destroy of a window
