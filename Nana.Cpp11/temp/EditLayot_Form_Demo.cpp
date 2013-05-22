@@ -1,4 +1,6 @@
 #include <../temp/EditLayot_Form.hpp>
+#include <iostream>    // temp, for debugging
+#include <fstream>     // temp, for debugging
 
 
 int main()
@@ -47,7 +49,20 @@ int main()
 		LayForm->show ();
 	});
 	form.show();
-	nana::gui::exec();
+    try {
+	        nana::gui::exec();
+
+        } catch (std::exception e)
+        {
+            std::cout<< std::endl<< e.what();
+            throw ;
+        } catch (...)
+        {
+            std::cout<< std::endl<< "exeption !!";
+            throw ;
+        }
+
+
 	return 0;
 }
 

@@ -41,6 +41,14 @@ namespace nana{	namespace gui{	namespace widgets
 			redraw(API::is_focus_window(window_));
 			_m_scrollbar();
 		}
+        void text_editor::store(const char* tfs)
+        {
+			textbase_.store(tfs);
+        }
+        void text_editor::store(const char* tfs, nana::unicode encoding)
+        {
+			textbase_.store(tfs,encoding);
+        }
 
 		bool text_editor::text_area(const nana::rectangle& r)
 		{
@@ -221,7 +229,7 @@ namespace nana{	namespace gui{	namespace widgets
 			return do_draw;
 		}
 
-		const textbase<nana::char_t> & text_editor::textbase() const
+		const textbase<nana::char_t> & text_editor::textbase() 
 		{
 			return textbase_;
 		}

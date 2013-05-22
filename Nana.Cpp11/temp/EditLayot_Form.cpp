@@ -50,6 +50,7 @@ void EditLayot_Form::InitCaptions()
 	}
 void EditLayot_Form::MakeResponsive()
 	{
+        _textBox.on_first_change([&](){on_edited();});
 		_menuFile.append  (STR("&Open..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.open();OpenFile();});
 		_menuFile.append  (STR("&Save..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.save();SaveFile();});
 		_menuProgram.append (STR("&Apply Layot to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayot();});
@@ -58,18 +59,24 @@ void EditLayot_Form::MakeResponsive()
 		_OSbx.Open.make_event	<nana::gui::events::click> (*this , &EditLayot_Form::OpenFile		);
 		_OSbx.Save.make_event	<nana::gui::events::click> (*this , &EditLayot_Form::SaveFile		);
 		_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayot_Form::OpenFile		);
-		_ReCollocate.make_event		<nana::gui::events::click> ([&](){ReLayot();});
+		_ReCollocate.make_event	<nana::gui::events::click> ([&](){ReLayot();});
 		_OSbx._fileName.ext_event().selected = [&](nana::gui::combox&cb)
 		{
 		    if(! _OSbx.UserSelected()) return;
 
             nana::string   fileN=_OSbx.FileName();  // The newly selected name
             std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;
-            SaveFileN(_Loaded);  // save only is edited?, changed ??? but how to know??	;
 			OpenFileN(fileN );
 		};
-
 	}
+void EditLayot_Form::on_edited()
+{
+   nana::string newTitel  = _Titel  +  STR(" <") ;
+                newTitel +=  nana::string(nana::charset(_textBox.filename())) ;
+                newTitel += (_textBox.saved()? STR(">"): STR(" * >")  );
+    caption	( newTitel);
+}
+
 void EditLayot_Form::InitMyLayot()
 	{
 		std::string layot;
@@ -100,34 +107,36 @@ void EditLayot_Form::OpenFile()
 	{	 
       if(_OSbx.Canceled () ) return;
       std::wcout<<std::endl<<STR("OpenFile: ")<<std::endl;
+
 	  OpenFileN(_OSbx.FileName());
 	}
 void EditLayot_Form::OpenFileN(const nana::string   &file)
 	{	  
-		if( file.empty() ) return;
+		if( file.empty() ) 
+            return;
         std::wcout<<std::endl<<STR("OpenFileN: ")<<file<<std::endl;
-		caption	(_Titel+STR(" <")+ file+STR(">"));
+        if ( _textBox.edited () )
+           SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
 		_textBox.load(file.c_str() );
         _textBox.select(true);
-            _textBox.show();
-        _Loaded=file;
-       std::wcout<<std::endl<<STR("OpenedFileN: ")<<file<<std::endl;
+        _textBox.show();
+        std::wcout<<std::endl<<STR("OpenedFileN: ")<<file<<std::endl;
 	}
 void EditLayot_Form::SaveFileN(const nana::string   &fileTip)
 	{	
         std::wcout<<std::endl<<STR("Seaving tip: ")<<fileTip<<std::endl;
         _OSbx.fb_s.init_path(fileTip);
         _OSbx.save();
-       if(_OSbx.Canceled () ) return;
+       if(_OSbx.Canceled () ) 
+           return;
        SaveFile();
 	}
 void EditLayot_Form::SaveFile()
 	{	
-      if(_OSbx.Canceled () ) return;
+      if(_OSbx.Canceled () ) 
+          return;
         std::wcout<<std::endl<<STR("Seaving file: ")<<_OSbx.FileName()<<std::endl;
 		_textBox.store(_OSbx.FileName().c_str() );
-        _Loaded=_OSbx.FileName();
-		caption	(_Titel+STR(" <" )+ _Loaded + STR( ">" ));
 		std::wcout<<std::endl<<STR("SavedFIle: ")<<_OSbx.FileName()<<std::endl;
 	}
 void EditLayot_Form::EditMyLayot()

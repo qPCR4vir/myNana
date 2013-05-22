@@ -16,6 +16,7 @@
 #include <deque>
 #include <memory>
 #include <fstream>
+#include <functional> 
 #include <nana/charset.hpp>
 
 namespace nana
@@ -35,8 +36,10 @@ namespace skeletons
 		typedef typename string_type::size_type	size_type;
 
 		textbase()
+            : on_first_change([](){}),   // do nothing
+              changed_(false)
 		{
-			text_cont_.emplace_back();
+			text_cont_.emplace_back();  // why?
 		}
 
 		bool empty() const
@@ -47,8 +50,8 @@ namespace skeletons
 
 		void load(const char* tfs)
 		{
-			text_cont_.clear();
-			attr_max_.reset();
+			//text_cont_.clear();     // clear only if the new file can be opened ??? or trust the user and clear anyway?
+			//attr_max_.reset();      // what about exeptions? (on open failure?)
 
 			std::ifstream ifs(tfs);
 			ifs.seekg(0, std::ios::end);
@@ -117,11 +120,14 @@ namespace skeletons
 			ifs.clear();
 			ifs.seekg(0, std::ios::beg);
 
+            text_cont_.clear();     // clear only if file can be opened
+			attr_max_.reset();      
+            _m_saved(tfs);
+
 			std::string str;
 			std::size_t lines = 0;
-			while(ifs.good())
+			while( std::getline(ifs, str) )         // is this OK?   while(ifs.good()) 
 			{
-				std::getline(ifs, str);
 				text_cont_.push_back(nana::charset(str));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
@@ -162,16 +168,18 @@ namespace skeletons
 
 		void load(const char * tfs, nana::unicode encoding)
 		{
-			text_cont_.clear();
-			attr_max_.reset();
+			//text_cont_.clear();
+			//attr_max_.reset();
 
 			std::ifstream ifs(tfs);
 			std::string str;
 			bool big_endian = true;
 
-			if(ifs.good())
+			if(ifs.good() && std::getline(ifs, str))    // only if(std::getline(ifs, str))  ??
 			{
-				std::getline(ifs, str);
+                text_cont_.clear();     // clear only if file can be opened
+			    attr_max_.reset();      
+                _m_saved(tfs);
 
 				std::size_t len_of_BOM = 0;
 				switch(encoding)
@@ -204,10 +212,8 @@ namespace skeletons
 
 			std::size_t lines = 1;
 
-			while(ifs.good())
+            while (ifs.good() && std::getline(ifs, str))    // only while(std::getline(ifs, str))  ??
 			{
-				std::getline(ifs, str);
-
 				if(big_endian)
 				{
 					if(nana::unicode::utf16 == encoding)
@@ -226,7 +232,7 @@ namespace skeletons
 			}
 		}
 
-		void store(const char* tfs) const
+		void store(const char* tfs) 
 		{
 			std::ofstream ofs(tfs, std::ios::binary);
 			if(ofs && text_cont_.size())
@@ -242,10 +248,11 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back());
 				ofs.write(mbs.c_str(), mbs.size());
+                _m_saved(tfs);
 			}
 		}
 
-		void store(const char* tfs, nana::unicode encoding) const
+		void store(const char* tfs, nana::unicode encoding) /*const*/
 		{
 			std::ofstream ofs(tfs, std::ios::binary);
 			if(ofs && text_cont_.size())
@@ -277,6 +284,7 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
 				ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
+                _m_saved(tfs);
 			}
 		}
 
@@ -300,7 +308,7 @@ namespace skeletons
 			return std::make_pair(attr_max_.line, attr_max_.size);
 		}
 	public:
-		void cover(size_type pos, const char_type* text)
+		void cover(size_type pos, const char_type* text)            // replace ?
 		{
 			if(text_cont_.size() <= pos)
 			{
@@ -311,6 +319,7 @@ namespace skeletons
 				text_cont_[pos] = text;
 
 			_m_make_max(pos);
+            _m_edited();
 		}
 
 		void insert(size_type line, size_type pos, const char_type* str)
@@ -331,6 +340,7 @@ namespace skeletons
 			}
 
 			_m_make_max(line);
+            _m_edited();
 		}
 
 		void insert(size_type line, size_type pos, char_type ch)
@@ -351,6 +361,7 @@ namespace skeletons
 			}
 
 			_m_make_max(line);
+            _m_edited();
 		}
 
 		void insertln(size_type line, const string_type& str)
@@ -361,6 +372,7 @@ namespace skeletons
 				text_cont_.push_back(str);
 
 			_m_make_max(line);
+            _m_edited();
 		}
 
 		void erase(size_type line, size_type pos, size_type count)
@@ -375,6 +387,8 @@ namespace skeletons
 
 				if(attr_max_.line == line)
 					_m_scan_for_max();
+
+                _m_edited();
 			}
 		}
 
@@ -387,12 +401,14 @@ namespace skeletons
 				_m_scan_for_max();
 			else if(pos < attr_max_.line)
 				attr_max_.line--;
+            _m_edited();
 		}
 
 		void erase_all()
 		{
 			std::deque<string_type>().swap(text_cont_);
 			attr_max_.reset();
+            _m_saved("");
 		}
 
 		void merge(size_type pos)
@@ -406,7 +422,29 @@ namespace skeletons
 					--attr_max_.line;
 			}
 		}
-	private:
+
+        std::string filename() const
+        {
+            return filename_ ;
+        }
+
+        bool edited() const
+        {
+            return changed_;
+        }
+
+        bool saved() const
+        {
+            return ! not_saved() ;
+        }
+        bool not_saved() const
+        {
+            return edited() || filename_.empty () ;
+        }
+
+        std::function <void()> on_first_change;
+
+    private:
 		void _m_make_max(std::size_t pos)
 		{
 			const string_type& str = text_cont_[pos];
@@ -432,9 +470,38 @@ namespace skeletons
 			}
 		}
 
+        void _m_saved(std::string filename)   // normaly:  (const std::string& filename_)
+        {
+            if ( filename_ != filename )
+            {
+                filename_=std::move(filename);
+                changed_=false;
+                on_first_change();
+            } 
+            else if (changed_)
+            {
+                changed_=false;
+                on_first_change();
+            }
+            changed_=false;
+        }
+
+        void _m_edited()
+        {
+            if (! changed_)
+            {
+                changed_=true;
+                on_first_change();
+            }
+            changed_=true;
+        }
+
+
 	private:
-		std::deque<string_type>	text_cont_;
+		std::deque<string_type>	             text_cont_;
 		mutable std::shared_ptr<string_type> nullstr_;
+        std::string                          filename_;
+        bool                                 changed_;
 		struct attr_max
 		{
 			attr_max()

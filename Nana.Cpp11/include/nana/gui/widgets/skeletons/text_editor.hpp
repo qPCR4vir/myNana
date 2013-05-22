@@ -41,6 +41,29 @@ namespace nana{	namespace gui{	namespace widgets
 			void border_renderer(std::function<void(nana::paint::graphics&)>);
 
 			void load(const char*);
+			void store(const char* tfs) ;
+			void store(const char* tfs, nana::unicode encoding);
+
+            std::string filename() const
+            {
+                return textbase_.filename() ;
+            }
+
+            bool edited() const
+            {
+                return textbase_.edited();
+            }
+
+            bool saved() const
+            {
+                return textbase_.saved() ;
+            }
+
+            void on_first_change ( std::function <void()>  on_change)
+            {
+                textbase_.on_first_change=on_change;
+            }
+
 
 			//text_area
 			//@return: Returns true if the area of text is changed.
@@ -102,7 +125,7 @@ namespace nana{	namespace gui{	namespace widgets
 			bool mouse_down(bool left_button, int screen_x, int screen_y);
 			bool mouse_move(bool left_button, int screen_x, int screen_y);
 			bool mouse_up(bool left_button, int screen_x, int screen_y);
-			const skeletons::textbase<nana::char_t>& textbase() const;
+			const skeletons::textbase<nana::char_t>& textbase() ;
 		private:
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const eventinfo& ei);

@@ -230,6 +230,41 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			create(wd, r, visible);
 		}
 
+
+		std::string textbox::filename() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				return editor->filename();
+            else
+                return "";
+		}
+		bool textbox::edited() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				return editor->edited();
+            else
+                return false;
+		}
+		bool textbox::saved() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				return editor->saved();
+            else
+                return false;		}
+		void textbox::on_first_change ( std::function <void()>  on_change)
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->on_first_change (  on_change);
+		}
+
 		void textbox::load(const nana::char_t* file)
 		{
 			internal_scope_guard isg;
@@ -238,20 +273,20 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file) const
+		void textbox::store(const nana::char_t* file)  
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
-		void textbox::store(const nana::char_t* file, nana::unicode encoding) const
+		void textbox::store(const nana::char_t* file, nana::unicode encoding) 
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
+				editor->store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
 		}
 
 
