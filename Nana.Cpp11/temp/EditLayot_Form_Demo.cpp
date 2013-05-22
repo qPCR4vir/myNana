@@ -13,22 +13,29 @@ int main()
 	but4.caption (STR("But4"));
 	OpenSaveBox         osb  (form, STR("Project:") ), 
                         osb2 (form, STR("Project2:") );
-	osb.add_filter (STR("Text File"), STR("*.txt;*.doc"));
-	osb.add_filter (STR("All File"), STR("*.*"));
-	osb2.add_filter(STR("Text File"), STR("*.txt"));
-	osb2.add_filter(STR("Todos File"), STR("*.*"));
+	 osb.add_filter (STR("Text File" ), STR("*.txt;*.doc"));
+	 osb.add_filter (STR("All File"  ), STR("*.*"));
+	osb2.add_filter (STR("Text File" ), STR("*.txt"));
+	osb2.add_filter (STR("Todos File"), STR("*.*"));
 
 	nana::gui::place	place(form);
-	std::stringstream lay;
-	lay << "vertical\n\t<weight=25> gap=2\n\t" << osb.ly () << "\n\t<gap=2 <b1> <b2><b3>>\n\t<b4>\n\t"
-                                          << osb2.ly() ;
+	std::stringstream   lay;
+	lay << "vertical                          \n\t"
+                    "<weight=25>              \n\t" 
+                    "<Project >      \n\t" 
+                    "<gap=2 <b1> <b2> <b3> >  \n\t"
+                    "<b4>                     \n\t"
+                    "<Project2 >     \n\t" ;
+
 	place.div(lay.str().c_str ());     // try std::runtime_error msgbox
 
+	place.field("Project" )<<osb;
+	place.field("Project2")<<osb2;
 	place.field("b1")<<but1;
 	place.field("b2")<<but2;
 	place.field("b3")<<but3;
 	place.field("b4")<<but4;
-	place<<osb<<osb2;
+
 	place.collocate ();
 
 
