@@ -44,6 +44,27 @@ namespace nana{	namespace gui{	namespace widgets
 			void store(const char* tfs) ;
 			void store(const char* tfs, nana::unicode encoding);
 
+            std::string filename() const
+            {
+                return textbase_.filename() ;
+            }
+
+            bool edited() const
+            {
+                return textbase_.edited();
+            }
+
+            bool saved() const
+            {
+                return textbase_.saved() ;
+            }
+
+            void on_first_change ( std::function <void()>  on_change)
+            {
+                textbase_.on_first_change=on_change;
+            }
+
+
 			//text_area
 			//@return: Returns true if the area of text is changed.
 			bool text_area(const nana::rectangle&);

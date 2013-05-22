@@ -13,7 +13,7 @@ class EditLayot_Form : public nana::gui::form
 						const nana::string   &DefLayotFileName=STR(""),
 						nana::gui::form      *fm=nullptr  );
  private:
-	nana::string		_Titel, _Loaded/*, _DefLayFile*/;
+	nana::string		_Titel;//, _Loaded/*, _DefLayFile*/;
 	nana::gui::place	_place, &_OriPlace;
 	OpenSaveBox			_OSbx;
 	nana::gui::button	_ReCollocate;
@@ -22,6 +22,7 @@ class EditLayot_Form : public nana::gui::form
 	nana::gui::menu	    &_menuFile,&_menuProgram/*,&_menuLayot*/;
 	std::unique_ptr <EditLayot_Form> _myEdLayForm;
 
+    void on_edited();
 	void InitCaptions();
     void MakeResponsive();
 	void InitMyLayot();

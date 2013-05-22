@@ -435,7 +435,11 @@ namespace skeletons
 
         bool saved() const
         {
-            return !edited() && !filename_.empty () ;
+            return ! not_saved() ;
+        }
+        bool not_saved() const
+        {
+            return edited() || filename_.empty () ;
         }
 
         std::function <void()> on_first_change;
@@ -479,8 +483,7 @@ namespace skeletons
                 changed_=false;
                 on_first_change();
             }
-            else
-                changed_=false;
+            changed_=false;
         }
 
         void _m_edited()
@@ -490,8 +493,7 @@ namespace skeletons
                 changed_=true;
                 on_first_change();
             }
-            else
-                changed_=true;
+            changed_=true;
         }
 
 

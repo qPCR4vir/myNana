@@ -68,7 +68,11 @@ namespace nana{ namespace gui{
 		void load(const nana::char_t* file);
 		void store(const nana::char_t* file)  ;
 		void store(const nana::char_t* file, nana::unicode encoding) ;
-
+        
+        std::string filename() const;
+        bool edited() const;
+        bool saved() const;
+        void on_first_change ( std::function <void()>  on_change);
 
 		bool getline(std::size_t n, nana::string&) const;
 		textbox& append(const nana::string&, bool at_caret);
