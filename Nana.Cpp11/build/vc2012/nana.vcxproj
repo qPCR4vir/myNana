@@ -599,9 +599,6 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\source\any.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />
