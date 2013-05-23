@@ -61,9 +61,9 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 
 
 
-	Open.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::open	);
+    Open.make_event	<nana::gui::events::click> ([&](){open();}	);
 	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);
-	Save.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::save	);
+	Save.make_event	<nana::gui::events::click> ([&](){save();});
 
 	//_fileName.ext_event().selected = [&](nana::gui::combox&cb)
 	//{
@@ -98,9 +98,10 @@ void OpenSaveBox::open()
     std::wcout<<std::endl<<STR("open Canceled: ")<<std::endl;
     _canceled= true;
 }
-void OpenSaveBox::save()
+void OpenSaveBox::save(const nana::string &file_tip)
 {
-	std::wcout<<std::endl<<STR("save: ")<<std::endl;
+	std::wcout<<std::endl<<STR("save (with tip: ") << file_tip<<STR(")")<<std::endl;
+    fb_s.file(file_tip); 
 	if(fb_s())  
 	{	_user_selected=false;
         _fileName.push_back(fb_s.file()).option(_fileName.the_number_of_options());

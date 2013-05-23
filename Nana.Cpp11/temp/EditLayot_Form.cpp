@@ -52,7 +52,7 @@ void EditLayot_Form::MakeResponsive()
 	{
         _textBox.on_first_change([&](){on_edited();});
 		_menuFile.append  (STR("&Open..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.open();OpenFile();});
-		_menuFile.append  (STR("&Save..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.save();SaveFile();});
+		_menuFile.append  (STR("&Save..."),[&](nana::gui::menu::item_proxy& ip){_OSbx.save(_OSbx.FileName());SaveFile();});
 		_menuProgram.append (STR("&Apply Layot to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayot();});
 		_menuProgram.append (STR("&Edit this windows Layot"       ),[&](nana::gui::menu::item_proxy& ip){EditMyLayot();});
 
@@ -125,8 +125,7 @@ void EditLayot_Form::OpenFileN(const nana::string   &file)
 void EditLayot_Form::SaveFileN(const nana::string   &fileTip)
 	{	
         std::wcout<<std::endl<<STR("Seaving tip: ")<<fileTip<<std::endl;
-        _OSbx.fb_s.init_path(fileTip);
-        _OSbx.save();
+        _OSbx.save(fileTip);
        if(_OSbx.Canceled () ) 
            return;
        SaveFile();

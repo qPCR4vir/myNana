@@ -837,18 +837,22 @@ namespace nana{	namespace gui
 		{
 			return impl_->file;
 		}
+		void filebox::file(nana::string init_file) 
+		{
+			impl_->file=std::move(init_file);
+		}
 
 		bool filebox::show() const
 		{
 #if defined(NANA_WINDOWS)
-			nana::char_t buffer[520];
+            if (impl_->file.size() < 520 )
+                impl_->file.resize(520) ;
 			OPENFILENAME ofn;               //http://msdn.microsoft.com/en-us/library/windows/desktop/ms646839(v=vs.85).aspx
 			memset(&ofn, 0, sizeof ofn);
 			ofn.lStructSize = sizeof(ofn);
 			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
-			ofn.lpstrFile = buffer;
-			ofn.lpstrFile[0] = '\0';
-			ofn.nMaxFile = sizeof(buffer) / sizeof(*buffer) - 1;
+			ofn.lpstrFile = & impl_->file[0];
+			ofn.nMaxFile = impl_->file.size () ;
 
 			//Filter
 			nana::string filter;
@@ -872,7 +876,7 @@ namespace nana{	namespace gui
 				}
 			}
 			else
-				filter = STR("ALl Files\0*.*\0");
+				filter = STR("All Files\0*.*\0");  //  "All Files\0*.*\0\0".  ??
 
 			ofn.lpstrFilter = filter.c_str();
 			ofn.lpstrTitle = (impl_->title.size() ? impl_->title.c_str() : nullptr);
@@ -882,7 +886,7 @@ namespace nana{	namespace gui
 			ofn.lpstrInitialDir = (impl_->path.size() ? impl_->path.c_str() : 0);
 			if(FALSE != (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
 			{                                  //http://msdn.microsoft.com/en-us/library/windows/desktop/ms646927(v=vs.85).aspx
-				impl_->file = buffer;
+				impl_->file.resize( nana::strlen ( impl_->file.data() )) ; //= buffer;
 				return true;
 			}
 #elif defined(NANA_LINUX)

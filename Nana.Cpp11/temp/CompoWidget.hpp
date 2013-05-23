@@ -59,7 +59,7 @@ class OpenSaveBox : public  nana::gui::panel<false>
 	nana::string FileName()const						{  return _fileName.caption();}
 	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
 	void		open();
-	void		save();
+	void		save(const nana::string &file_tip=STR("") );
 	void		pick();
     bool        UserSelected() const {return _user_selected ;}
     bool        Canceled()     const {return _canceled;}
