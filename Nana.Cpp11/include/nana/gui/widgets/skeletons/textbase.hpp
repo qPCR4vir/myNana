@@ -178,7 +178,7 @@ namespace skeletons
 
 			if(ifs.good() )    // only if(std::getline(ifs, str))  ??
 			{
-                std::getline(ifs, str)
+                std::getline(ifs, str);
                 text_cont_.clear();     // clear only if file can be opened
 			    attr_max_.reset();      
                 _m_saved(tfs);
@@ -216,7 +216,7 @@ namespace skeletons
 
             while (ifs.good()  )   
 			{
-				std::getline(ifs, str)
+				std::getline(ifs, str);
                     
                 if(big_endian)
 				{
