@@ -15,12 +15,12 @@
 //  public:
 //	CompoWidgetP (	const nana::string &caption_, 
 //					const std::string& fieldName="", 
-//					const std::string& layot="",
+//					const std::string& Layout="",
 //					const nana::string& fileName=STR(""));
 //
 //	void caption(const nana::string &caption_)	{ _caption=caption_;}
 //	const nana::string &caption() const			{return _caption;   }
-//	const char *ly(const std::string& layot )	{return (_lay=layot).c_str ();}
+//	const char *ly(const std::string& Layout )	{return (_lay=Layout).c_str ();}
 //	const char *ly()const						{return _lay.c_str ();}
 //	const char *fn()const						{return _fieldname.c_str();}
 //	virtual ~CompoWidgetP ()						{}

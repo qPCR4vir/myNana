@@ -5,10 +5,10 @@
 //
 //CompoWidgetP::CompoWidgetP (	const nana::string &caption_, 
 //							const std::string& fieldName, 
-//							const std::string& layot,
+//							const std::string& Layout,
 //							const nana::string& fileName)
 //				: _caption	(caption_ ), 
-//				  _lay		(layot),
+//				  _lay		(Layout),
 //				  _fieldname (fieldName!=""? fieldName : std::string(nana::charset(caption_)))
 //{
 //	size_t len=0;
