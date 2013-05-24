@@ -2,52 +2,56 @@
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
+class DemoForm : public nana::gui::form, public EditableForm 
+{ public:
+    DemoForm ():nana::gui::form (nana::rectangle( nana::point(500,410), nana::size(400,150) )),
+                EditableForm(*this, STR("Configurable Window")),
+                but1 (*this), but2(*this), but3(*this), but4(*this),
+                osb  (*this, STR("Project:") ), 
+                osb2 (*this, STR("Project2:"))
+    {
+        but1.caption (STR("But1"));
+	    but2.caption (STR("But2"));
+	    but3.caption (STR("But3"));
+	    but4.caption (STR("But4"));
+
+         osb.add_filter (STR("Text File" ), STR("*.txt;*.doc"));
+	     osb.add_filter (STR("All File"  ), STR("*.*"));
+	    osb2.add_filter (STR("Text File" ), STR("*.txt"));
+	    osb2.add_filter (STR("Todos File"), STR("*.*"));
+
+        InitMyLayout();
+        InitMenu    ();
+    }
+    void InitMyLayout() override 
+    {
+        std::stringstream   lay(_myLayout);
+	    lay << "vertical                        \n\t"
+                    "<weight=25>                \n\t" 
+                    "<Project >                 \n\t" 
+                    "<gap=2 <b1> <b2> <b3> >    \n\t"
+                    "<b4>                       \n\t"
+                    "<Project2 >                \n\t" ;
+        _myLayout=lay.str();
+	    _place.div(_myLayout.c_str ());     // try std::runtime_error msgbox
+
+	    _place.field("Project" )<<osb;
+	    _place.field("Project2")<<osb2;
+	    _place.field("b1")<<but1;
+	    _place.field("b2")<<but2;
+	    _place.field("b3")<<but3;
+	    _place.field("b4")<<but4;
+
+	    _place.collocate ();
+    }
+	nana::gui::button	but1 , but2, but3, but4;
+    OpenSaveBox         osb  , osb2 ;
+ };
 
 int main()
 {
-	nana::gui::form  form(nana::rectangle( nana::point(500,410), nana::size(400,150) ));
-	                 form.caption (STR("Configurable Window"));
-	nana::gui::menubar	menub(form);
-	nana::gui::button	but1 (form), but2(form), but3(form), but4(form);
-	but1.caption (STR("But1"));
-	but2.caption (STR("But2"));
-	but3.caption (STR("But3"));
-	but4.caption (STR("But4"));
-	OpenSaveBox         osb  (form, STR("Project:") ), 
-                        osb2 (form, STR("Project2:") );
-	 osb.add_filter (STR("Text File" ), STR("*.txt;*.doc"));
-	 osb.add_filter (STR("All File"  ), STR("*.*"));
-	osb2.add_filter (STR("Text File" ), STR("*.txt"));
-	osb2.add_filter (STR("Todos File"), STR("*.*"));
+	DemoForm form;
 
-	nana::gui::place	place(form);
-	std::stringstream   lay;
-	lay << "vertical                          \n\t"
-                    "<weight=25>              \n\t" 
-                    "<Project >      \n\t" 
-                    "<gap=2 <b1> <b2> <b3> >  \n\t"
-                    "<b4>                     \n\t"
-                    "<Project2 >     \n\t" ;
-
-	place.div(lay.str().c_str ());     // try std::runtime_error msgbox
-
-	place.field("Project" )<<osb;
-	place.field("Project2")<<osb2;
-	place.field("b1")<<but1;
-	place.field("b2")<<but2;
-	place.field("b3")<<but3;
-	place.field("b4")<<but4;
-
-	place.collocate ();
-
-
-	std::unique_ptr <EditLayot_Form> LayForm;
-	menub.push_back(STR("&Programm")).append(STR("&Edit this windows Layot"),[&](nana::gui::menu::item_proxy& ip)
-	{
-		if (!LayForm) 
-			LayForm.reset (new EditLayot_Form (place,lay.str(), STR("") , &form ));
-		LayForm->show ();
-	});
 	form.show();
     try {
 	        nana::gui::exec();
@@ -61,8 +65,6 @@ int main()
             std::cout<< std::endl<< "exeption !!";
             throw ;
         }
-
-
 	return 0;
 }
 
