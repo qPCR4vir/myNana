@@ -793,7 +793,7 @@ namespace nana{	namespace gui
 		{
 			impl_->owner = owner;
 			impl_->open_or_save = open;
-			impl_->file[0] = 0;
+			impl_->file[0] = 0;  // Why?
 #if defined(NANA_WINDOWS)
 			nana::char_t buf[260];
 			DWORD len = ::GetCurrentDirectory(260, buf); //http://msdn.microsoft.com/en-us/library/windows/desktop/aa364934(v=vs.85).aspx
@@ -837,9 +837,9 @@ namespace nana{	namespace gui
 		{
 			return impl_->file;
 		}
-		void filebox::file(nana::string init_file) 
+		void filebox::file(const nana::string& init_file) 
 		{
-			impl_->file=std::move(init_file);
+			impl_->file=init_file;
 		}
 
 		bool filebox::show() const
@@ -885,7 +885,7 @@ namespace nana{	namespace gui
 			ofn.nMaxFileTitle = 0;
 			ofn.lpstrInitialDir = (impl_->path.size() ? impl_->path.c_str() : 0);
 			if(FALSE != (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
-			{                                  //http://msdn.microsoft.com/en-us/library/windows/desktop/ms646927(v=vs.85).aspx
+			{                                                                                     //http://msdn.microsoft.com/en-us/library/windows/desktop/ms646927(v=vs.85).aspx
 				impl_->file.resize( nana::strlen ( impl_->file.data() )) ; //= buffer;
 				return true;
 			}
