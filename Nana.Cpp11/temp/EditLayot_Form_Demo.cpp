@@ -4,11 +4,14 @@
 
 class DemoForm : public nana::gui::form, public EditableForm 
 { public:
+	nana::gui::button	but1 , but2, but3, but4;
+    OpenSaveBox         osb  , osb2 ;
+
     DemoForm ():nana::gui::form (nana::rectangle( nana::point(500,410), nana::size(400,150) )),
-                EditableForm(*this, STR("Configurable Window")),
-                but1 (*this), but2(*this), but3(*this), but4(*this),
-                osb  (*this, STR("Project:") ), 
-                osb2 (*this, STR("Project2:"))
+                EditableForm    (*this, STR("Configurable Window")),
+                but1         (*this), but2(*this), but3(*this), but4(*this),
+                osb          (*this, STR("Project:") ), 
+                osb2         (*this, STR("Project2:"))
     {
         but1.caption (STR("But1"));
 	    but2.caption (STR("But2"));
@@ -23,15 +26,16 @@ class DemoForm : public nana::gui::form, public EditableForm
         InitMyLayout();
         InitMenu    ();
     }
+
     void InitMyLayout() override 
     {
         std::stringstream   lay(_myLayout);
 	    lay << "vertical                        \n\t"
                     "<weight=25>                \n\t" 
-                    "<Project >                 \n\t" 
+                    "<Project weight=22>        \n\t" 
                     "<gap=2 <b1> <b2> <b3> >    \n\t"
-                    "<b4>                       \n\t"
-                    "<Project2 >                \n\t" ;
+                    "<<b4> <weight=2>>          \n\t"
+                    "<Project2 weight=22>       \n\t" ;
         _myLayout=lay.str();
 	    _place.div(_myLayout.c_str ());     // try std::runtime_error msgbox
 
@@ -44,8 +48,6 @@ class DemoForm : public nana::gui::form, public EditableForm
 
 	    _place.collocate ();
     }
-	nana::gui::button	but1 , but2, but3, but4;
-    OpenSaveBox         osb  , osb2 ;
  };
 
 int main()

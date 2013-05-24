@@ -12,7 +12,9 @@ class EditableForm
                _menu	(fm), 
                _Titel(std::move(Titel)),
                _DefLayoutFileName(DefLayoutFileName)
-     {fm.caption(_Titel);};
+     {
+         fm.caption(_Titel);
+    };
 
 	nana::string		_Titel;    //nana::gui::form    *_my_fm;
     std::string         _myLayout;
@@ -32,6 +34,17 @@ class EditableForm
     }
  	void         EditMyLayout   ();
     static const char* readLayout(const nana::string& FileName, std::string& Layout);
+    void ReCollocate( std::string  Layout)
+    {
+        _myLayout.swap(Layout);
+        ReCollocate( );
+   }
+    void ReCollocate( )
+    {
+        _place.div(_myLayout.c_str ());     
+	    _place.collocate ();
+    }
+
 };
 
 class EditLayout_Form : public nana::gui::form, public EditableForm

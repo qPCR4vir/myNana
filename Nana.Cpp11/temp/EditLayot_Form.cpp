@@ -8,13 +8,9 @@ void EditableForm::EditMyLayout()
 				_myEdLayForm.reset (new EditLayout_Form ( this ));
 			_myEdLayForm->show ();
 		}
-//_place, _myLayout.c_str (),   STR("Layout_Form.lay.txt") ,
-//nana::gui::place     &pl, 
-//										const std::string    &lay, 
-//										const nana::string   &DefLayoutFileName,
-//										
-	EditLayout_Form::EditLayout_Form  (	EditableForm     *fm )
-		:nana::gui::form ( nana::rectangle( nana::point(500,200), nana::size(400,170) )),
+
+EditLayout_Form::EditLayout_Form  (	EditableForm     *fm )
+		:nana::gui::form ( nana::rectangle( nana::point(300,100), nana::size(500,300) )),
          EditableForm (*this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
                     _fm             (fm),
 				    _OSbx			(*this, STR("Layout:")),      
@@ -104,8 +100,7 @@ void EditLayout_Form::ReLayout()
 	{   nana::string lay,line;
 		for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
 			lay+=line;
-        _fm->_place.div( std::string(nana::charset (lay)).c_str() );  // try std::runtime_error msgbox
-		_fm->_place.collocate ();
+        _fm->ReCollocate( std::string(nana::charset (lay)).c_str() );  // try std::runtime_error msgbox
 	}
 void EditLayout_Form::OpenFile()
 	{	 
@@ -120,7 +115,11 @@ void EditLayout_Form::OpenFileN(const nana::string   &file)
             return;
         std::wcout<<std::endl<<STR("OpenFileN: ")<<file<<std::endl;
         if ( _textBox.edited () )
-           SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
+        {
+           _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
+            SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
+           _OSbx.fb_s.title(STR("")); 
+        }
 		_textBox.load(file.c_str() );
         _textBox.select(true);
         _textBox.show();
