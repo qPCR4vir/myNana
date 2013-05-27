@@ -50,9 +50,6 @@ namespace skeletons
 
 		void load(const char* tfs)
 		{
-			//text_cont_.clear();     // clear only if the new file can be opened ??? or trust the user and clear anyway?
-			//attr_max_.reset();      // what about exeptions? (on open failure?)
-
 			std::ifstream ifs(tfs);
 			ifs.seekg(0, std::ios::end);
 			std::size_t bytes = static_cast<std::size_t>(ifs.tellg());

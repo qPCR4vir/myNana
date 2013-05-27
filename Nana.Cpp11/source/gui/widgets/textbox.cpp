@@ -290,10 +290,10 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		}
 
 
-		bool textbox::getline(std::size_t n, nana::string& text) const
+		bool textbox::getline(std::size_t line_index, nana::string& text) const
 		{
 			auto editor = get_drawer_trigger().editor();
-			return (editor ? editor->getline(n, text) : false);
+			return (editor ? editor->getline(line_index, text) : false);
 		}
 
 		textbox& textbox::append(const nana::string& text, bool at_caret)
@@ -305,6 +305,17 @@ namespace nana{ namespace gui{ namespace drawerbase {
 					editor->move_caret_end();
 
 				editor->put(text);
+				API::update_window(this->handle());
+			}
+			return *this;
+		}
+
+        textbox& textbox::reset(const nana::string& newtext )
+		{
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+			{
+				editor->text(newtext);
 				API::update_window(this->handle());
 			}
 			return *this;
