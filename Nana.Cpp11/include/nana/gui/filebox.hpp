@@ -17,7 +17,7 @@ namespace nana{	namespace gui
 		void add_filter(const nana::string& description, const nana::string& filetype);
 
 		nana::string file() const;
-		void file(nana::string init_file) ;
+		void file(const nana::string& init_file) ;
 
  		bool show() const;
 		

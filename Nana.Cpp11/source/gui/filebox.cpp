@@ -793,19 +793,15 @@ namespace nana{	namespace gui
 		{
 			impl_->owner = owner;
 			impl_->open_or_save = open;
-			impl_->file[0] = 0;  // Why?
 #if defined(NANA_WINDOWS)
-			nana::char_t buf[260];
-			DWORD len = ::GetCurrentDirectory(260, buf); //http://msdn.microsoft.com/en-us/library/windows/desktop/aa364934(v=vs.85).aspx
-			if(len >= 260)
+			impl_->path.resize (260);
+			DWORD len = ::GetCurrentDirectory(impl_->path.size() , &impl_->path[0]); //http://msdn.microsoft.com/en-us/library/windows/desktop/aa364934(v=vs.85).aspx
+			if(len >= impl_->path.size() )
 			{
-				nana::char_t * p = new nana::char_t[len + 1];
-				::GetCurrentDirectory(len + 1, p);
-				impl_->path = p;
-				delete [] p;
+				impl_->path.resize (len + 1);
+				::GetCurrentDirectory(impl_->path.size() , &impl_->path[0]);
 			}
-			else
-				impl_->path = buf;
+			impl_->path.resize( len) ; 
 #endif
 		}
 
