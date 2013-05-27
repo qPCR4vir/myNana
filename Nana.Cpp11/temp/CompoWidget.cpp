@@ -2,30 +2,6 @@
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
-//
-//CompoWidgetP::CompoWidgetP (	const nana::string &caption_, 
-//							const std::string& fieldName, 
-//							const std::string& Layout,
-//							const nana::string& fileName)
-//				: _caption	(caption_ ), 
-//				  _lay		(Layout),
-//				  _fieldname (fieldName!=""? fieldName : std::string(nana::charset(caption_)))
-//{
-//	size_t len=0;
-//	for(char c: _fieldname) 
-//		if (c=='_' || iswalnum(c))
-//			_fieldname[len++]=c;
-//	_fieldname.resize(len); 
-//}
-//nana::gui::place::field_reference operator<<(nana::gui::place::field_reference f, CompoWidgetP& cw)
-//{
-//	return cw.put(f); 
-//}
-//nana::gui::place& operator<<(nana::gui::place&pl, CompoWidgetP& cw)
-//{
-//	return cw.put(pl); 
-//}	
-
 OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm, 
 								const nana::string   &label,
 								const nana::string   &DefFileName )
@@ -59,20 +35,9 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 	_place.field("pick"        ) << Pick;
 	_place.collocate ();
 
-
-
     Open.make_event	<nana::gui::events::click> ([&](){open();}	);
 	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);
 	Save.make_event	<nana::gui::events::click> ([&](){save();});
-
-	//_fileName.ext_event().selected = [&](nana::gui::combox&cb)
-	//{
-	//	SaveFile();  // save only is edited, changed ??? but how to know??	;
-	//	_save =false;
-	//	if(_cbProject.the_number_of_options()>0)
-	//		_textBox.load(_cbProject.text(_cbProject.option()).c_str() );
-	//	_save=true;
-	//};
 
 	_fileName.editable(true);
 	if(DefFileName!=STR(""))
