@@ -1,4 +1,6 @@
-#include <../temp/EditLayot_Form.hpp>
+#include <../temp/EditableForm.hpp>
+#include <../temp/CompoWidget.hpp>
+
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
@@ -26,28 +28,25 @@ class DemoForm : public nana::gui::form, public EditableForm
         InitMyLayout();
         InitMenu    ();
     }
-
-    void InitMyLayout() override 
+    void SetDefLayout   () override
     {
-        std::stringstream   lay(_myLayout);
-	    lay << "vertical                        \n\t"
+        _DefLayout= "vertical                   \n\t"
                     "<weight=25>                \n\t" 
                     "<Project weight=22>        \n\t" 
                     "<gap=2 <b1> <b2> <b3> >    \n\t"
                     "<<b4> <weight=2>>          \n\t"
                     "<Project2 weight=22>       \n\t" ;
-        _myLayout=lay.str();
-	    _place.div(_myLayout.c_str ());     // try std::runtime_error msgbox
-
+    }
+    void AsignWidgetToFields() override
+    {
 	    _place.field("Project" )<<osb;
 	    _place.field("Project2")<<osb2;
 	    _place.field("b1")<<but1;
 	    _place.field("b2")<<but2;
 	    _place.field("b3")<<but3;
 	    _place.field("b4")<<but4;
-
-	    _place.collocate ();
     }
+
  };
 
 int main()

@@ -1,6 +1,13 @@
-#include <../temp/EditLayot_Form.hpp>
+#include <../temp/EditableForm.hpp>
+#include <../temp/CompoWidget.hpp>
+
+#include <nana/gui/widgets/textbox.hpp>
+
 #include <iostream> 
 #include <fstream> 
+
+bool EditableWidget::_globalBlockInteratctiveEdition=false;
+bool EditableWidget::_globalBlockConfig             =false;
 
 void EditableForm::EditMyLayout()
 		{
@@ -8,6 +15,8 @@ void EditableForm::EditMyLayout()
 				_myEdLayForm.reset (new EditLayout_Form ( this ));
 			_myEdLayForm->show ();
 		}
+EditableForm::~EditableForm(){}
+
 
 EditLayout_Form::EditLayout_Form  (	EditableForm     *fm )
 		:nana::gui::form ( nana::rectangle( nana::point(300,100), nana::size(500,300) )),
@@ -16,7 +25,7 @@ EditLayout_Form::EditLayout_Form  (	EditableForm     *fm )
 				    _OSbx			(*this, STR("Layout:")),      
 					_ReCollocate	(*this),
 					_textBox		(*this),
-					_menuFile		(_menu.push_back(STR("&File")))
+					_menuFile		(_menuBar.push_back(STR("&File")))
 	{	
 		if (fm) _Titel +=fm->_Titel ; //caption(); 
 		InitCaptions();
@@ -50,16 +59,42 @@ void EditLayout_Form::InitCaptions()
 void EditLayout_Form::MakeResponsive()
 	{
         _textBox.on_first_change([&](){on_edited();});
+        _textBox.make_event <nana::gui::events::click> ([&](const nana::gui::eventinfo& ei)
+        {
+           if (ei.mouse.right_button)
+           {
+               std::wcout<<std::endl<<STR("Rigth Click: x,y=")<<ei.mouse.x<<STR(",")<<ei.mouse.y  <<std::endl;
+               _menuProgram->popup (_textBox.handle(),ei.mouse.x,ei.mouse.y,false);
+
+           }
+           if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
+
+
+        }); 
 		_menuFile.append  (STR("&Open..."   ),[&](nana::gui::menu::item_proxy& ip){ _OSbx.open();OpenFile()  ;}                );
         _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip){  ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;}   );
 		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip){ _OSbx.save(_OSbx.FileName());SaveFile() ;} );
          InitMenu    ();
+        _menuProgram->append_splitter();
 		_menuProgram->append (STR("&Apply Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayout();});
-
+		_menuProgram->append (STR("&Restet Default Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip)
+        {
+            if ( _textBox.edited () )
+            {
+               _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
+                SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
+               _OSbx.fb_s.title(STR("")); 
+            }
+            _fm->ResetDefLayout(); 
+            _fm->ReCollocate( );
+            _textBox.reset(nana::string(nana::charset(_fm->_myLayout)) );
+            _textBox.select(true);
+            _textBox.show();
+        });
 		_OSbx.Open.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
 		_OSbx.Save.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::SaveFile		);
 		_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
-		_ReCollocate.make_event	<nana::gui::events::click> ([&](){ReLayout();});
+        _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout();}); 
 		_OSbx._fileName.ext_event().selected = [&](nana::gui::combox&cb)
 		{
 		    if(! _OSbx.UserSelected()) return;
@@ -76,26 +111,22 @@ void EditLayout_Form::on_edited()
                 newTitel += (_textBox.saved()? STR(">"): STR(" * >")  );
     caption	( newTitel);
 }
+void EditLayout_Form::SetDefLayout   ()
+{
+    _DefLayout= "vertical                                            \n\t"
+                            "<weight=25>                             \n\t"
+                            "<weight=25  OpenSave>                   \n\t"
+                            "<textBox>                               \n\t"
+                            "<weight=25 <weight=5> <re weight=50 gap=1>>\n\t"
+                            "<weight=5>                              \n\t";
 
-void EditLayout_Form::InitMyLayout()
-	{   
-        std::string Layout;
-        readLayout( _DefLayoutFileName, Layout ="");
-        if (Layout.empty() )
-            _myLayout= "vertical                                            \n\t"
-                                   "<weight=25>                             \n\t"
-                                   "<weight=25  OpenSave>                   \n\t"
-                                   "<textBox>                               \n\t"
-                                   "<weight=25 <weight=5> <re weight=50 gap=1>>\n\t"
-                                   "<weight=5>                              \n\t";
-        else _myLayout=Layout;
-
-        _place.div( _myLayout.c_str () );
-		_place.field("OpenSave"	   )<< _OSbx;
-		_place.field("textBox"	   )<< _textBox;
-		_place.field("re"		   )<< _ReCollocate ;
-		_place.collocate ();
-	}
+}
+void EditLayout_Form::AsignWidgetToFields() 
+{
+	_place.field("OpenSave"	   )<< _OSbx;
+	_place.field("textBox"	   )<< _textBox;
+	_place.field("re"		   )<< _ReCollocate ;
+}
 void EditLayout_Form::ReLayout()
 	{   nana::string lay,line;
 		for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
