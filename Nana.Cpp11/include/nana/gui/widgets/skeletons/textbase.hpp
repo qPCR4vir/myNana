@@ -438,6 +438,11 @@ namespace skeletons
         {
             return ! not_saved() ;
         }
+        void set_unchanged()
+        {
+            changed_ =false;
+        }
+
         bool not_saved() const
         {
             return edited() || filename_.empty () ;
@@ -471,11 +476,11 @@ namespace skeletons
 			}
 		}
 
-        void _m_saved(std::string filename)   // normaly:  (const std::string& filename_)
+        void _m_saved(const std::string& filename) 
         {
             if ( filename_ != filename )
             {
-                filename_=std::move(filename);
+                filename_= filename;
                 changed_=false;
                 on_first_change();
             } 

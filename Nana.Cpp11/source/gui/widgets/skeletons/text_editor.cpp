@@ -45,6 +45,11 @@ namespace nana{	namespace gui{	namespace widgets
         {
 			textbase_.store(tfs);
         }
+        void text_editor::set_unchanged()
+        {
+			textbase_.set_unchanged();
+        }
+
         void text_editor::store(const char* tfs, nana::unicode encoding)
         {
 			textbase_.store(tfs,encoding);

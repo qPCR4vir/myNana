@@ -20,8 +20,9 @@ class DemoForm : public nana::gui::form, public EditableForm
                 but1         (*this), but2(*this), but3(*this), but4(*this),
                 osb          (*this, STR("Project:") ), 
                 osb2         (*this, STR("Project2:")),
-                num1         (*this, STR("Numer1:")),
-                num2         (*this, STR("Numer2:")),  _num(*this), _up(*this), _down(*this), _label(*this)
+                num1         (*this, STR("G:") , -5, -30, 30),
+                num2         (*this, STR("Tm:"), 60,  30, 90),  
+                _num(*this), _up(*this), _down(*this), _label(*this)
     {
         but1.caption (STR("But1"));
 	    but2.caption (STR("But2"));

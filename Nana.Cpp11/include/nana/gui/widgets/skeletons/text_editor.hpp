@@ -64,6 +64,7 @@ namespace nana{	namespace gui{	namespace widgets
                 textbase_.on_first_change=on_change;
             }
 
+            void set_unchanged();
 
 			//text_area
 			//@return: Returns true if the area of text is changed.

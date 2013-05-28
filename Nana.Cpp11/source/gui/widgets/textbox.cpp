@@ -316,9 +316,11 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			if(editor)
 			{
 				editor->text(newtext);
+                //editor->set_unchanged(); 
 				API::update_window(this->handle());
 			}
 			return *this;
+
 		}
 
 		textbox& textbox::border(bool has_border)
