@@ -6,10 +6,20 @@
 #include <nana/gui/place.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 
-#include <../temp/CompoWidget.hpp>
+//#include <../temp/CompoWidget.hpp>
+//#include <nana/gui/wvl.hpp>
+#include <nana/gui/widgets/panel.hpp>
+#include <nana/gui/widgets/button.hpp>
+#include <nana/gui/widgets/combox.hpp>
+#include <nana/gui/widgets/label.hpp>
+//#include <nana/gui/place.hpp>
+#include <nana/gui/filebox.hpp>       
+
 
 #include <iostream> 
 #include <fstream> 
+#include <cassert>
+
 
 class EditLayout_Form;
 
@@ -27,11 +37,11 @@ public:
     {
         return _globalBlockConfig=block;
     }
-    bool  BlockInteratctiveEdition()
+    bool  BlockInteratctiveEdition() const
     {
         return _BlockInteratctiveEdition;
     }
-    bool  BlockConfig()
+    bool  BlockConfig() const 
     {
         return _BlockConfig;
     }
@@ -43,110 +53,25 @@ public:
     {
         return _BlockConfig=block;
     }
- //   EditableWidget (nana::gui::widget& ThisWidget,nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
- //           :  _place	       (ThisWidget),   
- //              _Titel(std::move(Titel)),        //   ???
- //              _DefLayoutFileName(DefLayoutFileName)
- //    {
- //         ThisWidget.caption(_Titel);       //   ???
- //       _menuBar.make_event <nana::gui::events::click> ([&](const nana::gui::eventinfo& ei)
- //       {
- //          if (ei.mouse.right_button)
- //          {
- //              std::wcout<<std::endl<<STR("Rigth Click: x,y=")<<ei.mouse.x<<STR(",")<<ei.mouse.y  <<std::endl;
- //              _menuProgram->popup (ThisWidget.handle(),ei.mouse.x,ei.mouse.y,false);
-
- //          }
- //          if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
- //       }); 
- //   };
-	//nana::string		_Titel;    //nana::gui::form    *_my_fm;
- //   std::string         _myLayout, _DefLayout;
- //   nana::string        _DefLayoutFileName;	
- //   nana::gui::place	_place;
-	//nana::gui::menubar	_menuBar;
-	//nana::gui::menu	    *_menuProgram;
-	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
-
- //   virtual ~EditableWidow();
- //   virtual void SetDefLayout   ()=0;
- //   virtual void AsignWidgetToFields()=0;
-	//virtual void InitMyLayout   ()
-	//{   
- //       SetDefLayout   ();
- //       readLayout( _DefLayoutFileName, _myLayout ="");
- //       if (_myLayout.empty() )
- //           _myLayout= _DefLayout;
-
- //       _place.div( _myLayout.c_str () );
- //       AsignWidgetToFields();
-	//	_place.collocate ();
-	//}
- //   virtual void AddMenuProgram (){_menuProgram=&_menuBar.push_back(STR("&Programm"));}
- //   virtual void InitMenu       ()
- //   {
- //      AddMenuProgram();
- //      _menuProgram->append(STR("&Edit this windows Layout"),[&](nana::gui::menu::item_proxy& ip)
-	//                                                            {EditMyLayout(); }                  );
- //      _menuProgram->append(STR("&Reset this windows default Layout"),[&](nana::gui::menu::item_proxy& ip)
-	//                                                            {ResetDefLayout(); ReCollocate( );} );
-
- //      
- //   }
- //   void ResetDefLayout()
- //   {
- //       _myLayout=_DefLayout;
- //   }
-
- //	void         EditMyLayout   ();
- //   static const char* readLayout(const nana::string& FileName, std::string& Layout);
- //   void ReCollocate( std::string  Layout)
- //   {
- //       _myLayout.swap(Layout);
- //       ReCollocate( );
- //  }
- //   void ReCollocate( )
- //   {
- //       _place.div(_myLayout.c_str ());     
-	//    _place.collocate ();
- //   }
-
-
-};
-
-
-class EditableForm: public EditableWidget
-{ public:
-    EditableForm (nana::gui::form& ThisForm,nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
-            :  _place	       (ThisForm),                //_my_fm(&fm),
-               _menuBar	       (ThisForm), 
-               _Titel(std::move(Titel)),
+    EditableWidget (nana::gui::widget& ThisWidget, nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
+            :  _place	       (ThisWidget),   
+               _Titel(std::move(Titel)),        //   ???
                _DefLayoutFileName(DefLayoutFileName)
      {
-         ThisForm.caption(_Titel);
-         _menuBar.make_event <nana::gui::events::click> ([&](const nana::gui::eventinfo& ei)
-        {
-           if (ei.mouse.right_button)
-           {
-               std::wcout<<std::endl<<STR("Rigth Click: x,y=")<<ei.mouse.x<<STR(",")<<ei.mouse.y  <<std::endl;
-               _menuProgram->popup (ThisForm.handle(),ei.mouse.x,ei.mouse.y,false);
-
-           }
-           if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
-        }); 
-    };
-	nana::string		_Titel;    //nana::gui::form    *_my_fm;
+        ThisWidget.caption(_Titel);       //   ???
+        InitMenu   (_menuProgram);
+    }
+	nana::string		_Titel;   //  ????
     std::string         _myLayout, _DefLayout;
     nana::string        _DefLayoutFileName;	
     nana::gui::place	_place;
-	nana::gui::menubar	_menuBar;
-	nana::gui::menu	    *_menuProgram;
+	nana::gui::menu	    _menuProgram;
 	std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
-    virtual ~EditableForm();
-    virtual void SetDefLayout   ()=0;
+    virtual     ~EditableWidget     (){};
+    virtual void SetDefLayout       ()=0;
     virtual void AsignWidgetToFields()=0;
-	virtual void InitMyLayout   ()
+	        void InitMyLayout       ()
 	{   
         SetDefLayout   ();
         readLayout( _DefLayoutFileName, _myLayout ="");
@@ -157,20 +82,30 @@ class EditableForm: public EditableWidget
         AsignWidgetToFields();
 		_place.collocate ();
 	}
-    virtual void AddMenuProgram (){_menuProgram=&_menuBar.push_back(STR("&Programm"));}
-    virtual void InitMenu       ()
+            void InitMenu   (nana::gui::menu& menuProgram)
     {
-       AddMenuProgram();
-       _menuProgram->append(STR("&Edit this windows Layout"),[&](nana::gui::menu::item_proxy& ip)
+       menuProgram.append(STR("&Edit this windows Layout"),[&](nana::gui::menu::item_proxy& ip)
 	                                                            {EditMyLayout(); }                  );
-       _menuProgram->append(STR("&Reset this windows default Layout"),[&](nana::gui::menu::item_proxy& ip)
+       menuProgram.append(STR("&Reset this windows default Layout"),[&](nana::gui::menu::item_proxy& ip)
 	                                                            {ResetDefLayout(); ReCollocate( );} );
-
-       
     }
-    void ResetDefLayout()
+            void SelectClickableWidget(nana::gui::widget& wdg, nana::gui::menu& menuProgram)
+            {
+                wdg.make_event<nana::gui::events::click>(nana::gui::menu_popuper(menuProgram) );   
+            }
+            void SelectClickableWidget(nana::gui::widget& wdg)
+            {
+                SelectClickableWidget(wdg, _menuProgram);
+            }
+
+
+            void ResetDefLayout()
     {
         _myLayout=_DefLayout;
+    }
+    const std::string& DefLayout() const
+    {
+        return _DefLayout;
     }
 
  	void         EditMyLayout   ();
@@ -188,29 +123,87 @@ class EditableForm: public EditableWidget
 };
 
 
+class EditableForm: public EditableWidget
+{ public:
+    EditableForm (nana::gui::form& ThisForm,nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
+            :  EditableWidget( ThisForm, Titel, DefLayoutFileName),
+               _menuBar	       (ThisForm), _menuProgramInBar(nullptr)
+     {
+         ThisForm.caption(_Titel);
+     }
+	nana::gui::menubar	_menuBar;
+	nana::gui::menu*	_menuProgramInBar;
+    //virtual ~EditableForm();
+    void AddMenuProgram ()
+    {
+        assert (!_menuProgramInBar );
+        _menuProgramInBar=&_menuBar.push_back(STR("&Programm"));
+        InitMenu   (*_menuProgramInBar);
+    }
+};
+
+//#include <../temp/CompoWidget.hpp>
+class OpenSaveBox : public  nana::gui::panel<false> , public EditableWidget   
+{public:
+	nana::gui::button	Open, Save, Pick;
+	nana::gui::combox	_fileName;
+	nana::gui::filebox  fb_o, fb_s, fb_p;
+	OpenSaveBox     (	nana::gui::form &fm, 
+						const nana::string   &label,
+						const nana::string   &DefFileName=STR("") );
+
+	void add_filter(const nana::string& description, const nana::string& filetype)
+	{ 
+		fb_o.add_filter(description, filetype);
+		fb_s.add_filter(description, filetype);
+		fb_p.add_filter(description, filetype);
+	}
+    void SetDefLayout       () override ;
+    void AsignWidgetToFields() override ;
+
+	nana::string FileName()const						{  return _fileName.caption();}
+	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
+	void		open();
+	void		save(const nana::string &file_tip=STR("") );
+	void		pick();
+    bool        UserSelected() const {return _user_selected ;}
+    bool        Canceled()     const {return _canceled;}
+
+
+ protected:
+	//virtual p::field_reference	put(p::field_reference f)override;
+	//virtual p&	put(p&   pl) override
+
+ private:
+	nana::gui::label	_label;
+    bool _user_selected, _canceled;
+    //std::string         _myLayout;
+    //nana::gui::place	_place;
+
+};
+
 class EditLayout_Form : public nana::gui::form, public EditableForm
 {public:
-	EditLayout_Form (EditableForm *fm );
+	EditLayout_Form (EditableWidget *fm );
  private:
-    EditableForm       *_fm ;
+    EditableWidget     *_fm ;
 	OpenSaveBox			_OSbx;
 	nana::gui::button	_ReCollocate;
 	nana::gui::textbox	_textBox;
-	nana::gui::menu	    &_menuFile;
+	nana::gui::menu	   &_menuFile;
 
-    void SetDefLayout   () override ;
+    void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
     void on_edited();
 	void InitCaptions();
 
     void MakeResponsive();
-	void ReLayout();
-	void OpenFile();
+	void ReLayout ();
+	void OpenFile ();
 	void OpenFileN(const nana::string   &file=STR(""));
-	void SaveFile();
 	void SaveFileN(const nana::string   &fileTip=STR(""));
     void ForceSave(const nana::string   &file);
-
+	void SaveFile ();
 }	;
 #endif 
 

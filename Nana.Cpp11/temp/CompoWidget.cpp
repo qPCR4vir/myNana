@@ -1,13 +1,16 @@
-#include <../temp/CompoWidget.hpp>
+#include <../temp/EditableForm.hpp>
+
+//#include <../temp/CompoWidget.hpp>
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
 OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm, 
 								const nana::string   &label,
 								const nana::string   &DefFileName )
-							:	nana::gui::panel<false>    (	fm  ),
+							:	nana::gui::panel<false>(fm),
+                                EditableWidget( *this, label, DefFileName),
 								Open(*this), Save(*this), Pick(*this),_fileName(*this),_label(*this),
-								fb_o(*this,true ),fb_s(*this,false ),fb_p(*this,true ),_place(*this),
+								fb_o(*this,true ),fb_s(*this,false ),fb_p(*this,true ),
                                 _user_selected(false),
                                 _canceled(false)
 {
@@ -17,23 +20,6 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 	Open.caption	(STR("Open"		));
 	Save.caption	(STR("Save"		));
 	Pick.caption	(STR("..."		));
-
-    _myLayout= 
-        "vertical   <weight=1>    \n"
-        "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
-        "		               <proj_buttons weight=74 gap=1>     \n"
-        "					   <cbFL >       \n"
-        "					   <pick weight=30>  \n"
-        "					   <weight=3> 	>" 
-        "            <weight=2>    \n"          ;  // an interesante idea, but allow only one instantition of a CompoWidwet of this type 
-
-	_place.div(_myLayout.c_str ());    
-
-	_place.field("cbFL"        ) <<  _fileName ;
-	_place.field("label"       ) << _label;
-	_place.field("proj_buttons") << Open << Save;
-	_place.field("pick"        ) << Pick;
-	_place.collocate ();
 
     Open.make_event	<nana::gui::events::click> ([&](){open();}	);
 	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);
@@ -45,6 +31,26 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 		_fileName.option(0);
 	}
     _user_selected=true;
+    InitMyLayout();
+    SelectClickableWidget( _label);
+}
+    void OpenSaveBox::SetDefLayout       () 
+{
+    _DefLayout= 
+        "vertical   <weight=1>    \n"
+        "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
+        "		               <proj_buttons weight=74 gap=1>     \n"
+        "					   <cbFL >       \n"
+        "					   <pick weight=30>  \n"
+        "					   <weight=3> 	>" 
+        "            <weight=2>    \n"          ;  
+}
+    void OpenSaveBox::AsignWidgetToFields() 
+{
+	_place.field("cbFL"        ) <<  _fileName ;
+	_place.field("label"       ) << _label;
+	_place.field("proj_buttons") << Open << Save;
+	_place.field("pick"        ) << Pick;
 }
 	
 void OpenSaveBox::open()

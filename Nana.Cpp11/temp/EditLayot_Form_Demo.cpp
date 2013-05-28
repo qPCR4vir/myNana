@@ -1,5 +1,5 @@
 #include <../temp/EditableForm.hpp>
-#include <../temp/CompoWidget.hpp>
+//#include <../temp/CompoWidget.hpp>
 
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
@@ -26,7 +26,10 @@ class DemoForm : public nana::gui::form, public EditableForm
 	    osb2.add_filter (STR("Todos File"), STR("*.*"));
 
         InitMyLayout();
-        InitMenu    ();
+        AddMenuProgram();
+        SelectClickableWidget( _menuBar);
+        SelectClickableWidget( but2);
+
     }
     void SetDefLayout   () override
     {
