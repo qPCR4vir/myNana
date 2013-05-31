@@ -24,6 +24,7 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
                     _fm             (fm),
 				    _OSbx			(*this, STR("Layout:")),      
 					_ReCollocate	(*this),
+					_hide       	(*this),
 					_textBox		(*this),
 					_menuFile		(_menuBar.push_back(STR("&File")))
 	{	
@@ -55,6 +56,7 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
 void EditLayout_Form::InitCaptions()
 	{
 		_ReCollocate.caption	(STR("Apply"		));
+		_hide.caption	        (STR("Hide"		    ));
 		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 	}
 void EditLayout_Form::MakeResponsive()
@@ -72,9 +74,9 @@ void EditLayout_Form::MakeResponsive()
 
 
         //}); 
-		_menuFile.append  (STR("&Open..."   ),[&](nana::gui::menu::item_proxy& ip){ _OSbx.open();OpenFile()  ;}                );
+		_menuFile.append  (STR("&Open..."   ),[&](nana::gui::menu::item_proxy& ip){ /*_OSbx.open();*/OpenFile()  ;}                );
         _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip){  ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;}   );
-		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip){ _OSbx.save(_OSbx.FileName());SaveFile() ;} );
+		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip){ _OSbx.save(nana::string(nana::charset(_textBox.filename())));SaveFile() ;} );
          AddMenuProgram ();
 
          //InitMenu    ();
@@ -97,9 +99,9 @@ void EditLayout_Form::MakeResponsive()
         SelectClickableWidget( _textBox, *_menuProgramInBar );
         SelectClickableWidget( _menuBar, *_menuProgramInBar);
 
-        _OSbx.Open.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
-		_OSbx.Save.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::SaveFile		);
-		_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
+        _OSbx.Open.make_event	<nana::gui::events::click> ([&](){ OpenFile() ;} );
+		_OSbx.Save.make_event	<nana::gui::events::click> ([&](){ SaveFile() ;} );
+		//_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
         _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout();}); 
 		_OSbx._fileName.ext_event().selected = [&](nana::gui::combox&cb)
 		{
@@ -109,6 +111,12 @@ void EditLayout_Form::MakeResponsive()
             std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;
 			OpenFileN(fileN );
 		};
+        make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
+        {
+            ei.unload.cancel = true;    //Stop closing and then
+            hide();
+        });
+        _hide.make_event <nana::gui::events::click> ([&](){hide();}); 
 	}
 void EditLayout_Form::on_edited()
 {
@@ -119,11 +127,15 @@ void EditLayout_Form::on_edited()
 }
 void EditLayout_Form::SetDefLayout   ()
 {
-    _DefLayout= "vertical                                            \n\t"
+    _DefLayout= "vertical   gap=2                                    \n\t"
                             "<weight=25>                             \n\t"
                             "<weight=25  OpenSave>                   \n\t"
                             "<textBox>                               \n\t"
-                            "<weight=25 <weight=5> <re weight=50 gap=1>>\n\t"
+                            "<weight=25 <weight=15>                  \n\t" 
+                            "           <re weight=50>               \n\t"
+                            "           < >                          \n\t"
+                            "           <hide weight=50>             \n\t"
+                            "           <weight=15> >                \n\t" 
                             "<weight=5>                              \n\t";
 
 }
@@ -132,6 +144,7 @@ void EditLayout_Form::AsignWidgetToFields()
 	_place.field("OpenSave"	   )<< _OSbx;
 	_place.field("textBox"	   )<< _textBox;
 	_place.field("re"		   )<< _ReCollocate ;
+	_place.field("hide"		   )<< _hide ;
 }
 void EditLayout_Form::ReLayout()
 	{   nana::string lay,line;

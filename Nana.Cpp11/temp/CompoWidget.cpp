@@ -21,9 +21,9 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 	Save.caption	(STR("Save"		));
 	Pick.caption	(STR("..."		));
 
-    Open.make_event	<nana::gui::events::click> ([&](){open();}	);
-	Pick.make_event	<nana::gui::events::click> (*this , &OpenSaveBox::pick	);
-	Save.make_event	<nana::gui::events::click> ([&](){save();});
+    Open.make_event	<nana::gui::events::click> ([&](){open(FileName());}	);
+	Pick.make_event	<nana::gui::events::click> ([&](){pick(FileName());}	); 
+	Save.make_event	<nana::gui::events::click> ([&](){save(FileName());}    );
 
 	_fileName.editable(true);
 	if(DefFileName!=STR(""))
@@ -53,49 +53,34 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm,
 	_place.field("pick"        ) << Pick;
 }
 	
-void OpenSaveBox::open()
+void OpenSaveBox::open(const nana::string &file_tip)
 {
-	std::wcout<<std::endl<<STR("open: ")<<std::endl;
-
-    if(fb_o())  
-	{   
-        _user_selected=false;
-        _fileName.push_back(fb_o.file()).option(_fileName.the_number_of_options());
-	    std::wcout<<std::endl<<STR("open OK: ")<<std::endl;
-        _user_selected=true;
-        _canceled= false;
-        return;
-    }
-    std::wcout<<std::endl<<STR("open Canceled: ")<<std::endl;
-    _canceled= true;
+	pick_file( fb_o, STR("open"), file_tip);
 }
 void OpenSaveBox::save(const nana::string &file_tip)
 {
-	std::wcout<<std::endl<<STR("save (with tip: ") << file_tip<<STR(")")<<std::endl;
-    fb_s.file(file_tip); 
-	if(fb_s())  
+	pick_file( fb_s, STR("save"), file_tip);
+}
+void OpenSaveBox::pick(const nana::string &file_tip)
+{
+	pick_file( fb_p, STR("pick"), file_tip);
+}
+void OpenSaveBox::pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip)
+{
+	std::wcout<<std::endl<<action<<STR(" (with tip: ") << file_tip<<STR(")")<<std::endl;
+    fb.file(file_tip); 
+	if(fb())  
 	{	_user_selected=false;
-        _fileName.push_back(fb_s.file()).option(_fileName.the_number_of_options());
-	    std::wcout<<std::endl<<STR("save OK: ")<<std::endl;
+        _fileName.push_back(fb.file()).option(_fileName.the_number_of_options());
+	    std::wcout<<std::endl<<action<<STR(" OK: ")<<std::endl;
         _user_selected=true;
         _canceled= false;
         return;
     }
-    std::wcout<<std::endl<<STR("save Canceled: ")<<std::endl;
+    std::wcout<<std::endl<<action<<STR(" Canceled: ")<<std::endl;
     _canceled= true;
 }
-void OpenSaveBox::pick()
-{
-	std::wcout<<std::endl<<STR("pick: ")<<std::endl;
-	if(fb_p())  
-	{	
-        _user_selected=false;
-        _fileName.push_back(fb_p.file()).option(_fileName.the_number_of_options());
-        _user_selected=true;
-        _canceled= false;
-    }
-    _canceled= true;
-}
+
 //OpenSaveBox::p::field_reference	OpenSaveBox::put(p::field_reference f)
 //{
 //	return f << p::fixed(_label,49) << p::fixed(Open,40) << p::fixed(Save,35) <<_fileName << p::fixed(Pick,25); 

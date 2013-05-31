@@ -163,9 +163,9 @@ class OpenSaveBox : public  nana::gui::panel<false> , public EditableWidget
 
 	nana::string FileName()const						{  return _fileName.caption();}
 	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
-	void		open();
-	void		save(const nana::string &file_tip=STR("") );
-	void		pick();
+	void		open(const nana::string &file_tip=STR(""));
+	void		save(const nana::string &file_tip=STR(""));
+	void		pick(const nana::string &file_tip=STR(""));
     bool        UserSelected() const {return _user_selected ;}
     bool        Canceled()     const {return _canceled;}
 
@@ -179,6 +179,7 @@ class OpenSaveBox : public  nana::gui::panel<false> , public EditableWidget
     bool _user_selected, _canceled;
     //std::string         _myLayout;
     //nana::gui::place	_place;
+	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
 
 };
 
@@ -188,7 +189,7 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
  private:
     EditableWidget     *_fm ;
 	OpenSaveBox			_OSbx;
-	nana::gui::button	_ReCollocate;
+	nana::gui::button	_ReCollocate, _hide;
 	nana::gui::textbox	_textBox;
 	nana::gui::menu	   &_menuFile;
 
