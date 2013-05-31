@@ -189,7 +189,7 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
  private:
     EditableWidget     *_fm ;
 	OpenSaveBox			_OSbx;
-	nana::gui::button	_ReCollocate, _hide;
+	nana::gui::button	_ReCollocate, _hide, _panic, _def;
 	nana::gui::textbox	_textBox;
 	nana::gui::menu	   &_menuFile;
 
@@ -200,6 +200,7 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
 
     void MakeResponsive();
 	void ReLayout ();
+    void ReloadDef();
 	void OpenFile ();
 	void OpenFileN(const nana::string   &file=STR(""));
 	void SaveFileN(const nana::string   &fileTip=STR(""));

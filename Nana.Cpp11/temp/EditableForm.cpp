@@ -23,8 +23,7 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
          EditableForm (*this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
                     _fm             (fm),
 				    _OSbx			(*this, STR("Layout:")),      
-					_ReCollocate	(*this),
-					_hide       	(*this),
+					_ReCollocate	(*this),_panic  (*this),_def  (*this), 	_hide	(*this),
 					_textBox		(*this),
 					_menuFile		(_menuBar.push_back(STR("&File")))
 	{	
@@ -56,6 +55,8 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
 void EditLayout_Form::InitCaptions()
 	{
 		_ReCollocate.caption	(STR("Apply"		));
+		_panic.caption	        (STR("Panic !"	    ));
+		_def.caption	        (STR("Default"		));
 		_hide.caption	        (STR("Hide"		    ));
 		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 	}
@@ -82,20 +83,7 @@ void EditLayout_Form::MakeResponsive()
          //InitMenu    ();
         _menuProgramInBar->append_splitter();
 		_menuProgramInBar->append (STR("&Apply Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayout();});
-		_menuProgramInBar->append (STR("&Restet Default Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip)
-        {
-            if ( _textBox.edited () )
-            {
-               _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
-                SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
-               _OSbx.fb_s.title(STR("")); 
-            }
-            _fm->ResetDefLayout(); 
-            _fm->ReCollocate( );
-            _textBox.reset(nana::string(nana::charset(_fm->_myLayout)) );
-            _textBox.select(true);
-            _textBox.show();
-        });
+		_menuProgramInBar->append (STR("&Restet Default Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip) {ReloadDef();});
         SelectClickableWidget( _textBox, *_menuProgramInBar );
         SelectClickableWidget( _menuBar, *_menuProgramInBar);
 
@@ -116,7 +104,10 @@ void EditLayout_Form::MakeResponsive()
             ei.unload.cancel = true;    //Stop closing and then
             hide();
         });
-        _hide.make_event <nana::gui::events::click> ([&](){hide();}); 
+        _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout()  ;}   ); 
+        _panic.make_event       <nana::gui::events::click> ([&](){_fm->ResetDefLayout(); _fm->ReCollocate( );}); 
+        _def.make_event         <nana::gui::events::click> ([&](){ReloadDef() ;}   ); 
+        _hide.make_event        <nana::gui::events::click> ([&](){hide()      ;}   ); 
 	}
 void EditLayout_Form::on_edited()
 {
@@ -132,18 +123,22 @@ void EditLayout_Form::SetDefLayout   ()
                             "<weight=25  OpenSave>                   \n\t"
                             "<textBox>                               \n\t"
                             "<weight=25 <weight=15>                  \n\t" 
-                            "           <re weight=50>               \n\t"
+                            "           <re weight=50 gap=2>         \n\t"
+                            "           <panic weight=50>            \n\t"
+                            "           < >                          \n\t"
+                            "           <def weight=50>              \n\t"
                             "           < >                          \n\t"
                             "           <hide weight=50>             \n\t"
                             "           <weight=15> >                \n\t" 
                             "<weight=5>                              \n\t";
-
 }
 void EditLayout_Form::AsignWidgetToFields() 
 {
 	_place.field("OpenSave"	   )<< _OSbx;
 	_place.field("textBox"	   )<< _textBox;
 	_place.field("re"		   )<< _ReCollocate ;
+	_place.field("panic"	   )<< _panic ;
+	_place.field("def"		   )<< _def ;
 	_place.field("hide"		   )<< _hide ;
 }
 void EditLayout_Form::ReLayout()
@@ -152,6 +147,21 @@ void EditLayout_Form::ReLayout()
 			lay+=line;
         _fm->ReCollocate( std::string(nana::charset (lay)).c_str() );  // try std::runtime_error msgbox
 	}
+void EditLayout_Form::ReloadDef()
+{
+    if ( _textBox.edited () )
+    {
+        _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
+        SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
+        _OSbx.fb_s.title(STR("")); 
+    }
+    _fm->ResetDefLayout(); 
+    _fm->ReCollocate( );
+    _textBox.reset(nana::string(nana::charset(_fm->_myLayout)) );
+    _textBox.select(true);
+    _textBox.show();
+}
+
 void EditLayout_Form::OpenFile()
 	{	 
       if(_OSbx.Canceled () ) return;
