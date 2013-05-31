@@ -1,6 +1,5 @@
 #include <../temp/EditableForm.hpp>
 #include <../temp/Numer.hpp>
-//#include <../temp/CompoWidget.hpp>
 
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
@@ -71,13 +70,40 @@ class DemoForm : public nana::gui::form, public EditableForm
 
  };
 
+ //std::map<std::string, Magnitude  > Magnitudes;
+ //std::map<std::string, std::string> Units ;
 
 
 
-
+//int main_temp ()
 int main()
 {
 	DemoForm form;
+
+    CUnit("gr", 1, "", "masa");
+    CUnit("Kg", 1000, "gr");
+    CUnit ("grC",1,"", "Temperature");
+    CUnit("mg", 0.001, "gr", "");
+    CUnit("s", 1, "s", "Time");
+    CUnit("min", 60, "s");
+    CUnit("h", 60, "min");
+    CUnit("day", 24, "h");
+    CUnit("L", 1, "", "Volumen");
+    CUnit("m3", 1000, "L");
+    CUnit("dm3", 1, "L");
+    CUnit("L", 1000, "mL");
+
+
+    for (auto& mag: CUnit::MagnitudesDic())
+    {
+        std::cout<< "\n\nMagnitud: "<< mag.first;
+        for ( auto un: mag.second)
+            std::cout<< "\n \t" << CUnit::UnitsDic().at(un);
+
+    }
+
+
+
 
 	form.show();
     try {
