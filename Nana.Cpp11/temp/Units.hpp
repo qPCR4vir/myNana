@@ -73,7 +73,7 @@ class CUnit
     static units                _Units ;
     static magnitudes           _Magnitudes;
     static nonLinealFunction    _identity;
-
+    static bool                 _initialized;
     void add();
 
   public:
@@ -160,6 +160,30 @@ class CUnit
         //if (_Units[name].base== name)
         //CUnit u();
     
+
+    static bool Initialize()
+    {
+        CUnit("gr"      , 1     , ""     , "Mass"       );
+        CUnit("Kg"      , 1000  , "gr"                  );
+        CUnit("mg"      , 0.001 , "gr"                  );
+        CUnit ("K"      ,1      , ""     , "Temperature");
+        CUnit ("grC",conversion(1, 273), "K"             );
+        CUnit("s"       , 1     , "s"    , "Time"       );
+        CUnit("min"     , 60    , "s"                   );
+        CUnit("h"       , 60    , "min"                 );
+        CUnit("day"     , 24    , "h"                   );
+        CUnit("L"       , 1     , ""    , "Volumen"     );
+        CUnit("m3"      , 1000  , "L"                   );
+        CUnit("dm3"     , 1     , "L"                   );
+        CUnit("L"       , 1000  , "mL"                  );
+        CUnit("m"       , 1     , ""    , "Length"      );
+        CUnit("Km"      , 1000  , "m"   , "Length"      );
+        CUnit("dm"      , .1    , "m"                   );
+        CUnit("cm"      , .1    , "dm"                  );
+        CUnit("mm"      , .1    , "cm"                  );
+
+        return true;
+    }
 
 
 };

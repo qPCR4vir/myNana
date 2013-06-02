@@ -8,6 +8,8 @@ double ide(double ori){return ori;}
 CUnit::nonLinealFunction    CUnit::_identity(ide);
 CUnit::units                CUnit::_Units ;
 CUnit::magnitudes           CUnit::_Magnitudes;
+bool                        CUnit::_initialized = CUnit::Initialize();
+
 
 std::ostream& operator<<( std::ostream& o, const CUnit& u)
 {

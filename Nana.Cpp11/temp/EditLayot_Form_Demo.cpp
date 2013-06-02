@@ -88,24 +88,6 @@ int main()
 {
 	DemoForm form;
 
-    CUnit("gr", 1, "", "Mass");
-    CUnit("Kg", 1000, "gr");
-    CUnit ("grC",1,"", "Temperature");
-    CUnit("mg", 0.001, "gr", "");
-    CUnit("s", 1, "s", "Time");
-    CUnit("min", 60, "s");
-    CUnit("h", 60, "min");
-    CUnit("day", 24, "h");
-    CUnit("L", 1, "", "Volumen");
-    CUnit("m3", 1000, "L");
-    CUnit("dm3", 1, "L");
-    CUnit("L", 1000, "mL");
-    CUnit("m", 1, "", "Length");
-    CUnit("Km", 1000, "m", "Length");
-    CUnit("dm", .1, "m", "Length");
-    CUnit("cm", .1, "dm", "Length");
-    CUnit("mm", .1, "cm", "Length");
-
 
     for (auto& mag: CUnit::MagnitudesDic())
     {
@@ -114,7 +96,9 @@ int main()
             std::cout<< "\n \t" << CUnit::UnitsDic().at(un);
 
     }
+            std::cout<< "\n" ;
     
+
     PrintConv(10, "min", "s");
     PrintConv(30, "min", "h");
     PrintConv(1.0/24/60, "day", "s");
@@ -126,6 +110,9 @@ int main()
     PrintConv(10, "mm", "m");
     PrintConv(1000, "dm", "Km");
     PrintConv(0.001, "Km", "mm");
+    PrintConv(50, "grC", "K");
+    PrintConv(0, "grC", "K");
+    PrintConv(0, "K", "grC");
 
 
 	form.show();
