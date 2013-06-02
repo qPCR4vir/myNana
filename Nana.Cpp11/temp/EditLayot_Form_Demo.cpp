@@ -73,6 +73,14 @@ class DemoForm : public nana::gui::form, public EditableForm
  //std::map<std::string, Magnitude  > Magnitudes;
  //std::map<std::string, std::string> Units ;
 
+void PrintConv(double val, const CUnit::unit_name& from, const CUnit::unit_name& to)
+{
+    std::cout<< "\n" <<"Converting "<< from << " into " << to ;
+    CUnit f_t(from,to);
+    if (f_t.error) 
+        return; 
+    std::cout<< ": " << val << " " << from << " = " << f_t.conv(val)<< " "  << to;
+}
 
 
 //int main_temp ()
@@ -80,7 +88,7 @@ int main()
 {
 	DemoForm form;
 
-    CUnit("gr", 1, "", "masa");
+    CUnit("gr", 1, "", "Mass");
     CUnit("Kg", 1000, "gr");
     CUnit ("grC",1,"", "Temperature");
     CUnit("mg", 0.001, "gr", "");
@@ -92,17 +100,32 @@ int main()
     CUnit("m3", 1000, "L");
     CUnit("dm3", 1, "L");
     CUnit("L", 1000, "mL");
+    CUnit("m", 1, "", "Length");
+    CUnit("Km", 1000, "m", "Length");
+    CUnit("dm", .1, "m", "Length");
+    CUnit("cm", .1, "dm", "Length");
+    CUnit("mm", .1, "cm", "Length");
 
 
     for (auto& mag: CUnit::MagnitudesDic())
     {
-        std::cout<< "\n\nMagnitud: "<< mag.first;
+        std::cout<< "\n\nMagnitude: "<< mag.first;
         for ( auto un: mag.second)
             std::cout<< "\n \t" << CUnit::UnitsDic().at(un);
 
     }
-
-
+    
+    PrintConv(10, "min", "s");
+    PrintConv(30, "min", "h");
+    PrintConv(1.0/24/60, "day", "s");
+    PrintConv(.1, "Kg", "gr");
+    PrintConv(10, "mL", "s");
+    PrintConv(10, "h", "s");
+    PrintConv(10, "dm3", "m3");
+    PrintConv(10, "dm", "m");
+    PrintConv(10, "mm", "m");
+    PrintConv(1000, "dm", "Km");
+    PrintConv(0.001, "Km", "mm");
 
 
 	form.show();

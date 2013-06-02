@@ -42,6 +42,12 @@ class CUnit
 
             return conversion (c,s, [rc,this](double b){return nlc(rc.c*rc.nlc(b)+rc.s);});
         }
+        double operator()(double ori_val)
+        {
+            if (lineal)
+                return c*ori_val+s;
+            return c*nlc(ori_val)+s;
+        }
     } ;
     conversion      conv;
     unit_name       name, base;
@@ -87,14 +93,14 @@ class CUnit
     {
         if (! (unit_exist(base) && unit_exist(name)) )
         {    
-           std::cerr << std::endl << "We need two existing units in order to create a new definition of: " << name
+           std::cerr << std::endl << "We need two existing units in order to find a conversion. " << name
                      << " based on " << base << std::endl;
                 return;
          }
         if (_Units[name].magnitude != _Units[base].magnitude)
         {   
-            std::cerr << std::endl << "Units "<< name<< " of " << _Units[name].magnitude << " and "
-                     << base << " of " << _Units[name].magnitude<<" are not compatible " <<  std::endl;
+            std::cerr << std::endl << "Units "<< name<< " (" << _Units[name].magnitude << ") and "
+                     << base << " (" << _Units[base].magnitude<<") are not compatible. " <<  std::endl;
                 return;
         }
         if (name==base)
@@ -102,16 +108,58 @@ class CUnit
             error=false;
             return ;
         }
-        if (_Units[name].base == base)
+
+        unit_name ub=name, un ;
+        do{ 
+            if (ub==base)
+            {    
+                error=false;
+                return ;
+            }
+            conv=conv * _Units[ub].conv;
+            ub=_Units[un=ub].base;
+        }while(un!=ub);
+        conversion c2b(conv);
+        conv=conversion();
+        unit_name rub, run=base ;
+        do{ 
+            if (run==name)
+            {    
+                error=false;
+                return ;
+            }
+            conversion cv(_Units[run].conv);
+            if ( !cv.lineal)
+            {    
+                error=true;
+                return ;
+            }
+            cv.s=-cv.s/cv.c;
+            cv.c=1/cv.c;
+            conv=cv*conv;
+            run=_Units[rub=run].base;
+        }while(run!=rub);
+        if (ub!=rub)
         {    
-            *this= _Units[name];
-            error=false;
+            error=true;
             return ;
         }
-
- /*       if (_Units[name].base== name)
-        CUnit u();*/
+        conv=c2b*conv;
+        error=false;
     }
+        //for{ unit_name un=name ;  _Units[un].base != un ; un=_Units[un].base)
+        //{
+        //   conv=conv*_Units[un].conv;
+        //   un=_Units[un].base;
+        //if ( un== base)
+        //{    
+        //    *this= _Units[name];
+        //    error=false;
+        //    return ;
+        //}
+        //if (_Units[name].base== name)
+        //CUnit u();
+    
 
 
 };
