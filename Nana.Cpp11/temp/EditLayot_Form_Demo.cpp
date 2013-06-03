@@ -12,7 +12,14 @@ class DemoForm : public nana::gui::form, public EditableForm
     nana::gui::textbox _num;
     nana::gui::button  _up, _down;
     nana::gui::label   _label;
-    UnitPicker         UPicker;
+    nana::gui::UnitPicker      UPicker;
+    nana::gui::NumUnitUpDown   Ta;
+
+
+        //NumUnitUpDown ( widget&wd,        const string& label, 
+        //            double defVal,    double min,     double max,    const CUnit::unit_name& def  , 
+        //            const string& DefLayFile ,   double step=1,  unsigned decimals=2)
+
 
 
     DemoForm ():nana::gui::form (nana::rectangle( nana::point(600,210), nana::size(500,250) )),
@@ -23,7 +30,9 @@ class DemoForm : public nana::gui::form, public EditableForm
                 num1         (*this, STR("G:") , -5, -30, 30),
                 num2         (*this, STR("Tm:"), 60,  30, 90),  
                 _num(*this), _up(*this), _down(*this), _label(*this),
-                UPicker(*this, "m")
+                UPicker(*this, "m"),
+                Ta           ( *this, STR("Ta:"), 55,  50, 60, "grC",STR("") /*, DefLayFile , step=1, decimals=2*/)
+
     {
         but1.caption (STR("But1"));
 	    but2.caption (STR("But2"));
@@ -47,14 +56,15 @@ class DemoForm : public nana::gui::form, public EditableForm
     }
     void SetDefLayout   () override
     {
-        _DefLayout= "vertical                   \n\t"
-                    "<weight=25>                \n\t" 
-                    "<Project weight=22>        \n\t" 
-                    "<gap=2 <b1> <b2> <b3> >    \n\t"
-                    "<<b4> <weight=2>>          \n\t"
-                    "<  weight=20 <label weight=60 ><Num> <vertical weight=50 <UpDown> >>        \n\t"
-                    "<num  weight=20 <Unit weight=40 >>           \n\t"
-                    "<Project2 weight=22>       \n\t" ;
+        _DefLayout= "vertical      gap=2             \n\t"
+	                 "       <weight=25>                \n\t"
+	                 "       <Project weight=22>       \n\t "
+	                 "       <gap=2 <b1> <b2> <b3> >   \n\t "
+	                 "       <<b4> <weight=2>>         \n\t "
+	                 "       <  weight=22 <label weight=60 ><Num> <vertical weight=50 <UpDown> >>     \n\t   "
+	                 "       <  weight=23 <Ta  weight= 180><> <num  weight=280 ><>  <Unit weight=40 >>         \n\t  "
+	                 "       <Project2 weight=22>       "
+                  ;
     }
     void AsignWidgetToFields() override
     {
@@ -69,6 +79,7 @@ class DemoForm : public nana::gui::form, public EditableForm
 	    _place.field("Unit"   ) << UPicker/*._cb*/ ;
 	    _place.field("UpDown" ) << _up << _down  ;
 	    _place.field("label"  ) << _label;
+	    _place.field("Ta"  ) << Ta;
     }
 
  };

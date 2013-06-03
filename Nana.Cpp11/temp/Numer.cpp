@@ -2,7 +2,7 @@
 
 namespace nana { namespace gui {
 
-NumerUpDown::NumerUpDown (  form &fm, const string &label, double val, double min, double max, 
+NumerUpDown::NumerUpDown (  widget &fm, const string &label, double val, double min, double max, 
                             const string   &DefFileName,   double step, unsigned decimals  )
         :	panel<false>(fm),
             EditableWidget( *this, label, DefFileName),
