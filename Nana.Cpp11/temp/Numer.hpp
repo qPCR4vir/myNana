@@ -60,13 +60,29 @@ void add(double step)
 }} // namespace nana { namespace gui {
 
 
-  template <class CUnit>
-class NumerUnit :public NumerUpDown
+class UnitPicker : public nana::gui::combox
 {
-  public:
-    NumerUnit();
+    CUnit::unit_name _defUnit;
+    const CUnit::magnitude_name magnitude;
+  public: 
+     //nana::gui::combox _cb;
+     UnitPicker(nana::gui::widget &wd, const CUnit::unit_name& def)
+          :/*_cb*/nana::gui::combox(wd), _defUnit(def), magnitude(CUnit::UnitsDic().at(def).magnitude )
+      {
+          /*_cb.*/editable(false);
+          for(const CUnit::unit_name& un : CUnit::MagnitudesDic().at(magnitude) )
+              /*_cb.*/push_back (nana::charset ( un/*CUnit::UnitsDic().at(un).to_string ()*/  ));
+          /*_cb.*/caption(nana::charset (def));
+          //_cb.ext_event().selected=[&](nana::gui::combox& cb)
+          //{
+          //    _cb.caption(_cb.caption().substr(6, _cb.caption().find_first_of(STR(" ="),6)-6 )); 
+          //};
+
+      }
 
 };
+
+
 
 
 

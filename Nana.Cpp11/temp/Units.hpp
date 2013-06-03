@@ -63,7 +63,7 @@ class CUnit
     {  
         return _Magnitudes.find(m)!= _Magnitudes.end();  
     }
-    std::string       to_string()
+    std::string       to_string() const
     {
         std::ostringstream o;
         o << *this;
@@ -163,11 +163,14 @@ class CUnit
 
     static bool Initialize()
     {
-        CUnit("gr"      , 1     , ""     , "Mass"       );
-        CUnit("Kg"      , 1000  , "gr"                  );
+        CUnit("kg"      , 1     , ""    , "Mass"        );
+        CUnit("gr"      , 0.001 , "kg"                  );
         CUnit("mg"      , 0.001 , "gr"                  );
-        CUnit ("K"      ,1      , ""     , "Temperature");
-        CUnit ("grC",conversion(1, 273), "K"             );
+        CUnit("A"       ,1      , ""     , "Current"    );
+        CUnit("mol"     ,1      , ""     , "Amount"     );
+        CUnit("cd"      ,1      , ""     , "Luminosity" );
+        CUnit("K"       ,1      , ""     , "Temperature");
+        CUnit("grC",conversion(1, 273), "K"             );
         CUnit("s"       , 1     , "s"    , "Time"       );
         CUnit("min"     , 60    , "s"                   );
         CUnit("h"       , 60    , "min"                 );
@@ -181,6 +184,11 @@ class CUnit
         CUnit("dm"      , .1    , "m"                   );
         CUnit("cm"      , .1    , "dm"                  );
         CUnit("mm"      , .1    , "cm"                  );
+        CUnit("rad"     , 1     , "m/m"    , "angle"    );
+        CUnit("sr"      , 1     , "m2/m2"  , "solidangle");
+        CUnit("Hz"      , 1     , "s-1"    , "frequency");
+        CUnit("N"       , 1     , "kg*m*s-2", "force"   );
+
 
         return true;
     }
@@ -192,16 +200,5 @@ class CUnit
 
 #endif 
 
-//typedef std::map<std::string, Magnitude> Magnitudes;
-//extern Magnitudes AllUnits ;
-//extern Magnitude MMasa ;
-//extern Magnitude MTemperature ;
-//extern Magnitude MEnergy ;
-//extern Magnitude MLength ;
-//extern Magnitude MTime ;
-//extern Magnitudes AllUnits ;
-//typedef std::multimap<std::string, 
-//extern std::multimap<std::string, 
-    //typedef std::map<std::string,std::pair<double,std::string>> magnitude;
 
 

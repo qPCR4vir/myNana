@@ -12,6 +12,7 @@ class DemoForm : public nana::gui::form, public EditableForm
     nana::gui::textbox _num;
     nana::gui::button  _up, _down;
     nana::gui::label   _label;
+    UnitPicker         UPicker;
 
 
     DemoForm ():nana::gui::form (nana::rectangle( nana::point(600,210), nana::size(500,250) )),
@@ -21,7 +22,8 @@ class DemoForm : public nana::gui::form, public EditableForm
                 osb2         (*this, STR("Project2:")),
                 num1         (*this, STR("G:") , -5, -30, 30),
                 num2         (*this, STR("Tm:"), 60,  30, 90),  
-                _num(*this), _up(*this), _down(*this), _label(*this)
+                _num(*this), _up(*this), _down(*this), _label(*this),
+                UPicker(*this, "m")
     {
         but1.caption (STR("But1"));
 	    but2.caption (STR("But2"));
@@ -51,7 +53,7 @@ class DemoForm : public nana::gui::form, public EditableForm
                     "<gap=2 <b1> <b2> <b3> >    \n\t"
                     "<<b4> <weight=2>>          \n\t"
                     "<  weight=20 <label weight=60 ><Num> <vertical weight=50 <UpDown> >>        \n\t"
-                    "<num  weight=20 >           \n\t"
+                    "<num  weight=20 <Unit weight=40 >>           \n\t"
                     "<Project2 weight=22>       \n\t" ;
     }
     void AsignWidgetToFields() override
@@ -63,8 +65,9 @@ class DemoForm : public nana::gui::form, public EditableForm
 	    _place.field("b3")<<but3;
 	    _place.field("b4")<<but4;
 	    _place.field("num")<<num1 << num2;
-	    _place.field("Num"    ) << _num ;
-	    _place.field("UpDown" ) << _up << _down ;
+	    _place.field("Num"    ) << _num  ;
+	    _place.field("Unit"   ) << UPicker/*._cb*/ ;
+	    _place.field("UpDown" ) << _up << _down  ;
 	    _place.field("label"  ) << _label;
     }
 
