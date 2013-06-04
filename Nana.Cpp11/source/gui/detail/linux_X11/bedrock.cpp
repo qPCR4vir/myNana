@@ -679,7 +679,7 @@ namespace detail
 
 							bedrock.fire_event(event_tag::mouse_up, msgwnd, ei);
 							bedrock.wd_manager.do_lazy_refresh(msgwnd, false);
->						}
+ 						}
 						else if(fire_click)
 						{
 							bedrock.fire_event(event_tag::click, msgwnd, ei);
