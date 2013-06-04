@@ -68,7 +68,7 @@ void OpenSaveBox::pick(const nana::string &file_tip)
 void OpenSaveBox::pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip)
 {
 	std::wcout<<std::endl<<action<<STR(" (with tip: ") << file_tip<<STR(")")<<std::endl;
-    fb.file(file_tip); 
+    fb.init_file(file_tip); 
 	if(fb())  
 	{	_user_selected=false;
         _fileName.push_back(fb.file()).option(_fileName.the_number_of_options());

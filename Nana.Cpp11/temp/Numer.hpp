@@ -19,8 +19,8 @@ class NumerUpDown : public  panel<false> , public EditableWidget
     double Min(double val)     {_min=val; /*UpDate();*/ return _min;}
     double Max(          )const{                    return _max;}
     double Max(double val)     {_max=val; /*UpDate(); */return _max;}
-    //double Step(          )const{                    return _step;}
-    //double Step(double val)     {_step=val; /*UpDate(); */return _step;}
+    double Step(          )const{                    return _step;}
+    double Step(double val)     {_step=val; /*UpDate(); */return _step;}
   private:
     textbox _num;
     button  _up, _down;
@@ -125,15 +125,22 @@ public:
     {
         _unit.ext_event().selected=[&](combox& cb)
                                     {
-                                        _num.Max (_unit.convert_from(  _num.Max(), _curr_un ) );
-                                        _num.Min (_unit.convert_from(  _num.Min(), _curr_un ) );
-                                        //_num.Step (_unit.convert_from(  _num.Step(), _curr_un ) );
+                                        CUnit u(_curr_un , charset( _unit.caption() )/*CUnit::unit_name ( nana::charset(cb.option ()) ) */);
+                                        if(u.error )
+                                        {    _unit.caption (_unit.caption ()+STR("?"));
+                                             return;
+                                        }
+                                        _num.Max   ( u.conv(_num.Max  () )  );
+                                        _num.Min   ( u.conv(_num.Min  () )  );
+                                        _num.Value ( u.conv(_num.Value() )  );
+                                        if (u.conv.lineal )
+                                          _num.Step( u.conv.c*_num.Step()   );
                                        
-                                        _num.Value (_unit.convert_from(  _num.Value(), _curr_un ) );
                                         _curr_un=charset(_unit.caption ());
                                     };
         InitMyLayout();
         SelectClickableWidget( _num);
+        SelectClickableWidget( _unit);
 
     }
      void SetDefLayout       () override

@@ -31,7 +31,8 @@ class DemoForm : public nana::gui::form, public EditableForm
                 num2         (*this, STR("Tm:"), 60,  30, 90),  
                 _num(*this), _up(*this), _down(*this), _label(*this),
                 UPicker(*this, "m"),
-                Ta           ( *this, STR("Ta:"), 55,  50, 60, "grC",STR("") /*, DefLayFile , step=1, decimals=2*/)
+                Ta           ( *this, STR("Conc:"), 0.1,  0, 20, "M", STR(""), 0.1,3 /*, DefLayFile , step=1, decimals=2*/)
+                //Ta           ( *this, STR("Ta:"), 55,  50, 60, "grC",STR("") /*, DefLayFile , step=1, decimals=2*/)
 
     {
         but1.caption (STR("But1"));
@@ -116,17 +117,25 @@ int main()
     PrintConv(10, "min", "s");
     PrintConv(30, "min", "h");
     PrintConv(1.0/24/60, "day", "s");
-    PrintConv(.1, "Kg", "gr");
+    PrintConv(.1, "kg", "gr");
     PrintConv(10, "mL", "s");
     PrintConv(10, "h", "s");
     PrintConv(10, "dm3", "m3");
     PrintConv(10, "dm", "m");
     PrintConv(10, "mm", "m");
     PrintConv(1000, "dm", "Km");
-    PrintConv(0.001, "Km", "mm");
-    PrintConv(50, "grC", "K");
+    PrintConv(0.001, "km", "mm");
+    PrintConv(50, "°C", "K");
     PrintConv(0, "grC", "K");
     PrintConv(0, "K", "grC");
+    PrintConv(0, "K", "grC");
+    PrintConv(0, "K", "°C");
+    PrintConv(0.1, "tone", "kg");
+    PrintConv(0.1, "amol", "cop");
+    PrintConv(100, "cop/µL", "fM");
+    PrintConv(1, "g/mL", "g/L");
+    PrintConv(1, "g/mL", "M");
+
 
 
 	form.show();
