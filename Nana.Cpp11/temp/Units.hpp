@@ -6,6 +6,7 @@
 #include <set>
 #include <functional>
 #include <sstream>
+#include <assert.h>
 
 
 class CUnit;
@@ -31,7 +32,7 @@ class CUnit
         {};
         conversion(double c_  , double s_ ,const nonLinealFunction& nlc_):c(c_),s(s_), nlc(nlc_)    , lineal(false) 
         {};
-        conversion operator*(const conversion& rc)
+        conversion operator*(const conversion& rc) const
         { 
             if (lineal && rc.lineal)
                 return conversion (rc.c*c, c*rc.s+s);
@@ -42,7 +43,12 @@ class CUnit
 
             return conversion (c,s, [rc,this](double b){return nlc(rc.c*rc.nlc(b)+rc.s);});
         }
-        double operator()(double ori_val)
+        conversion _inverted() const
+        { 
+            assert (lineal);
+            return conversion (1/c, -s/c);
+        }
+        double operator()(double ori_val) const
         {
             if (lineal)
                 return c*ori_val+s;
@@ -55,6 +61,7 @@ class CUnit
     bool            error;
     static const magnitudes& MagnitudesDic() {return _Magnitudes;}
     static const units     & UnitsDic     () {return _Units     ;}
+
     static bool       unit_exist(const unit_name& n)
     {  
         return _Units.find(n)!= _Units.end();  
@@ -68,6 +75,11 @@ class CUnit
         std::ostringstream o;
         o << *this;
         return o.str();
+    }
+protected:
+    static bool  _compatible(const unit_name& name_, const unit_name& base_)
+    {
+        return UnitsDic().at(name_ ).magnitude == UnitsDic().at(base_).magnitude ; 
     }
   private:
     static units                _Units ;
@@ -173,6 +185,7 @@ class CUnit
         CUnit("pg"      , 1000  , "fg"                  );
         CUnit("tone"    , 1000  , "kg"                  );
         CUnit("A"       , 1     , ""     , "Current"    );
+        CUnit("mA"      , 1000  , "A"                   );
         CUnit("mol"     , 1     , ""     , "Amount"     );
         CUnit("mol"     , No    , "cop"                 );
         CUnit("mmol"    , 0.001 , "mol"                 );
@@ -195,6 +208,7 @@ class CUnit
         CUnit("h"       , 60    , "min"                 );
         CUnit("day"     , 24    , "h"                   );
         CUnit("week"    , 7     , "day"                 );
+        CUnit("year"    , 365   , "day"                 );
         CUnit("L"       , 1     , ""    , "Volumen"     );
         CUnit("L"       , 1000  , "mL"                  );
         CUnit("mL"      , 1000  , "µL"                  );
@@ -215,8 +229,8 @@ class CUnit
         CUnit("Wh"      , 3600  , "J"                   );
         CUnit("bp"      , 1     , "nt"    , "GeneLength");
         CUnit("kb"      , 1000  , "bp"    , "GeneLength");
-        CUnit("M"       , 1     , ""    , "concentration");
-        CUnit("M"       , No    , "cop/L","concentration");
+        //CUnit("M"       , 1     , ""      , "molarity"  );
+        CUnit("M"       , No    , "cop/L" ,"molarity"   );
         CUnit("cop/µL"  , 1000  , "cop/L"               );
         CUnit("M"       , 1     , "mol/L"               );
         CUnit("M"       , 1000  , "mM"                  );
@@ -232,14 +246,85 @@ class CUnit
         CUnit("g/mL"    , 1000  , "g/L"                 );
         CUnit("pg/µL"   , 1     , "µg/L"                );
 
-
-
-
-
         return true;
     }
+};
 
-
+class Relation : public CUnit
+{
+public:
+    Relation(const unit_name& name_,  double   k_            ,   const unit_name& base_ )
+        /*: CUnit (name_,base_)*/
+    {
+        if ( error =  !unit_exist(name_) || !unit_exist(base_))
+            return;
+        //if ( error = _compatible (name_ , base_ ) && !CUnit (name_,base_).error ) 
+        //    return;
+        conv = conversion (k_);
+        name=name_; base= base_ ;
+    }
+    Relation(const unit_name& name_,  const conversion& conv_,     const unit_name& base_ )
+        /*: CUnit (name_,base_)*/
+    {
+        if ( error =  !unit_exist(name_) || !unit_exist(base_))
+            return;
+        //if ( error = _compatible (name_ , base_ ) && !CUnit (name_,base_).error ) 
+        //    return;
+        conv = conv_;
+        name=name_; base= base_ ;
+    }
+    //Relation(const unit_name& name_,  const conversion& conv_,     const unit_name& base_ )
+    //    : CUnit (name_,base_)
+    //{
+    //    conv = conv_;
+    //    error = error ? !unit_exist(name) || !unit_exist(base) || _compatible (name , base ) : true;
+    //}
+    CUnit operator()(const unit_name& name_, const unit_name& base_)
+    {
+        CUnit u;
+        u.name=name_; u.base=base_ ;
+        if (!unit_exist (name_ ) || !unit_exist (base_ ))
+            return u;
+        //if ( _compatible(name_, base_) )
+        //{
+        //    u =CUnit(name_, base_);
+        //    if (!u.error)
+        //        return u;
+        //} 
+        if ( _compatible(name_, name) && _compatible(base,base_) )
+        {
+            CUnit l(name_, name), r(base,base_);
+            if (!l.error && !r.error )
+            {  
+               u.conv=l.conv * conv * r.conv ;
+               u.error = false;
+               return u;
+            }
+        }
+        if ( _compatible(name_, base ) && _compatible(name ,base_) )
+        {
+            CUnit rl(name_, base ), rr(name ,base_);
+            if (!rl.error && !rr.error )
+            {  
+               u.conv=rl.conv * conv._inverted()  * rr.conv ;
+               u.error = false;
+            }
+        }
+        return u;
+    }
+};
+class MW 
+{
+  Relation m,c;
+public:
+    MW(double mw):m("mol",mw,"g"),c("M",mw,"g/L"){}
+    CUnit operator()(const CUnit::unit_name& name_, const CUnit::unit_name& base_)
+    {
+        CUnit r=m(name_,base_);
+        if (!r.error)
+            return r;
+        return c(name_,base_);
+    }
 };
 
 

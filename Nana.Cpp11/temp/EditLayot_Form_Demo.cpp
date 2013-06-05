@@ -22,7 +22,7 @@ class DemoForm : public nana::gui::form, public EditableForm
 
 
 
-    DemoForm ():nana::gui::form (nana::rectangle( nana::point(600,210), nana::size(500,250) )),
+    DemoForm ():nana::gui::form (nana::rectangle( nana::point(800,210), nana::size(500,250) )),
                 EditableForm    (*this, STR("Configurable Window"), STR("Layot_Demo.lay.txt")),
                 but1         (*this), but2(*this), but3(*this), but4(*this),
                 osb          (*this, STR("Project:") ), 
@@ -96,6 +96,13 @@ void PrintConv(double val, const CUnit::unit_name& from, const CUnit::unit_name&
         return; 
     std::cout<< ": " << val << " " << from << " = " << f_t.conv(val)<< " "  << to;
 }
+void PrintConv(double val, const CUnit& u)
+{
+    std::cout<< "\n" <<"Converting "<< u.name << " into " << u.base ;
+    if (u.error) 
+        return; 
+    std::cout<< ": " << val << " " << u.name << " = " << u.conv(val)<< " "  << u.base ;
+}
 
 
 //int main_temp ()
@@ -117,13 +124,14 @@ int main()
     PrintConv(10, "min", "s");
     PrintConv(30, "min", "h");
     PrintConv(1.0/24/60, "day", "s");
-    PrintConv(.1, "kg", "gr");
-    PrintConv(10, "mL", "s");
+    PrintConv(10, "year", "week");
+    PrintConv(.1, "kg", "g");
+    //PrintConv(10, "mL", "s");
     PrintConv(10, "h", "s");
     PrintConv(10, "dm3", "m3");
     PrintConv(10, "dm", "m");
     PrintConv(10, "mm", "m");
-    PrintConv(1000, "dm", "Km");
+    //PrintConv(1000, "dm", "Km");
     PrintConv(0.001, "km", "mm");
     PrintConv(50, "°C", "K");
     PrintConv(0, "grC", "K");
@@ -135,6 +143,41 @@ int main()
     PrintConv(100, "cop/µL", "fM");
     PrintConv(1, "g/mL", "g/L");
     PrintConv(1, "g/mL", "M");
+
+    std::cout<< "\n";
+    Relation Job_d_h("day",8,"h"), Job_w_d("week",5,"day");
+
+    std::cout<< "\n Working days / year: " << Job_w_d("year","day");
+    std::cout<< "\n Working days / month: " << Job_w_d("year","day").conv(1.0/12);
+    std::cout<< "\n Working h / week: " << Job_d_h.conv( Job_w_d.conv(1) );
+    std::cout<< "\n Working h / month: " << Job_d_h.conv( Job_w_d("year","day").conv(1.0/12) );
+    std::cout<< "\n Working h / year: " << Job_d_h.conv( Job_w_d("year","day").conv(1) );
+
+
+    std::cout<< "\n Job: " << Job_d_h;
+    std::cout<< "\n Job: " << Job_d_h("week","h");
+    PrintConv(5, Job_d_h("day","h"));
+
+    std::cout<< "\n Job: " << Job_w_d("year","week");
+    std::cout<< "\n Job: " << Job_w_d("year","day");
+
+    std::cout<< "\n";
+
+    Relation Light("s",300000,"km");
+    std::cout<< "\n Light: " << Light;
+    std::cout<< "\n Light: " << Light("year","km");
+
+    std::cout<< "\n";
+    Relation H2O("mol",18,"g");
+    std::cout<< "\n H2O: " << H2O;
+
+
+    std::cout<< "\n";
+    MW O2(2*8);
+    std::cout<< "\n O2: " << O2("mol","g");
+    std::cout<< "\n O2: " << O2("g/L","mM");
+    std::cout<< "\n O2: " ;
+    PrintConv(8, O2("g/L","mM"));
 
 
 
