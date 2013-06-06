@@ -162,7 +162,7 @@ namespace nana{	namespace gui
 				}
 				else
 					readbytes = _m_number(sp_, false);
-
+						
 				if(readbytes)
 				{
 					sp_ += readbytes;
@@ -240,7 +240,7 @@ namespace nana{	namespace gui
 
 			if(0 == len)
 				_m_throw_error("the \'" + idstr_ + "\' requires a number(integer or real or percent)");
-
+						
 			sp_ += len + (p - sp_);
 		}
 
@@ -335,7 +335,7 @@ namespace nana{	namespace gui
 		event_handle event_size_handle;
 		division * root_division;
 		std::map<std::string, field_impl*> fields;
-
+			
 		implement()
 			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
 		{}
@@ -462,7 +462,7 @@ namespace nana{	namespace gui
 				default:	break;
 				}
 			}
-
+				
 			element_t& operator=(element_t && rv)
 			{
                 if(this != &rv)
@@ -597,11 +597,11 @@ namespace nana{	namespace gui
 					fastened.erase(i);
 					break;
 				}
-			});
+			});	
 			return *this;
 		}
 	public:
-
+	
 		//returns the number of fixed pixels and the number of adjustable items
 		std::pair<unsigned, std::size_t> fixed_and_adjustable() const
 		{
@@ -680,7 +680,7 @@ namespace nana{	namespace gui
 			std::pair<unsigned, std::size_t> pair;
 			if(field && (kind_of_division == match_kind))
 				pair = field->fixed_and_adjustable();
-
+				
 			for(auto child : children)
 			{
 				if(false == child->is_fixed()) //it is adjustable
@@ -705,7 +705,7 @@ namespace nana{	namespace gui
 		number_t gap;
 		field_impl * field;
 	};
-
+    /// Horizontal
 	class place::implement::div_arrange
 		: public division
 	{
@@ -716,47 +716,45 @@ namespace nana{	namespace gui
 
 		virtual void collocate()
 		{
-			auto pair = fixed_pixels(kind::arrange);
-			if(field)
-				pair.first += field->percent_pixels(area.width);
-
+			auto pair = fixed_pixels(kind::arrange);             /// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields 
+			if(field)                                            /// Have this div fields? (A pointer to fields in this div)
+				pair.first += field->percent_pixels(area.width); /// Yes: Calcule summe of width ocupated by each percent-field in this div  
+				
 			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
 
 			double percent_pixels = 0;
-			for(auto child: children)
+			for(auto child: children)                            /// For each child div: summe of width of each percent-div
 			{
 				if(child->is_percent())
 					percent_pixels += area.width * child->weight.real();
 			}
 
-			pair.first += static_cast<unsigned>(percent_pixels);
-			double adjustable_pixels = (pair.second && pair.first < area.width ? (double(area.width - pair.first) / pair.second) : 0.0);
-
+			pair.first += static_cast<unsigned>(percent_pixels);   /// Calcule width ocupate by all percent fields and div in this div.
+			double adjustable_pixels = (pair.second && pair.first < area.width ? (double(area.width - pair.first) / pair.second) : 0.0);  /// What is free?
+				
 			double left = area.x;
-			for(auto child : children)
+			for(auto child : children)                          /// First collocate child div's !!!
 			{
-				child->area.x = static_cast<int>(left);
+				child->area.x = static_cast<int>(left);         /// begening from the left, assing left x
 				child->area.y = area.y;
 				child->area.height = area.height;
 
-				double adj_px;
-				if(false == child->is_fixed()) //the child is adjustable
-				{
-					if(false == child->is_percent())
-					{
-						adj_px = child->fixed_pixels(kind::arrange).first;
-						if(adj_px <= adjustable_pixels)
-							adj_px = adjustable_pixels;
-					}
-					else
-						adj_px = static_cast<unsigned>(area.width * child->weight.real());
-				}
-				else
-					adj_px = child->weight.integer();
+				double adj_px;                                  /// and calcule width of this div.
+				     if(child->is_fixed())                              /// with is fixed for fixed div
+					            adj_px = child->weight.integer();
+				else if(child->is_percent())                            /// and calculated for others: if the child div is percent - simple take it full
+						        adj_px = static_cast<unsigned>(area.width * child->weight.real());
+				    else
+				    {
+					    adj_px = child->fixed_pixels(kind::arrange).first;   /// if child div is floating (no fixed and no percent)
+					    if(adj_px <= adjustable_pixels)                      /// take it width only if it fit into the free place of this div.
+						    adj_px = adjustable_pixels;
+				    }
+				
 
 				left += adj_px;
 				child->area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
-				child->collocate();
+				child->collocate();  /// The child div have full position. Now we can collocate  inside it the child fields and child-div.
 			}
 
 			if(field)
@@ -811,12 +809,12 @@ namespace nana{	namespace gui
 
 		virtual void collocate()
 		{
-			auto pair = fixed_pixels(kind::vertical_arrange);
-			if(field)
-				pair.first += field->percent_pixels(area.height);
+			auto pair = fixed_pixels(kind::vertical_arrange);    /// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields 
+			if(field)                                            /// Have this div fields? (A pointer to fields in this div)
+				pair.first += field->percent_pixels(area.height); /// Yes: Calcule summe of height ocupated by each percent-field in this div  
 
-			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
-
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.height * gap.real());
+				
 			double percent_pixels = 0;
 			for(auto child: children)
 			{
@@ -827,7 +825,7 @@ namespace nana{	namespace gui
 			pair.first += static_cast<unsigned>(percent_pixels);
 			double adjustable_pixels = (pair.second && pair.first < area.height ? (double(area.height - pair.first) / pair.second) : 0.0);
 
-
+				
 			double top = area.y;
 			for(auto child : children)
 			{
@@ -1005,7 +1003,7 @@ namespace nana{	namespace gui
 					{
 						if(table[l + lbp])
 							continue;
-
+							
 						i = _m_search(i, end);
 						if(i == end)
 						{
@@ -1084,7 +1082,7 @@ namespace nana{	namespace gui
 		static field_impl::const_iterator _m_search(field_impl::const_iterator i, field_impl::const_iterator end)
 		{
 			if(i == end) return end;
-
+				
 			while(i->kind_of_element == field_impl::element_t::kind::gap)
 			{
 				if(++i == end) return end;
@@ -1132,7 +1130,7 @@ namespace nana{	namespace gui
 			if(div)
 				return div;
 		}
-		return nullptr;
+		return nullptr;	
 	}
 
 	place::implement::division* place::implement::scan_div(tokenizer& tknizer)
@@ -1219,13 +1217,13 @@ namespace nana{	namespace gui
 		case token::grid:
 			{
 				div_grid * p = new div_grid(std::move(name));
-
+					
 				if(array.size())
 				{
 					if(array[0].kind_of() != number_t::kind::percent)
 						p->dimension.first = array[0].integer();
 				}
-
+					
 				if(array.size() > 1)
 				{
 					if(array[1].kind_of() != number_t::kind::percent)
@@ -1244,7 +1242,7 @@ namespace nana{	namespace gui
         default:
             throw std::runtime_error("nana.place: invalid division type.");
 		}
-
+			
 		div->weight = weight;
 		div->gap = gap;
 		div->field = field;		//attach the field to the division
@@ -1282,7 +1280,7 @@ namespace nana{	namespace gui
 					{
 						impl_->root_division->area = API::window_size(ei.window);
 						impl_->root_division->collocate();
-					}
+					}					
 				});
 		}
 
