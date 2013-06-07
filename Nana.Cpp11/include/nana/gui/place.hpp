@@ -21,9 +21,82 @@ namespace gui
 	class place
 		: nana::noncopyable
 	{
-		typedef std::pair<window, unsigned>	fixed_t;
-		typedef std::pair<window, int>	percent_t;
-		typedef std::pair<window, std::pair<unsigned, unsigned> > room_t;
+		typedef std::pair<window, unsigned>	                        fixed_t; 
+		typedef std::pair<window, int>	                            percent_t;
+		typedef std::pair<window, std::pair<unsigned, unsigned> >   room_t;
+
+        struct adj{unsigned weigth; size_t count_adj; adj():weigth(0),count_adj(0){}  };
+        struct IAdjust
+        {    
+             virtual adj  pre_place (unsigned t_w, adj& prev=adj() )=0 ;
+             virtual adj  end_place (unsigned t_w,const adj& tip, adj& prev=adj() )=0 ;
+             virtual unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )=0 ;
+
+             //virtual unsigned min   (unsigned t_w,const adj& tip)=0;    
+             //virtual unsigned max   (unsigned t_w,const adj& tip)=0;    
+             //virtual bool adjustable(unsigned t_w,const adj& tip)=0;
+        };
+        struct base_widget_field_t  :  IAdjust                      
+        { 
+            window   handle; 
+            unsigned min_,max_; 
+            base_widget_field_t(         ):handle(nullptr), min_(0),max_(0){}
+            base_widget_field_t(window wd):handle(wd     ), min_(0),max_(0){}
+
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override    {   ++prev.count_adj;   return  prev;        }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    
+            {   
+                if ( tip.weigth/tip.count_adj < min_ )   {prev.weigth += min_; return prev; }
+                if ( tip.weigth/tip.count_adj > max_ )   {prev.weigth += max_; return prev; }
+                prev.weigth += min_; 
+                ++prev.count_adj;   return  prev;        
+            }
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override
+            {   
+                if ( tip.weigth/tip.count_adj < min_ )   {return min_; }
+                if ( tip.weigth/tip.count_adj > max_ )   {return max_; }
+
+                return  prev.weigth/tip.count_adj + min_ ;        
+            }
+            //unsigned min   (unsigned t_w,const adj& tip)override{return min_;} 
+            //unsigned max   (unsigned t_w,const adj& tip)override{return max_;} 
+            // virtual bool adjustable(unsigned t_w,const adj& tip)=0;
+        };
+
+        struct fixed_widget_field_t: base_widget_field_t   
+        { 
+            unsigned weight_; 
+
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override    {   return end_place(t_w, prev);      }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    {   prev.weigth += weigth_adj() ;   return  prev;        }    
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )  override              {   return weigth_adj();      }        
+            unsigned weigth_adj()
+            {   
+                if ( weight_  < min_ )    {return min_; }
+                if ( weight_  > max_ )    {return max_; }
+                
+                return  weight_;          
+            }
+        };
+
+        struct percent_widget_field_t: base_widget_field_t 
+        { 
+            int      percent; 
+        
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override     {   return end_place(t_w, prev);      }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override     {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;              }
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override                 {   return   weigth_adj( t_w ) ;     
+            }
+            unsigned weigth_adj(unsigned t_w )
+            {   
+                if ( t_w * percent / 100.0 < min_ )    {return min_; }
+                if ( t_w * percent / 100.0 > max_ )    {return max_; }
+                return  t_w * percent / 100.0 ;     
+            }
+        };     // double?, unsigned?
+
+        struct room_widget_field_t: base_widget_field_t    { unsigned rows,columns; };
+
 
 		struct implement;
 
@@ -31,7 +104,7 @@ namespace gui
 		{
 		public:
 			virtual ~field_t() = 0;
-			virtual field_t& operator<<(window wd)		= 0;
+			virtual field_t& operator<<(window wd)		= 0;    // virtual field_t& operator<<(base_widget_field_t& wd)		= 0;
 			virtual field_t& operator<<(unsigned gap)	= 0;
 			virtual field_t& operator<<(const fixed_t& f)	= 0;
 			virtual field_t& operator<<(const percent_t& p)	= 0;

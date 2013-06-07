@@ -602,11 +602,11 @@ namespace nana{	namespace gui
 		}
 	public:
 	
-		//returns the number of fixed pixels and the number of adjustable items
+		/// returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
 		std::pair<unsigned, std::size_t> fixed_and_adjustable() const
-		{
+		{    
 			std::pair<unsigned, std::size_t> vpair;
-			for(auto & e : elements)
+			for(auto & e : elements)  /// in elements only the last named-field , gap and weigth?
 			{
 				switch(e.kind_of_element)
 				{
@@ -616,7 +616,7 @@ namespace nana{	namespace gui
 				case element_t::kind::gap:
 					vpair.first += e.u.gap_value;
 					break;
-				case element_t::kind::percent:	//the percent is not fixed and not adjustable.
+				case element_t::kind::percent:	/// the percent is not fixed and not adjustable.
 					break;
 				default:
 					++vpair.second;
@@ -674,22 +674,20 @@ namespace nana{	namespace gui
 			return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
 		}
 
-		//return the fixed pixels and adjustable items.
+		/// return the fixed pixels and adjustable items. Count pixel from fixed div only and from fixed fields and gaps, and count adjustable div and fields.
 		std::pair<unsigned, std::size_t> fixed_pixels(kind match_kind) const
 		{
 			std::pair<unsigned, std::size_t> pair;
 			if(field && (kind_of_division == match_kind))
-				pair = field->fixed_and_adjustable();
+				pair = field->fixed_and_adjustable(); /// fixed_and_adjustable returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
 				
 			for(auto child : children)
 			{
-				if(false == child->is_fixed()) //it is adjustable
-				{
-					if(false == child->is_percent())
-						++pair.second;
-				}
-				else
+				if( child->is_fixed()  )
 					pair.first += static_cast<unsigned>(child->weight.integer());
+				else                        
+				if( ! child->is_percent() )    //it is adjustable
+						++pair.second;
 			}
 			return pair;
 		}
@@ -715,22 +713,25 @@ namespace nana{	namespace gui
 		{}
 
 		virtual void collocate()
-		{
-			auto pair = fixed_pixels(kind::arrange);             /// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields 
-			if(field)                                            /// Have this div fields? (A pointer to fields in this div)
-				pair.first += field->percent_pixels(area.width); /// Yes: Calcule summe of width ocupated by each percent-field in this div  
-				
-			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
+		{   		/// fixed_pixels return the fixed pixels and adjustable items. Count pixel from fixed div only and from fixed fields and gaps, and count adjustable div and fields.
 
+			auto pair = fixed_pixels(kind::arrange);             /// Calcule in pair.first the summe of width of all fixed-fields and fixed child div in this div. In second count adjustable child div's but not the fields. Ignore percent child div. 
+			if(field)                                            /// Have this div fields? (A pointer to fields in this div)
+				pair.first += field->percent_pixels(area.width); /// Yes: Add the summe of width ocupated by each percent-field in this div  
 			double percent_pixels = 0;
-			for(auto child: children)                            /// For each child div: summe of width of each percent-div
+			for(auto child: children)                            /// And summe of the width of each percent-div
 			{
 				if(child->is_percent())
 					percent_pixels += area.width * child->weight.real();
 			}
 
-			pair.first += static_cast<unsigned>(percent_pixels);   /// Calcule width ocupate by all percent fields and div in this div.
-			double adjustable_pixels = (pair.second && pair.first < area.width ? (double(area.width - pair.first) / pair.second) : 0.0);  /// What is free?
+			pair.first += static_cast<unsigned>(percent_pixels);   /// Calcule width ocupate by all percent and fixed fields and div in this div.
+
+			double adjustable_pixels = (pair.second && (pair.first < area.width) ? (double(area.width - pair.first) / pair.second) : 0.0);  /// What is free for gaps and adjustable fields?
+
+                                                                   /// Calcule the width of the gap to be include after each field or div. 
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
+
 				
 			double left = area.x;
 			for(auto child : children)                          /// First collocate child div's !!!
@@ -740,24 +741,27 @@ namespace nana{	namespace gui
 				child->area.height = area.height;
 
 				double adj_px;                                  /// and calcule width of this div.
+
 				     if(child->is_fixed())                              /// with is fixed for fixed div
 					            adj_px = child->weight.integer();
+
 				else if(child->is_percent())                            /// and calculated for others: if the child div is percent - simple take it full
 						        adj_px = static_cast<unsigned>(area.width * child->weight.real());
+
 				    else
 				    {
 					    adj_px = child->fixed_pixels(kind::arrange).first;   /// if child div is floating (no fixed and no percent)
-					    if(adj_px <= adjustable_pixels)                      /// take it width only if it fit into the free place of this div.
-						    adj_px = adjustable_pixels;
+					    if(adj_px <= adjustable_pixels)                      /// take it width only if it fit into the free place of this div. Otherwise take what left
+						    adj_px = adjustable_pixels;                     /// No more place for gaps?
 				    }
 				
 
-				left += adj_px;
-				child->area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
+				left += adj_px;    /// Fix the begin of the next div not including the gap ??!
+				child->area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);  /// Effect discontinuo
 				child->collocate();  /// The child div have full position. Now we can collocate  inside it the child fields and child-div.
 			}
 
-			if(field)
+			if(field)   /// Now colocate the fields
 			{
 				unsigned adj_px = static_cast<unsigned>(adjustable_pixels) - (static_cast<unsigned>(adjustable_pixels) > gap_size ? gap_size : 0);
 				nana::rectangle r = area;
@@ -812,48 +816,51 @@ namespace nana{	namespace gui
 			auto pair = fixed_pixels(kind::vertical_arrange);    /// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields 
 			if(field)                                            /// Have this div fields? (A pointer to fields in this div)
 				pair.first += field->percent_pixels(area.height); /// Yes: Calcule summe of height ocupated by each percent-field in this div  
-
-			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.height * gap.real());
-				
 			double percent_pixels = 0;
-			for(auto child: children)
+			for(auto child: children)                            /// For each child div: summe of width of each percent-div
 			{
 				if(child->is_percent())
 					percent_pixels += area.height * child->weight.real();
 			}
 
-			pair.first += static_cast<unsigned>(percent_pixels);
+            pair.first += static_cast<unsigned>(percent_pixels);  /// Calcule height ocupate by all percent and fixed fields and div in this div.
+
 			double adjustable_pixels = (pair.second && pair.first < area.height ? (double(area.height - pair.first) / pair.second) : 0.0);
+
+				                                                 /// Calcule the height of each gap
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.height * gap.real());
+				
 
 				
 			double top = area.y;
-			for(auto child : children)
+			for(auto child : children)                               /// First collocate child div's !!!
 			{
 				child->area.x = area.x;
-				child->area.y = static_cast<int>(top);
+				child->area.y = static_cast<int>(top);               /// begening from the top, assing top y
 				child->area.width = area.width;
 
-				double adj_px;
-				if(false == child->is_fixed()) //the child is adjustable
-				{
-					if(false == child->is_percent())
-					{
-						adj_px = child->fixed_pixels(kind::vertical_arrange).first;
-						if(adj_px <= adjustable_pixels)
-							adj_px = adjustable_pixels;
-					}
-					else
-						adj_px = area.height * child->weight.real();
-				}
-				else
-					adj_px = child->weight.integer();
+				double adj_px;                                         /// and calcule h of this div.
 
-				top += adj_px;
+				if (child->is_fixed())                                 /// with is fixed for fixed div
+					adj_px = child->weight.integer();
+				else                                            //the child is adjustable
+
+  				if (child->is_percent())                             /// and calculated for others: if the child div is percent - simple take it full
+					adj_px = area.height * child->weight.real(); 
+				else
+
+				{
+					adj_px = child->fixed_pixels(kind::vertical_arrange).first;   /// if child div is floating (no fixed and no percent)
+					if(adj_px <= adjustable_pixels)                               /// take it width only if it fit into the free place of this div. Otherwise take what left
+						adj_px = adjustable_pixels;                            /// No more place for gaps?
+				}
+
+				top += adj_px;                            /// Fix the begin of the next div not including the gap ??!
 				child->area.height = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
-				child->collocate();
+				child->collocate();    /// The child div have full position. Now we can collocate  inside it the child fields and child-div.
 			}
 
-			if(field)
+			if(field)     /// Now colocate the fields
 			{
 				unsigned adj_px = static_cast<unsigned>(adjustable_pixels) - (static_cast<unsigned>(adjustable_pixels) > gap_size ? gap_size : 0);
 				nana::rectangle r = area;
