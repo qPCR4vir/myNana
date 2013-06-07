@@ -59,12 +59,12 @@ class DemoForm : public nana::gui::form, public EditableForm
     {
         _DefLayout= "vertical      gap=2             \n\t"
 	                 "       <weight=25>                \n\t"
-	                 "       <Project weight=22>       \n\t "
+	                 "       <Project weight=23>       \n\t "
 	                 "       <gap=2 <b1> <b2> <b3> >   \n\t "
 	                 "       <<b4> <weight=2>>         \n\t "
 	                 "       <  weight=22 <label weight=60 ><Num> <vertical weight=50 <UpDown> >>     \n\t   "
-	                 "       <  weight=23 <Ta  weight= 180><> <num  weight=280 ><>  <Unit weight=40 >>         \n\t  "
-	                 "       <Project2 weight=22>       "
+	                 "       <  weight=23 <Ta  weight= 200><> <num  weight=280 ><>  <Unit weight=50 gap=2 >>         \n\t  "
+	                 "       <Project2 weight=23>       "
                   ;
     }
     void AsignWidgetToFields() override

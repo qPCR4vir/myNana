@@ -146,15 +146,15 @@ public:
      void SetDefLayout       () override
     {
         _DefLayout= "  <                        \n"
-                                "  <vertical   weight=120            Num                 >           \n"
+                                "  <vertical   weight=130            Num                 >           \n"
                                 "  <vertical      <><vertical Unit weight=21><>          >             \n"
                          " > ";   
 
         _num._DefLayout="  <                        \n"
-                        "          <>               \n"
+                        "                           \n"
                                 "  <vertical weight=60       <><label weight=15 gap=1>        <>          >           \n"
                                 "  <vertical weight=15       <><vertical UpDown weight=21><>          >               \n"
-                                "  <vertical weight=50       <><Num weight=21>                    <>          >        \n"
+                                "  <vertical                 <><Num weight=21>                    <>          >        \n"
                          " > ";
     }
      void AsignWidgetToFields() override
