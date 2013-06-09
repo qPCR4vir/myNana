@@ -331,10 +331,10 @@ namespace nana{	namespace gui
 		class div_vertical_arrange;
 		class div_grid;
 
-		window window_handle;
-		event_handle event_size_handle;
-		division * root_division;
-		std::map<std::string, field_impl*> fields;
+		window          window_handle;
+		event_handle    event_size_handle;
+		division *      root_division;
+		std::map<std::string, IAdjust *> fields;
 			
 		implement()
 			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
