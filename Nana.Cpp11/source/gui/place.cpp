@@ -364,9 +364,9 @@ namespace nana{	namespace gui
 			kind kind_of_element;
 			union
 			{
-				window handle;
+				window handle;     //    base_widget_field_t *wdgt;
 				unsigned gap_value;
-				fixed_t	*	fixed_ptr;
+				fixed_t	*	fixed_ptr;    // or value type??
 				percent_t *	percent_ptr;
 				room_t	*	room_ptr;
 			}u;
@@ -374,7 +374,7 @@ namespace nana{	namespace gui
 			element_t(window wd)
 				: kind_of_element(kind::window)
 			{
-				u.handle = wd;
+				u.handle = wd;                    // u.wdgt= new base_widget_field_t ; u.wdgt->handle = wd;     
 			}
 
 			element_t(unsigned gap)
@@ -386,19 +386,19 @@ namespace nana{	namespace gui
 			element_t(const fixed_t& fixed)
 				: kind_of_element(kind::fixed)
 			{
-				u.fixed_ptr = new fixed_t(fixed);
+				u.fixed_ptr = new fixed_t(fixed);  // u.wdgt= new fixed_widget_field_t(fixed);
 			}
 
 			element_t(const percent_t& per)
 				: kind_of_element(kind::percent)
 			{
-				u.percent_ptr = new percent_t(per);
+				u.percent_ptr = new percent_t(per);  // u.wdgt= new percent_widget_field_t(per);
 			}
 
-			element_t(const room_t& rm)
+			element_t(const room_t& rm)            // element_t(const room_widget_field_t& rm)
 				: kind_of_element(kind::room)
 			{
-				u.room_ptr = new room_t(rm);
+				u.room_ptr = new room_t(rm);     // u.wdgt= new room_widget_field_t(rm);
 			}
 
 			element_t(const element_t& rhs)
@@ -407,7 +407,7 @@ namespace nana{	namespace gui
 				switch(kind_of_element)
 				{
 				case kind::fixed:
-					u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+					u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr); // u.wdgt= new fixed_widget_field_t(*dynamic_cast<fixed_widget_field_t>(rhs.u.wdgt));
 					break;
 				case kind::percent:
 					u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
@@ -429,18 +429,18 @@ namespace nana{	namespace gui
 
                     switch(kind_of_element)
                     {
-                    case kind::fixed:
-                        u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
-                        break;
-                    case kind::percent:
-                        u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
-                        break;
-                    case kind::room:
-                        u.room_ptr = new room_t(*rhs.u.room_ptr);
-                        break;
-                    default:
-                        u = rhs.u;
-                        break;
+                        case kind::fixed:
+                            u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+                            break;
+                        case kind::percent:
+                            u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
+                            break;
+                        case kind::room:
+                            u.room_ptr = new room_t(*rhs.u.room_ptr);
+                            break;
+                        default:
+                            u = rhs.u;
+                            break;
                     }
                 }
                 return *this;
@@ -451,25 +451,25 @@ namespace nana{	namespace gui
 			{
 				switch(kind_of_element)
 				{
-				case kind::fixed:
-					rv.u.fixed_ptr = nullptr;
-					break;
-				case kind::percent:
-					rv.u.percent_ptr = nullptr;
-					break;
-				case kind::room:
-					rv.u.room_ptr = nullptr;
-				default:	break;
+				    case kind::fixed:
+					    rv.u.fixed_ptr = nullptr;
+					    break;
+				    case kind::percent:
+					    rv.u.percent_ptr = nullptr;
+					    break;
+				    case kind::room:
+					    rv.u.room_ptr = nullptr;
+				    default:	break;
 				}
 			}
 				
 			element_t& operator=(element_t && rv)
 			{
-                if(this != &rv)
+                if(this == &rv) return *this;
+                u=rv.u;
+                kind_of_element = rv.kind_of_element;
+                switch(kind_of_element)
                 {
-                    kind_of_element = rv.kind_of_element;
-                    switch(kind_of_element)
-                    {
                     case kind::fixed:
                         rv.u.fixed_ptr = nullptr;
                         break;
@@ -479,8 +479,8 @@ namespace nana{	namespace gui
                     case kind::room:
                         rv.u.room_ptr = nullptr;
                     default:	break;
-                    }
                 }
+                
                 return *this;
 			}
 
@@ -505,15 +505,15 @@ namespace nana{	namespace gui
 			{
 				switch(kind_of_element)
 				{
-				case kind::window:
-					return u.handle;
-				case kind::fixed:
-					return u.fixed_ptr->first;
-				case kind::percent:
-					return u.percent_ptr->first;
-				case kind::room:
-					return u.room_ptr->first;
-				default:	break;
+				    case kind::window:
+					    return u.handle;    // return u.wdgt->handle;
+				    case kind::fixed:
+					    return u.fixed_ptr->first;
+				    case kind::percent:
+					    return u.percent_ptr->first;
+				    case kind::room:
+					    return u.room_ptr->first;
+				    default:	break;
 				}
 				return nullptr;
 			}
@@ -695,13 +695,13 @@ namespace nana{	namespace gui
 		virtual void collocate() = 0;
 
 	public:
-		kind kind_of_division;
-		const std::string name;
-		std::vector<division*> children;
-		nana::rectangle area;
-		number_t weight;
-		number_t gap;
-		field_impl * field;
+		kind                    kind_of_division;
+		const std::string       name;
+		std::vector<division*>  children;
+		nana::rectangle         area;
+		number_t                weight;
+		number_t                gap;
+		field_impl *            field;
 	};
     /// Horizontal
 	class place::implement::div_arrange
@@ -1086,7 +1086,7 @@ namespace nana{	namespace gui
 			}
 		}
 	private:
-		static field_impl::const_iterator _m_search(field_impl::const_iterator i, field_impl::const_iterator end)
+		static field_impl::const_iterator _m_search(field_impl::const_iterator i, field_impl::const_iterator end) /// Skyp gaps
 		{
 			if(i == end) return end;
 				

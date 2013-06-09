@@ -122,14 +122,14 @@ namespace gui
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
-		void bind(window handle);
-		void div(const char* s);
+		void        bind    (window handle);
+		void        div     (const char* s);
 		field_reference field(const char* name);
-		void collocate();
+		void        collocate();
 
-		static fixed_t fixed(window wd, unsigned size);
-		static percent_t percent(window wd, int per);
-		static room_t room(window wd, unsigned w, unsigned h);
+		static fixed_t      fixed   (window wd, unsigned size       );
+		static percent_t    percent (window wd, int per             );
+		static room_t       room    (window wd, unsigned w, unsigned h);
 	private:
 		implement * impl_;
 	};
