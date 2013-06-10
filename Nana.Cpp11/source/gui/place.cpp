@@ -11,6 +11,7 @@
 #include <sstream>
 #include <cfloat>
 #include <cmath>
+#include <set>
 #include <stdexcept>
 #include <cstring>
 #include <nana/gui/place.hpp>
@@ -26,16 +27,9 @@ namespace nana{	namespace gui
 	public:
 		enum class kind{integer, real, percent};
 
-		number_t()
-			: kind_(kind::integer)
-		{
-			value_.integer = 0;
-		}
+		number_t() 			: kind_(kind::integer)		{			value_.integer = 0;		}
 
-		kind kind_of() const
-		{
-			return kind_;
-		}
+		kind kind_of() const		{			return kind_;		}
 
 		int integer() const
 		{
@@ -83,14 +77,14 @@ namespace nana{	namespace gui
 		enum class token
 		{
 			div_start, div_end,
-			identifier, vertical, grid, number, array,
-			weight, gap,
+			identifier, vertical, horizontal, grid, number, array,
+			weight, gap, min, max,
 			equal,
 			eof, error
 		};
 
 		tokenizer(const char* p)
-			: divstr_(p), sp_(p)
+			: div_str(p), divstr_(div_str.c_str() ), sp_(div_str.c_str())
 		{}
 
 		const std::string& idstr() const
@@ -115,16 +109,12 @@ namespace nana{	namespace gui
 			std::size_t readbytes = 0;
 			switch(*sp_)
 			{
-			case '\0':
-				return token::eof;
-			case '=':
-				++sp_;
+			case '\0':				return token::eof;
+			case '=':				++sp_;
 				return token::equal;
-			case '<':
-				++sp_;
+			case '<':				++sp_;
 				return token::div_start;
-			case '>':
-				++sp_;
+			case '>':				++sp_;
 				return token::div_end;
 			case '[':
 				array_.clear();
@@ -202,6 +192,16 @@ namespace nana{	namespace gui
 				{
 					_m_attr_number_value();
 					return token::gap;
+				}
+				else if(idstr_ == "min")
+				{
+					_m_attr_number_value();
+					return token::min;
+				}
+				else if(idstr_ == "max")
+				{
+					_m_attr_number_value();
+					return token::max;
 				}
 				else if(idstr_ == "vertical")
 					return token::vertical;
@@ -314,6 +314,7 @@ namespace nana{	namespace gui
 			return 0;
 		}
 	private:
+        std::string div_str;
 		const char* divstr_;
 		const char* sp_;
 		std::string idstr_;
@@ -331,21 +332,19 @@ namespace nana{	namespace gui
 		class div_v;
 		class div_grid;
 
-		window          window_handle;
-		event_handle    event_size_handle;
-		division *      root_division;
-		std::map<std::string, IField *> fields;
+		window                          window_handle;
+		event_handle                    event_size_handle;
+		std::unique_ptr<division>       root_division;
+        std::set<std::string>           names;
+		std::multimap<std::string, std::unique_ptr<IField>> fields;
 			
-		implement()
-			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
-		{}
+		implement()		: window_handle(nullptr), event_size_handle(nullptr)	{}
+		~implement() 	{	   API::umake_event(event_size_handle);	    }
 
-		//The following functions are defined behind the definition of class division.
-		//because the class division here is an incomplete type.
-		~implement();
-		static division * search_div_name(division* start, const std::string&);
-		division * scan_div(tokenizer&);
-	};	//end struct implement
+		division *        scan_div       (tokenizer&);
+
+		//static division * search_div_name(division* start, const std::string&);
+	};	
 
 
 	place::field_t::~field_t(){}
@@ -359,170 +358,13 @@ namespace nana{	namespace gui
         IField * create_field(window handle_,double   percent_                  ){IField *p= new percent_widget ( handle_, percent_)          ;}
         IField * create_field(window handle_,unsigned rows_,unsigned columns_   ){IField *p= new adj_room       ( handle_, rows_, columns_ )  ;}
 
-		//struct element_t
-		//{
-		//	enum class kind
-		//	{
-		//		window, gap, fixed, percent, room
-		//	};
-		//	kind kind_of_element;
-		//	union
-		//	{
-		//		window handle;     //    base_widget_field_t *wdgt;
-		//		unsigned gap_value;
-		//		fixed_t	*	fixed_ptr;    // or value type??
-		//		percent_t *	percent_ptr;
-		//		room_t	*	room_ptr;
-		//	}u;
-		//	element_t(window wd)
-		//		: kind_of_element(kind::window)
-		//	{
-		//		u.handle = wd;                    // u.wdgt= new base_widget_field_t ; u.wdgt->handle = wd;     
-		//	}
-		//	element_t(unsigned gap)
-		//		: kind_of_element(kind::gap)
-		//	{
-		//		u.gap_value = gap;
-		//	}
-		//	element_t(const fixed_t& fixed)
-		//		: kind_of_element(kind::fixed)
-		//	{
-		//		u.fixed_ptr = new fixed_t(fixed);  // u.wdgt= new fixed_widget_field_t(fixed);
-		//	}
-		//	element_t(const percent_t& per)
-		//		: kind_of_element(kind::percent)
-		//	{
-		//		u.percent_ptr = new percent_t(per);  // u.wdgt= new percent_widget_field_t(per);
-		//	}
-		//	element_t(const room_t& rm)            // element_t(const room_widget_field_t& rm)
-		//		: kind_of_element(kind::room)
-		//	{
-		//		u.room_ptr = new room_t(rm);     // u.wdgt= new room_widget_field_t(rm);
-		//	}
-		//	element_t(const element_t& rhs)
-		//		: kind_of_element(rhs.kind_of_element)
-		//	{
-		//		switch(kind_of_element)
-		//		{
-		//		case kind::fixed:
-		//			u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr); // u.wdgt= new fixed_widget_field_t(*dynamic_cast<fixed_widget_field_t>(rhs.u.wdgt));
-		//			break;
-		//		case kind::percent:
-		//			u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
-		//			break;
-		//		case kind::room:
-		//			u.room_ptr = new room_t(*rhs.u.room_ptr);
-		//			break;
-		//		default:
-		//			u = rhs.u;
-		//			break;
-		//		}
-		//	}
-		//	element_t& operator=(const element_t& rhs)
-		//	{
-		//	    if(this != &rhs)
-  //              {
-  //                  kind_of_element = rhs.kind_of_element;
-  //                  switch(kind_of_element)
-  //                  {
-  //                      case kind::fixed:
-  //                          u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
-  //                          break;
-  //                      case kind::percent:
-  //                          u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
-  //                          break;
-  //                      case kind::room:
-  //                          u.room_ptr = new room_t(*rhs.u.room_ptr);
-  //                          break;
-  //                      default:
-  //                          u = rhs.u;
-  //                          break;
-  //                  }
-  //              }
-  //              return *this;
-		//	}
-		//	element_t(element_t && rv)
-		//		: kind_of_element(rv.kind_of_element), u(rv.u)
-		//	{
-		//		switch(kind_of_element)
-		//		{
-		//		    case kind::fixed:
-		//			    rv.u.fixed_ptr = nullptr;
-		//			    break;
-		//		    case kind::percent:
-		//			    rv.u.percent_ptr = nullptr;
-		//			    break;
-		//		    case kind::room:
-		//			    rv.u.room_ptr = nullptr;
-		//		    default:	break;
-		//		}
-		//	}
-		//		
-		//	element_t& operator=(element_t && rv)
-		//	{
-  //              if(this == &rv) return *this;
-  //              u=rv.u;
-  //              kind_of_element = rv.kind_of_element;
-  //              switch(kind_of_element)
-  //              {
-  //                  case kind::fixed:
-  //                      rv.u.fixed_ptr = nullptr;
-  //                      break;
-  //                  case kind::percent:
-  //                      rv.u.percent_ptr = nullptr;
-  //                      break;
-  //                  case kind::room:
-  //                      rv.u.room_ptr = nullptr;
-  //                  default:	break;
-  //              }
-  //              
-  //              return *this;
-		//	}
-		//	~element_t()
-		//	{
-		//		switch(kind_of_element)
-		//		{
-		//		case kind::fixed:
-		//			delete u.fixed_ptr;
-		//			break;
-		//		case kind::percent:
-		//			delete u.percent_ptr;
-		//			break;
-		//		case kind::room:
-		//			delete u.room_ptr;
-		//			break;
-		//		default:	break;
-		//		}
-		//	}
-		//	window window_handle() const
-		//	{
-		//		switch(kind_of_element)
-		//		{
-		//		    case kind::window:
-		//			    return u.handle;    // return u.wdgt->handle;
-		//		    case kind::fixed:
-		//			    return u.fixed_ptr->first;
-		//		    case kind::percent:
-		//			    return u.percent_ptr->first;
-		//		    case kind::room:
-		//			    return u.room_ptr->first;
-		//		    default:	break;
-		//		}
-		//		return nullptr;
-		//	}
-		//};
 	 public:
 		typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
 
-		field_impl(place * p)
+		field_impl(place * p, const std::string& name)
 			:	attached(false),
 				place_ptr_(p)
 		{}
-        //~field_impl()
-        //{
-        //    for (auto f: elements )
-        //        delete f;
-        //}
 
 	 private:
 		//Listen to destroy of a window
@@ -595,41 +437,8 @@ namespace nana{	namespace gui
 		}
 	public:
 	
-		/// returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
-		//std::pair<unsigned, std::size_t> fixed_and_adjustable() const
-		//{    
-		//	std::pair<unsigned, std::size_t> vpair;
-		//	for(auto & e : elements)  /// in elements only the last named-field , gap and weigth?
-		//	{
-		//		switch(e.kind_of_element)
-		//		{
-		//		case element_t::kind::fixed:
-		//			vpair.first += e.u.fixed_ptr->second;
-		//			break;
-		//		case element_t::kind::gap:
-		//			vpair.first += e.u.gap_value;
-		//			break;
-		//		case element_t::kind::percent:	/// the percent is not fixed and not adjustable.
-		//			break;
-		//		default:
-		//			++vpair.second;
-		//		}
-		//	}
-		//	return vpair;
-		//}
-
-		//unsigned percent_pixels(unsigned pixels) const
-		//{
-		//	double perpx = 0;
-		//	for(auto & e : elements)
-		//	{
-		//		if(element_t::kind::percent == e.kind_of_element)
-		//			perpx += pixels * (e.u.percent_ptr->second / 100.0);
-		//	}
-		//	return static_cast<unsigned>(perpx);
-		//}
 	public:
-		bool attached;
+		std::string name;
 		std::vector<std::unique_ptr<IField>> elements;
 		std::vector<window>	                 fastened;
 
@@ -660,34 +469,13 @@ namespace nana{	namespace gui
 				delete p;
 			}
 		}
+        void create_children()
+        {
+            children.clear();
+            for (const auto &name : field_names)
+                for(auto &f : fields.at(name) );
+        }
 
-		//bool is_fixed() const
-		//{
-		//	return ((weight.kind_of() == number_t::kind::integer) && (weight.integer() != 0));
-		//}
-
-		//bool is_percent() const
-		//{
-		//	return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
-		//}
-
-		/// return the fixed pixels and adjustable items. Count pixel from fixed div only and from fixed fields and gaps, and count adjustable div and fields.
-		//std::pair<unsigned, std::size_t> fixed_pixels(kind match_kind) const
-		//{
-		//	std::pair<unsigned, std::size_t> pair;
-		//	if(field && (kind_of_division == match_kind))
-		//		pair = field->fixed_and_adjustable(); /// fixed_and_adjustable returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
-		//		
-		//	for(auto child : children)
-		//	{
-		//		if( child->is_fixed()  )
-		//			pair.first += static_cast<unsigned>(child->weight.integer());
-		//		else                        
-		//		if( ! child->is_percent() )    //it is adjustable
-		//				++pair.second;
-		//	}
-		//	return pair;
-		//}
 
 		virtual void collocate(const rectangle& r) 
 		{   
@@ -728,12 +516,11 @@ namespace nana{	namespace gui
 		}
 
 	public:
-		//kind                    kind_of_division;
-		const std::string       name;
-		std::vector<IField*>    children;   //  std::vector<div*> 
-		nana::rectangle         area;
-		number_t                weight;
-		number_t                gap;        //  
+		std::vector <std::string> field_names;
+		std::vector<IField*>      children;   //  std::vector<div*> 
+		//nana::rectangle         area;
+		//number_t                weight;
+		IField*                 gap;        //  
 		field_impl *            field;
 	};
     
@@ -967,34 +754,22 @@ namespace nana{	namespace gui
 		std::pair<unsigned, unsigned> dimension;
 	};//end class div_grid
 
-
-
-	place::implement::~implement()
-	{
-		API::umake_event(event_size_handle);
-		delete root_division;
-		for(auto & pair : fields)
-		{
-			delete pair.second;
-		}
-	}
-
 	//search_div_name
 	//search a division with the specified name.
-	place::implement::division * place::implement::search_div_name(division* start, const std::string& name)
-	{
-		if(nullptr == start) return nullptr;
-
-		if(start->name == name) return start;
-
-		for(auto child : start->children)
-		{
-			division * div = search_div_name(child, name);
-			if(div)
-				return div;
-		}
-		return nullptr;	
-	}
+	//place::implement::division * place::implement::search_div_name(division* start, const std::string& name)
+	//{
+	//	if(nullptr == start) return nullptr;
+//
+	//	if(start->name == name) return start;
+//
+	//	for(auto child : start->children)
+	//	{
+	//		division * div = search_div_name(child, name);
+	//		if(div)
+	//			return div;
+	//	}
+	//	return nullptr;	
+	//}
 
 	place::implement::division* place::implement::scan_div(tokenizer& tknizer)
 	{
@@ -1173,6 +948,7 @@ namespace nana{	namespace gui
 		{
 			name = name ? name : "";
 
+            impl_->fields. .emplace(name);
 			//get the field with specified name, if no such field with specified name
 			//then create one.
 			auto & p = impl_->fields[name];
@@ -1200,21 +976,20 @@ namespace nana{	namespace gui
 		{
 			if(impl_->root_division && impl_->window_handle)
 			{
-				//impl_->root_division->area = API::window_size(impl_->window_handle);
-				impl_->root_division->collocate(API::window_size(impl_->window_handle));
+				for(auto & field : impl_->fields)
+				    field.second->attached = false;
+ 
+                impl_->root_division->collocate(API::window_size(impl_->window_handle));
 
 				for(auto & field : impl_->fields)
-				{
-					bool is_show = field.second->attached;
-					if(is_show)
-						is_show = (nullptr != implement::search_div_name(impl_->root_division, field.first));
-
-					for(auto & el : field.second->elements)
-						API::show_window(el.window_handle(), is_show);
-				}
+					API::show_window(field.second->window_handle(), field.second->attached);
 			}
 		}
 	//end class place
 
 }//end namespace gui
 }//end namespace nana
+
+					//for(auto & el : field.second->elements)
+						//is_show = (nullptr != implement::search_div_name(impl_->root_division, field.first));
+					//bool is_show = field.second->attached;

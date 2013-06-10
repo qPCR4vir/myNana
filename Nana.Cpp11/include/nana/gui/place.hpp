@@ -62,12 +62,13 @@ namespace gui
              virtual ~IField(){}
              virtual void  collocate(const rectangle& r)   =0;
              virtual window window_handle()const =0;
+             bool attached;
         };
 
         template <class Base>
         struct IAdjust : IField
         {    
-             void   collocate(const rectangle& r)override   {   Base::collocate_(r);    }
+             void   collocate(const rectangle& r)override   {   Base::collocate_(r); attached=true;    }
              window window_handle() const override    { return Base::window_handle_(); }
              unsigned min, max; 
              IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
@@ -207,6 +208,7 @@ namespace gui
 			virtual field_t& operator<<(const percent_widget& p)	= 0;
 			virtual field_t& operator<<(const adj_room& r)	= 0;
 			virtual field_t& fasten(window wd)	= 0;
+            
 		};
 	public:
 		typedef field_t & field_reference;
@@ -219,9 +221,9 @@ namespace gui
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
-		void        bind    (window handle);
-		void        div     (const char* s);
-		field_reference field(const char* name);
+		void        bind     (window handle);
+		void        div      (const char* s);
+		field_t *   field(const char* name);
 		void        collocate();
 
 		static fixed_widget      fixed   (window wd, unsigned size       );
