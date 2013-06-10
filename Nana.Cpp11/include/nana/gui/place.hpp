@@ -27,22 +27,33 @@ namespace gui
 		typedef std::pair<window, std::pair<unsigned, unsigned> >   room_t;
 
         struct adj{unsigned weigth; size_t count_adj; adj():weigth(0),count_adj(0){}  };
+
+        struct IField
+        {
+             virtual adj  pre_place (unsigned t_w,      adj& prev=adj()                 )=0;
+             virtual adj  end_place (unsigned t_w,const adj& tip,       adj& prev=adj() )=0 ;
+             virtual unsigned weigth(unsigned t_w,const adj& tip, const adj& prev       )=0 ;
+             virtual ~IField(){}
+             virtual void  collocate(const rectangle& r)   =0;
+             virtual window window_handle() =0;
+        };
+
+        template <class Base>
         struct IAdjust
         {    
-             virtual adj  pre_place (unsigned t_w, adj& prev=adj() )=0;
-             virtual adj  end_place (unsigned t_w,const adj& tip, adj& prev=adj() )=0 ;
-             virtual unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )=0 ;
-             virtual void  collocate(const rectangle& r)=0 ;
+             void  collocate(const rectangle& r)override   {   Base::collocate(r);    }
+             window window_handle() const override    { return Base::window_handle(); }
              unsigned min, max; 
-             IAdjust():min(std::numeric_limits <decltype  (min)>::min ()),
-                       max(std::numeric_limits <decltype  (max)>::max ()){}
-             IAdjust(unsigned min_,unsigned max_):min(min_), max(max_){} 
+             IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
+                       max(std::numeric_limits <decltype(max)>::max() ){}
+             IAdjust(unsigned min_,unsigned max_) :min(min_), max(max_){} 
              virtual ~IAdjust(){}
         };
-        struct IAdjustable  :  IAdjust                      
+        template <class Base>
+        struct IAdjustable  :  IAdjust<Base>                      
         { 
             IAdjustable(         ){}
-            IAdjustable(unsigned min_,unsigned max_):IAdjust(min_,max_){}
+            IAdjustable(unsigned min_,unsigned max_):IAdjust<Base>  (min_,max_){}
 
             adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override    {   ++prev.count_adj;   return  prev;        }
             adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    
@@ -60,7 +71,8 @@ namespace gui
                 return  prev.weigth/tip.count_adj + min ;        
             }
         };
-        struct IFixed: IAdjust   
+        template <class Base>
+        struct IFixed: IAdjust <Base>    
         { 
             unsigned weight_; 
 
@@ -79,14 +91,15 @@ namespace gui
                 return  weight_;          
             }
         };
-        struct IPercent: IAdjust 
+        template <class Base>
+        struct IPercent: IAdjust <Base>    
         { 
             double      percent; 
 
             IPercent(unsigned percent_):percent(percent_/100.0){}
             IPercent(double   percent_):percent(percent_){}
-            IPercent(unsigned percent_, unsigned min_,unsigned max_):IAdjust(min_,max_),percent(percent_/100.0){}
-            IPercent(double   percent_, unsigned min_,unsigned max_):IAdjust(min_,max_),percent(percent_      ){}
+            IPercent(unsigned percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_/100.0){}
+            IPercent(double   percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_      ){}
         
             adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override     {   return end_place(t_w, prev);      }
             adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override     {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;              }
@@ -104,13 +117,15 @@ namespace gui
         { 
             virtual ~Gap_field (){}
             unsigned collocate(const rectangle& r){}
+            window window_handle() const { return nullptr; }
         };
         struct Widget_field                       
         { 
             window   handle; 
             Widget_field(window handle_):handle(handle_){}
             virtual ~Widget_field (){}
-            void collocate(const rectangle& r)
+            window window_handle() const { return handle; }
+            virtual void  collocate(const rectangle& r)
             {  
                 API::move_window (handle,r );
             }
@@ -121,51 +136,41 @@ namespace gui
             Room_field(window handle_,unsigned rows_,unsigned columns_):Widget_field( handle_), rows(rows_),columns(columns_){}
         };
 
-        struct fixed_gap: Gap_field, IFixed   
+        struct fixed_gap:  IFixed<Gap_field> , Gap_field 
         { 
             fixed_gap(unsigned weight_):IFixed(weight_){}
             fixed_gap(unsigned weight_, unsigned min_,unsigned max_):IFixed(weight_,min_,max_){}
         };
-        struct fixed_widget: Widget_field, IFixed   
+        struct fixed_widget:    Widget_field ,  IFixed<Widget_field>
         { 
             fixed_widget(window handle_,unsigned weight_):Widget_field(handle_),IFixed(weight_){}
             fixed_widget(window handle_,unsigned weight_, unsigned min_,unsigned max_):Widget_field(handle_),IFixed(weight_,min_,max_){}
         };
-        struct fixed_room: Room_widget_field, IFixed   
+        struct fixed_room: Room_field, IFixed<Room_field>   
         { 
-            fixed_widget_field(window handle_,unsigned weight_):Widget_field(handle_),IFixed(weight_){}
-            fixed_widget_field(window handle_,unsigned weight_, unsigned min_,unsigned max_):Widget_field(handle_),IFixed(weight_,min_,max_){}
+            fixed_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IFixed(weight_){}
+            fixed_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IFixed(weight_,min_,max_){}
         };
 
-        struct percent_gap: Gap_field, IPercent 
+        struct percent_gap: Gap_field, IPercent<Gap_field> 
         { 
-            percent_gap(unsigned percent_):IPercent(percent_){}
-            percent_gap(unsigned percent_, unsigned min_,unsigned max_):IPercent(percent_,min_,max_){}
-            percent_gap(double   percent_):IPercent(percent_){}
-            percent_gap(double   percent_, unsigned min_,unsigned max_):IPercent(percent_,min_,max_){}
+            percent_gap(unsigned percent_):IPercent<Gap_field>(percent_){}
+            percent_gap(unsigned percent_, unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
+            percent_gap(double   percent_):IPercent<Gap_field>(percent_){}
+            percent_gap(double   percent_, unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
         };     
-        struct percent_widget: Widget_field , IPercent
+        struct percent_widget: Widget_field , IPercent<Widget_field>
         { 
-            percent_widget(window handle_,unsigned percent_):Widget_field(handle_),IPercent(percent_){}
-            percent_widget(window handle_,unsigned percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent(percent_,min_,max_){}
-            percent_widget(window handle_,double   percent_):Widget_field(handle_),IPercent(percent_){}
-            percent_widget(window handle_,double   percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent(percent_,min_,max_){}
+            percent_widget(window handle_,unsigned percent_):Widget_field(handle_),IPercent<Widget_field>(percent_){}
+            percent_widget(window handle_,unsigned percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent<Widget_field>(percent_,min_,max_){}
+            percent_widget(window handle_,double   percent_):Widget_field(handle_),IPercent<Widget_field>(percent_){}
+            percent_widget(window handle_,double   percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent<Widget_field>(percent_,min_,max_){}
         };   
-        struct percent_room: base_widget_field_t 
-        { 
-            int      percent; 
-        
-            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override     {   return end_place(t_w, prev);      }
-            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override     {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;              }
-            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override                 {   return   weigth_adj( t_w ) ;     
-            }
-            unsigned weigth_adj(unsigned t_w )
-            {   
-                if ( t_w * percent / 100.0 < min_ )    {return min_; }
-                if ( t_w * percent / 100.0 > max_ )    {return max_; }
-                return  t_w * percent / 100.0 ;     
-            }
-        };     // double?, unsigned?
+        //struct percent_room:  Room_field, IPercent<Room_field>   
+        //{ 
+        //    percent_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_){}
+        //    percent_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_,min_,max_){}
+        //};     
 
 
 
@@ -175,7 +180,8 @@ namespace gui
 		{
 		public:
 			virtual ~field_t() = 0;
-			virtual field_t& operator<<(window wd)		= 0;    // virtual field_t& operator<<(base_widget_field_t& wd)		= 0;
+            virtual field_t& operator<<(IField & fld)		= 0;
+			virtual field_t& operator<<(window wd)		= 0;    //
 			virtual field_t& operator<<(unsigned gap)	= 0;
 			virtual field_t& operator<<(const fixed_t& f)	= 0;
 			virtual field_t& operator<<(const percent_t& p)	= 0;
@@ -198,9 +204,9 @@ namespace gui
 		field_reference field(const char* name);
 		void        collocate();
 
-		static fixed_t      fixed   (window wd, unsigned size       );
-		static percent_t    percent (window wd, int per             );
-		static room_t       room    (window wd, unsigned w, unsigned h);
+		static fixed_widget      fixed   (window wd, unsigned size       );
+		static percent_widget    percent (window wd, int per             );
+		static fixed_room        room    (window wd, unsigned w, unsigned h);
 	private:
 		implement * impl_;
 	};

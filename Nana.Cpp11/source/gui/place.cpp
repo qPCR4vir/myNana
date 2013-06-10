@@ -334,7 +334,7 @@ namespace nana{	namespace gui
 		window          window_handle;
 		event_handle    event_size_handle;
 		division *      root_division;
-		std::map<std::string, IAdjust *> fields;
+		std::map<std::string, IField *> fields;
 			
 		implement()
 			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
@@ -646,10 +646,10 @@ namespace nana{	namespace gui
 	class place::implement::division
 	{
 	public:
-		enum class kind{arrange, vertical_arrange, grid};
+		//enum class kind{arrange, vertical_arrange, grid};
 
-		division(kind k, std::string&& n)
-			: kind_of_division(k), name(std::move(n)), field(nullptr)
+		division(/*kind k, */std::string&& n)
+			: /*kind_of_division(k),*/ name(std::move(n)), field(nullptr)
 		{}
 
 		virtual ~division()
@@ -664,44 +664,44 @@ namespace nana{	namespace gui
 			}
 		}
 
-		bool is_fixed() const
-		{
-			return ((weight.kind_of() == number_t::kind::integer) && (weight.integer() != 0));
-		}
+		//bool is_fixed() const
+		//{
+		//	return ((weight.kind_of() == number_t::kind::integer) && (weight.integer() != 0));
+		//}
 
-		bool is_percent() const
-		{
-			return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
-		}
+		//bool is_percent() const
+		//{
+		//	return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
+		//}
 
 		/// return the fixed pixels and adjustable items. Count pixel from fixed div only and from fixed fields and gaps, and count adjustable div and fields.
-		std::pair<unsigned, std::size_t> fixed_pixels(kind match_kind) const
-		{
-			std::pair<unsigned, std::size_t> pair;
-			if(field && (kind_of_division == match_kind))
-				pair = field->fixed_and_adjustable(); /// fixed_and_adjustable returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
-				
-			for(auto child : children)
-			{
-				if( child->is_fixed()  )
-					pair.first += static_cast<unsigned>(child->weight.integer());
-				else                        
-				if( ! child->is_percent() )    //it is adjustable
-						++pair.second;
-			}
-			return pair;
-		}
+		//std::pair<unsigned, std::size_t> fixed_pixels(kind match_kind) const
+		//{
+		//	std::pair<unsigned, std::size_t> pair;
+		//	if(field && (kind_of_division == match_kind))
+		//		pair = field->fixed_and_adjustable(); /// fixed_and_adjustable returns the number of fixed pixels in fixed fields and gaps, and the number of adjustable items. Ignore percent fields.
+		//		
+		//	for(auto child : children)
+		//	{
+		//		if( child->is_fixed()  )
+		//			pair.first += static_cast<unsigned>(child->weight.integer());
+		//		else                        
+		//		if( ! child->is_percent() )    //it is adjustable
+		//				++pair.second;
+		//	}
+		//	return pair;
+		//}
 
 		virtual void collocate() = 0;
 
 	public:
-		kind                    kind_of_division;
+		//kind                    kind_of_division;
 		const std::string       name;
-		std::vector<division*>  children;
+		std::vector<IField*>    children;
 		nana::rectangle         area;
 		number_t                weight;
 		number_t                gap;
-		field_impl *            field;
+		IField *                field;
 	};
     /// Horizontal
 	class place::implement::div_arrange
