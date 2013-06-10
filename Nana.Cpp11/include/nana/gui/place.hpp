@@ -14,6 +14,7 @@
 #include <utility>
 #include <nana/gui/basis.hpp>
 #include <limits>
+#include <nana\gui\programming_interface.hpp>
 
 namespace nana
 {
@@ -26,6 +27,31 @@ namespace gui
 		typedef std::pair<window, int>	                            percent_t;
 		typedef std::pair<window, std::pair<unsigned, unsigned> >   room_t;
 
+
+        struct Gap_field                       
+        { 
+            virtual ~Gap_field (){}
+            unsigned collocate_(const rectangle& r){}
+            window window_handle_() const { return nullptr; }
+        };
+        struct Widget_field                       
+        { 
+            window   handle; 
+            Widget_field(window handle_):handle(handle_){}
+            virtual ~Widget_field (){}
+            window window_handle_() const { return handle; }
+             void  collocate_(const rectangle& r)
+            {  
+                API::move_window (handle,r );
+            }
+        };
+        struct Room_field: Widget_field    
+        { 
+            unsigned rows,columns;
+            Room_field(window handle_,unsigned rows_,unsigned columns_):Widget_field( handle_), rows(rows_),columns(columns_){}
+        };
+
+
         struct adj{unsigned weigth; size_t count_adj; adj():weigth(0),count_adj(0){}  };
 
         struct IField
@@ -35,14 +61,14 @@ namespace gui
              virtual unsigned weigth(unsigned t_w,const adj& tip, const adj& prev       )=0 ;
              virtual ~IField(){}
              virtual void  collocate(const rectangle& r)   =0;
-             virtual window window_handle() =0;
+             virtual window window_handle()const =0;
         };
 
         template <class Base>
-        struct IAdjust
+        struct IAdjust : IField
         {    
-             void  collocate(const rectangle& r)override   {   Base::collocate(r);    }
-             window window_handle() const override    { return Base::window_handle(); }
+             void   collocate(const rectangle& r)override   {   Base::collocate_(r);    }
+             window window_handle() const override    { return Base::window_handle_(); }
              unsigned min, max; 
              IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
                        max(std::numeric_limits <decltype(max)>::max() ){}
@@ -113,30 +139,24 @@ namespace gui
             }
         };     // double?, unsigned?
 
-        struct Gap_field                       
+        struct adj_gap:  IAdjustable<Gap_field> , Gap_field 
         { 
-            virtual ~Gap_field (){}
-            unsigned collocate(const rectangle& r){}
-            window window_handle() const { return nullptr; }
+            adj_gap( )                                                   {}
+            adj_gap( unsigned min_,unsigned max_):IAdjustable (min_,max_){}
         };
-        struct Widget_field                       
+        struct adj_widget:    Widget_field ,  IAdjustable<Widget_field>
         { 
-            window   handle; 
-            Widget_field(window handle_):handle(handle_){}
-            virtual ~Widget_field (){}
-            window window_handle() const { return handle; }
-            virtual void  collocate(const rectangle& r)
-            {  
-                API::move_window (handle,r );
-            }
+            adj_widget(window handle_)                             :Widget_field(handle_)                       {}
+            adj_widget(window handle_, unsigned min_,unsigned max_):Widget_field(handle_),IAdjustable(min_,max_){}
         };
-        struct Room_field: Widget_field    
+        struct adj_room: Room_field, IAdjustable<Room_field>   
         { 
-            unsigned rows,columns;
-            Room_field(window handle_,unsigned rows_,unsigned columns_):Widget_field( handle_), rows(rows_),columns(columns_){}
+            adj_room(window handle_,unsigned rows_,unsigned columns_)                             :Room_field(handle_, rows_, columns_){}
+            adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IAdjustable<Room_field>(min_,max_){}
         };
 
-        struct fixed_gap:  IFixed<Gap_field> , Gap_field 
+
+        struct fixed_gap:  Gap_field, IFixed<Gap_field> 
         { 
             fixed_gap(unsigned weight_):IFixed(weight_){}
             fixed_gap(unsigned weight_, unsigned min_,unsigned max_):IFixed(weight_,min_,max_){}
@@ -183,9 +203,9 @@ namespace gui
             virtual field_t& operator<<(IField & fld)		= 0;
 			virtual field_t& operator<<(window wd)		= 0;    //
 			virtual field_t& operator<<(unsigned gap)	= 0;
-			virtual field_t& operator<<(const fixed_t& f)	= 0;
-			virtual field_t& operator<<(const percent_t& p)	= 0;
-			virtual field_t& operator<<(const room_t& r)	= 0;
+			virtual field_t& operator<<(const fixed_widget& f)	= 0;
+			virtual field_t& operator<<(const percent_widget& p)	= 0;
+			virtual field_t& operator<<(const adj_room& r)	= 0;
 			virtual field_t& fasten(window wd)	= 0;
 		};
 	public:
@@ -205,8 +225,8 @@ namespace gui
 		void        collocate();
 
 		static fixed_widget      fixed   (window wd, unsigned size       );
-		static percent_widget    percent (window wd, int per             );
-		static fixed_room        room    (window wd, unsigned w, unsigned h);
+		static percent_widget    percent (window wd, double per          );
+		static adj_room          room    (window wd, unsigned w, unsigned h);
 	private:
 		implement * impl_;
 	};
