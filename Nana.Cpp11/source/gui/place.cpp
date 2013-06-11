@@ -12,6 +12,8 @@
 #include <cfloat>
 #include <cmath>
 #include <set>
+#include <unordered_map>
+//#include <algorithm>
 #include <stdexcept>
 #include <cstring>
 #include <nana/gui/place.hpp>
@@ -20,10 +22,10 @@
 
 namespace nana{	namespace gui
 {
-	//number_t is used to store a number type variable
-	//such as integer, real and percent. Essentially, percent is a typo of real.
 	class number_t
-	{
+	{	//number_t is used to store a number type variable
+	    //such as integer, real and percent. Essentially, percent is a typo of real.
+
 	public:
 		enum class kind{integer, real, percent};
 
@@ -322,128 +324,278 @@ namespace nana{	namespace gui
 		std::vector<number_t> array_;
 	};	//end class tokenizer
 
-
-	
 	struct place::implement           //struct implement
 	{
-		class field_impl;
 		class division;
+
+		window                          parent_window_handle;
+		event_handle                    event_size_handle;
+		std::unique_ptr<division>       root_division;
+        std::set<std::string>           names;
+		std::unordered_map<std::string, std::unique_ptr<IField>> fields;
+		std::unordered_map<std::string,    window              > fastened;
+			
+		implement()		: parent_window_handle(nullptr), event_size_handle(nullptr)	{}
+		~implement() 	{	   API::umake_event(event_size_handle);	    }
+
+        void              collocate();
+
+		division *        scan_div       (tokenizer&);
+		//static division * search_div_name(division* start, const std::string&);
+
+        class field_impl;
 		class div_h;
 		class div_v;
 		class div_grid;
 
-		window                          window_handle;
-		event_handle                    event_size_handle;
-		std::unique_ptr<division>       root_division;
-        std::set<std::string>           names;
-		std::multimap<std::string, std::unique_ptr<IField>> fields;
-			
-		implement()		: window_handle(nullptr), event_size_handle(nullptr)	{}
-		~implement() 	{	   API::umake_event(event_size_handle);	    }
+        struct Gap_field                       
+        { 
+            virtual ~Gap_field (){}
+            unsigned collocate_(const rectangle& r){}
+            window window_handle_() const { return nullptr; }
+        };
+        struct Widget_field                       
+        { 
+            window   handle; 
+            Widget_field(window handle_):handle(handle_){}
+            virtual ~Widget_field (){}
+            window window_handle_() const { return handle; }
+             void  collocate_(const rectangle& r)
+            {  
+                API::move_window (handle,r );
+            }
+        };
+        struct Room_field: Widget_field    
+        { 
+            unsigned rows,columns;
+            Room_field(window handle_,unsigned rows_,unsigned columns_):Widget_field( handle_), rows(rows_),columns(columns_){}
+        };
 
-		division *        scan_div       (tokenizer&);
+        template <class Base>
+        struct IAdjust : place::IField
+        {    
+             void   collocate(const rectangle& r)override   {   Base::collocate_(r); attached=true;    }
+             window window_handle() const override    { return Base::window_handle_(); }
+             unsigned min, max; 
+             IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
+                       max(std::numeric_limits <decltype(max)>::max() ){}
+             IAdjust(unsigned min_,unsigned max_) :min(min_), max(max_){} 
+             virtual ~IAdjust(){}
+        };
+        template <class Base>
+        struct IAdjustable  :  IAdjust<Base>                      
+        { 
+            IAdjustable(         ){}
+            IAdjustable(unsigned min_,unsigned max_):IAdjust<Base>  (min_,max_){}
 
-		//static division * search_div_name(division* start, const std::string&);
-	};	
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override    {   ++prev.count_adj;   return  prev;        }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    
+            {   
+                if ( tip.weigth/tip.count_adj < min )   {prev.weigth += min; return prev; }
+                if ( tip.weigth/tip.count_adj > max )   {prev.weigth += max; return prev; }
+                prev.weigth += min; 
+                ++prev.count_adj;   return  prev;        
+            }
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override
+            {   
+                if ( tip.weigth/tip.count_adj < min )   {return min; }
+                if ( tip.weigth/tip.count_adj > max )   {return max; }
 
+                return  prev.weigth/tip.count_adj + min ;        
+            }
+        };
+        template <class Base>
+        struct IFixed: IAdjust <Base>    
+        { 
+            unsigned weight_; 
+
+            IFixed(unsigned weight):weight_(weight){}
+            IFixed(unsigned weight, unsigned min_,unsigned max_):IAdjust(min_,max_),weight_(weight){}
+
+
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override    {   return end_place(t_w, prev);      }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    {   prev.weigth += weigth_adj() ;   return  prev;        }    
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )  override              {   return weigth_adj();      }        
+            unsigned weigth_adj()
+            {   
+                if ( weight_  < min )    {return min; }
+                if ( weight_  > max )    {return max; }
+                
+                return  weight_;          
+            }
+        };
+        template <class Base>
+        struct IPercent: IAdjust <Base>    
+        { 
+            double      percent; 
+
+            IPercent(unsigned percent_):percent(percent_/100.0){}
+            IPercent(double   percent_):percent(percent_){}
+            IPercent(unsigned percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_/100.0){}
+            IPercent(double   percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_      ){}
+        
+            adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override     {   return end_place(t_w, prev);      }
+            adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override     {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;              }
+            unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override                 {   return   weigth_adj( t_w ) ;     
+            }
+            unsigned weigth_adj(unsigned t_w )
+            {   
+                if ( t_w * percent / 100.0 < min )    {return min; }
+                if ( t_w * percent / 100.0 > max )    {return max; }
+                return  t_w * percent / 100.0 ;     
+            }
+        };     // double?, unsigned?
+
+        struct adj_gap:  IAdjustable<Gap_field> , Gap_field 
+        { 
+            adj_gap( )                                                   {}
+            adj_gap( unsigned min_,unsigned max_):IAdjustable (min_,max_){}
+        };
+        struct adj_widget:    Widget_field ,  IAdjustable<Widget_field>
+        { 
+            adj_widget(window handle_)                             :Widget_field(handle_)                       {}
+            adj_widget(window handle_, unsigned min_,unsigned max_):Widget_field(handle_),IAdjustable(min_,max_){}
+        };
+        struct adj_room: Room_field, IAdjustable<Room_field>   
+        { 
+            adj_room(window handle_,unsigned rows_,unsigned columns_)                             :Room_field(handle_, rows_, columns_){}
+            adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IAdjustable<Room_field>(min_,max_){}
+        };
+
+
+        struct fixed_gap:  Gap_field, IFixed<Gap_field> 
+        { 
+            fixed_gap(unsigned weight_):IFixed(weight_){}
+            fixed_gap(unsigned weight_, unsigned min_,unsigned max_):IFixed(weight_,min_,max_){}
+        };
+        struct fixed_widget:    Widget_field ,  IFixed<Widget_field>
+        { 
+            fixed_widget(window handle_,unsigned weight_):Widget_field(handle_),IFixed(weight_){}
+            fixed_widget(window handle_,unsigned weight_, unsigned min_,unsigned max_):Widget_field(handle_),IFixed(weight_,min_,max_){}
+        };
+        struct fixed_room: Room_field, IFixed<Room_field>   
+        { 
+            fixed_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IFixed(weight_){}
+            fixed_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IFixed(weight_,min_,max_){}
+        };
+
+        struct percent_gap: Gap_field, IPercent<Gap_field> 
+        { 
+            percent_gap(unsigned percent_):IPercent<Gap_field>(percent_){}
+            percent_gap(unsigned percent_, unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
+            percent_gap(double   percent_):IPercent<Gap_field>(percent_){}
+            percent_gap(double   percent_, unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
+        };     
+        struct percent_widget: Widget_field , IPercent<Widget_field>
+        { 
+            percent_widget(window handle_,unsigned percent_):Widget_field(handle_),IPercent<Widget_field>(percent_){}
+            percent_widget(window handle_,unsigned percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent<Widget_field>(percent_,min_,max_){}
+            percent_widget(window handle_,double   percent_):Widget_field(handle_),IPercent<Widget_field>(percent_){}
+            percent_widget(window handle_,double   percent_, unsigned min_,unsigned max_):Widget_field(handle_),IPercent<Widget_field>(percent_,min_,max_){}
+        };   
+        //struct percent_room:  Room_field, IPercent<Room_field>   
+        //{ 
+        //    percent_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_){}
+        //    percent_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_,min_,max_){}
+        //};     
+	};	      //struct implement
 
 	place::field_t::~field_t(){}
 
 	class place::implement::field_impl 		:	public place::field_t
 	{
+	public:
+		std::string name;
+	private:
+		place * place_ptr_;
+	 public:
+		typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
+
+		field_impl(place * p, const std::string& name_)	:	place_ptr_(p),   name(name_)		{}
+
 	  public:
         IField * create_field(window    wd                                      ){IField *p= new adj_widget     (wd)                          ;}
         IField * create_field(unsigned gap                                      ){IField *p= new fixed_gap      (gap)                         ;}
         IField * create_field(window handle_,unsigned weight_                   ){IField *p= new fixed_widget   ( handle_, weight_)           ;}
         IField * create_field(window handle_,double   percent_                  ){IField *p= new percent_widget ( handle_, percent_)          ;}
         IField * create_field(window handle_,unsigned rows_,unsigned columns_   ){IField *p= new adj_room       ( handle_, rows_, columns_ )  ;}
-
-	 public:
-		typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
-
-		field_impl(place * p, const std::string& name)
-			:	attached(false),
-				place_ptr_(p)
-		{}
-
 	 private:
-		//Listen to destroy of a window
-		//It will delete the element and recollocate when the window destroyed.
-		void _m_make_destroy(window wd)
+        field_t& operator<<(IField * fld) override
 		{
-			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
-			{
-				for(auto i = elements.begin(), end = elements.end(); i != end; ++i)
-				{
-					if(ei.window != (*i)->window_handle())
-						continue;
-                    elements.erase(i);
-					break;
-				}
-				place_ptr_->collocate();
-			});
+			place_ptr_->impl_->fields.emplace(name,fld);
+			_m_make_destroy(fld->window_handle());
+			return *this;
 		}
-		field_t& operator<<(window wd) override
+
+        field_t& operator<<(window wd) override
 		{
-			elements.emplace_back(create_field(wd));
+			place_ptr_->impl_->fields.emplace(name,create_field(wd));
 			_m_make_destroy(wd);
 			return *this;
 		}
 		field_t& operator<<(unsigned gap) override
 		{
-			elements.emplace_back(create_field(gap));
+			place_ptr_->impl_->fields.emplace(name,create_field(gap));
 			return *this;
 		}
-		field_t& operator<<(const fixed_widget& fx) override
+		field_t& operator<<(const fixed_widget& fx) 
 		{
-			elements.emplace_back(new fixed_widget(fx));
+			place_ptr_->impl_->fields.emplace(name,new fixed_widget(fx));
 			_m_make_destroy(fx.window_handle());
 			return *this;
 		}
-    	field_t& operator<<(const percent_widget& pcnt) override
+    	field_t& operator<<(const percent_widget& pcnt) 
 		{
-			elements.emplace_back(new percent_widget(pcnt));
+			place_ptr_->impl_->fields.emplace(name,new percent_widget(pcnt));
 			_m_make_destroy(pcnt.window_handle());
 			return *this;
 		}
-		field_t& operator<<(const adj_room& r) override
+		field_t& operator<<(const adj_room& r) 
 		{
 			adj_room x = r;
 			if(x.rows == 0)
 				x.rows = 1;
 			if(x.columns == 0)
 				x.columns = 1;
-			elements.emplace_back(new adj_room(x));
+			place_ptr_->impl_->fields.emplace(name,new adj_room(x));
 			_m_make_destroy(r.window_handle());
 			return *this;
 		}
 		field_t& fasten(window wd) override
 		{
-			fastened.push_back(wd);
+			place_ptr_->impl_->fastened.emplace (name , wd); fastened.push_back(wd);
 
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
 			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
 			{
-				for(auto i = fastened.begin(), end = fastened.end(); i != end; ++i)
-				{
-					if(ei.window != *i)
-						continue;
-					fastened.erase(i);
-					break;
-				}
+				for (auto f=place_ptr_->impl_->fastened.begin(); f!=place_ptr_->impl_->fastened.end(); ++f)
+                    if (f->second ==  ei.window )
+                    {
+                        place_ptr_->impl_->fastened.erase(f);    // delete ???
+                        break;
+                    }
 			});	
 			return *this;
 		}
-	public:
-	
-	public:
-		std::string name;
-		std::vector<std::unique_ptr<IField>> elements;
-		std::vector<window>	                 fastened;
+		//std::vector<std::unique_ptr<IField>> elements;
+		//std::vector<window>	                 fastened;
+		//Listen to destroy of a window
+		//It will delete the element and recollocate when the window destroyed.
+		void _m_make_destroy(window wd)
+		{
+			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+			{
+				for (auto f=place_ptr_->impl_->fields.begin(); f!=place_ptr_->impl_->fields.end(); ++f)
+                    if (f->second->window_handle() ==  ei.window )
+                    {
+                        place_ptr_->impl_->fields.erase(f);    // delete ???
+				        place_ptr_->collocate();
+                        break;
+                    }
+			});
+		}
 
-	private:
-		place * place_ptr_;
 	};//end class field_impl
 
 	class place::implement::division
@@ -784,41 +936,32 @@ namespace nana{	namespace gui
 		std::vector<number_t> array;
 
 		std::vector<division*> children;
-		for(token tk = tknizer.read(); tk != token::eof; tk = tknizer.read())
+        for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
 		{
 			bool exit_for = false;
 			switch(tk)
 			{
-			case token::div_start:
-				children.push_back(scan_div(tknizer));
-				break;
+			case token::div_start:	    children.push_back(scan_div(tknizer));				break;
+			case token::array:		    tknizer.array().swap(array);   				        break;
+			case token::identifier:		name = tknizer.idstr();				break;
+
+			case token::horizontal:
 			case token::vertical:
-			case token::grid:
-				div_type = tk;
-				break;
-			case token::array:
-				tknizer.array().swap(array);
-				break;
-			case token::weight:
-				weight = tknizer.number();
+			case token::grid:			div_type = tk;		   		        break;
+
+			case token::weight:		weight = tknizer.number();
 				//If the weight is type of real, convert it to integer.
 				//the integer and percent are allowed for weight.
 				if(weight.kind_of() == number_t::kind::real)
 					weight.assign(static_cast<int>(weight.real()));
 				break;
-			case token::gap:
-				gap = tknizer.number();
+			case token::gap:		gap = tknizer.number();
 				//If the gap is type of real, convert it to integer.
 				//the integer and percent are allowed for gap.
 				if(gap.kind_of() == number_t::kind::real)
 					gap.assign(static_cast<int>(gap.real()));
 				break;
-			case token::div_end:
-				exit_for = true;
-				break;
-			case token::identifier:
-				name = tknizer.idstr();
-				break;
+
 			default:	break;
 			}
 			if(exit_for)
@@ -846,39 +989,36 @@ namespace nana{	namespace gui
 
 		switch(div_type)
 		{
-		case token::eof:
-			div = new div_arrange(std::move(name));
-			break;
-		case token::vertical:
-			div = new div_vertical_arrange(std::move(name));
-			break;
-		case token::grid:
-			{
-				div_grid * p = new div_grid(std::move(name));
+		    case token::eof:
+		    case token::horizontal:			div = new div_h(std::move(name));			break;
+		    case token::vertical:			div = new div_v(std::move(name));			break;
+		    case token::grid:
+			    {
+				    div_grid * p = new div_grid(std::move(name));
 					
-				if(array.size())
-				{
-					if(array[0].kind_of() != number_t::kind::percent)
-						p->dimension.first = array[0].integer();
-				}
+				    if(array.size())
+				    {
+					    if(array[0].kind_of() != number_t::kind::percent)
+						    p->dimension.first = array[0].integer();
+				    }
 					
-				if(array.size() > 1)
-				{
-					if(array[1].kind_of() != number_t::kind::percent)
-						p->dimension.second = array[1].integer();
-				}
+				    if(array.size() > 1)
+				    {
+					    if(array[1].kind_of() != number_t::kind::percent)
+						    p->dimension.second = array[1].integer();
+				    }
 
-				if(0 == p->dimension.first)
-					p->dimension.first = 1;
+				    if(0 == p->dimension.first)
+					    p->dimension.first = 1;
 
-				if(0 == p->dimension.second)
-					p->dimension.second = 1;
+				    if(0 == p->dimension.second)
+					    p->dimension.second = 1;
 
-				div = p;
-			}
-			break;
-        default:
-            throw std::runtime_error("nana.place: invalid division type.");
+				    div = p;
+			    }
+			    break;
+            default:
+                throw std::runtime_error("nana.place: invalid division type.");
 		}
 			
 		div->weight = weight;
@@ -908,17 +1048,14 @@ namespace nana{	namespace gui
 
 		void place::bind(window wd)
 		{
-			if(impl_->window_handle)
+			if(impl_->parent_window_handle)
 				throw std::runtime_error("place.bind: it has already binded to a window.");
 
-			impl_->window_handle = wd;
+			impl_->parent_window_handle = wd;
 			impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
 				{
 					if(impl_->root_division)
-					{
-						impl_->root_division->area = API::window_size(ei.window);
-						impl_->root_division->collocate();
-					}					
+						impl_->root_division->collocate(API::window_size(ei.window));
 				});
 		}
 
@@ -931,60 +1068,44 @@ namespace nana{	namespace gui
 			impl_->root_division = impl_->scan_div(tknizer);
 		}
 
-		place::fixed_widget   place::fixed(window wd, unsigned size)
+		place::IField*  place::fixed(window wd, unsigned size)
 		{
-			return fixed_widget(wd, size);
+			return new implement::fixed_widget(wd, size);
 		}
-		place::percent_widget place::percent(window wd, double per)
+		place::IField*  place::percent(window wd, double per)
 		{
-			return percent_widget(wd, per);
+			return new implement::percent_widget(wd, per);
 		}
-		place::adj_room       place::room(window wd, unsigned r, unsigned c)
+		place::IField*  place::room(window wd, unsigned r, unsigned c)
 		{
-			return adj_room(wd, r, c);
+			return new implement::adj_room(wd, r, c);
 		}
 
 		place::field_reference place::field(const char* name)
 		{
 			name = name ? name : "";
-
-            impl_->fields. .emplace(name);
-			//get the field with specified name, if no such field with specified name
-			//then create one.
-			auto & p = impl_->fields[name];
-			if(nullptr == p)
-				p = new implement::field_impl(this);
-
-			if((false == p->attached) && impl_->root_division)
-			{
-				//search the division with the specified name,
-				//and attached the division to the field
-				implement::division * div = implement::search_div_name(impl_->root_division, name);
-				if(div)
-				{
-					if(div->field && (div->field != p))
-						throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
-
-					div->field = p;
-					p->attached = true;
-				}
-			}
-			return *p;
+            return  implement::field_impl(this,name);
 		}
 
 		void place::collocate()
 		{
-			if(impl_->root_division && impl_->window_handle)
+			impl_->collocate();
+		}
+		void place::implement::collocate()
+		{
+			if(root_division && parent_window_handle)
 			{
-				for(auto & field : impl_->fields)
+				for(auto & field : fields)
 				    field.second->attached = false;
  
-                impl_->root_division->collocate(API::window_size(impl_->window_handle));
+                root_division->collocate(API::window_size(parent_window_handle));
 
-				for(auto & field : impl_->fields)
+				for(auto & field : fields)
 					API::show_window(field.second->window_handle(), field.second->attached);
 			}
 		}
+
+
 	//end class place
 
 }//end namespace gui
