@@ -324,6 +324,18 @@ namespace nana{	namespace gui
 		std::vector<number_t> array_;
 	};	//end class tokenizer
 
+    struct adj{unsigned weigth; size_t count_adj; adj():weigth(0),count_adj(0){}  };
+    struct place::IField
+    {
+            virtual adj  pre_place (unsigned t_w,      adj& prev=adj()                 )=0;
+            virtual adj  end_place (unsigned t_w,const adj& tip,       adj& prev=adj() )=0 ;
+            virtual unsigned weigth(unsigned t_w,const adj& tip, const adj& prev       )=0 ;
+            virtual ~IField(){}
+            virtual void  collocate(const rectangle& r)   =0;
+            virtual window window_handle()const =0;
+            bool attached;
+    };
+
 	struct place::implement           //struct implement
 	{
 		class division;
@@ -372,7 +384,7 @@ namespace nana{	namespace gui
         };
 
         template <class Base>
-        struct IAdjust : place::IField
+        struct IAdjust : IField
         {    
              void   collocate(const rectangle& r)override   {   Base::collocate_(r); attached=true;    }
              window window_handle() const override    { return Base::window_handle_(); }
@@ -563,7 +575,7 @@ namespace nana{	namespace gui
 		}
 		field_t& fasten(window wd) override
 		{
-			place_ptr_->impl_->fastened.emplace (name , wd); fastened.push_back(wd);
+			place_ptr_->impl_->fastened.emplace (name , wd); 
 
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
@@ -601,10 +613,7 @@ namespace nana{	namespace gui
 	class place::implement::division
 	{
 	public:
-		//enum class kind{arrange, vertical_arrange, grid};
-
-		division(std::string&& n)	:  name(std::move(n)), field(nullptr)
-		{}
+		division(place*plc, const std::string& name_)	 :place_ptr_(p)		{field_names.push_back(name_);}
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
         virtual int&       fixed_c(rectangle& r )=0;
@@ -621,14 +630,18 @@ namespace nana{	namespace gui
 				delete p;
 			}
 		}
-        void create_children()
+        void populate_children()
         {
             children.clear();
             for (const auto &name : field_names)
-                for(auto &f : fields.at(name) );
+            {
+                auto r= place_ptr_->impl_->fields.equal_range(name);
+                for (auto fi=r.first ; fi != r.second ; ++fi)
+                    children.push_back (fi->second.get () );
+            }
         }
 
-
+        void add_field_name(const std::string& n){field_names.push_back(n);}
 		virtual void collocate(const rectangle& r) 
 		{   
 			rectangle area (r);	
@@ -668,12 +681,13 @@ namespace nana{	namespace gui
 		}
 
 	public:
-		std::vector <std::string> field_names;
+		place* place_ptr_;
+        std::vector <std::string> field_names;
 		std::vector<IField*>      children;   //  std::vector<div*> 
+		IField*                 gap;        //  
 		//nana::rectangle         area;
 		//number_t                weight;
-		IField*                 gap;        //  
-		field_impl *            field;
+		//field_impl *            field;
 	};
     
 	class place::implement::div_h 	: public division

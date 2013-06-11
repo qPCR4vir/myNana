@@ -34,17 +34,7 @@ namespace nana {namespace gui
 		void              div      (const char* layout);
 		void              collocate();
 
-        struct adj{unsigned weigth; size_t count_adj; adj():weigth(0),count_adj(0){}  };
-        struct IField
-        {
-             virtual adj  pre_place (unsigned t_w,      adj& prev=adj()                 )=0;
-             virtual adj  end_place (unsigned t_w,const adj& tip,       adj& prev=adj() )=0 ;
-             virtual unsigned weigth(unsigned t_w,const adj& tip, const adj& prev       )=0 ;
-             virtual ~IField(){}
-             virtual void  collocate(const rectangle& r)   =0;
-             virtual window window_handle()const =0;
-             bool attached;
-        };
+        struct IField ;
 		struct field_t
 		{
 			virtual ~field_t() = 0;
@@ -67,6 +57,3 @@ namespace nana {namespace gui
 }//end namespace nana
 
 #endif //#ifndef NANA_GUI_PLACE_HPP
-			//virtual field_t& operator<<(const fixed_widget& f)	= 0;
-			//virtual field_t& operator<<(const percent_widget& p)	= 0;
-			//virtual field_t& operator<<(const adj_room& r)	= 0;
