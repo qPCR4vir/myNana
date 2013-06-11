@@ -344,6 +344,7 @@ namespace nana{	namespace gui
 		event_handle                    event_size_handle;
 		std::unique_ptr<division>       root_division;
         std::set<std::string>           names;
+        unsigned                        div_numer;
 		std::unordered_map<std::string, std::unique_ptr<IField>> fields;
 		std::unordered_map<std::string,    window              > fastened;
 			
@@ -354,11 +355,19 @@ namespace nana{	namespace gui
 
 		division *        scan_div       (tokenizer&);
 		//static division * search_div_name(division* start, const std::string&);
+        std::string   add_div_name()
+        {
+            std::string name= std::to_string (div_numer++);
+            names.insert (name);
+            return name; 
+        }
+
 
         class field_impl;
 		class div_h;
 		class div_v;
 		class div_grid;
+        
 
         struct Gap_field                       
         { 
@@ -473,6 +482,9 @@ namespace nana{	namespace gui
             adj_room(window handle_,unsigned rows_,unsigned columns_)                             :Room_field(handle_, rows_, columns_){}
             adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IAdjustable<Room_field>(min_,max_){}
         };
+		class adj_div_h;
+		class adj_div_v;
+		class adj_div_grid;
 
 
         struct fixed_gap:  Gap_field, IFixed<Gap_field> 
@@ -490,6 +502,9 @@ namespace nana{	namespace gui
             fixed_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IFixed(weight_){}
             fixed_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IFixed(weight_,min_,max_){}
         };
+		class fixed_div_h;
+		class fixed_div_v;
+		class fixed_div_grid;
 
         struct percent_gap: Gap_field, IPercent<Gap_field> 
         { 
@@ -510,6 +525,9 @@ namespace nana{	namespace gui
         //    percent_room(window handle_,unsigned rows_,unsigned columns_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_){}
         //    percent_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IPercent<Room_field>  (weight_,min_,max_){}
         //};     
+		class percent_div_h;
+		class percent_div_v;
+		class percent_div_grid;
 	};	      //struct implement
 
 	place::field_t::~field_t(){}
@@ -612,8 +630,14 @@ namespace nana{	namespace gui
 
 	class place::implement::division
 	{
-	public:
-		division(place*plc, const std::string& name_)	 :place_ptr_(p)		{field_names.push_back(name_);}
+	  public:
+		place*                    place_ptr_;
+        std::vector <std::string> field_names;
+		std::vector<IField*>      children;   //  std::vector<div*> 
+		std::vector<window>       fastened_in_div;   //  
+		std::unique_ptr<IField>   gap;        //  
+	  public:
+		division(place*plc, const std::string& name_)	 :place_ptr_(p)		{add_field_name(name_);}
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
         virtual int&       fixed_c(rectangle& r )=0;
@@ -621,40 +645,48 @@ namespace nana{	namespace gui
 
         virtual ~division()
 		{
-			//detach the field
-			if(field)
-				field->attached = false;
+			////detach the field
+			//if(field)
+			//	field->attached = false;
 
-			for(auto p : children)
-			{
-				delete p;
-			}
+			//for(auto p : children)
+			//{
+			//	delete p;
+			//}
 		}
-        void populate_children()
+        /// populate childen in the same order in with they were introduced in the div layout str, and then in the order in with they were added to the field
+        void populate_children()  
         {
-            children.clear();
+            //children.clear();  // ????
             for (const auto &name : field_names)
             {
                 auto r= place_ptr_->impl_->fields.equal_range(name);
                 for (auto fi=r.first ; fi != r.second ; ++fi)
                     children.push_back (fi->second.get () );
-            }
-        }
 
-        void add_field_name(const std::string& n){field_names.push_back(n);}
+                auto f= place_ptr_->impl_->fastened.equal_range(name);
+                for (auto fi=f.first ; fi != f.second ; ++fi)
+                    fastened_in_div.push_back (fi->second );
+            }
+            if (gap) 
+                children.push_back (gap.get() );
+        }
+        /// add field names in the same order in with they are introduced in the div layout str
+        void add_field_name(const std::string& n)
+        {
+            if (place_ptr_->impl_->names.insert (n).second)
+               field_names.push_back(n) ; 
+            else ;//trow name repit;
+        }
 		virtual void collocate(const rectangle& r) 
 		{   
 			rectangle area (r);	
+            populate_children ();
             adj pre_adj, end_adj;
 			for(auto child: children)                            
                 child->pre_place(  weigth_s(area) , pre_adj );  
-            for(auto &f: field->elements)                            
-                    f->pre_place(  weigth_s(area) , pre_adj );
-
 			for(auto child: children)                            
                 child->end_place(  weigth_s(area) , pre_adj, end_adj );
-            for(auto &f: field->elements)                            
-                    f->end_place(  weigth_s(area) , pre_adj, end_adj );
        
 			rectangle left = area;
 			for(auto child : children)                          /// First collocate child div's !!!
@@ -665,26 +697,10 @@ namespace nana{	namespace gui
                 weigth_s(left)      -= weigth_s(child_area);
                 child->collocate(child_area);
 			}
-            for(auto &f: field->elements)                            
-			{
-			    rectangle child_area (left);
-                weigth_s(child_area) = f->weigth(  weigth_s(area) , pre_adj, end_adj )   ;
-                weigth_c(left)      += weigth_s(child_area);
-                weigth_s(left)      -= weigth_s(child_area);
-                f->collocate(child_area);
-			}
-
-				for(auto & fsn: field->fastened)
-				{
-					API::move_window(fsn, area.x, area.y, area.width, area.height);
-				}
+			for(auto & fsn: fastened_in_div)
+				API::move_window(fsn, area);
 		}
 
-	public:
-		place* place_ptr_;
-        std::vector <std::string> field_names;
-		std::vector<IField*>      children;   //  std::vector<div*> 
-		IField*                 gap;        //  
 		//nana::rectangle         area;
 		//number_t                weight;
 		//field_impl *            field;
@@ -698,7 +714,7 @@ namespace nana{	namespace gui
          int&       fixed_c(rectangle& r )override{return r.y;}
          unsigned&  fixed_s(rectangle& r )override{return r.height;}
         
-        div_h(std::string&& name)	: division(std::move(name))		{}
+        div_h(place*plc, const std::string& name_)	: division(plc, name_)		{}
 	};
 	class place::implement::div_v 	: public division
 	{
@@ -708,13 +724,12 @@ namespace nana{	namespace gui
          int&       fixed_c(rectangle& r )override{return r.x;}
          unsigned&  fixed_s(rectangle& r )override{return r.width;}
         
-		div_v (std::string&& name) 	: division( std::move(name))		{}
+		div_v(place*plc, const std::string& name_)	: division(plc, name_)		{}
 	};
 	class place::implement::div_grid	: public division
 	{
 	  public:
-		div_grid(std::string&& name)
-			: division(kind::grid, std::move(name))
+		div_grid(place*plc, const std::string& name_)	: division(plc, name_)		
 		{
 			dimension.first = dimension.second = 0;
 		}
@@ -920,6 +935,20 @@ namespace nana{	namespace gui
 		std::pair<unsigned, unsigned> dimension;
 	};//end class div_grid
 
+	class place::implement::adj_div_h : public IAdjustable<div_h> , public div_h 
+    {
+        adj_div_h(window handle_)                             :div_h(handle_)                       {}
+        adj_div_h(window handle_, unsigned min_,unsigned max_):div_h(handle_),IAdjustable(min_,max_){}
+    };
+	class place::implement::adj_div_v
+    {
+
+    };
+	class place::implement::adj_div_grid : public IAdjustable<div_h> , public div_h 
+    {
+
+    };
+
 	//search_div_name
 	//search a division with the specified name.
 	//place::implement::division * place::implement::search_div_name(division* start, const std::string& name)
@@ -1044,22 +1073,18 @@ namespace nana{	namespace gui
 
 	//class place
 
-
 		place::place()
 			: impl_(new implement)
 		{}
-
 		place::place(window wd)
 			: impl_(new implement)
 		{
 			bind(wd);
 		}
-
 		place::~place()
 		{
 			delete impl_;
 		}
-
 		void place::bind(window wd)
 		{
 			if(impl_->parent_window_handle)
@@ -1072,14 +1097,23 @@ namespace nana{	namespace gui
 						impl_->root_division->collocate(API::window_size(ei.window));
 				});
 		}
-
 		void place::div(const char* s)
 		{
-			delete impl_->root_division;
-			impl_->root_division = nullptr;
+            impl_->div_numer=0;
+            for (auto field=impl_->fields.begin(); field != impl_->fields.end(); ++field   )
+            {
+                if (isdigit( field->first[0] ) )  /// delete div, with have a name-numer
+                {
+                    field->second.release();  
+                    impl_->fields.erase(field);
+                }
+            }
+            for (auto name=impl_->names.begin(); name != impl_->names.end(); ++name )
+                if (isdigit( (*name)[0] ) )  /// delete div names, with have a name-numer
+                    impl_->names.erase(name);
 
 			tokenizer tknizer(s);
-			impl_->root_division = impl_->scan_div(tknizer);
+			impl_->root_division.reset( impl_->scan_div(tknizer));
 		}
 
 		place::IField*  place::fixed(window wd, unsigned size)
@@ -1118,7 +1152,6 @@ namespace nana{	namespace gui
 					API::show_window(field.second->window_handle(), field.second->attached);
 			}
 		}
-
 
 	//end class place
 
