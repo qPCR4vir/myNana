@@ -352,6 +352,7 @@ namespace nana{	namespace gui
 		~implement() 	{	   API::umake_event(event_size_handle);	    }
 
         void              collocate();
+		void              div(const char* s);
 
 		division *        scan_div       (tokenizer&);
 		//static division * search_div_name(division* start, const std::string&);
@@ -360,6 +361,12 @@ namespace nana{	namespace gui
             std::string name= std::to_string (div_numer++);
             names.insert (name);
             return name; 
+        }
+        bool add_field_name(const std::string& n)
+        {
+            if (names.insert (n).second)
+                return true; 
+            else ;//trow name repit;
         }
 
 
@@ -539,13 +546,13 @@ namespace nana{	namespace gui
 	private:
 		place * place_ptr_;
 	 public:
-		typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
+		//typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
 
 		field_impl(place * p, const std::string& name_)	:	place_ptr_(p),   name(name_)		{}
 
 	  public:
-        IField * create_field(window    wd                                      ){IField *p= new adj_widget     (wd)                          ;}
-        IField * create_field(unsigned gap                                      ){IField *p= new fixed_gap      (gap)                         ;}
+        IField * create_field(window    wd                                      ){IField *p= new adj_widget     ( wd )                        ;}
+        IField * create_field(unsigned gap                                      ){IField *p= new fixed_gap      ( gap )                       ;}
         IField * create_field(window handle_,unsigned weight_                   ){IField *p= new fixed_widget   ( handle_, weight_)           ;}
         IField * create_field(window handle_,double   percent_                  ){IField *p= new percent_widget ( handle_, percent_)          ;}
         IField * create_field(window handle_,unsigned rows_,unsigned columns_   ){IField *p= new adj_room       ( handle_, rows_, columns_ )  ;}
@@ -556,7 +563,6 @@ namespace nana{	namespace gui
 			_m_make_destroy(fld->window_handle());
 			return *this;
 		}
-
         field_t& operator<<(window wd) override
 		{
 			place_ptr_->impl_->fields.emplace(name,create_field(wd));
@@ -637,7 +643,7 @@ namespace nana{	namespace gui
 		std::vector<window>       fastened_in_div;   //  
 		std::unique_ptr<IField>   gap;        //  
 	  public:
-		division(place*plc, const std::string& name_)	 :place_ptr_(p)		{add_field_name(name_);}
+		division(place*plc)	 :place_ptr_(p)		{}
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
         virtual int&       fixed_c(rectangle& r )=0;
@@ -672,12 +678,6 @@ namespace nana{	namespace gui
                 children.push_back (gap.get() );
         }
         /// add field names in the same order in with they are introduced in the div layout str
-        void add_field_name(const std::string& n)
-        {
-            if (place_ptr_->impl_->names.insert (n).second)
-               field_names.push_back(n) ; 
-            else ;//trow name repit;
-        }
 		virtual void collocate(const rectangle& r) 
 		{   
 			rectangle area (r);	
@@ -970,107 +970,139 @@ namespace nana{	namespace gui
 	{
 		typedef tokenizer::token token;
 
-		division * div = nullptr;
-		token div_type = token::eof;
-		std::string name;
-
-		number_t weight;
-		number_t gap;
-		std::vector<number_t> array;
-
-		std::vector<division*> children;
+		token       div_type = token::eof;
+		number_t    weight , gap;
+        bool        have_gap=false, have_weight=false;
+        unsigned    min(std::numeric_limits<unsigned>::min());
+        unsigned    max(std::numeric_limits<unsigned>::max());
+		std::vector<number_t>    array;
+		std::vector<std::string> field_names_in_div;
+ 
         for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
 		{
-			bool exit_for = false;
 			switch(tk)
 			{
-			case token::div_start:	    children.push_back(scan_div(tknizer));				break;
-			case token::array:		    tknizer.array().swap(array);   				        break;
-			case token::identifier:		name = tknizer.idstr();				break;
+			    case token::div_start:	    
+                    {
+                       std::string div_name(add_div_name ());
+                       fields.emplace(div_name,scan_div(tknizer));
+                       field_names_in_div.push_back(div_name);				
+                                                                                break;
+                    }
+			    case token::array:		    tknizer.array().swap(array);   		break;
+			    case token::identifier:		
+                {
+                    std::string field_name(tknizer.idstr());
+                    if (add_field_name (field_name))
+                       field_names_in_div.push_back(field_name );				
+                                                                                break;
+                }
+			    case token::horizontal:
+			    case token::vertical:
+			    case token::grid:			div_type = tk;		   		        break;
 
-			case token::horizontal:
-			case token::vertical:
-			case token::grid:			div_type = tk;		   		        break;
-
-			case token::weight:		weight = tknizer.number();
-				//If the weight is type of real, convert it to integer.
-				//the integer and percent are allowed for weight.
-				if(weight.kind_of() == number_t::kind::real)
-					weight.assign(static_cast<int>(weight.real()));
-				break;
-			case token::gap:		gap = tknizer.number();
-				//If the gap is type of real, convert it to integer.
-				//the integer and percent are allowed for gap.
-				if(gap.kind_of() == number_t::kind::real)
-					gap.assign(static_cast<int>(gap.real()));
-				break;
-
-			default:	break;
+			    case token::weight:	weight = tknizer.number();have_weight=true; break;
+			    case token::gap:	   gap = tknizer.number();have_gap=true;    break;
+			    case token::min:		    
+                    {
+                        number_t m= tknizer.number();
+                        if(m.kind_of() == number_t::kind::percent   )
+                            ; // trow no min percent possible
+                        else if(m.kind_of() == number_t::kind::integer   )
+					        min = m.integer();
+                        else 
+					        min=static_cast<unsigned>(m.real());
+                                                                                break;
+                    }
+			    case token::max:		    
+                    {
+                        number_t m= tknizer.number();
+                        if(m.kind_of() == number_t::kind::percent   )
+                            ; // trow no max percent possible
+                        else if(m.kind_of() == number_t::kind::integer   )
+					        max = m.integer();
+                        else 
+					        max=static_cast<unsigned>(m.real());
+                                                                                break;
+                    }
+			    default:	break;
 			}
-			if(exit_for)
-				break;
 		}
+        division *div;
 
-		field_impl * field = nullptr;
-		if(name.size())
+        if (div_type == token::grid)
 		{
-			//find the field with specified name.
-			//the field may not be created.
-			auto i = fields.find(name);
-			if(fields.end() != i)
+			unsigned rows=1, columns=1;		
+			if(array.size())
 			{
-				field = i->second;
-
-				//the field is attached to a division, it means there is another division with same name.
-				if(field->attached)
-					throw std::runtime_error("place, the name \'"+ name +"\' is redefined.");
-
-				//this field will be attached to the division that will be created later.
-				field->attached = true;
-			}
-		}
-
-		switch(div_type)
-		{
-		    case token::eof:
-		    case token::horizontal:			div = new div_h(std::move(name));			break;
-		    case token::vertical:			div = new div_v(std::move(name));			break;
-		    case token::grid:
+				if(array[0].kind_of() != number_t::kind::percent)
+					rows = array[0].integer();
+                if(array.size() > 1)
 			    {
-				    div_grid * p = new div_grid(std::move(name));
-					
-				    if(array.size())
-				    {
-					    if(array[0].kind_of() != number_t::kind::percent)
-						    p->dimension.first = array[0].integer();
-				    }
-					
-				    if(array.size() > 1)
-				    {
-					    if(array[1].kind_of() != number_t::kind::percent)
-						    p->dimension.second = array[1].integer();
-				    }
-
-				    if(0 == p->dimension.first)
-					    p->dimension.first = 1;
-
-				    if(0 == p->dimension.second)
-					    p->dimension.second = 1;
-
-				    div = p;
+				    if(array[1].kind_of() != number_t::kind::percent)
+					    columns = array[1].integer();
 			    }
-			    break;
-            default:
-                throw std::runtime_error("nana.place: invalid division type.");
+			}
+			if( ! rows )
+				rows = 1;
+			if( ! columns )
+				columns = 1;
+			div = new adj_div_grid(rows,columns,min,max);
 		}
-			
-		div->weight = weight;
-		div->gap = gap;
-		div->field = field;		//attach the field to the division
-		div->children.swap(children);
+        else if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
+        {
+            double perc=weight.real ();
+            switch(div_type)
+            {
+                case token::eof:
+		        case token::horizontal:			div = new percent_div_h(perc,min.max);			break;
+		        case token::vertical:			div = new percent_div_v(perc,min.max);			break;
+                default:
+                    throw std::runtime_error("nana.place: invalid division type.");
+		    }
+        } else 
+            {   unsigned fixed=0;
+                if      ( weight.kind_of () == number_t::kind::real    && weight.real()    > 0 )
+                    fixed = static_cast<unsigned>(weight.real());
+                else if ( weight.kind_of () == number_t::kind::integer && weight.integer() > 0 )
+                    fixed = static_cast<unsigned>(weight.integer());
+                if (fixed)
+                    switch(div_type)
+                    {
+                        case token::eof:
+		                case token::horizontal:			div = new fixed_div_h(fixed,min.max);			break;
+		                case token::vertical:			div = new fixed_div_v(fixed,min.max);			break;
+                        default:
+                            throw std::runtime_error("nana.place: invalid division type.");
+		            }
+                else
+                    switch(div_type)
+                    {
+                        case token::eof:
+		                case token::horizontal:			div = new adj_div_h(min.max);			break;
+		                case token::vertical:			div = new adj_div_v(min.max);			break;
+                        default:
+                            throw std::runtime_error("nana.place: invalid division type.");
+		            }
+        }
+        if (have_gap)
+        {
+            unsigned fixed=0;
+		    if      (gap.kind_of() == number_t::kind::real    && gap.real()    > 0 )
+			    fixed=static_cast<unsigned>(gap.real()); 
+            else if (gap.kind_of() == number_t::kind::integer && gap.integer() > 0 )
+			    fixed=static_cast<unsigned>(gap.integer()); 
+            if (fixed)
+                div->gap.reset (new fixed_gap(fixed) );
+
+		    else if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
+                div->gap.reset (new percent_gap(gap.real ()) );
+            else 
+                div->gap.reset (new adj_gap() );
+        }
+		div->field_names.swap(field_names_in_div);
 		return div;
 	}
-
 	//class place
 
 		place::place()
@@ -1097,23 +1129,28 @@ namespace nana{	namespace gui
 						impl_->root_division->collocate(API::window_size(ei.window));
 				});
 		}
-		void place::div(const char* s)
-		{
-            impl_->div_numer=0;
-            for (auto field=impl_->fields.begin(); field != impl_->fields.end(); ++field   )
+        void place::implement::div(const char* s)
+        {
+            div_numer=0;
+            for (auto field=fields.begin(); field != fields.end(); ++field   )
             {
                 if (isdigit( field->first[0] ) )  /// delete div, with have a name-numer
                 {
                     field->second.release();  
-                    impl_->fields.erase(field);
+                    fields.erase(field);
                 }
             }
-            for (auto name=impl_->names.begin(); name != impl_->names.end(); ++name )
+            for (auto name=names.begin(); name != names.end(); ++name )
                 if (isdigit( (*name)[0] ) )  /// delete div names, with have a name-numer
-                    impl_->names.erase(name);
+                    names.erase(name);
 
 			tokenizer tknizer(s);
-			impl_->root_division.reset( impl_->scan_div(tknizer));
+			root_division.reset( scan_div(tknizer));
+        }
+
+        void place::div(const char* s)
+		{
+            impl_->div(s); 
 		}
 
 		place::IField*  place::fixed(window wd, unsigned size)
