@@ -27,44 +27,41 @@ namespace nana{	namespace gui
 	    //such as integer, real and percent. Essentially, percent is a typo of real.
 
 	public:
-		enum class kind{integer, real, percent};
+		enum class kind{empty, integer, real, percent};
 
-		number_t() 			: kind_(kind::integer)		{			value_.integer = 0;		}
+		number_t() 			: kind_(kind::empty)		{	value_.integer = 0;		}
 
 		kind kind_of() const		{			return kind_;		}
 
 		int integer() const
 		{
-			if(kind::integer == kind_)
+			if(kind::integer == kind_ || kind::empty  == kind_ )
 				return value_.integer;
 			return static_cast<int>(value_.real);
 		}
-
 		double real() const
 		{
-			if(kind::integer == kind_)
+			if(kind::integer == kind_ || kind::empty  == kind_ )
 				return value_.integer;
 			return value_.real;
 		}
-
 		void assign(int i)
 		{
 			kind_ = kind::integer;
 			value_.integer = i;
 		}
-
 		void assign(double d)
 		{
 			kind_ = kind::real;
 			value_.real = d;
 		}
-
 		void assign_percent(double d)
 		{
 			kind_ = kind::percent;
 			value_.real = d / 100;
 		}
-	private:
+        void clear(){*this = number_t(); 	}
+    private:
 		kind kind_;
 		union valueset
 		{
@@ -331,8 +328,10 @@ namespace nana{	namespace gui
             virtual adj  end_place (unsigned t_w,const adj& tip,       adj& prev=adj() )=0 ;
             virtual unsigned weigth(unsigned t_w,const adj& tip, const adj& prev       )=0 ;
             virtual ~IField(){}
-            virtual void  collocate(const rectangle& r)   =0;
-            virtual window window_handle()const =0;
+            virtual void   collocate(const rectangle& r)   =0;
+            virtual window window_handle()const   =0;
+            virtual void   populate_children(	implement*   place_impl_)  =0;
+            virtual size   dimension()   const                              =0;
             bool attached;
     };
 
@@ -356,54 +355,57 @@ namespace nana{	namespace gui
 
 		division *        scan_div       (tokenizer&);
 		//static division * search_div_name(division* start, const std::string&);
-        std::string   add_div_name()
+        std::string   add_div_name  ()
         {
             std::string name= std::to_string (div_numer++);
             names.insert (name);
             return name; 
         }
-        bool add_field_name(const std::string& n)
+        bool          add_field_name(const std::string& n)
         {
             if (names.insert (n).second)
                 return true; 
             else ;//trow name repit;
         }
 
-
         class field_impl;
-		class div_h;
-		class div_v;
-		class div_grid;
-        
 
         struct Gap_field                       
         { 
-            virtual ~Gap_field (){}
-            unsigned collocate_(const rectangle& r){}
-            window window_handle_() const { return nullptr; }
+            virtual  ~Gap_field (){}
+            unsigned  collocate_         ( const rectangle& r)      {}
+            window    window_handle_     () const                   { return nullptr; }
+            void      populate_children_ ( implement*   place_impl_){}
+            size      dimension_         () const                   {return size();} 
         };
-        struct Widget_field                       
+        struct Widget_field :  Gap_field                     
         { 
             window   handle; 
             Widget_field(window handle_):handle(handle_){}
             virtual ~Widget_field (){}
             window window_handle_() const { return handle; }
-             void  collocate_(const rectangle& r)
+            void  collocate_(const rectangle& r)
             {  
                 API::move_window (handle,r );
             }
+            size      dimension_         () const                   {return size(1,1);} 
         };
         struct Room_field: Widget_field    
         { 
             unsigned rows,columns;
             Room_field(window handle_,unsigned rows_,unsigned columns_):Widget_field( handle_), rows(rows_),columns(columns_){}
+            size      dimension_         () const                   {return size(rows,columns);} 
         };
+		class div_h;
+		class div_v;
+		class div_grid;
 
         template <class Base>
         struct IAdjust : IField
         {    
-             void   collocate(const rectangle& r)override   {   Base::collocate_(r); attached=true;    }
-             window window_handle() const override    { return Base::window_handle_(); }
+             void   collocate(const rectangle& r)override          {        Base::collocate_(r); attached=true;    }
+             window window_handle() const override                 { return Base::window_handle_(); }
+             void  populate_children(implement*place_impl_)override{ return Base::populate_children(place_impl_); }
              unsigned min, max; 
              IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
                        max(std::numeric_limits <decltype(max)>::max() ){}
@@ -457,9 +459,7 @@ namespace nana{	namespace gui
         { 
             double      percent; 
 
-            IPercent(unsigned percent_):percent(percent_/100.0){}
             IPercent(double   percent_):percent(percent_){}
-            IPercent(unsigned percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_/100.0){}
             IPercent(double   percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_      ){}
         
             adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override     {   return end_place(t_w, prev);      }
@@ -468,10 +468,12 @@ namespace nana{	namespace gui
             }
             unsigned weigth_adj(unsigned t_w )
             {   
-                if ( t_w * percent / 100.0 < min )    {return min; }
-                if ( t_w * percent / 100.0 > max )    {return max; }
-                return  t_w * percent / 100.0 ;     
+                if ( t_w * percent  < min )    {return min; }
+                if ( t_w * percent  > max )    {return max; }
+                return  t_w * percent  ;     
             }
+            //IPercent(unsigned percent_):percent(percent_/100.0){}
+            //IPercent(unsigned percent_, unsigned min_,unsigned max_):IAdjust<Base>    (min_,max_),percent(percent_/100.0){}
         };     // double?, unsigned?
 
         struct adj_gap:  IAdjustable<Gap_field> , Gap_field 
@@ -487,7 +489,7 @@ namespace nana{	namespace gui
         struct adj_room: Room_field, IAdjustable<Room_field>   
         { 
             adj_room(window handle_,unsigned rows_,unsigned columns_)                             :Room_field(handle_, rows_, columns_){}
-            adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IAdjustable<Room_field>(min_,max_){}
+            //adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_):Room_field(handle_, rows_, columns_),IAdjustable<Room_field>(min_,max_){}
         };
 		class adj_div_h;
 		class adj_div_v;
@@ -637,13 +639,12 @@ namespace nana{	namespace gui
 	class place::implement::division
 	{
 	  public:
-		place*                    place_ptr_;
         std::vector <std::string> field_names;
 		std::vector<IField*>      children;   //  std::vector<div*> 
 		std::vector<window>       fastened_in_div;   //  
 		std::unique_ptr<IField>   gap;        //  
 	  public:
-		division(place*plc)	 :place_ptr_(p)		{}
+		//division()	 	{}
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
         virtual int&       fixed_c(rectangle& r )=0;
@@ -661,16 +662,19 @@ namespace nana{	namespace gui
 			//}
 		}
         /// populate childen in the same order in with they were introduced in the div layout str, and then in the order in with they were added to the field
-        void populate_children()  
+        void populate_children(	implement*   place_impl_)
         {
             //children.clear();  // ????
             for (const auto &name : field_names)
             {
-                auto r= place_ptr_->impl_->fields.equal_range(name);
+                auto r= place_impl_->fields.equal_range(name);
                 for (auto fi=r.first ; fi != r.second ; ++fi)
+                {    
                     children.push_back (fi->second.get () );
+                    //fi->second->
+                }
 
-                auto f= place_ptr_->impl_->fastened.equal_range(name);
+                auto f= place_impl_->fastened.equal_range(name);
                 for (auto fi=f.first ; fi != f.second ; ++fi)
                     fastened_in_div.push_back (fi->second );
             }
@@ -700,10 +704,6 @@ namespace nana{	namespace gui
 			for(auto & fsn: fastened_in_div)
 				API::move_window(fsn, area);
 		}
-
-		//nana::rectangle         area;
-		//number_t                weight;
-		//field_impl *            field;
 	};
     
 	class place::implement::div_h 	: public division
@@ -714,7 +714,7 @@ namespace nana{	namespace gui
          int&       fixed_c(rectangle& r )override{return r.y;}
          unsigned&  fixed_s(rectangle& r )override{return r.height;}
         
-        div_h(place*plc, const std::string& name_)	: division(plc, name_)		{}
+        //div_h()	: division(plc, name_)		{}
 	};
 	class place::implement::div_v 	: public division
 	{
@@ -724,20 +724,17 @@ namespace nana{	namespace gui
          int&       fixed_c(rectangle& r )override{return r.x;}
          unsigned&  fixed_s(rectangle& r )override{return r.width;}
         
-		div_v(place*plc, const std::string& name_)	: division(plc, name_)		{}
+		//div_v(place*plc, const std::string& name_)	: division(plc, name_)		{}
 	};
-	class place::implement::div_grid	: public division
+	class place::implement::div_grid	: public div_h
 	{
 	  public:
-		div_grid(place*plc, const std::string& name_)	: division(plc, name_)		
-		{
-			dimension.first = dimension.second = 0;
-		}
+          std::string name; ///< field name to be refered in the field(name)<<room instr.
+          size        dim;  ///< w=rows and h=columns
+		div_grid(const std::string& name_, size dim_)	: name(name_), dim(dim_)	{}
 
 		virtual void collocate()
 		{
-			if(nullptr == field)
-				return;
 
 			unsigned gap_size = (gap.kind_of() == number_t::kind::percent ?
 				static_cast<unsigned>(area.width * gap.real()) : static_cast<unsigned>(gap.integer()));
