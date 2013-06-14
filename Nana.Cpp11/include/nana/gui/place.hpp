@@ -44,10 +44,11 @@ namespace nana {namespace gui
 			virtual field_t& fasten(window wd)	= 0;
 		};
 		typedef field_t & field_reference;
-		field_reference    field   (const char* name);
-		static IField*     fixed   (window wd, unsigned size         );
-		static IField*     percent (window wd, double   percent_     );
-		static IField*     room    (window wd, unsigned w, unsigned h);
+		field_reference    field   (const char* name);    /// TODO: Add min and max
+
+		static IField*     fixed   (window wd, unsigned size         );/// TODO: Add min and max
+		static IField*     percent (window wd, double   percent_     );/// TODO: Add min and max
+		static IField*     room    (window wd, unsigned w, unsigned h);/// TODO: Add min and max
 
 		struct implement;
 	  private:
