@@ -22,7 +22,7 @@ namespace nana {namespace gui
 	{
 	  public:
 
-		 place();
+		 //place();
 		 place(window parent_widget);
 		~place();
 
@@ -30,7 +30,7 @@ namespace nana {namespace gui
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
-		void              bind     (window parent_widget);
+		//void              bind     (window parent_widget);
 		void              div      (const char* layout);
 		void              collocate();
 

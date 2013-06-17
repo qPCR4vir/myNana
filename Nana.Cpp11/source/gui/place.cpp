@@ -19,28 +19,35 @@
 #include <cstring>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
+#include <iostream>    // temp, for debugging
 
-
+std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
+{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 namespace nana{	namespace gui
 {
 	class number_t
 	{	//number_t is used to store a number type variable
 	    //such as integer, real and percent. Essentially, percent is a typo of real.
 	public:
-		enum class kind{empty, integer, real, percent};
-		number_t() 			: kind_(kind::empty)		{	value_.integer = 0;		}
+		enum class kind{/*empty, */integer, real, percent};
+		number_t() 			: kind_(kind::integer)		{	value_.integer = 0;		}
 
 		kind kind_of() const		{			return kind_;		}
 
 		int integer() const
 		{
-			if(kind::integer == kind_ || kind::empty  == kind_ )
+    //        if( kind::empty  == kind_ )
+				//return 0;
+			
+            if(kind::integer == kind_ )
 				return value_.integer;
 			return static_cast<int>(value_.real);
 		}
 		double real() const
 		{
-			if(kind::integer == kind_ || kind::empty  == kind_ )
+    //        if( kind::empty  == kind_ )
+				//return 0;
+			if(kind::integer == kind_  )
 				return value_.integer;
 			return value_.real;
 		}
@@ -299,20 +306,24 @@ namespace nana{	namespace gui
 	{
 		class division;
         std::unique_ptr<field_t>        temp_field_t;
-		window                          parent_window_handle;
+		const window                    parent_window_handle;
 		event_handle                    event_size_handle;
 		std::unique_ptr<division>       root_division;
         std::unordered_set<std::string> names;          ///<  All the names defines. Garant no repited name.
         unsigned                        div_numer;      ///<  Used to generate unique div name.
-        /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
+
+            /// All the fields defined by user with field(name)<<IField, 
+            /// plus the div. find from the layot in div()
 		std::unordered_map<std::string, std::unique_ptr<IField>> fields;    
 		std::unordered_map<std::string,    window              > fastened;
 			
-		implement()		: parent_window_handle(nullptr), event_size_handle(nullptr)	{}
-		~implement() 	{	   API::umake_event(event_size_handle);	    }
+		implement(window parent_widget)	;	
+       ~implement() 	{	   API::umake_event(event_size_handle);	    }
 
         void              collocate();
 		void              div(const char* s);
+        //void              bind     (window parent_widget);
+
 
 		division *        scan_div       (tokenizer&);
         std::string   add_div_name  ()  /// Generate and registre in the set a new unique div name
@@ -383,8 +394,9 @@ namespace nana{	namespace gui
              //void  populate_children(implement*place_impl_)override{ return Base::populate_children_(place_impl_); }
              //size        dimension   ()   const override           { return Base::dimension_(); }              
              unsigned min, max; 
+             static const unsigned MAX= 1000000 ;  // std::numeric_limits <decltype(max)>::max()/1000;
              IAdjust():min(std::numeric_limits <decltype(min)>::min() ),
-                       max(std::numeric_limits <decltype(max)>::max() ){}
+                       max(MAX /*REVISE!!!!!temporal!!!!!!!!!!!!!!!!!!!!!!!!!!!*/ ){}
              IAdjust(unsigned min_,unsigned max_) :min(min_), max(max_){} 
              virtual ~IAdjust(){}
         };
@@ -395,22 +407,27 @@ namespace nana{	namespace gui
             IAdjustable(unsigned min_,unsigned max_):IAdjust<Base>  (min_,max_){}
 
             adj   pre_place(unsigned t_w,                        adj& acc_fixed_min = adj() ) override    
-                      {   ++acc_fixed_min.count_adj;   return  acc_fixed_min;        }
+                      {   
+                          ++acc_fixed_min.count_adj;  
+                          acc_fixed_min.weigth += min;
+                          return  acc_fixed_min;        
+                      }
 
             adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    
             {   
-                if ( t_w < min * tip.count_adj + tip.weigth )   {prev.weigth += min; return prev; }
-                if ( t_w > max * tip.count_adj + tip.weigth )   {prev.weigth += max; return prev; }
+                if ( t_w <       min * tip.count_adj + tip.weigth )   {prev.weigth += min; return prev; }
+                if ( t_w > (max-min) * tip.count_adj + tip.weigth )   {prev.weigth += max; return prev; }
                 prev.weigth += min; 
                 ++prev.count_adj;   return  prev;        
             }
             unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override
             {   
-                assert (tip.count_adj);
-                if ( t_w < min * tip.count_adj + tip.weigth )   {return min; }
-                if ( t_w > max * tip.count_adj + tip.weigth )   {return max; }
+                if ( t_w <        min * tip.count_adj + prev.weigth )   {return min; }
+                if ( t_w > (max-min)  * tip.count_adj + prev.weigth )   {return max; }
 
-                return  (t_w - prev.weigth ) / tip.count_adj + min ;        
+                assert (tip.count_adj);
+
+                return  (t_w - prev.weigth ) / prev.count_adj + min ;        
             }
         };
         template <class Base>
@@ -659,7 +676,8 @@ namespace nana{	namespace gui
         /// populate childen in the same order in with they were introduced in the div layout str, and then in the order in with they were added to the field
         void populate_children(	implement*   place_impl_)
         {
-            assert(children.empty ());             /// .clear(); the children or it is empty allways ????
+            //assert(children.empty ());             /// .clear(); the children or it is empty allways ????
+            children.clear ();             /// .clear(); the children or it is empty allways ????
             for (const auto &name : field_names)   /// for all the names in this div
             {
                 auto r= place_impl_->fields.equal_range(name);     /// find in the place global list of fields all the fields attached to it
@@ -678,20 +696,23 @@ namespace nana{	namespace gui
         /// add field names in the same order in with they are introduced in the div layout str
 		virtual void collocate(const rectangle& r) 
 		{   
+                //std::cerr<< "\ncollocating div in: "<<r; // debugg
+
 			rectangle area (r);	
-            adj pre_adj, end_adj;
+            adj pre_adj, end_adj; auto t_w=weigth_s(area);
 			for(auto child: children)                            
-                child->pre_place(  weigth_s(area) , pre_adj );  
+                child->pre_place(  t_w , pre_adj );  
 			for(auto child: children)                            
-                child->end_place(  weigth_s(area) , pre_adj, end_adj );
+                child->end_place(  t_w , pre_adj, end_adj );
        
 			rectangle left = area;
-			for(auto child : children)                          /// First collocate child div's !!!
+			for(auto child : children)                          
 			{
 			    rectangle child_area (left);
-                weigth_s(child_area) = child->weigth(  weigth_s(area) , pre_adj, end_adj )   ;
+                weigth_s(child_area) = child->weigth(  t_w , pre_adj, end_adj )   ;
                 weigth_c(left)      += weigth_s(child_area);
                 weigth_s(left)      -= weigth_s(child_area);
+                //std::cerr<< "\ncollocating child in: "<<child_area; // debugg
                 child->collocate(child_area);
 			}
 			for(auto & fsn: fastened_in_div)
@@ -896,7 +917,7 @@ namespace nana{	namespace gui
 		number_t    weight , gap;
         bool        have_gap=false, have_weight=false;
         unsigned    min(std::numeric_limits<unsigned>::min());
-        unsigned    max(std::numeric_limits<unsigned>::max());
+        unsigned    max(place::implement::IAdjust<place::implement::Gap_field>::MAX/*std::numeric_limits<unsigned>::max()*/);
 		std::vector<number_t>    array;
 		std::vector<std::string> field_names_in_div;
         std::string gr_name;
@@ -1032,30 +1053,50 @@ namespace nana{	namespace gui
 	}
 	//class place
 
-		place::place()
-			: impl_(new implement)
-		{}
+		//place::place()
+		//	: impl_(new implement)
+		//{}
 		place::place(window wd)
-			: impl_(new implement)
+			: impl_(new implement(wd))
 		{
-			bind(wd);
+			//bind(wd);
 		}
 		place::~place()
 		{
 			delete impl_;
 		}
-		void place::bind(window wd)
-		{
-			if(impl_->parent_window_handle)
-				throw std::runtime_error("place.bind: it has already binded to a window.");
+		//void place::bind(window wd)
+		//{
+		//	if(impl_->parent_window_handle)
+		//		throw std::runtime_error("place.bind: it has already binded to a window.");
 
-			impl_->parent_window_handle = wd;
-			impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
-				{
-					if(impl_->root_division)
-						impl_->root_division->collocate(API::window_size(ei.window));
-				});
-		}
+		//	impl_->parent_window_handle = wd;
+		//	impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
+		//		{
+		//			if(impl_->root_division)
+		//				impl_->root_division->collocate(API::window_size(ei.window));
+		//		});
+		//}
+	place::implement::implement(window parent_widget)		
+            : parent_window_handle(parent_widget), event_size_handle(nullptr)	
+    {   
+		//rectangle r;  //debugg
+  //      r=API::window_size(this->parent_window_handle);  //debugg
+  //      std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
+
+        event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
+		{
+            //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "<<ei.window <<" ]) ";  //debugg
+			
+            if(this->root_division)
+            {
+				//rectangle r;  //debugg
+                this->root_division->collocate(/*r=*/API::window_size(this->parent_window_handle));
+                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
+            }
+		});
+    }
+
         void place::implement::div(const char* s)
         {
             div_numer=0;
@@ -1108,10 +1149,13 @@ namespace nana{	namespace gui
 		{
 			if(root_division && parent_window_handle)
 			{
-				for(auto & field : fields)
-				    field.second->attached = false;
- 
-                root_division->collocate(API::window_size(parent_window_handle));
+               root_division->populate_children (this);
+               for(auto & field : fields)
+                    field.second->attached = false;
+
+				//rectangle r; // debugg
+                root_division->collocate(/*r=*/API::window_size(parent_window_handle));
+                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
 
 				for(auto & field : fields)
 					API::show_window(field.second->window_handle(), field.second->attached);
