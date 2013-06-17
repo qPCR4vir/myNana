@@ -20,6 +20,8 @@
 #include <fstream> 
 #include <cassert>
 
+ std::ostream& operator<<(std::ostream& o,const nana::rectangle &r);
+//{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
 class EditLayout_Form;
 
@@ -57,7 +59,13 @@ public:
             :  _place	       (ThisWidget),   
                _Titel(std::move(Titel)),        //   ???
                _DefLayoutFileName(DefLayoutFileName)
-     {
+     {  
+     	//nana::rectangle r;  //debugg
+      //  r=nana::gui::API::window_size(ThisWidget);  //debugg
+      //  //std::cerr<< "\nplace::implement::implement(window parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
+      //  std::cerr<< "\nEditableWidget(parent_widget [ "<< std::string(nana::charset ( _Titel))<<" ]) with area: "<<r;  //debugg
+
+
         ThisWidget.caption(_Titel);       //   ???
         InitMenu   (_menuProgram);
     }

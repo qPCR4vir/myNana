@@ -6,6 +6,10 @@
 #include <iostream> 
 #include <fstream> 
 
+// std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
+//{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
+//
+
 bool EditableWidget::_globalBlockInteratctiveEdition=false;
 bool EditableWidget::_globalBlockConfig             =false;
 
