@@ -149,7 +149,7 @@ void EditLayout_Form::ReLayout()
 	{   nana::string lay,line;
 		for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
 			lay+=line;
-        _fm->ReCollocate( std::string(nana::charset (lay)).c_str() );  // try std::runtime_error msgbox
+        _fm->ReCollocate( std::string(nana::charset (lay)) );  // try std::runtime_error msgbox
 	}
 void EditLayout_Form::ReloadDef()
 {

@@ -86,9 +86,10 @@ public:
         if (_myLayout.empty() )
             _myLayout= _DefLayout;
 
-        _place.div( _myLayout.c_str () );
         AsignWidgetToFields();
-		_place.collocate ();
+        //_place.div(_myLayout.c_str ());     
+
+        ReCollocate( );
 	}
             void InitMenu   (nana::gui::menu& menuProgram)
     {
@@ -148,6 +149,14 @@ class EditableForm: public EditableWidget
         _menuProgramInBar=&_menuBar.push_back(STR("&Programm"));
         InitMenu   (*_menuProgramInBar);
     }
+    void InitMyLayout       ()
+	{   
+        EditableWidget::InitMyLayout();
+        //_place.div(_myLayout.c_str ());     
+
+        ////ReCollocate( );
+	}
+
 };
 
 //#include <../temp/CompoWidget.hpp>

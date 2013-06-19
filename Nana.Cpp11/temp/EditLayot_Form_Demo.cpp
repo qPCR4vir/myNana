@@ -103,14 +103,8 @@ void PrintConv(double val, const CUnit& u)
         return; 
     std::cout<< ": " << val << " " << u.name << " = " << u.conv(val)<< " "  << u.base ;
 }
-
-
-//int main_temp ()
-int main()
+void TestUnits()
 {
-	DemoForm form;
-
-
     for (auto& mag: CUnit::MagnitudesDic())
     {
         std::cout<< "\n\nMagnitude: "<< mag.first;
@@ -179,7 +173,12 @@ int main()
     std::cout<< "\n O2: " ;
     PrintConv(8, O2("g/L","mM"));
 
+}
 
+//int main_temp ()
+int main()
+{
+	DemoForm form;
 
 	form.show();
     try {
