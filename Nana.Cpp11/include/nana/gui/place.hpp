@@ -35,19 +35,33 @@ namespace nana {namespace gui
 		void              collocate();
 
         struct IField ;
+        struct minmax
+        {
+            minmax(unsigned Min=MIN, unsigned Max=MAX);
+            unsigned min,max /*, Min(), Max()*/;
+            void     MinMax      (minmax Size_Range) 
+                {
+                    min=Size_Range.min; 
+                    max=Size_Range.max;
+                };
+            void     MinMax      (unsigned min_,unsigned max_=MAX) {min=min_; max=max_;} 
+            minmax   MinMax      (                 )  { return *this;};
+            static const unsigned MIN=0,MAX=1000000;
+        };
 		struct field_t
 		{
-			virtual ~field_t() = 0;
+			virtual field_t& operator<<(minmax Size_range)	= 0;
             virtual field_t& operator<<(IField * fld)		= 0;
-			virtual field_t& operator<<(window wd)		= 0;    //
+			virtual field_t& operator<<(window wd)		= 0;    
 			virtual field_t& operator<<(unsigned gap)	= 0;
-			virtual field_t& fasten(window wd)	= 0;
+			virtual field_t& fasten(window wd)	    = 0;
+			virtual ~field_t()                  = 0;
 		};
 		typedef field_t & field_reference;
 		field_reference    field   (const char* name);    /// TODO: Add min and max
 
-		static IField*     fixed   (window wd, unsigned size         );/// TODO: Add min and max
-		static IField*     percent (window wd, double   percent_     );/// TODO: Add min and max
+		static IField*     fixed   (window wd, unsigned size         );
+		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
 		static IField*     room    (window wd, unsigned w, unsigned h);/// TODO: Add min and max
 
 		struct implement;
