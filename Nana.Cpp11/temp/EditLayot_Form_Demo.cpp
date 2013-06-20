@@ -4,6 +4,9 @@
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
+    void ReSize(const nana::gui::eventinfo &e, nana::gui::widget& w)
+    { w.caption(w.caption().substr(0,6)+std::to_wstring(w.size().width  )); }
+
 class DemoForm : public nana::gui::form, public EditableForm 
 { public:
 	nana::gui::button	but1 , but2, but3, but4;
@@ -35,10 +38,10 @@ class DemoForm : public nana::gui::form, public EditableForm
                 //Ta           ( *this, STR("Ta:"), 55,  50, 60, "grC",STR("") /*, DefLayFile , step=1, decimals=2*/)
 
     {
-        but1.caption (STR("But1"));
-	    but2.caption (STR("But2"));
-	    but3.caption (STR("But3"));
-	    but4.caption (STR("But4"));
+        but1.caption (STR("But1: "));
+	    but2.caption (STR("But2: "));
+	    but3.caption (STR("But3: "));
+	    but4.caption (STR("But4: "));
         _up.caption (STR("^"));
         _down.caption (STR("v"));
         _label.caption (STR("Num out:"));
@@ -54,7 +57,13 @@ class DemoForm : public nana::gui::form, public EditableForm
         SelectClickableWidget( _menuBar);
         SelectClickableWidget( but2);
 
+        but1.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but1);});
+	    but2.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but2);});
+	    but3.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but3);});
+	    but4.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but4);});
+
     }
+ 
     void SetDefLayout   () override
     {
         _DefLayout= "vertical      gap=2             \n\t"

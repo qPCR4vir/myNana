@@ -1,5 +1,12 @@
 /*
  *	An Alternative Implementation of Place for Layout
+ *  (
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
  *	@file: nana/gui/place.cpp
  */
 #include <sstream>
@@ -312,20 +319,20 @@ namespace place_impl
                     }
         adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
         {   
+            if ( t_w      <   fixed.weigth + fixed.min         )  
+                                                            { adj_min.weigth += min; return adj_min; }
             if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                                                                { adj_min.weigth += min; return adj_min; }
+                                                            { adj_min.weigth += min; return adj_min; }
             if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                                                                { adj_min.weigth += max; return adj_min; }
+                                                            { adj_min.weigth += max; return adj_min; }
 
-            if ( t_w      <   fixed.weigth + fixed.min      )   { adj_min.weigth += min; return adj_min; }
-            if ( t_w  - fixed.weigth < min * fixed.count_adj)   { adj_min.weigth += min; return adj_min; }
-            if ( t_w  - fixed.weigth < min * fixed.count_adj)   { adj_min.weigth += min; return adj_min; }
-            //if ( t_w > (max-min)*fixed.count_adj+fixed.weigth ) { adj_min.weigth += max; return adj_min; }
             adj_min.min += min; 
             ++adj_min.count_adj;   return  adj_min;        
         }
         unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )override
         {   
+            if ( t_w      <   fixed.weigth + fixed.min         )   
+                                                                        {return min; }
             if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
                                                                         {return min; }
             if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
@@ -335,12 +342,7 @@ namespace place_impl
             if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
                                                                         {return max; }
 
-            if ( t_w      <   fixed.weigth + fixed.min         )   { return min; }
-            if ( t_w <                        + adj_min.weigth )   {return min; }
-
-            assert (fixed.count_adj);
-
-            return  (t_w - fixed.weigth  ) / fixed.count_adj  ;        
+            return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
         }
     };
 
