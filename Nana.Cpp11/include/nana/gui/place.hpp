@@ -16,25 +16,20 @@
 #include <limits>
 #include <nana\gui\programming_interface.hpp>
 
+
 namespace nana {namespace gui
 {
-	class place		: nana::noncopyable
+	namespace place_impl
+    {
+        struct IField ;
+        struct implement;
+    }
+    using  place_impl::IField ;
+    using  place_impl::implement ;
+
+    class place		: nana::noncopyable
 	{
 	  public:
-
-		 //place();
-		 place(window parent_widget);
-		~place();
-
-		/** @brief Bind to a window
-		 *	@param handle	A handle to a window which the place wants to attach.
-		 *	@remark	It will throw an exception if the place has already binded to a window.
-		 */
-		//void              bind     (window parent_widget);
-		void              div      (const char* layout);
-		void              collocate();
-
-        struct IField ;
         struct minmax
         {
             minmax(unsigned Min=MIN, unsigned Max=MAX);
@@ -57,14 +52,26 @@ namespace nana {namespace gui
 			virtual field_t& fasten(window wd)	    = 0;
 			virtual ~field_t()                  = 0;
 		};
-		typedef field_t & field_reference;
+
+		typedef field_t &             field_reference;
+
+		 place(window parent_widget);
+		~place();
+
+		void              div      (const char* layout);
+		void              collocate();
 		field_reference    field   (const char* name);    /// TODO: Add min and max
 
 		static IField*     fixed   (window wd, unsigned size         );
 		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
 		static IField*     room    (window wd, unsigned w, unsigned h);/// TODO: Add min and max
+		 //place();
+		/** @brief Bind to a window
+		 *	@param handle	A handle to a window which the place wants to attach.
+		 *	@remark	It will throw an exception if the place has already binded to a window.
+		 */
+		//void              bind     (window parent_widget);
 
-		struct implement;
 	  private:
 		implement * impl_;
 	};
