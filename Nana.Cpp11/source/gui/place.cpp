@@ -624,7 +624,6 @@ namespace place_impl
                 n += child->dimension().width * child->dimension().height ;      
 			return n;
 		}
-	public:
 	};//end class div_grid
 
 	struct adj_div_h : public IAdjustable<div_h> 
@@ -708,7 +707,7 @@ namespace place_impl
     struct implement           //struct implement
 	{
         std::unique_ptr<field_t>        temp_field_t;
-		const window                    parent_window_handle;
+		window                          parent_window_handle;
 		event_handle                    event_size_handle;
 		std::unique_ptr<division>       root_division;
         std::unordered_set<std::string> names;     ///<  All the names defines. Garant no repited name.
@@ -719,15 +718,14 @@ namespace place_impl
 		std::unordered_multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::unordered_multimap<std::string,    window              > fastened;
 			
-		implement(window parent_widget)	;	
+        implement()	 : event_size_handle(nullptr), div_numer(0), parent_window_handle(nullptr){}
        ~implement() 	{	   API::umake_event(event_size_handle);	    }
 
         void              collocate();
 		void              div(const char* s);
-        //void              bind     (window parent_widget);
-
-
+        bool              bind     (window parent_widget);
 		division *        scan_div       (tokenizer&);
+
         /// Generate and registre in the set a new unique div name from the current layout
         std::string   add_div_name  ()  
         {
@@ -967,26 +965,6 @@ namespace place_impl
 		return div;
 	}
 
-    implement::implement(window parent_widget)		
-            : parent_window_handle(parent_widget), event_size_handle(nullptr)	, div_numer(0)
-    {   
-		//rectangle r;  //debugg
-  //      r=API::window_size(this->parent_window_handle);  //debugg
-  //      std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
-
-        event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
-		{
-            //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "<<ei.window <<" ]) ";  //debugg
-			
-            if(this->root_division)
-            {
-				//rectangle r;  //debugg
-                this->root_division->collocate(/*r=*/API::window_size(this->parent_window_handle));
-                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
-            }
-		});
-    }
-
     void implement::div(const char* s)
     {
         names.clear ();
@@ -1031,7 +1009,9 @@ namespace place_impl
 
 } // namespace place_impl
 
-	place::place(window wd)	: impl_(new implement(wd))    {/*bind(wd);*/}
+	place::place(window wd)	: impl_(new implement)   {bind(wd);}
+	place::place()		    : impl_(new implement)	 {         }
+	place::~place()		{			delete impl_;		}
     void        place::div      (const char* s)	{   impl_->div(s); 	    }
 	void        place::collocate(         ) 	{	impl_->collocate();	}
 	place::field_reference place::field  (const char* name)
@@ -1052,25 +1032,36 @@ namespace place_impl
 	{
 		return new place_impl::adj_room(wd, r, c);
 	}
-	place::~place()		{			delete impl_;		}
     place::minmax::minmax (unsigned Min, unsigned Max) : min(Min), max(Max){}
     place::field_t::~field_t(){}
 
-	//place::place()
-	//	: impl_(new implement)
-	//{}
-	//void place::bind(window wd)
-	//{
-	//	if(impl_->parent_window_handle)
-	//		throw std::runtime_error("place.bind: it has already binded to a window.");
-	//	impl_->parent_window_handle = wd;
-	//	impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
-	//		{
-	//			if(impl_->root_division)
-	//				impl_->root_division->collocate(API::window_size(ei.window));
-	//		});
-	//}
+	void place::bind(window wd)
+	{
+		if( impl_->bind(wd))
+			throw std::runtime_error("place.bind: it has already binded to a window.");
+    }
+    bool implement::bind (window wd) 
+    {
+		if (parent_window_handle) return true; 
+        parent_window_handle = wd;
+     		//  rectangle r;  //debugg
+            //  r=API::window_size(this->parent_window_handle);  //debugg
+            //  std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
 
+        event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
+		{
+            //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
+            //         <<ei.window <<" ]) ";  //debug
+			
+            if(this->root_division)
+            {
+				//rectangle r;  //debugg
+                this->root_division->collocate(/*r=*/API::window_size(this->parent_window_handle));
+                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
+            }
+		});
+        return false;
+	}
 
 }//end namespace gui
 }//end namespace nana

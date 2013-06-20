@@ -56,6 +56,8 @@ namespace nana {namespace gui
 		typedef field_t &             field_reference;
 
 		 place(window parent_widget);
+		 place();
+		void              bind     (window parent_widget);
 		~place();
 
 		void              div      (const char* layout);
@@ -65,12 +67,10 @@ namespace nana {namespace gui
 		static IField*     fixed   (window wd, unsigned size         );
 		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
 		static IField*     room    (window wd, unsigned w, unsigned h);/// TODO: Add min and max
-		 //place();
 		/** @brief Bind to a window
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
-		//void              bind     (window parent_widget);
 
 	  private:
 		implement * impl_;
