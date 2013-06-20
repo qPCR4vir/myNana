@@ -114,7 +114,7 @@ namespace place_impl
 				else    					        _m_throw_error(*sp_);
 				break; 
 			default:
-				if('0' <= *sp_ && *sp_ <= '9')
+				if(isdigit (*sp_))
 				{
 					readbytes = _m_number(sp_, false);
 					if(readbytes) 	{	sp_ += readbytes; return token::number;		}
@@ -198,22 +198,14 @@ namespace place_impl
 			double real = 0;
 			//read the integral part.
 			const char* istart = sp;
-			while('0' <= *sp && *sp <= '9')
-			{
-				integer = integer * 10 + (*sp - '0');
-				++sp;
-			}
+			while(isdigit (*sp))	{	integer = integer * 10 + (*sp - '0');	++sp;		}
 			const char* iend = sp;
 
 			if('.' == *sp)
 			{
 				double div = 1;
 				const char* rstart = ++sp;
-				while(isdigit (*sp))
-				{
-					real += (*sp - '0') / (div *= 10);
-					++sp;
-				}
+				while(isdigit (*sp)){	real += (*sp - '0') / (div *= 10);		++sp;		}
 
 				if(rstart != sp)
 				{
@@ -232,9 +224,8 @@ namespace place_impl
 			{
 				for(;*sp == ' '; ++sp);
 				if('%' == *sp)
-				{
-					if(number_t::kind::integer == number_.kind_of())
-						number_.assign_percent(number_.integer());
+				{   
+                    number_.assign_percent(number_.real());
 					return sp - allstart + 1;
 				}
 				return sp - allstart;
@@ -256,9 +247,9 @@ namespace place_impl
     {
                                 IField      (){}
                                 IField      (unsigned min_,unsigned max_):minmax  (min_,max_){}
-            virtual adj         pre_place   (unsigned t_w,      adj& prev=adj()                 )=0;
-            virtual adj         end_place   (unsigned t_w,const adj& tip,       adj& prev=adj() )=0 ;
-            virtual unsigned    weigth      (unsigned t_w,const adj& tip, const adj& prev       )=0 ;
+            virtual adj         pre_place   (unsigned t_w,      adj& fixed=adj()                    )=0;
+            virtual adj         end_place   (unsigned t_w,const adj& fixed,       adj& adj_min=adj())=0;
+            virtual unsigned    weigth      (unsigned t_w,const adj& fixed, const adj& adj_min      )=0;
             virtual            ~IField      (){}
             virtual size        dimension   ()   const                              =0;
             virtual void        collocate   (const rectangle& r)   =0;
@@ -270,9 +261,44 @@ namespace place_impl
     {    
             IAdjust(){}
             IAdjust(unsigned min_,unsigned max_=MAX) {MinMax(min_, max_);} 
-
             virtual ~IAdjust(){}
     };
+    template <class Base> struct IFixed:  IAdjust<Base>     
+    { 
+        unsigned weight_; 
+
+        IFixed(unsigned weight)                             : weight_(weight) {}
+        IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjust<Base>(min_,max_){}
+
+        adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
+                    {   fixed.weigth   += weigth_adj(t_w) ;   return  fixed;        }
+
+        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
+                    {   adj_min.weigth += weigth_adj(t_w) ;   return  adj_min;      }   
+
+        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )  override              
+                    {   return weigth_adj(t_w);      }    
+
+        virtual unsigned weigth_adj(unsigned t_w )
+        {   
+            if ( weight_  < min )    {return min; }
+            if ( weight_  > max )    {return max; }
+                
+            return  weight_;          
+        }
+    };
+    template <class Base> struct IPercent: IFixed<Base> 
+    { 
+        IPercent(double percent_)                            :IFixed<Base>(100*percent_)          {}
+        IPercent(double percent_,unsigned min_,unsigned max_):IFixed<Base>(100*percent_,min_,max_){}
+        unsigned weigth_adj(unsigned t_w )override
+        {   
+            if ( t_w * weight_ /100.0  < min )    {return min; }
+            if ( t_w * weight_ /100.0  > max )    {return max; }
+                
+            return  t_w * weight_ /100.0;          
+        }
+    };     
     template <class Base> struct IAdjustable  :  IAdjust<Base>                      
     { 
         IAdjustable(         ){}
@@ -317,53 +343,6 @@ namespace place_impl
             return  (t_w - fixed.weigth  ) / fixed.count_adj  ;        
         }
     };
-    template <class Base> struct IFixed:  IAdjust<Base>     
-    { 
-        unsigned weight_; 
-
-        IFixed(unsigned weight):weight_(weight){}
-        IFixed(unsigned weight, unsigned min_,unsigned max_): IAdjust<Base>(min_,max_),weight_(weight){}
-
-
-        adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
-                    {   fixed.weigth   += weigth_adj() ;   return  fixed;        }
-
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-                    {   adj_min.weigth += weigth_adj() ;   return  adj_min;      }   
-
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )  override              
-                    {   return weigth_adj();      }    
-
-        unsigned weigth_adj()
-        {   
-            if ( weight_  < min )    {return min; }
-            if ( weight_  > max )    {return max; }
-                
-            return  weight_;          
-        }
-    };
-    template <class Base> struct IPercent: IAdjust<Base> 
-    { 
-        double      percent; 
-
-        IPercent(double percent_):percent(percent_){}
-        IPercent(double percent_,unsigned min_,unsigned max_):IAdjust<Base>(min_,max_),percent(percent_){}
-        
-        adj   pre_place(unsigned t_w,                        adj& prev = adj() ) override
-                    {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;      }
-
-        adj   end_place(unsigned t_w,const adj& tip = adj(), adj& prev = adj() ) override    
-                    {   prev.weigth +=  weigth_adj( t_w ) ;   return  prev;      }
-
-        unsigned weigth(unsigned t_w,const adj& tip,const adj& prev )override  
-                    {   return   weigth_adj( t_w ) ;                             }
-        unsigned weigth_adj(unsigned t_w )
-        {   
-            if ( t_w * percent  < min )    {return min; }
-            if ( t_w * percent  > max )    {return max; }
-            return  t_w * percent  ;     
-        }
-    };     
 
     struct Gap_field   : IField                     
     { 
@@ -865,24 +844,15 @@ namespace place_impl
 			    case token::gap:	   gap = tknizer.number();have_gap=true;    break;
 			    case token::min:		    
                     {
-                        number_t m= tknizer.number();
-                        if(m.kind_of() == number_t::kind::percent   )
-                            ; // trow no min percent possible
-                        else if(m.kind_of() == number_t::kind::integer   )
-					        w.min = m.integer();
-                        else 
-					        w.min=static_cast<unsigned>(m.real());                break;
-                                                                               
+                        if(tknizer.number().kind_of() != number_t::kind::percent   )
+					        w.min = tknizer.number().integer();                                
+                         /*else trow no min percent possible */                 break;
                     }
 			    case token::max:		    
                     {
-                        number_t m= tknizer.number();
-                        if(m.kind_of() == number_t::kind::percent   )
-                            ; // trow no max percent possible
-                        else if(m.kind_of() == number_t::kind::integer   )
-					        w.max = m.integer();
-                        else 
-					        w.max=static_cast<unsigned>(m.real());                break;
+                        if(tknizer.number().kind_of() != number_t::kind::percent   )
+					        w.max = tknizer.number().integer();                                
+                         /*else trow no max percent possible */                 break;
                     }
 			    default:	break;
 			}
@@ -902,13 +872,10 @@ namespace place_impl
 					    columns = array[1].integer();
 			    }
 			}
-			if( ! rows )
-				rows = 1;
-			if( ! columns )
-				columns = 1;
-            if(gr_name.empty())
-                gr_name=field_names_in_div.back();  
-		}
+			if( ! rows )    				rows    = 1;
+			if( ! columns )			  	    columns = 1;
+            if(gr_name.empty())             gr_name =field_names_in_div.back();  
+		} else
         if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
         {
             double perc=weight.real ();
@@ -922,11 +889,7 @@ namespace place_impl
                     throw std::runtime_error("nana.place: invalid division type.");
 		    }
         } else 
-            {   unsigned fixed=0;
-                if      ( weight.kind_of () == number_t::kind::real    && weight.real()    > 0 )
-                    fixed = static_cast<unsigned>(weight.real());
-                else if ( weight.kind_of () == number_t::kind::integer && weight.integer() > 0 )
-                    fixed = static_cast<unsigned>(weight.integer());
+            {   unsigned fixed=weight.integer();
                 if (fixed)
                     switch(div_type)
                     {
@@ -948,22 +911,15 @@ namespace place_impl
         }
         if (have_gap)
         {
-            unsigned fixed=0;
-		    if      (gap.kind_of() == number_t::kind::real    && gap.real()    > 0 )
-			    fixed=static_cast<unsigned>(gap.real()); 
-            else if (gap.kind_of() == number_t::kind::integer && gap.integer() > 0 )
-			    fixed=static_cast<unsigned>(gap.integer()); 
-            if (fixed)
-                div->gap.reset (new fixed_gap(fixed) );
-
-		    else if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
+            if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
                 div->gap.reset (new percent_gap(gap.real ()) );
-            else 
-                div->gap.reset (new adj_gap() );
+		    else 
+                if (gap.integer())          div->gap.reset (new fixed_gap(gap.integer()) );
+                else                        div->gap.reset (new adj_gap  () );
         }
 		div->field_names.swap(field_names_in_div);
 		return div;
-	}
+	} // scan_div
 
     void implement::div(const char* s)
     {
@@ -981,7 +937,7 @@ namespace place_impl
 		if(root_division && parent_window_handle)
 		{
             root_division->populate_children (this);
-			//rectangle r; // debugg
+            			                                //rectangle r; // debugg
             root_division->collocate(/*r=*/API::window_size(parent_window_handle));
             //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
 		}
@@ -989,10 +945,9 @@ namespace place_impl
 
     void division::populate_children(	implement*   place_impl_)
     {
-        //assert(children.empty ());             /// .clear(); the children or it is empty allways ????
         children.clear ();             /// .clear(); the children or it is empty allways ????
-        for (const auto &name : field_names)   /// for all the names in this div
-        {                       /// find in the place global list of fields all the fields attached to it
+        for (const auto &name : field_names)      /// for all the names in this div
+        {                             /// find in the place global list of fields all the fields attached to it
             auto r= place_impl_->fields.equal_range(name);     
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
@@ -1005,7 +960,7 @@ namespace place_impl
             for (auto fi=f.first ; fi != f.second ; ++fi)
                 fastened_in_div.push_back (fi->second );
         }
-    }
+    }  
 
 } // namespace place_impl
 
