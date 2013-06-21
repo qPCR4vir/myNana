@@ -66,7 +66,7 @@ void EditLayout_Form::InitCaptions()
 	}
 void EditLayout_Form::MakeResponsive()
 	{
-        _textBox.on_first_change([&](){on_edited();});
+        _textBox.ext_event().first_change=  ([&](){on_edited();});
         //_textBox.make_event <nana::gui::events::click> ([&](const nana::gui::eventinfo& ei)
         //{
         //   if (ei.mouse.right_button)

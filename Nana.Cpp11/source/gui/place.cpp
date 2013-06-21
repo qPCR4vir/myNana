@@ -240,7 +240,7 @@ namespace place_impl
 			return 0;
 		}
 	private:
-        std::string div_str;
+        std::string div_str;   // for the future. kip a copy of the layout
 		const char* divstr_;
 		const char* sp_;
 		std::string idstr_;

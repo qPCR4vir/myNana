@@ -42,9 +42,9 @@ void add(double step)
 {
     string val(50,0);
     swprintf(&val[0],val.size(), STR(" %*.*f"), 15, _decimals, _val );
-    _num.on_first_change               ([&](){});
+    _num.ext_event().first_change= ([&](){});
        _num.caption (val.c_str());
-    _num.on_first_change               ([&](){add( 0    ); });
+    _num.ext_event().first_change=     ([&](){add( 0    ); });
 }
 
      void SetDefLayout       () override

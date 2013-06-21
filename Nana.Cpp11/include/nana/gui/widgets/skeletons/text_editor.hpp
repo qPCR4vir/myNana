@@ -59,10 +59,10 @@ namespace nana{	namespace gui{	namespace widgets
                 return textbase_.saved() ;
             }
 
-            void on_first_change ( std::function <void()>  on_change)
-            {
-                textbase_.on_first_change=on_change;
-            }
+            //void on_first_change ( std::function <void()>  on_change)
+            //{
+            //    textbase_.on_first_change=on_change;
+            //}
 
             void set_unchanged();
 
@@ -126,7 +126,9 @@ namespace nana{	namespace gui{	namespace widgets
 			bool mouse_down(bool left_button, int screen_x, int screen_y);
 			bool mouse_move(bool left_button, int screen_x, int screen_y);
 			bool mouse_up(bool left_button, int screen_x, int screen_y);
-			const skeletons::textbase<nana::char_t>& textbase() ;
+
+			skeletons::textbase<nana::char_t>& textbase();
+			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const eventinfo& ei);
@@ -191,6 +193,7 @@ namespace nana{	namespace gui{	namespace widgets
 			nana::char_t mask_char_;
 
 			mutable ext_renderer_tag ext_renderer_;
+
 			struct attributes
 			{
 				attributes();

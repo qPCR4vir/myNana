@@ -52,7 +52,9 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		void drawer::attached(graph_reference graph)
 		{
 			window wd = widget_->handle();
+
 			editor_ = new text_editor(wd, graph);
+			editor_->textbase().bind_ext_evtbase(extra_evtbase);
 			editor_->border_renderer(nana::make_fun(*this, &drawer::_m_draw_border));
 
 			_m_text_area(graph.width(), graph.height());
@@ -230,39 +232,9 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			create(wd, r, visible);
 		}
 
-
-		std::string textbox::filename() const
+		textbox::ext_event_type& textbox::ext_event() const
 		{
-			internal_scope_guard isg;
-			auto editor = get_drawer_trigger().editor();
-			if(editor)
-				return editor->filename();
-            else
-                return "";
-		}
-		bool textbox::edited() const
-		{
-			internal_scope_guard isg;
-			auto editor = get_drawer_trigger().editor();
-			if(editor)
-				return editor->edited();
-            else
-                return false;
-		}
-		bool textbox::saved() const
-		{
-			internal_scope_guard isg;
-			auto editor = get_drawer_trigger().editor();
-			if(editor)
-				return editor->saved();
-            else
-                return false;		}
-		void textbox::on_first_change ( std::function <void()>  on_change)
-		{
-			internal_scope_guard isg;
-			auto editor = get_drawer_trigger().editor();
-			if(editor)
-				editor->on_first_change (  on_change);
+			return get_drawer_trigger().extra_evtbase;
 		}
 
 		void textbox::load(const nana::char_t* file)
@@ -273,22 +245,49 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor->load(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
+//-		void textbox::store(const nana::char_t* file) const
 		void textbox::store(const nana::char_t* file)  
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
 				editor->store(static_cast<std::string>(nana::charset(file)).c_str());
+//-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
+//-		void textbox::store(const nana::char_t* file, nana::unicode encoding) const
 		void textbox::store(const nana::char_t* file, nana::unicode encoding) 
 		{
 			internal_scope_guard isg;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
+//-				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
 				editor->store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
 		}
 
+		std::string textbox::filename() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				return editor->textbase().filename();
+
+			return std::string();
+		}
+
+		bool textbox::edited() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->textbase().edited() : false);
+		}
+
+		bool textbox::saved() const
+		{
+			internal_scope_guard isg;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->textbase().saved() : false);
+		}
 
 		bool textbox::getline(std::size_t line_index, nana::string& text) const
 		{
