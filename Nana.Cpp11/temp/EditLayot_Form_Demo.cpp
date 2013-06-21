@@ -18,13 +18,6 @@ class DemoForm : public nana::gui::form, public EditableForm
     nana::gui::UnitPicker      UPicker;
     nana::gui::NumUnitUpDown   Ta;
 
-
-        //NumUnitUpDown ( widget&wd,        const string& label, 
-        //            double defVal,    double min,     double max,    const CUnit::unit_name& def  , 
-        //            const string& DefLayFile ,   double step=1,  unsigned decimals=2)
-
-
-
     DemoForm ():nana::gui::form (nana::rectangle( nana::point(800,210), nana::size(500,250) )),
                 EditableForm    (*this, STR("Configurable Window"), STR("Layot_Demo.lay.txt")),
                 but1         (*this), but2(*this), but3(*this), but4(*this),
@@ -69,8 +62,8 @@ class DemoForm : public nana::gui::form, public EditableForm
         _DefLayout= "vertical      gap=2             \n\t"
 	                 "       <weight=25>                \n\t"
 	                 "       <Project weight=23>       \n\t "
-	                 "       <gap=2 min=40 <b1> <b2 min=100> <b3 max=30> >   \n\t "
-	                 "       <<b4> <weight=2>>         \n\t "
+	                 "       <gap=2 min=30 <b1> <b2 min=200> <b3 weight=200> >   \n\t "
+	                 "       <<b4 min=200 >min=30 <weight=6>>           \n\t "
 	                 "       <  weight=22 <label weight=60 ><Num> <vertical weight=50 <UpDown> >>     \n\t   "
 	                 "       <  weight=23 <Ta  weight= 200><> <num  weight=280 ><>  <Unit weight=50 gap=2 >>         \n\t  "
 	                 "       <Project2 weight=23>       "
@@ -93,9 +86,6 @@ class DemoForm : public nana::gui::form, public EditableForm
     }
 
  };
-
- //std::map<std::string, Magnitude  > Magnitudes;
- //std::map<std::string, std::string> Units ;
 
 void PrintConv(double val, const CUnit::unit_name& from, const CUnit::unit_name& to)
 {
@@ -129,23 +119,27 @@ void TestUnits()
     PrintConv(1.0/24/60, "day", "s");
     PrintConv(10, "year", "week");
     PrintConv(.1, "kg", "g");
-    //PrintConv(10, "mL", "s");
     PrintConv(10, "h", "s");
     PrintConv(10, "dm3", "m3");
     PrintConv(10, "dm", "m");
     PrintConv(10, "mm", "m");
-    //PrintConv(1000, "dm", "Km");
     PrintConv(0.001, "km", "mm");
     PrintConv(50, "°C", "K");
-    PrintConv(0, "grC", "K");
-    PrintConv(0, "K", "grC");
-    PrintConv(0, "K", "grC");
     PrintConv(0, "K", "°C");
+    PrintConv(0, "°C", "K");
+    PrintConv(0, "°C", "°F");
+    PrintConv(100, "°C", "K");
+    PrintConv(100, "°C", "°F");
     PrintConv(0.1, "tone", "kg");
     PrintConv(0.1, "amol", "cop");
     PrintConv(100, "cop/µL", "fM");
     PrintConv(1, "g/mL", "g/L");
     PrintConv(1, "g/mL", "M");
+    //PrintConv(10, "mL", "s");
+    //PrintConv(1000, "dm", "Km");
+    //PrintConv(0, "grC", "K");
+    //PrintConv(0, "K", "grC");
+    //PrintConv(0, "K", "grC");
 
     std::cout<< "\n";
     Relation Job_d_h("day",8,"h"), Job_w_d("week",5,"day");
@@ -188,7 +182,7 @@ void TestUnits()
 int main()
 {
 	DemoForm form;
-
+    TestUnits();
 	form.show();
     try {
 	        nana::gui::exec();

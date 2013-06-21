@@ -43,10 +43,16 @@ class CUnit
 
             return conversion (c,s, [rc,this](double b){return nlc(rc.c*rc.nlc(b)+rc.s);});
         }
-        conversion _inverted() const
+        conversion inverted() const
         { 
             assert (lineal);
             return conversion (1/c, -s/c);
+        }
+        conversion invert() 
+        { 
+            assert (lineal);
+            c =1/c; s=-s/c;
+            return *this;
         }
         double operator()(double ori_val) const
         {
@@ -100,66 +106,124 @@ protected:
         add();
     }
     CUnit():error(true){}
-    CUnit(const unit_name& name_, const unit_name& base_)
-        : name(name_), base(base_), error(true)
+    CUnit(const unit_name& from, const unit_name& to)   // convert from=name, to=base
+        : name(from), base(to), error(true)
     {
-        if (! (unit_exist(base) && unit_exist(name)) )
+        if (! (unit_exist(to) && unit_exist(from)) )
         {    
-           std::cerr << std::endl << "We need two existing units in order to find a conversion. " << name
-                     << " based on " << base << std::endl;
+           std::cerr << std::endl << "We need two existing units in order to find a conversion. " << from
+                     << " based on " << to << std::endl;
                 return;
          }
-        if (_Units[name].magnitude != _Units[base].magnitude)
+        if (_Units[from].magnitude != _Units[to].magnitude)
         {   
-            std::cerr << std::endl << "Units "<< name<< " (" << _Units[name].magnitude << ") and "
-                     << base << " (" << _Units[base].magnitude<<") are not compatible. " <<  std::endl;
+            std::cerr << std::endl << "Units "<< from<< " (" << _Units[from].magnitude << ") and "
+                     << to << " (" << _Units[to].magnitude<<") are not compatible. " <<  std::endl;
                 return;
         }
-        if (name==base)
-        {    
-            error=false;
-            return ;
-        }
+        if (from==to)       {     error=false;     return ;       }
 
-        unit_name ub=name, un ;
-        do{ 
-            if (ub==base)
-            {    
-                error=false;
-                return ;
-            }
-            conv=conv * _Units[ub].conv;
-            ub=_Units[un=ub].base;
-        }while(un!=ub);
-        conversion c2b(conv);
-        conv=conversion();
-        unit_name rub, run=base ;
-        do{ 
-            if (run==name)
-            {    
-                error=false;
-                return ;
-            }
-            conversion cv(_Units[run].conv);
-            if ( !cv.lineal)
-            {    
-                error=true;
-                return ;
-            }
-            cv.s=-cv.s/cv.c;
-            cv.c=1/cv.c;
-            conv=cv*conv;
-            run=_Units[rub=run].base;
-        }while(run!=rub);
-        if (ub!=rub)
+        unit_name  c_from=from, c_to, c_to_prev=c_from ;   // Unit Base = current to , and Unit Name = current from
+        do                                                 // while it is not a basic unit (no more walking posible)
+        {
+            c_to_prev = c_to;
+            c_to      =_Units[c_from].base; 
+            conv      = conv * _Units[c_from].conv;
+            if (c_to == to)       {     error=false;     return ;       } // We arrived !! we have U(from,to)
+
+            c_from=c_to;               // search walking in the direction from->to, using to=U[from]
+
+        }while(c_to_prev != c_to);     // while it is not a basic unit (no more walking posible)
+                                       // we arrived to a basic unit. We have now: U( from , c_to = basic unit)
+
+        //unit_name  c_from=from, c_to ;   // Unit Base = current to , and Unit Name = current from
+        //do{                             //  This is a litter more eficient variant !!!
+        //    if (c_from==to)
+        //    {    
+        //        error=false;
+        //        return ;
+        //    }
+        //    conv=conv * _Units[c_from].conv;
+        //    c_from=_Units[c_to=c_from].base;
+        //}while(c_to!=c_from);
+
+
+        conversion c2b(conv);       // direct Conversion to a basic unit: U( from , c_to = basic unit)
+        conv=conversion();          // search walking in the direction to->from , using to=U[from]
+
+       
+        unit_name  c_rfrom=to, c_rto, c_rto_prev=c_rfrom ;   // Unit Base = current to , and Unit Name = current from
+        do                                                 // while it is not a basic unit (no more walking posible)
+        {
+            c_rto_prev = c_rto;
+            c_rto      =_Units[c_rfrom].base; 
+
+            if (! _Units[c_rfrom].conv.lineal )   return;
+            conv      =  conv * _Units[c_rfrom].conv.inverted() ;
+
+            if (c_rto == from)       {     error=false;     return ;  } // We arrived !! we have U(to,from)
+
+            c_rfrom=c_rto;               // search walking in the direction to->from, using to=U[from]
+
+        }while(c_rto_prev != c_rto);     // while it is not a basic unit (no more walking posible)
+                                       // we arrived to a basic unit. We have now: U( from , c_to = basic unit)
+
+        //unit_name c_rfrom=to ,  c_rto ; /// Reverse Unit Name =  Reverse current from (to) , and Reverse Unit Base = Reverse current to (from)
+        //do{ 
+        //    if (c_rto==from)
+        //    {    
+        //        error=false; /*conv.invert()*/;
+        //        return ;
+        //    }
+        //    conversion cv(_Units[c_rto].conv);
+        //    if ( !cv.lineal)
+        //    {    
+        //        error=true;
+        //        return ;
+        //    }
+        //    conv= conv * cv.inverted();
+        //    c_rto=_Units[c_rfrom=c_rto].base;
+        //}while(c_rto!=c_rfrom);
+
+        if (c_to!=c_rto)
         {    
-            std::cerr << std::endl << "Units "<< name<< " (" << _Units[name].magnitude << ") and "
-                     << base << " (" << _Units[base].magnitude<<") have no conversion defined. " <<  std::endl;
+            std::cerr << std::endl << "Units "<< from<< " (" << _Units[from].magnitude << ") and "
+                     << to << " (" << _Units[to].magnitude<<") have no conversion defined. " <<  std::endl;
             error=true;
             return ;
         }
         conv=c2b*conv;
         error=false;
+
+        //        conversion c2b(conv);    // Conversion to a basic unit: U( from , c_to = basic unit)
+        //conv=conversion();
+        //unit_name rub, run=to ; /// Reverse Unit Name =  Reverse current from (to) , and Reverse Unit Base = Reverse current to (from)
+        //do{ 
+        //    if (run==from)
+        //    {    
+        //        error=false; /*conv.invert()*/;
+        //        return ;
+        //    }
+        //    conversion cv(_Units[run].conv);
+        //    if ( !cv.lineal)
+        //    {    
+        //        error=true;
+        //        return ;
+        //    }
+        //    conv= conv * cv.inverted();
+        //    run=_Units[rub=run].base;
+        //}while(run!=rub);
+        //if (c_to!=rub)
+        //{    
+        //    std::cerr << std::endl << "Units "<< from<< " (" << _Units[from].magnitude << ") and "
+        //             << to << " (" << _Units[to].magnitude<<") have no conversion defined. " <<  std::endl;
+        //    error=true;
+        //    return ;
+        //}
+        //conv=c2b*conv;
+        //error=false;
+
+
     }
         //for{ unit_name un=name ;  _Units[un].base != un ; un=_Units[un].base)
         //{
@@ -200,10 +264,11 @@ protected:
         CUnit("particle", 1     , "cop"                 );
         CUnit("cd"      , 1     , ""     , "Luminosity" );
         CUnit("K"       , 1     , ""     , "Temperature");
-        CUnit("grC",conversion(1, 273), "K"             );
-        CUnit("°C"      , 1     , "grC"                 );
+        CUnit("°C",conversion(1, 273.15), "K"           );
+        CUnit("°C",conversion(1.8, 32),  "°F"           );
+        //CUnit("°C"      , 1     , "grC"               );
         CUnit("s"       , 1     , "s"    , "Time"       );
-        CUnit("ms"      , 1000  , "s"                   );
+        CUnit("s"      , 1000   , "ms"                  );
         CUnit("min"     , 60    , "s"                   );
         CUnit("h"       , 60    , "min"                 );
         CUnit("day"     , 24    , "h"                   );
@@ -229,7 +294,7 @@ protected:
         CUnit("Wh"      , 3600  , "J"                   );
         CUnit("bp"      , 1     , "nt"    , "GeneLength");
         CUnit("kb"      , 1000  , "bp"    , "GeneLength");
-        //CUnit("M"       , 1     , ""      , "molarity"  );
+        //CUnit("M"       , 1     , ""    , "molarity"  );
         CUnit("M"       , No    , "cop/L" ,"molarity"   );
         CUnit("cop/µL"  , 1000  , "cop/L"               );
         CUnit("M"       , 1     , "mol/L"               );
@@ -306,7 +371,7 @@ public:
             CUnit rl(name_, base ), rr(name ,base_);
             if (!rl.error && !rr.error )
             {  
-               u.conv=rl.conv * conv._inverted()  * rr.conv ;
+               u.conv=rl.conv * conv.inverted()  * rr.conv ;
                u.error = false;
             }
         }
