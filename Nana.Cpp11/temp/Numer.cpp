@@ -4,8 +4,7 @@ namespace nana { namespace gui {
 
 NumerUpDown::NumerUpDown (  widget &fm, const string &label, double val, double min, double max, 
                             const string   &DefFileName,   double step, unsigned decimals  )
-        :	panel<false>(fm),
-            EditableWidget( *this, label, DefFileName),
+        :	CompoWidget( fm, label, DefFileName),
 			_num(*this), _up(*this), _down(*this), _label(*this),
             _val(val), _min(min), _max(max), _step(step), _decimals(decimals)
     {

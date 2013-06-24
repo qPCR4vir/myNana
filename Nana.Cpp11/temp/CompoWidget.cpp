@@ -4,17 +4,21 @@
 #include <iostream>    // temp, for debugging
 #include <fstream>     // temp, for debugging
 
+	//CompoWidget (nana::gui::widget& ParentWidget, nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
+ //       :  nana::gui::panel<false>(ParentWidget),  EditableWidget( *this, Titel, DefLayoutFileName){}
+
+
+
 OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm, 
 								const nana::string   &label,
 								const nana::string   &DefFileName )
-							:	nana::gui::panel<false>(fm),
-                                EditableWidget( *this, label, DefFileName),
+							:	CompoWidget(fm, label, DefFileName),
 								Open(*this), Save(*this), Pick(*this),_fileName(*this),_label(*this),
 								fb_o(*this,true ),fb_s(*this,false ),fb_p(*this,true ),
                                 _user_selected(false),
                                 _canceled(false)
 {
-    caption  (label)  ; 
+    //caption  (label)  ; 
 	_label.caption (  caption  ()  ); 
     _label.text_align(nana::align::right  ); 
 	Open.caption	(STR("Open"		));

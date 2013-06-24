@@ -6,7 +6,7 @@
 
 namespace nana { namespace gui {
 
-class NumerUpDown : public  panel<false> , public EditableWidget
+class NumerUpDown : public  CompoWidget
 {
   public:
     NumerUpDown (   widget &fm,      const string &label, 
@@ -108,7 +108,7 @@ class UnitPicker : public combox
 
 };
 
-class NumUnitUpDown : public panel<false> , EditableWidget 
+class NumUnitUpDown : public CompoWidget
 {
     NumerUpDown _num;
     UnitPicker  _unit;
@@ -118,8 +118,7 @@ public:
     NumUnitUpDown ( widget &wd,        const string& label, 
                     double defVal,    double min,     double max,    const CUnit::unit_name& def  , 
                     const string& DefLayFile ,   double step=1,  unsigned decimals=2)
-        : nana::gui::panel<false>(wd),
-          EditableWidget (*this,label,STR("NumUnitUpDonw.Lay.txt")),
+        : CompoWidget (wd,label,STR("NumUnitUpDonw.Lay.txt")),
           _num(*this,label, defVal, min,max,STR("Vert-Invert.NumUpDonw.Lay.txt"),step,decimals),
           _unit(*this, def), _curr_un(def) //_val(defVal)
     {

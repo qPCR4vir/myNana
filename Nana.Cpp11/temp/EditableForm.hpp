@@ -160,7 +160,14 @@ class EditableForm: public EditableWidget
 };
 
 //#include <../temp/CompoWidget.hpp>
-class OpenSaveBox : public  nana::gui::panel<false> , public EditableWidget   
+
+class CompoWidget : public  nana::gui::panel<false> , public EditableWidget  
+{public:
+	CompoWidget (nana::gui::widget& ParentWidget, nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
+        :  nana::gui::panel<false>(ParentWidget),  EditableWidget( *this, Titel, DefLayoutFileName){}
+};
+
+class OpenSaveBox : public  CompoWidget
 {public:
 	nana::gui::button	Open, Save, Pick;
 	nana::gui::combox	_fileName;
