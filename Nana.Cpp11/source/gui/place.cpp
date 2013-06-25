@@ -486,7 +486,7 @@ namespace place_impl
 			for(auto & fsn: fastened_in_div)
 			{	
                 API::move_window(fsn, r);
-                API::show_window(fsn,true);
+                API::show_window(fsn, API::visible(fsn));
             }
 		}
 	};
