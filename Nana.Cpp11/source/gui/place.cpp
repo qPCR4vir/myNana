@@ -463,29 +463,31 @@ namespace place_impl
                     /// and then in the order in with they were added to the field
         void populate_children(	implement*   place_impl_);
         /// add field names in the same order in with they are introduced in the div layout str
-		virtual void collocate(const rectangle& r) 
+		virtual void collocate( const rectangle& r) 
 		{   
-                //std::cerr<< "\ncollocating div in: "<<r; // debugg
+                                     //std::cerr<< "\ncollocating div in: "<<r; // debugg
+			rectangle area (r);
 
-			rectangle area (r);	
             adj pre_adj, end_adj; auto t_w=weigth_s(area);
 			for(auto child: children)                            
                 child->pre_place(  t_w , pre_adj );  
 			for(auto child: children)                            
                 child->end_place(  t_w , pre_adj, end_adj );
        
-			rectangle left = area;
 			for(auto child : children)                          
 			{
-			    rectangle child_area (left);
+			    rectangle child_area (area);
                 weigth_s(child_area) = child->weigth(  t_w , pre_adj, end_adj )   ;
-                weigth_c(left)      += weigth_s(child_area);
-                weigth_s(left)      -= weigth_s(child_area);
-                //std::cerr<< "\ncollocating child in: "<<child_area; // debugg
+                weigth_c(area)      += weigth_s(child_area);
+                weigth_s(area)      -= weigth_s(child_area);
+                                    //std::cerr<< "\ncollocating child in: "<<child_area; // debugg
                 child->collocate(child_area);
 			}
 			for(auto & fsn: fastened_in_div)
-				API::move_window(fsn, area);
+			{	
+                API::move_window(fsn, r);
+                API::show_window(fsn,true);
+            }
 		}
 	};
     

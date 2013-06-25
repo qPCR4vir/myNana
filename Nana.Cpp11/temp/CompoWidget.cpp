@@ -9,7 +9,7 @@
 
 
 
-OpenSaveBox::OpenSaveBox     (	nana::gui::form &fm, 
+OpenSaveBox::OpenSaveBox     (	nana::gui::widget &fm, 
 								const nana::string   &label,
 								const nana::string   &DefFileName )
 							:	CompoWidget(fm, label, DefFileName),
