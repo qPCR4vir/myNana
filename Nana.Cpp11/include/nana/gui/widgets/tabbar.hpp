@@ -200,7 +200,7 @@ namespace nana{ namespace gui{
 			create(wd, rectangle(), visible);
 		}
 
-		tabbar(window wd, const rectangle& r, bool visible)
+		tabbar(window wd, const rectangle& r=rectangle(), bool visible=true)
 		{
 			_m_init();
 			create(wd, r, visible);
