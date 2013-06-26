@@ -11,8 +11,8 @@
 
 OpenSaveBox::OpenSaveBox     (	nana::gui::widget &fm, 
 								const nana::string   &label,
-								const nana::string   &DefFileName )
-							:	CompoWidget(fm, label, DefFileName),
+								const nana::string   &DefLayoutFileName )
+							:	CompoWidget(fm, label, DefLayoutFileName),
 								Open(*this), Save(*this), Pick(*this),_fileName(*this),_label(*this),
 								fb_o(*this,true ),fb_s(*this,false ),fb_p(*this,true ),
                                 _user_selected(false),
@@ -30,10 +30,10 @@ OpenSaveBox::OpenSaveBox     (	nana::gui::widget &fm,
 	Save.make_event	<nana::gui::events::click> ([&](){save(FileName());}    );
 
 	_fileName.editable(true);
-	if(DefFileName!=STR(""))
-	{	_fileName.push_back	(DefFileName);
-		_fileName.option(0);
-	}
+	//if(DefFileName!=STR(""))
+	//{	_fileName.push_back	(DefFileName);
+	//	_fileName.option(0);
+	//}
     _user_selected=true;
     InitMyLayout();
     SelectClickableWidget( _label);

@@ -174,7 +174,7 @@ class OpenSaveBox : public  CompoWidget
 	nana::gui::filebox  fb_o, fb_s, fb_p;
 	OpenSaveBox     (	nana::gui::widget &fm, 
 						const nana::string   &label,
-						const nana::string   &DefFileName=STR("") );
+						const nana::string   &DefLayoutFileName=STR("") );
 
 	void add_filter(const nana::string& description, const nana::string& filetype)
 	{ 
