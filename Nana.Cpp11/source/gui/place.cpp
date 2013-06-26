@@ -258,7 +258,7 @@ namespace place_impl
             virtual adj         end_place   (unsigned t_w,const adj& fixed,       adj& adj_min=adj())=0;
             virtual unsigned    weigth      (unsigned t_w,const adj& fixed, const adj& adj_min      )=0;
             virtual            ~IField      (){}
-            virtual size        dimension   ()   const                              =0;
+            virtual rectangle   cells       ()   const                              =0;
             virtual void        collocate   (const rectangle& r)   =0;
             virtual window      window_handle()const   =0;
             virtual void        populate_children(	implement*   place_impl_)  =0;
@@ -350,8 +350,8 @@ namespace place_impl
     { 
         void     collocate    (const rectangle& r)override   {}
         window   window_handle() const override              { return nullptr; }
-        size     dimension    ()   const override            {return size();}             
         void     populate_children(implement*   place_impl_) override {}
+        rectangle   cells         () const override          {return rectangle(-1,-1,0,0);}             
 
         virtual  ~Gap_field (){}
     };
@@ -364,7 +364,7 @@ namespace place_impl
         void            init (window handle_){handle=handle_;}
 
         window          window_handle  () const override          { return handle; }
-        size            dimension      () const   override        {return size(1,1);} 
+        rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
         void            collocate      (const rectangle& r)override
         {  
             API::move_window (handle,r ); 
@@ -374,9 +374,16 @@ namespace place_impl
     struct Room_field: Widget_field    
     { 
         unsigned   rows,columns;
-        size       dimension     () const    override       {return size(rows,columns);} 
+        rectangle  cells         () const override          {return rectangle(-1,-1,columns,rows);}             
         void       init(window handle_,unsigned rows_,unsigned columns_)
         {  Widget_field::init( handle_);   rows=rows_;   columns=columns_;   }
+    };
+    struct Cells_field: Room_field    
+    { 
+        unsigned   row,column;
+        rectangle  cells         () const override          {return rectangle(column,row,columns,rows);}             
+        void       init(window handle_, rectangle r)
+        {  Widget_field::init( handle_); row=r.y ; column=r.x ; rows=r.height ; columns=r.width ; }
     };
     
     struct adj_gap:   IAdjustable<Gap_field> 
@@ -413,10 +420,12 @@ namespace place_impl
     };
     struct fixed_room:  IFixed<Room_field>   
     { 
-        fixed_room(window handle_,unsigned weight_  , unsigned rows_,unsigned columns_)
-            :IFixed<Room_field>   (weight_){Room_field::init(handle_, rows_, columns_);}
-        fixed_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_)
-            :IFixed<Room_field>   (weight_,min_,max_){Room_field::init(handle_, rows_, columns_);}
+        fixed_room(window handle_, unsigned weight_  , 
+                   unsigned rows_, unsigned columns_  )
+            :IFixed<Room_field>   (weight_)              {Room_field::init(handle_, rows_, columns_);}
+        fixed_room(window handle_, unsigned weight_  ,
+                   unsigned rows_,unsigned columns_,    unsigned min_,unsigned max_)
+            :IFixed<Room_field>   (weight_,min_,max_)    {Room_field::init(handle_, rows_, columns_);}
     };
 
     struct percent_gap: IPercent<Gap_field> 
@@ -433,12 +442,13 @@ namespace place_impl
     };   
     struct percent_room:  IPercent<Room_field>   
     { 
-        percent_room(window handle_,double   percent_,unsigned rows_,unsigned columns_)
-                :IPercent<Room_field>  (percent_          ){Room_field::init(handle_, rows_, columns_);}
+        percent_room(window handle_, double   percent_,
+                     unsigned rows_, unsigned columns_  )
+              :IPercent<Room_field>  (percent_          ) {Room_field::init(handle_, rows_, columns_);}
 
-        percent_room(window handle_,double   percent_,unsigned rows_,unsigned columns_, 
-                                                        unsigned min_,unsigned max_)
-                :IPercent<Room_field>(percent_,min_,max_){Room_field::init(handle_, rows_, columns_);}
+        percent_room(window handle_, double   percent_,
+                     unsigned rows_, unsigned columns_,   unsigned min_, unsigned max_ )
+              :IPercent<Room_field>(percent_,min_,max_)   {Room_field::init(handle_, rows_, columns_);}
     };     
 
 	class division : public IField
@@ -455,8 +465,9 @@ namespace place_impl
         virtual int&       fixed_c(rectangle& r )=0;
         virtual unsigned&  fixed_s(rectangle& r )=0;
 
-        window    window_handle    () const    override               { return nullptr; }
-        size      dimension        () const    override               { return size();  } 
+        window    window_handle    () const  override     { return nullptr; }
+        rectangle cells            () const  override     {return rectangle(-1,-1,1,1);}             
+        //size      dimension        () const  override       { return size();  } 
 
         virtual ~division() 	{ }
                     /// populate childen in the same order in with they were introduced in the div layout str,
@@ -513,17 +524,23 @@ namespace place_impl
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
 		void Init(const std::string& name_, size dim_)	
-        {  name=name_; rows=dim_.width ; columns =dim_.height ;}
+        {  name=name_; rows=dim_.height ; columns =dim_.width ;}
 
 		void Init(const std::string& name_, unsigned rows_, unsigned columns_)	
         {  name=name_; rows=rows_ ; columns =columns_;}
 
         virtual void collocate(const rectangle& r) override
 	    {
+            if(! r.width || ! r.height ) return;
+
             for(auto & fsn: fastened_in_div)
 			    API::move_window(fsn, r);
+
+            if(children.empty() ) return;
+
                                     /// by now asept only one field name in grid div
-            assert ( gap ? field_names.size() ==2 : field_names.size() ==1  ); 
+            assert (  field_names.size() ==1  ); 
+
             rectangle area(r);
 		    if((rows<=1 && columns<=1) || !rows || !columns)
 		    {
@@ -534,77 +551,101 @@ namespace place_impl
                     ++edge;
                 rows=columns=edge;
 		    }
-		    double block_w = weigth_s( area )/ double(rows);    // TODO: adapt to vert
-		    double block_h = fixed_s( area ) / double(columns);
+		    double block_w = /*weigth_s( area )*/  area.width / double(columns );    // TODO: adapt to vert
+		    double block_h = /*fixed_s( area )*/   area.height/ double(rows );
             std::vector<std::vector<size>> table(columns,std::vector<size>(rows,size(1,1)));  
 
 		    unsigned field=0;
             unsigned clm=0, rw;
             size d_c, d_f;
-            while (clm < columns)
-		    {
-                rw=0;
-			    while (rw < rows)	
-			    {
-				    d_c=table[clm][rw];
-                    if( ! d_c.height || ! d_c.width  )       /// pass collapsed cells
-						    continue;
-                    
-                    d_f = children[field]->dimension();  
-                    while ( ! d_f.height || ! d_f.width)      /// pass non dimension fields, the gaps
-                    {
-                        if (++field >= children.size () )
-                            return;
-                        d_f = children[++field]->dimension(); 
-				    }
-				    if(clm + d_f.width  >= columns )
-						                                d_f.width = columns - clm;    /// adjust to borders
-				    if(rw  + d_f.height >= rows    )
-						                                d_f.height = rows - rw;
+		    for(unsigned clm = 0; clm < columns ; ++clm)
+			  for(unsigned rw = 0; rw < rows ; ++rw)
+              {
+				d_c=table[clm][rw];
+                if( ! d_c.height || ! d_c.width  )       /// pass collapsed cells
+						continue;
 
-				    for(unsigned cc = 0; cc < d_f.width ; ++cc)
-					    for(unsigned cr = 0; cr < d_f.height ; ++cr)
-					    {
-						    size&ccell ( table[clm+cc][rw+cr] );
-                            if ( ccell.height &&  ccell.width)
-                                ccell=size(0,0);
-                            else 
-                                d_f.width = cc;
-					    }
-                        table[clm][rw]=d_f;
-                        rectangle cell(area);
-                        weigth_c (cell) = weigth_c ( area ) + static_cast<int>(clm * block_w);
-                        fixed_c (cell) = weigth_c ( area ) + static_cast<int>(rw  * block_h);
-                        weigth_s (cell) =  static_cast<unsigned>(block_w * d_f.width);
-                        fixed_s (cell) =  static_cast<unsigned>(block_h * d_f.height);
+                d_f = children[field]->cells();  
+                while ( ! d_f.height || ! d_f.width)      /// pass non dimension fields, the gaps
+                {
+                    if (++field >= children.size () )
+                        return;
+                    d_f = children[field]->cells(); 
+				}
+				if(clm + d_f.width  >= columns )
+						                            d_f.width = columns - clm;    /// adjust to borders
+				if(rw  + d_f.height >= rows    )
+						                            d_f.height = rows - rw;
 
-                        adj pre_adj, end_adj;
-                        children[field]->pre_place(  weigth_s(cell) , pre_adj ); 
-                                    gap->pre_place(  weigth_s(cell) , pre_adj ); 
-                        children[field]->end_place(  weigth_s(cell) , pre_adj ); 
-                                    gap->end_place(  weigth_s(cell) , pre_adj ); 
-			            rectangle child_area (cell);
-                        weigth_s(child_area) = children[field]->weigth(  weigth_s(area) , pre_adj, end_adj )   ;
+				for(unsigned cc = 0; cc < d_f.width ; ++cc)
+					for(unsigned cr = 0; cr < d_f.height ; ++cr)
+					{
+                        size&ccell ( table[clm+cc][rw+cr] );
+                        if ( ccell.height &&  ccell.width)
+                            ccell=size(0,0);
+                        else 
+                        {
+                            d_f.width = cc;
+                            break;
+                        }
+					}
+                table[clm][rw]=d_f;
+                rectangle cell(area);
+                cell.x     = area.x + static_cast<int>(clm * block_w);
+                cell.y     = area.y + static_cast<int>(rw  * block_h);
+                cell.width =  static_cast<unsigned>(block_w * d_f.width);
+                cell.height =  static_cast<unsigned>(block_h * d_f.height);
 
-                    pre_adj.count_adj = 1 ;           
-                    pre_adj.weigth    = child_area.height ;
-                    end_adj=pre_adj ;
-                    gap->pre_place (child_area.height, pre_adj );
-                    gap->end_place (child_area.height, pre_adj, end_adj );
-                    child_area.height = end_adj.weigth/pre_adj.count_adj;  
-                    children[field]->collocate(child_area);
+                adj pre_adj_x, end_adj_x,  pre_adj_y, end_adj_y;
+                        children[field]->pre_place(  cell.width , pre_adj_x ); 
+                        children[field]->pre_place(  cell.height, pre_adj_y ); 
+                if(gap) {           gap->pre_place(  cell.width , pre_adj_x ); 
+                                    gap->pre_place(  cell.height, pre_adj_y );      }
 
-                        if (++field >= children.size () )
-                            return;
-				    }
+                        children[field]->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
+                        children[field]->end_place(  cell.height, pre_adj_y, end_adj_y  ); 
+                if(gap) {           gap->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
+                                    gap->end_place(  cell.height, pre_adj_y, end_adj_y  ); }
+			    rectangle child_area (cell);
+                child_area.width = children[field]->weigth(   cell.width  ,pre_adj_x, end_adj_x  )   ;
+                child_area.height= children[field]->weigth(   cell.height ,pre_adj_y, end_adj_y  )   ;
+                children[field]->collocate(child_area);
+
+                    //pre_adj.weigth    = child_area.height ;
+                    //pre_adj.min       = 0 ;           
+                    //pre_adj.count_adj = 1 ;           
+                    //end_adj=pre_adj ;
+                    //if(gap) gap->pre_place (child_area.height, pre_adj );
+                    //if(gap) gap->end_place (child_area.height, pre_adj, end_adj );
+                    //child_area.height = end_adj.weigth/pre_adj.count_adj;  
+                if (++field >= children.size () )
+                    return;
             }
-	    }
+               //         weigth_c (cell) = weigth_c ( area ) + static_cast<int>(clm * block_w);
+               //         fixed_c  (cell) = weigth_c ( area ) + static_cast<int>(rw  * block_h);
+               //         weigth_s (cell) =  static_cast<unsigned>(block_w * d_f.width);
+               //         fixed_s  (cell) =  static_cast<unsigned>(block_h * d_f.height);
+               //         adj pre_adj, end_adj;
+               //         children[field]->pre_place(  weigth_s(cell) , pre_adj ); 
+               //         if(gap)          gap->pre_place(  weigth_s(cell) , pre_adj ); 
+               //         children[field]->end_place(  weigth_s(cell) , pre_adj ); 
+               //         if(gap)     gap->end_place(  weigth_s(cell) , pre_adj ); 
+			            //rectangle child_area (cell);
+               //         weigth_s(child_area) = children[field]->weigth(  weigth_s(area) , pre_adj, end_adj )   ;
+               //     pre_adj.count_adj = 1 ;           
+               //     pre_adj.weigth    = child_area.height ;
+               //     end_adj=pre_adj ;
+               //     if(gap) gap->pre_place (child_area.height, pre_adj );
+               //     if(gap) gap->end_place (child_area.height, pre_adj, end_adj );
+               //     child_area.height = end_adj.weigth/pre_adj.count_adj;  
+               //     children[field]->collocate(child_area);
+    }
 	  private:
 		unsigned _m_number_of_cells() const
 		{
 			unsigned n = 0;
 			for(auto & child : children)
-                n += child->dimension().width * child->dimension().height ;      
+                n += child->cells().width * child->cells().height ;      
 			return n;
 		}
 	};//end class div_grid
@@ -622,13 +663,13 @@ namespace place_impl
 	struct adj_div_grid : public IAdjustable<div_grid> 
     {
         adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_)   
-                { Init(name_,rows_,  columns_);}
+                                                           { Init(name_,rows_,columns_);}
 
         adj_div_grid(const std::string& name_, size dim_ , unsigned min_ ,  unsigned max_     )    
-            :    IAdjustable<div_grid>(dim_.width  ,dim_.height)  {Init(name_,dim_); }
+            :  IAdjustable<div_grid>(min_   ,max_       )  {Init(name_,dim_); }
 
         adj_div_grid(const std::string& name_, size dim_      )    
-            :    IAdjustable(dim_.width  ,dim_.height)           {Init(name_,dim_); }
+                                                           {Init(name_,dim_); }
 
         adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_,
                                                unsigned min_,unsigned max_)   
@@ -814,10 +855,10 @@ namespace place_impl
 		number_t    weight , gap;
         bool        have_gap=false, have_weight=false;
         minmax      w; 
+        std::string gr_name;
  
         std::vector<number_t>    array;
 		std::vector<std::string> field_names_in_div;
-        std::string gr_name;
  
         for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
 		{
@@ -879,7 +920,7 @@ namespace place_impl
 			if( ! rows )    				rows    = 1;
 			if( ! columns )			  	    columns = 1;
             if(gr_name.empty())             gr_name =field_names_in_div.back();  
-		} else
+		} 
         if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
         {
             double perc=weight.real ();
@@ -900,6 +941,8 @@ namespace place_impl
                         case token::eof:
 		                case token::horizontal:		div = new fixed_div_h(fixed,w.min,w.max);		break;
 		                case token::vertical:		div = new fixed_div_v(fixed,w.min,w.max);		break;
+                        case token::grid:           div = new fixed_div_grid(gr_name,fixed,
+                                                             rows,columns,   w.min,w.max);          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -909,6 +952,8 @@ namespace place_impl
                         case token::eof:
 		                case token::horizontal:			div = new adj_div_h(w.min,w.max);			break;
 		                case token::vertical:			div = new adj_div_v(w.min,w.max);			break;
+                        case token::grid:               div = new adj_div_grid(gr_name,
+                                                             rows,columns,   w.min,w.max);          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -940,10 +985,15 @@ namespace place_impl
 	{
 		if(root_division && parent_window_handle)
 		{
-            root_division->populate_children (this);
-            			                                //rectangle r; // debugg
-            root_division->collocate(/*r=*/API::window_size(parent_window_handle));
-            //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
+			rectangle r(API::window_size(this->parent_window_handle));  //debugg
+            //if(r.width && r.height ) 
+            {      
+               root_division->populate_children (this);
+               root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
+            }
+            //			                                //rectangle r; // debugg
+            //root_division->collocate(r/*=API::window_size(parent_window_handle)*/);
+            ////std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
 		}
 	}
 
@@ -1014,8 +1064,9 @@ namespace place_impl
 			
             if(this->root_division)
             {
-				//rectangle r;  //debugg
-                this->root_division->collocate(/*r=*/API::window_size(this->parent_window_handle));
+				rectangle r(API::window_size(this->parent_window_handle));  //debugg
+                //if(r.width && r.height ) 
+                   this->root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
                 //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
             }
 		});
