@@ -58,6 +58,8 @@ namespace nana{ namespace gui{
 		label();
 		label(window, bool visible);
 		label(window, const rectangle& = rectangle(), bool visible = true);
+		label(window wd, const string& caption_, bool visible= true);
+		label(window wd, const char_t *caption_, bool visible= true);
 		void transparent(bool);
 		bool transparent() const;
 		void format(bool);

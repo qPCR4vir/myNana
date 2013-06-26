@@ -172,6 +172,16 @@ namespace xcheckbox
 		{
 			create(wd, rectangle(), visible);
 		}
+		checkbox::checkbox(window wd, const string& caption_, bool visible)
+		{
+			create(wd, rectangle(), visible); 
+            caption(caption_);
+		}
+		checkbox::checkbox(window wd, const char_t * caption_, bool visible)
+		{
+			create(wd, rectangle(), visible); 
+            caption(caption_);
+		}
 
 		checkbox::checkbox(window wd, const nana::rectangle& r, bool visible)
 		{

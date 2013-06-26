@@ -531,7 +531,16 @@ namespace drawerbase
 			{
 				create(wd, r, visible);
 			}
-
+            button::button(window wd, const string& caption_, bool visible)
+	        {
+	            create(wd, rectangle(), visible); 
+                caption(caption_);
+	        }
+            button::button(window wd, const char_t *caption_, bool visible)
+	        {
+	            create(wd, rectangle(), visible); 
+                caption(caption_);
+	        }
 			void button::icon(const nana::paint::image& img)
 			{
 				internal_scope_guard isg;
