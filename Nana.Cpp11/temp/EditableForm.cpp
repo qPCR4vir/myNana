@@ -26,14 +26,15 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
 		:nana::gui::form ( nana::rectangle( nana::point(300,100), nana::size(500,300) )),
          EditableForm (*this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
                     _fm             (fm),
-				    _OSbx			(*this, STR("Layout:")),      
-					_ReCollocate	(*this),_panic  (*this),_def  (*this), 	_hide	(*this),
+				    _OSbx			(*this, STR("Layout:" )),      
+					_ReCollocate	(*this, STR("Apply"	  )),   _panic  (*this, STR("Panic !")),
+                    _def            (*this, STR("Default" )), 	_hide	(*this, STR("Hide"	 )),
 					_textBox		(*this),
 					_menuFile		(_menuBar.push_back(STR("&File")))
 	{	
 		if (fm) 
             caption(_Titel +=fm->_Titel) ;  
-		InitCaptions();
+		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 		InitMyLayout();
 
 		_textBox.editable(true);
@@ -58,11 +59,6 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
 
 void EditLayout_Form::InitCaptions()
 	{
-		_ReCollocate.caption	(STR("Apply"		));
-		_panic.caption	        (STR("Panic !"	    ));
-		_def.caption	        (STR("Default"		));
-		_hide.caption	        (STR("Hide"		    ));
-		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 	}
 void EditLayout_Form::MakeResponsive()
 	{
