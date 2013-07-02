@@ -6,6 +6,29 @@
 
 namespace nana { namespace gui {
 
+class NumberLabel : public label
+{
+  public:
+    NumberLabel (   widget &parent,    
+                    double val=0, 
+                    unsigned decimals=2,
+                    unsigned width=6)
+        :	label(parent),
+			_val(val),  _decimals(decimals), _width(width)
+    {
+        UpDate();
+    }
+    double    _val;
+    unsigned  _decimals, _width;
+    double Value(          )const{                    return _val;}
+    double Value(double val)     {_val=val; UpDate(); return _val;}
+    void UpDate()
+    {
+        string val(50,0);
+        swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
+           caption (val.c_str());
+    }
+};
 
 
 class NumberBox : public textbox
@@ -19,11 +42,7 @@ class NumberBox : public textbox
 			_val(val),  _decimals(decimals), _width(width)
     {
         multi_lines(false);
-        string Val(50,0);
-        swprintf( &Val[0],Val.size(), STR(" %*.*f"), 6, _decimals, _val );
-
-        caption (Val.c_str());
-
+        UpDate();
         make_event <events::focus>([&](const eventinfo& ei)
                 {  if (!ei.focus.getting) 
                         add( 0    );
@@ -43,12 +62,11 @@ class NumberBox : public textbox
     void UpDate()
     {
         string val(50,0);
-        swprintf(&val[0],val.size(), STR(" %*.*f"), 6, _decimals, _val );
+        swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
         ext_event().first_change= ([&](){});
            caption (val.c_str());
         ext_event().first_change=     ([&](){add( 0    ); });
     }
-    
 };
 
 class NumerUpDown : public  CompoWidget
