@@ -45,12 +45,14 @@ namespace nana {namespace gui
         };
 		struct field_t
 		{
-			virtual field_t& operator<<(minmax Size_range)	= 0;
-            virtual field_t& operator<<(IField * fld)		= 0;
-			virtual field_t& operator<<(window wd)		= 0;    
-			virtual field_t& operator<<(unsigned gap)	= 0;
+			virtual field_t& operator<<(minmax              Size_range)	= 0;
+            virtual field_t& operator<<(IField *            fld)		= 0;
+            virtual field_t& operator<<(const std::wstring& txt)		= 0;
+            virtual field_t& operator<<(const std::string&  txt)		= 0;
+			virtual field_t& operator<<(window              wd)		= 0;    
+			virtual field_t& operator<<(unsigned            gap)  	= 0;
 			virtual field_t& fasten(window wd)	    = 0;
-			virtual ~field_t()                  = 0;
+			virtual ~field_t()                      = 0;
 		};
 
 		typedef field_t &             field_reference;
