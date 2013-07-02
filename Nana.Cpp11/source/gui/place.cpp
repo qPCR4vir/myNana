@@ -296,8 +296,11 @@ namespace place_impl
     };
     template <class Base> struct IPercent: IFixed<Base> 
     { 
-        IPercent(double percent_)                            :IFixed<Base>(100*percent_)          {}
-        IPercent(double percent_,unsigned min_,unsigned max_):IFixed<Base>(100*percent_,min_,max_){}
+        IPercent(double percent_)                            
+            :IFixed<Base>(static_cast<unsigned>(100*percent_))          {}
+
+        IPercent(double percent_,unsigned min_,unsigned max_)
+            :IFixed<Base>(static_cast<unsigned>(100*percent_),min_,max_){}
         unsigned weigth_adj(unsigned t_w )override
         {   
             if ( t_w * weight_ /100.0  < min )    {return min; }
