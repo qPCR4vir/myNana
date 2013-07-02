@@ -6,14 +6,17 @@
 
 namespace nana { namespace gui {
 
+
+
 class NumberBox : public textbox
 {
   public:
     NumberBox (   widget &parent,    
                     double val=0, 
-                    unsigned decimals=2  )
+                    unsigned decimals=2,
+                    unsigned width=6)
         :	textbox(parent),
-			_val(val),  _decimals(decimals)
+			_val(val),  _decimals(decimals), _width(width)
     {
         multi_lines(false);
         string Val(50,0);
@@ -27,7 +30,7 @@ class NumberBox : public textbox
                 }); 
     }
     double    _val;
-    unsigned  _decimals;
+    unsigned  _decimals, _width;
     double Value(          )const{                    return _val;}
     double Value(double val)     {_val=val; UpDate(); return _val;}
     void add(double step)
