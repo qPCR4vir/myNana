@@ -37,4 +37,3 @@ NumerUpDown::NumerUpDown (  widget &fm, const string &label, double val, double 
 
 }} // namespace nana { namespace gui {
 
-

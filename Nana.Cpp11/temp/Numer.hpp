@@ -6,6 +6,48 @@
 
 namespace nana { namespace gui {
 
+class NumberBox : public textbox
+{
+  public:
+    NumberBox (   widget &parent,    
+                    double val=0, 
+                    unsigned decimals=2  )
+        :	textbox(parent),
+			_val(val),  _decimals(decimals)
+    {
+        multi_lines(false);
+        string Val(50,0);
+        swprintf( &Val[0],Val.size(), STR(" %*.*f"), 6, _decimals, _val );
+
+        caption (Val.c_str());
+
+        make_event <events::focus>([&](const eventinfo& ei)
+                {  if (!ei.focus.getting) 
+                        add( 0    );
+                }); 
+    }
+    double    _val;
+    unsigned  _decimals;
+    double Value(          )const{                    return _val;}
+    double Value(double val)     {_val=val; UpDate(); return _val;}
+    void add(double step)
+    {
+        try    {  _val=std::stod (caption()  );     }
+        catch (...)     {;     }
+        _val += step;
+        UpDate();
+    }
+    void UpDate()
+    {
+        string val(50,0);
+        swprintf(&val[0],val.size(), STR(" %*.*f"), 6, _decimals, _val );
+        ext_event().first_change= ([&](){});
+           caption (val.c_str());
+        ext_event().first_change=     ([&](){add( 0    ); });
+    }
+    
+};
+
 class NumerUpDown : public  CompoWidget
 {
   public:
