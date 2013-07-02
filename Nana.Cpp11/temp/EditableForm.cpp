@@ -10,48 +10,167 @@
 //{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 //
 
-bool EditableWidget::_globalBlockInteratctiveEdition=false;
-bool EditableWidget::_globalBlockConfig             =false;
+    EditableWidget::EditableWidget  ( nana::gui::widget* EdWd_owner,   ///< The ownwer of the form or panel: nullptr for "primary" forms 
+                                      nana::gui::widget& thisEdWd,  ///< the form or panel, owner of place and all other widgets of the editable widget
+                                      nana::string Titel, 
+                                      const nana::string &DefLayoutFileName)
+            :  
+               _EdWd_owner (EdWd_owner), 
+               _thisEdWd   (thisEdWd), 
+               _place      (_thisEdWd),    
+               _Titel(std::move(Titel)),        //   ???
+               _DefLayoutFileName(DefLayoutFileName), _myEdLayForm(nullptr)
+     {  
+         //nana::rectangle r;  //debugg
+      //  r=nana::gui::API::window_size(ThisWidget);  //debugg
+      //  //std::cerr<< "\nplace::implement::implement(window parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
+      //  std::cerr<< "\nEditableWidget(parent_widget [ "<< std::string(nana::charset ( _Titel))<<" ]) with area: "<<r;  //debugg
+   //      EditableWidget::~EditableWidget()
+   //     {
+   //         std::cerr<<"\nDestroying Editable Widget: ";    // debbug
+   //         std::wcerr<< this->_Titel ;   // debbug
+			//if (_myEdLayForm) 
+   //         {
+   //              std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+   //             std::wcerr<< _myEdLayForm->caption() ;   // debbug
+   //            _myEdLayForm->Closable();
+   //             _myEdLayForm->close();
+   //         }
+   //     }
+        std::cerr<<"\nConstructing EditableWidget: "; // debbug
+        std::wcerr<< this->_Titel; // debbug
 
-void EditableWidget::EditMyLayout()
+   //     ThisWidget.make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
+   //     {
+   //     std::cerr<<"\nClosing EditableWidget: "; // debbug
+   //     std::wcerr<< this->_Titel; // debbug
+			//if (_myEdLayForm) 
+   //         {
+   //              std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+   //             std::wcerr<< _myEdLayForm->caption() ;   // debbug
+   //            _myEdLayForm->Closable();
+   //             _myEdLayForm->close();
+   //         }
+   //     });
+
+        _thisEdWd.caption(_Titel);       //   ???
+        InitMenu   (_menuProgram);
+    }
+
+	CompoWidget::CompoWidget (nana::gui::widget& EdWd_owner,            ///< The ownwer of the form or panel 
+                              nana::string Titel, 
+                              const nana::string &DefLayoutFileName)
+        :  nana::gui::panel<false>(EdWd_owner),  
+           EditableWidget( &EdWd_owner,                                  ///< The ownwer of the form or panel 
+                           *this,               ///< the form or panel, owner of place and all other widgets of the editable widget
+                           Titel, DefLayoutFileName)
+    {
+        std::cerr<<"\nConstructing CompoWidget: "; // debbug
+        std::wcerr<< this->_Titel;                 // debbug
+
+        EdWd_owner.make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
+        {
+            std::cerr<<"\nClosing CompoWidget: "; // debbug
+            std::wcerr<< this->_Titel;            // debbug
+
+			if (_myEdLayForm) 
+            {
+                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                 std::wcerr<< _myEdLayForm->caption() ;          // debbug
+                _myEdLayForm->Closable();
+                _myEdLayForm->close();
+            }
+        });
+
+    }
+
+EditableForm::EditableForm ( nana::gui::widget *EdWd_owner,                       ///< The ownwer of the form or panel 
+                             nana::gui::widget& thisEdWd,    ///< the form or panel, owner of place and all other widgets of the editable widget
+                             nana::string Titel, 
+                             const nana::string &DefLayoutFileName         ) 
+            :  EditableWidget( EdWd_owner,                                  ///< The ownwer of the form or panel 
+                               thisEdWd,               ///< the form or panel, owner of place and all other widgets of the editable widget
+                               Titel, DefLayoutFileName),
+              _menuBar (thisEdWd), 
+              _menuProgramInBar(nullptr)
+     {
+         thisEdWd.caption(_Titel);
+        std::cerr<<"\nConstructing EditableForm: "; // debbug
+        std::wcerr<< this->_Titel; // debbug
+
+        thisEdWd.make_event<nana::gui::events::   unload>([this](const nana::gui::eventinfo& ei)
+        {
+            std::cerr<<"\nClosing EditableForm: "; // debbug
+            std::wcerr<< this->_Titel;             // debbug
+
+			if (_myEdLayForm) 
+            {
+                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                 std::wcerr<< _myEdLayForm->caption() ;          // debbug
+                 _myEdLayForm->Closable();
+                 _myEdLayForm->close();
+            }
+        });
+    }
+
+bool EnablingEditing::_globalBlockInteratctiveEdition=false;
+bool EnablingEditing::_globalBlockConfig             =false;
+
+void EditableWidget::EditMyLayout(/*nana::gui::widget & EdWd_own, nana::gui::widget &EdLyF_own*/)
 		{
 			if (!_myEdLayForm) 
-				_myEdLayForm.reset (new EditLayout_Form ( this ));
+				_myEdLayForm = new EditLayout_Form ( *this ) ;
+				//_myEdLayForm = std::addressof (nana::gui::form_loader<EditLayout_Form, true>() ( *this )) ;
+				//_myEdLayForm.reset (new EditLayout_Form (  wd ));
 			_myEdLayForm->show ();
 		}
-//EditableForm::~EditableForm(){}
+ 	//void         EditMyLayout   (nana::gui::widget & EdWd_own, nana::gui::widget &EdLyF_own);
+
+EditableWidget::~EditableWidget()
+        {
+            std::cerr<<"\nDestroying Editable Widget: ";    // debbug
+            std::wcerr<< this->_Titel ;   // debbug
+			if (_myEdLayForm) 
+            {
+                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                std::wcerr<< _myEdLayForm->caption() ;   // debbug
+               //_myEdLayForm->Closable();
+               // _myEdLayForm->close();
+            }
+        }
 
 
-EditLayout_Form::EditLayout_Form  (	EditableWidget     *fm )
-		:nana::gui::form ( nana::rectangle( nana::point(300,100), nana::size(500,300) )),
-         EditableForm (*this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
-                    _fm             (fm),
+
+EditLayout_Form::EditLayout_Form  (	EditableWidget &EdWd_owner)
+		:nana::gui::form (EdWd_owner._thisEdWd , nana::rectangle( nana::point(300,100), nana::size(500,300) )),
+         EditableForm (&(EdWd_owner._thisEdWd), *this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
+         hide_(Hidable()), _owner(EdWd_owner),          //_fm             (fm),
 				    _OSbx			(*this, STR("Layout:" )),      
 					_ReCollocate	(*this, STR("Apply"	  )),   _panic  (*this, STR("Panic !")),
                     _def            (*this, STR("Default" )), 	_hide	(*this, STR("Hide"	 )),
 					_textBox		(*this),
 					_menuFile		(_menuBar.push_back(STR("&File")))
 	{	
-		if (fm) 
-            caption(_Titel +=fm->_Titel) ;  
+		//if (fm) 
+            caption(_Titel += _owner._Titel) ;  
 		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 		InitMyLayout();
 
 		_textBox.editable(true);
 		_OSbx.add_filter(STR("Layout File"), STR("*.lay.txt"));
 
-	    if   (_fm->_myLayout.empty())    
-        {    if (! _fm->_DefLayoutFileName.empty())
-             {   _OSbx.FileName	(   _fm->_DefLayoutFileName  );
+	    if   ( _owner._myLayout.empty())    
+        {    if (! _owner._DefLayoutFileName.empty())
+             {   _OSbx.FileName	(   _owner._DefLayoutFileName  );
                  OpenFile();
              }
         } else   		          
-        {   _textBox.append(nana::string(nana::charset(_fm->_myLayout)),false );
+        {   _textBox.append(nana::string(nana::charset(_owner._myLayout)),false );
             _textBox.select(true);
             _textBox.show();
 
-             if (! _fm->_DefLayoutFileName.empty())
-                _OSbx.FileName	(   _fm->_DefLayoutFileName  );
+             if (! _owner._DefLayoutFileName.empty())
+                _OSbx.FileName	(   _owner._DefLayoutFileName  );
         }
 
 		MakeResponsive();
@@ -69,11 +188,8 @@ void EditLayout_Form::MakeResponsive()
         //   {
         //       std::wcout<<std::endl<<STR("Rigth Click: x,y=")<<ei.mouse.x<<STR(",")<<ei.mouse.y  <<std::endl;
         //       _menuProgram->popup (_textBox.handle(),ei.mouse.x,ei.mouse.y,false);
-
         //   }
         //   if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
-
-
         //}); 
 		_menuFile.append  (STR("&Open..."   ),[&](nana::gui::menu::item_proxy& ip){ /*_OSbx.open();*/OpenFile()  ;}                );
         _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip){  ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;}   );
@@ -99,13 +215,13 @@ void EditLayout_Form::MakeResponsive()
             std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;
 			OpenFileN(fileN );
 		};
-        make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
-        {
-            ei.unload.cancel = true;    //Stop closing and then
-            hide();
-        });
+        //make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
+        //{
+        //    ei.unload.cancel = true;    //Stop closing and then
+        //    hide();
+        //});
         _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout()  ;}   ); 
-        _panic.make_event       <nana::gui::events::click> ([&](){_fm->ResetDefLayout(); _fm->ReCollocate( );}); 
+        _panic.make_event       <nana::gui::events::click> ([&](){_owner.ResetDefLayout(); _owner.ReCollocate( );}); 
         _def.make_event         <nana::gui::events::click> ([&](){ReloadDef() ;}   ); 
         _hide.make_event        <nana::gui::events::click> ([&](){hide()      ;}   ); 
 	}
@@ -145,7 +261,7 @@ void EditLayout_Form::ReLayout()
 	{   nana::string lay,line;
 		for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
 			lay+=line;
-        _fm->ReCollocate( std::string(nana::charset (lay)) );  // try std::runtime_error msgbox
+        _owner.ReCollocate( std::string(nana::charset (lay)) );  // try std::runtime_error msgbox
 	}
 void EditLayout_Form::ReloadDef()
 {
@@ -155,9 +271,9 @@ void EditLayout_Form::ReloadDef()
         SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
         _OSbx.fb_s.title(STR("")); 
     }
-    _fm->ResetDefLayout(); 
-    _fm->ReCollocate( );
-    _textBox.reset(nana::string(nana::charset(_fm->_myLayout)) );
+    _owner.ResetDefLayout(); 
+    _owner.ReCollocate( );
+    _textBox.reset(nana::string(nana::charset(_owner._myLayout)) );
     _textBox.select(true);
     _textBox.show();
 }
@@ -207,9 +323,8 @@ const char* EditableWidget::readLayout(const nana::string& FileName, std::string
     {
 		std::ifstream loy(FileName);
 		std::string temp;
-
 		while (std::getline(loy,temp)) Layout+=temp + "\n";
-		std::cout<< Layout;
+		std::cout<<std::endl<< Layout;
 		return Layout.c_str();
     }	
 

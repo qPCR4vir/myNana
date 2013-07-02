@@ -25,12 +25,12 @@
 
 class EditLayout_Form;
 
-class EditableWidget
+class EnablingEditing
 {
-private:
+ private:
     static bool _globalBlockInteratctiveEdition, _globalBlockConfig ;
            bool       _BlockInteratctiveEdition,       _BlockConfig ;
-public:
+ public:
     static bool  globalBlockInteratctiveEdition(bool block=_globalBlockInteratctiveEdition)
     {
         return _globalBlockInteratctiveEdition=block;
@@ -55,28 +55,28 @@ public:
     {
         return _BlockConfig=block;
     }
-    EditableWidget (nana::gui::widget& ThisWidget, nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
-            :  _place	       (ThisWidget),   
-               _Titel(std::move(Titel)),        //   ???
-               _DefLayoutFileName(DefLayoutFileName)
-     {  
-     	//nana::rectangle r;  //debugg
-      //  r=nana::gui::API::window_size(ThisWidget);  //debugg
-      //  //std::cerr<< "\nplace::implement::implement(window parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
-      //  std::cerr<< "\nEditableWidget(parent_widget [ "<< std::string(nana::charset ( _Titel))<<" ]) with area: "<<r;  //debugg
+};
 
 
-        ThisWidget.caption(_Titel);       //   ???
-        InitMenu   (_menuProgram);
-    }
+class EditableWidget: public EnablingEditing
+{
+ public:
+    EditableWidget ( nana::gui::widget* EdWd_owner,                       ///< The ownwer of the form (if any) or panel 
+                     nana::gui::widget& thisEdWd,    ///< the form or panel, owner of place and all other widgets of the editable widget
+                     nana::string Titel, 
+                     const nana::string &DefLayoutFileName=STR("")           );
+
+    nana::gui::widget  *_EdWd_owner ;                                    ///< The ownwer of the form or panel 
+    nana::gui::widget  &_thisEdWd;   ///< the form or panel, owner of place and all other widgets of the editable widget
 	nana::string		_Titel;   //  ????
     std::string         _myLayout, _DefLayout;
     nana::string        _DefLayoutFileName;	
     nana::gui::place	_place;
-	nana::gui::menu	    _menuProgram;
-	std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
-    virtual     ~EditableWidget     (){};
+	nana::gui::menu	    _menuProgram;
+	EditLayout_Form*    _myEdLayForm;    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
+
+    virtual     ~EditableWidget     ();
     virtual void SetDefLayout       ()=0;
     virtual void AsignWidgetToFields()=0;
 	        void InitMyLayout       ()
@@ -117,7 +117,7 @@ public:
         return _DefLayout;
     }
 
- 	void         EditMyLayout   ();
+ 	void         EditMyLayout   (/*nana::gui::widget & EdWd_own, nana::gui::widget &EdLyF_own*/);
     static const char* readLayout(const nana::string& FileName, std::string& Layout);
     void ReCollocate( std::string  Layout)
     {
@@ -134,12 +134,10 @@ public:
 
 class EditableForm: public EditableWidget
 { public:
-    EditableForm (nana::gui::form& ThisForm,nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
-            :  EditableWidget( ThisForm, Titel, DefLayoutFileName),
-               _menuBar	       (ThisForm), _menuProgramInBar(nullptr)
-     {
-         ThisForm.caption(_Titel);
-     }
+    EditableForm ( nana::gui::widget* EdWd_owner,                       ///< The ownwer of the form or panel 
+                   nana::gui::widget& thisEdWd,    ///< the form or panel, owner of place and all other widgets of the editable widget
+                   nana::string Titel, 
+                   const nana::string &DefLayoutFileName=STR("")           );
 	nana::gui::menubar	_menuBar;
 	nana::gui::menu*	_menuProgramInBar;
     //virtual ~EditableForm();
@@ -163,8 +161,9 @@ class EditableForm: public EditableWidget
 
 class CompoWidget : public  nana::gui::panel<false> , public EditableWidget  
 {public:
-	CompoWidget (nana::gui::widget& ParentWidget, nana::string Titel, const nana::string &DefLayoutFileName=STR(""))
-        :  nana::gui::panel<false>(ParentWidget),  EditableWidget( *this, Titel, DefLayoutFileName){}
+	CompoWidget ( nana::gui::widget& EdWd_owner,              ///< The ownwer of the panel 
+                  nana::string Titel, 
+                  const nana::string &DefLayoutFileName=STR(""));
 };
 
 class OpenSaveBox : public  CompoWidget
@@ -172,7 +171,7 @@ class OpenSaveBox : public  CompoWidget
 	nana::gui::button	Open, Save, Pick;
 	nana::gui::combox	_fileName;
 	nana::gui::filebox  fb_o, fb_s, fb_p;
-	OpenSaveBox     (	nana::gui::widget &fm, 
+	OpenSaveBox     (	nana::gui::widget    &EdWd_owner, 
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
 
@@ -209,19 +208,47 @@ class OpenSaveBox : public  CompoWidget
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
 {public:
-	EditLayout_Form (EditableWidget *fm );
+	EditLayout_Form (EditableWidget &EdWd_owner );
+    void Closable()
+    { 
+        std::cerr<<"\nMaking Closeable EditLayout_Form: ";   // debbug
+        std::wcerr<< this->caption() ;  // debbug
+
+        umake_event ( hide_);
+    }
+    ~EditLayout_Form()
+    {
+        std::cerr<<"\nDestroying EditLayout_Form: ";   // debbug
+        std::wcerr<< this->caption() ;  // debbug
+    }
+
  private:
-    EditableWidget     *_fm ;
+    EditableWidget     &_owner  ;
 	OpenSaveBox			_OSbx;
 	nana::gui::button	_ReCollocate, _hide, _panic, _def;
 	nana::gui::textbox	_textBox;
 	nana::gui::menu	   &_menuFile;
+    nana::gui::event_handle hide_;
 
     void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
     void on_edited();
 	void InitCaptions();
 
+    nana::gui::event_handle Hidable()
+    { 
+        std::cerr<<"\nMaking Hidable EditLayout_Form: "; // debbug
+        std::wcerr<< this->caption() ; // debbug
+
+        return  make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
+        {
+            std::cerr<<"\n Hiding, not closing EditLayout_Form: ";  // debbug
+            std::wcerr<< this->caption() ; // debbug
+
+            ei.unload.cancel = true;    //Stop closing and then
+            hide();
+        });
+    };
     void MakeResponsive();
 	void ReLayout ();
     void ReloadDef();
