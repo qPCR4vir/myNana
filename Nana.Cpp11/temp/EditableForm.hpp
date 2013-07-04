@@ -166,6 +166,56 @@ class CompoWidget : public  nana::gui::panel<false> , public EditableWidget
                   const nana::string &DefLayoutFileName=STR(""));
 };
 
+class FilePickBox : public  CompoWidget
+{public:
+	nana::gui::button	Pick;
+	nana::gui::combox	_fileName;
+	nana::gui::filebox  fb_p;
+	FilePickBox     (	nana::gui::widget    &EdWd_owner, 
+						const nana::string   &label,
+						const nana::string   &DefLayoutFileName=STR("") );
+
+	void virtual add_filter(const nana::string& description, const nana::string& filetype)
+	{ 
+		fb_p.add_filter(description, filetype);
+	}
+    void SetDefLayout       () override ;
+    void AsignWidgetToFields() override ;
+
+	nana::string FileName()const						{  return _fileName.caption();}
+	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
+	void		pick(const nana::string &file_tip=STR(""));
+    bool        UserSelected() const {return _user_selected ;}
+    bool        Canceled()     const {return _canceled;}
+
+ protected:
+	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
+ private:
+	nana::gui::label	_label;
+    bool _user_selected, _canceled;
+};
+class OpenSaveBoxP : public  FilePickBox
+{public:
+	nana::gui::button	Open, Save;
+	nana::gui::filebox  fb_o, fb_s;
+	OpenSaveBoxP     (	nana::gui::widget    &EdWd_owner, 
+						const nana::string   &label,
+						const nana::string   &DefLayoutFileName=STR("") );
+
+	void add_filter(const nana::string& description, const nana::string& filetype) override
+	{ 
+		fb_o.add_filter(description, filetype);
+		fb_s.add_filter(description, filetype);
+		fb_p.add_filter(description, filetype);
+	}
+    void SetDefLayout       () override ;
+    void AsignWidgetToFields() override ;
+
+	void		open(const nana::string &file_tip=STR(""));
+	void		save(const nana::string &file_tip=STR(""));
+};
+
+
 class OpenSaveBox : public  CompoWidget
 {public:
 	nana::gui::button	Open, Save, Pick;
@@ -192,18 +242,10 @@ class OpenSaveBox : public  CompoWidget
     bool        UserSelected() const {return _user_selected ;}
     bool        Canceled()     const {return _canceled;}
 
-
- protected:
-	//virtual p::field_reference	put(p::field_reference f)override;
-	//virtual p&	put(p&   pl) override
-
  private:
 	nana::gui::label	_label;
     bool _user_selected, _canceled;
-    //std::string         _myLayout;
-    //nana::gui::place	_place;
 	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
-
 };
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
