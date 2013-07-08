@@ -248,8 +248,8 @@ public:
     void ResetLayout       (unsigned lab, unsigned n=50, unsigned unit=50)
     {
         SetDefLayout       (lab, n, unit);
-        ResetDefLayout();
-        ReCollocate( );
+        ResetDefLayout();  _num. ResetDefLayout();
+        ReCollocate( );    _num.ReCollocate( );
     }
 
      void AsignWidgetToFields() override
