@@ -111,7 +111,15 @@ class EditableWidget: public EnablingEditing
             void ResetDefLayout()
     {
         _myLayout=_DefLayout;
+        //ReCollocate( );
     }
+            void ResetDefLayout( std::string  Layout)
+    {
+        _DefLayout.swap(Layout);
+        ResetDefLayout();
+        ReCollocate( );
+    }
+
     const std::string& DefLayout() const
     {
         return _DefLayout;
@@ -198,7 +206,7 @@ class OpenSaveBox : public  FilePickBox
 {public:
 	nana::gui::button	Open, Save;
 	nana::gui::filebox  fb_o, fb_s;
-	OpenSaveBox     (	nana::gui::widget    &EdWd_owner,
+	OpenSaveBox     (	nana::gui::widget    &EdWd_owner, 
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
 
@@ -221,12 +229,12 @@ class OpenSaveBox : public  FilePickBox
 //	nana::gui::button	Open, Save, Pick;
 //	nana::gui::combox	_fileName;
 //	nana::gui::filebox  fb_o, fb_s, fb_p;
-//	OpenSaveBox     (	nana::gui::widget    &EdWd_owner,
+//	OpenSaveBox     (	nana::gui::widget    &EdWd_owner, 
 //						const nana::string   &label,
 //						const nana::string   &DefLayoutFileName=STR("") );
 //
 //	void add_filter(const nana::string& description, const nana::string& filetype)
-//	{
+//	{ 
 //		fb_o.add_filter(description, filetype);
 //		fb_s.add_filter(description, filetype);
 //		fb_p.add_filter(description, filetype);

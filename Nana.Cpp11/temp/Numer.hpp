@@ -173,14 +173,17 @@ class UnitPicker : public combox
 
 class NumUnitUpDown : public CompoWidget
 {
-    NumerUpDown _num;
-    UnitPicker  _unit;
     //double      _val;
     CUnit::unit_name _curr_un;
 public:
-    NumUnitUpDown ( widget &wd,        const string& label, 
-                    double defVal,    double min,     double max,    const CUnit::unit_name& def  , 
-                    const string& DefLayFile ,   double step=1,  unsigned decimals=2)
+    NumerUpDown _num; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
+    UnitPicker  _unit; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
+    NumUnitUpDown ( widget &wd,
+                    const string& label,
+                    double defVal,    double min,     double max,
+                    const CUnit::unit_name& def  ,
+                    const string& DefLayFile =STR("NumUnitUpDonw.Lay.txt"),
+                    double step=1,  unsigned decimals=2)
         : CompoWidget (wd,label,STR("NumUnitUpDonw.Lay.txt")),
           _num(*this,label, defVal, min,max,STR("Vert-Invert.NumUpDonw.Lay.txt"),step,decimals),
           _unit(*this, def), _curr_un(def) //_val(defVal)
