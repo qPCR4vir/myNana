@@ -194,11 +194,11 @@ class FilePickBox : public  CompoWidget
 	nana::gui::label	_label;
     bool _user_selected, _canceled;
 };
-class OpenSaveBoxP : public  FilePickBox
+class OpenSaveBox : public  FilePickBox
 {public:
 	nana::gui::button	Open, Save;
 	nana::gui::filebox  fb_o, fb_s;
-	OpenSaveBoxP     (	nana::gui::widget    &EdWd_owner, 
+	OpenSaveBox     (	nana::gui::widget    &EdWd_owner,
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
 
@@ -216,37 +216,37 @@ class OpenSaveBoxP : public  FilePickBox
 };
 
 
-class OpenSaveBox : public  CompoWidget
-{public:
-	nana::gui::button	Open, Save, Pick;
-	nana::gui::combox	_fileName;
-	nana::gui::filebox  fb_o, fb_s, fb_p;
-	OpenSaveBox     (	nana::gui::widget    &EdWd_owner, 
-						const nana::string   &label,
-						const nana::string   &DefLayoutFileName=STR("") );
-
-	void add_filter(const nana::string& description, const nana::string& filetype)
-	{ 
-		fb_o.add_filter(description, filetype);
-		fb_s.add_filter(description, filetype);
-		fb_p.add_filter(description, filetype);
-	}
-    void SetDefLayout       () override ;
-    void AsignWidgetToFields() override ;
-
-	nana::string FileName()const						{  return _fileName.caption();}
-	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
-	void		open(const nana::string &file_tip=STR(""));
-	void		save(const nana::string &file_tip=STR(""));
-	void		pick(const nana::string &file_tip=STR(""));
-    bool        UserSelected() const {return _user_selected ;}
-    bool        Canceled()     const {return _canceled;}
-
- private:
-	nana::gui::label	_label;
-    bool _user_selected, _canceled;
-	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
-};
+//class OpenSaveBox : public  CompoWidget
+//{public:
+//	nana::gui::button	Open, Save, Pick;
+//	nana::gui::combox	_fileName;
+//	nana::gui::filebox  fb_o, fb_s, fb_p;
+//	OpenSaveBox     (	nana::gui::widget    &EdWd_owner,
+//						const nana::string   &label,
+//						const nana::string   &DefLayoutFileName=STR("") );
+//
+//	void add_filter(const nana::string& description, const nana::string& filetype)
+//	{
+//		fb_o.add_filter(description, filetype);
+//		fb_s.add_filter(description, filetype);
+//		fb_p.add_filter(description, filetype);
+//	}
+//    void SetDefLayout       () override ;
+//    void AsignWidgetToFields() override ;
+//
+//	nana::string FileName()const						{  return _fileName.caption();}
+//	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
+//	void		open(const nana::string &file_tip=STR(""));
+//	void		save(const nana::string &file_tip=STR(""));
+//	void		pick(const nana::string &file_tip=STR(""));
+//    bool        UserSelected() const {return _user_selected ;}
+//    bool        Canceled()     const {return _canceled;}
+//
+// private:
+//	nana::gui::label	_label;
+//    bool _user_selected, _canceled;
+//	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
+//};
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
 {public:
