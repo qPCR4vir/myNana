@@ -291,7 +291,13 @@ protected:
         CUnit("Hz"      , 1     , "s-1"    , "frequency");
         CUnit("N"       , 1     , "kg*m*s-2", "force"   );
         CUnit("J"       , 1     , "kg*m2*s-2", "energy" );
+        CUnit("J"       , 1     , "N*m"      , "energy" );
+        CUnit("cal"     , 4.184 , "J"                   );
+        CUnit("kcal"    , 1000  , "cal"                 );
         CUnit("Wh"      , 3600  , "J"                   );
+        CUnit("cal/mol" , 4.184 , "J/mol", "intr_energy");
+        CUnit("kcal/mol", 1000  , "cal/mol"             );
+        CUnit("kJ/mol"  , 1000  , "J/mol"               );
         CUnit("bp"      , 1     , "nt"    , "GeneLength");
         CUnit("kb"      , 1000  , "bp"    , "GeneLength");
         //CUnit("M"       , 1     , ""    , "molarity"  );
