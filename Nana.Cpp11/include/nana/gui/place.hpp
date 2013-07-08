@@ -68,7 +68,9 @@ namespace nana {namespace gui
 
 		static IField*     fixed   (window wd, unsigned size         );
 		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-		static IField*     room    (window wd, unsigned w, unsigned h);/// TODO: Add min and max
+
+        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
+		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
 		/** @brief Bind to a window
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.

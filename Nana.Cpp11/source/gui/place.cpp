@@ -934,11 +934,11 @@ namespace place_impl
 			if(array.size())
 			{
 				if(array[0].kind_of() != number_t::kind::percent)
-					rows = array[0].integer();
+					columns = array[0].integer();
                 if(array.size() > 1)
 			    {
 				    if(array[1].kind_of() != number_t::kind::percent)
-					    columns = array[1].integer();
+					    rows = array[1].integer();
 			    }
 			}
 			if( ! rows )    				rows    = 1;
@@ -1026,9 +1026,9 @@ namespace place_impl
 	{
 		return new place_impl::percent_widget(wd, per, w.min ,w.max );
 	}
-	IField*         place::room   (window wd, unsigned r, unsigned c)
+	IField*         place::room   (window wd, unsigned width, unsigned height)
 	{
-		return new place_impl::adj_room(wd, r, c);
+		return new place_impl::adj_room(wd, height, width);
 	}
     place::minmax::minmax (unsigned Min, unsigned Max) : min(Min), max(Max){}
     place::field_t::~field_t(){}
