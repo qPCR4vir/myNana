@@ -210,35 +210,69 @@ public:
     }
      void SetDefLayout       () override
     {
-        _DefLayout= "  <                        \n"
-                                "  <vertical   weight=130            Num                 >           \n"
-                                "  <vertical      <><vertical Unit weight=21><>          >             \n"
+        SetDefLayout       (60);
+        //_DefLayout= "  <                        \n"
+        //                        "  <vertical     min=125               Num                 >           \n"
+        //                        "  <vertical     min=50    <><vertical Unit weight=21><>  >             \n"
+        //                 " > ";
+
+        //_num._DefLayout="  <                        \n"
+        //                "                           \n"
+        //                        "  <vertical weight=60       <><label weight=15 gap=1>        <>          >           \n"
+        //                        "  <vertical weight=15       <><vertical UpDown weight=21><>          >               \n"
+        //                        "  <vertical                 <><Num weight=21>                    <>          >        \n"
+        //                 " > ";
+    }
+     void SetDefLayout       (unsigned lab, unsigned n=50, unsigned unit=50)
+    {
+
+        char d[]= "  <                        \n"
+                                "  <vertical     min=%u               Num                 >           \n"
+                                "  <vertical     min=%u    <><vertical Unit weight=21><>  >             \n"
                          " > ";   
 
-        _num._DefLayout="  <                        \n"
+        char nd[]="  <                        \n"
                         "                           \n"
-                                "  <vertical weight=60       <><label weight=15 gap=1>        <>          >           \n"
-                                "  <vertical weight=15       <><vertical UpDown weight=21><>          >               \n"
+                                "  <vertical weight=%u       <><label weight=15 gap=1>        <>          >           \n"
+                                "  <vertical weight=%u       <><vertical UpDown weight=21><>          >               \n"
                                 "  <vertical                 <><Num weight=21>                    <>          >        \n"
                          " > ";
+
+             _DefLayout.resize ( std::strlen ( d)+20);
+       _num. _DefLayout.resize ( std::strlen (nd)+20);
+       sprintf(&      _DefLayout[0], d,lab+15+n,unit);
+       sprintf(&_num. _DefLayout[0],nd,lab,15);
+             _DefLayout.resize ( std::strlen (&      _DefLayout[0]));
+       _num. _DefLayout.resize ( std::strlen (&_num. _DefLayout[0]));
+     }
+    void ResetLayout       (unsigned lab, unsigned n=50, unsigned unit=50)
+    {
+        SetDefLayout       (lab, n, unit);
+        ResetDefLayout();
+        ReCollocate( );
     }
+
      void AsignWidgetToFields() override
     {
 	    _place.field("Num"    ) << _num ;
 	    _place.field("Unit"   ) << _unit ;
     }
+     /// expresed in default Units
      double Value()
      {
          return _unit.to_def(_num.Value()); 
      }
+     /// expresed in the especified "un" Units
      double Value(const CUnit::unit_name& un)
      {
          return _unit.convert_to(_num.Value(),un); 
      }
-     void   Value(double val)
+     /// expresed in default Units
+     void   Value(double val_in_default_Units)
      {
-         _num.Value(_unit.from_def(val)); 
+         _num.Value(_unit.from_def(val_in_default_Units));
      }
+     /// expresed in the especified "un" Units
      void   Value(double val, const CUnit::unit_name& un)
      {
          _num.Value(_unit.convert_from(val,un)); 
