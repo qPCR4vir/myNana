@@ -77,18 +77,18 @@ class NumerUpDown : public  CompoWidget
                     double val,           double min, double max, 
                     const string         &DefFileName=STR("NumUpDown.VertCenter.lay.txt"), 
                     double step=1,       unsigned width=6,    unsigned decimals=2  );
-    double Value    (          )const{                        return _val;}
-    double Min      (          )const{                        return _min;}
-    double Max      (          )const{                        return _max;}
-    double Step     (          )const{                        return _step;}
-    double Width    (          )const{                        return _width;}
-    double Decimals (          )const{                        return _decimals;}
-    double Value    (double val)     {_val=val;   UpDate() ;  return _val;}
-    double Min      (double val)     {_min=val; /*UpDate();*/ return _min;}
-    double Max      (double val)     {_max=val; /*UpDate(); */return _max;}
-    double Step     (double val)     {_step=val; /*UpDate();*/return _step;}
-    double Width    (double val)     {_width=val;/*UpDate();*/return _width;}
-    double Decimals (double val)     {_decimals=val;/*UpDate();*/return _decimals;}
+    double  Value    (          )const{                        return _val;}
+    double  Min      (          )const{                        return _min;}
+    double  Max      (          )const{                        return _max;}
+    double  Step     (          )const{                        return _step;}
+    unsigned Width    (          )const{                        return _width;}
+    unsigned Decimals (          )const{                        return _decimals;}
+    double  Value    (double val)     {_val=val;   UpDate() ;  return _val;}
+    double  Min      (double val)     {_min=val; /*UpDate();*/ return _min;}
+    double  Max      (double val)     {_max=val; /*UpDate(); */return _max;}
+    double  Step     (double val)     {_step=val; /*UpDate();*/return _step;}
+    unsigned Width    (unsigned val)  {_width=val;/*UpDate();*/return _width;}
+    unsigned Decimals (unsigned val)  {_decimals=val;/*UpDate();*/return _decimals;}
   private:
     textbox _num;
     button  _up, _down;
