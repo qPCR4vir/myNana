@@ -1,8 +1,9 @@
 #ifndef NANA_GUI_Numer_HPP
 #define NANA_GUI_Numer_HPP
-
+#pragma warning(disable : 4996)
 #include <../temp/EditableForm.hpp>
 #include <../temp/Units.hpp>
+
 
 namespace nana { namespace gui {
 
@@ -72,25 +73,28 @@ class NumberBox : public textbox
 class NumerUpDown : public  CompoWidget
 {
   public:
-    NumerUpDown (   widget &fm,      const string &label, 
-                    double val, double min, double max, 
-                    const string   &DefFileName=STR("NumUpDown.VertCenter.lay.txt"), 
-                    double step=1, unsigned decimals=2  );
-    double Value(          )const{                    return _val;}
-    double Value(double val)     {_val=val; UpDate(); return _val;}
-    double Min(          )const{                    return _min;}
-    double Min(double val)     {_min=val; /*UpDate();*/ return _min;}
-    double Max(          )const{                    return _max;}
-    double Max(double val)     {_max=val; /*UpDate(); */return _max;}
-    double Step(          )const{                    return _step;}
-    double Step(double val)     {_step=val; /*UpDate(); */return _step;}
+    NumerUpDown (   widget &parent_,      const string &label, 
+                    double val,           double min, double max, 
+                    const string         &DefFileName=STR("NumUpDown.VertCenter.lay.txt"), 
+                    double step=1,       unsigned width=6,    unsigned decimals=2  );
+    double Value    (          )const{                        return _val;}
+    double Min      (          )const{                        return _min;}
+    double Max      (          )const{                        return _max;}
+    double Step     (          )const{                        return _step;}
+    double Width    (          )const{                        return _width;}
+    double Decimals (          )const{                        return _decimals;}
+    double Value    (double val)     {_val=val;   UpDate() ;  return _val;}
+    double Min      (double val)     {_min=val; /*UpDate();*/ return _min;}
+    double Max      (double val)     {_max=val; /*UpDate(); */return _max;}
+    double Step     (double val)     {_step=val; /*UpDate();*/return _step;}
+    double Width    (double val)     {_width=val;/*UpDate();*/return _width;}
+    double Decimals (double val)     {_decimals=val;/*UpDate();*/return _decimals;}
   private:
     textbox _num;
     button  _up, _down;
     label   _label;
     double  _val, _min, _max, _step;
-    unsigned _decimals;
-    //std::function <void()> &active,&inactive; 
+    unsigned _decimals, _width;
 
 void add(double step)
 {
@@ -104,7 +108,7 @@ void add(double step)
     void UpDate()
 {
     string val(50,0);
-    swprintf(&val[0],val.size(), STR(" %*.*f"), 15, _decimals, _val );
+    swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
     _num.ext_event().first_change= ([&](){});
        _num.caption (val.c_str());
     _num.ext_event().first_change=     ([&](){add( 0    ); });
@@ -178,11 +182,11 @@ class NumUnitUpDown : public CompoWidget
 public:
     NumerUpDown _num; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
     UnitPicker  _unit; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
-    NumUnitUpDown ( widget &wd,
-                    const string& label,
-                    double defVal,    double min,     double max,
-                    const CUnit::unit_name& def  ,
-                    const string& DefLayFile =STR("NumUnitUpDonw.Lay.txt"),
+    NumUnitUpDown ( widget &wd,        
+                    const string& label, 
+                    double defVal,    double min,     double max,    
+                    const CUnit::unit_name& def  , 
+                    const string& DefLayFile =STR("NumUnitUpDonw.Lay.txt"),   
                     double step=1,  unsigned decimals=2)
         : CompoWidget (wd,label,STR("NumUnitUpDonw.Lay.txt")),
           _num(*this,label, defVal, min,max,STR("Vert-Invert.NumUpDonw.Lay.txt"),step,decimals),
@@ -214,7 +218,7 @@ public:
         //_DefLayout= "  <                        \n"
         //                        "  <vertical     min=125               Num                 >           \n"
         //                        "  <vertical     min=50    <><vertical Unit weight=21><>  >             \n"
-        //                 " > ";
+        //                 " > ";   
 
         //_num._DefLayout="  <                        \n"
         //                "                           \n"
@@ -225,7 +229,7 @@ public:
     }
      void SetDefLayout       (unsigned lab, unsigned n=50, unsigned unit=50)
     {
-
+       
         char d[]= "  <                        \n"
                                 "  <vertical     min=%u               Num                 >           \n"
                                 "  <vertical     min=%u    <><vertical Unit weight=21><>  >             \n"
@@ -237,7 +241,7 @@ public:
                                 "  <vertical weight=%u       <><vertical UpDown weight=21><>          >               \n"
                                 "  <vertical                 <><Num weight=21>                    <>          >        \n"
                          " > ";
-
+   
              _DefLayout.resize ( std::strlen ( d)+20);
        _num. _DefLayout.resize ( std::strlen (nd)+20);
        sprintf(&      _DefLayout[0], d,lab+15+n,unit);
@@ -270,7 +274,7 @@ public:
      /// expresed in default Units
      void   Value(double val_in_default_Units)
      {
-         _num.Value(_unit.from_def(val_in_default_Units));
+         _num.Value(_unit.from_def(val_in_default_Units)); 
      }
      /// expresed in the especified "un" Units
      void   Value(double val, const CUnit::unit_name& un)
