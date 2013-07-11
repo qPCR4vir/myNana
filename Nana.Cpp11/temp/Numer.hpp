@@ -17,13 +17,13 @@ class NumberLabel : public label
         :	label(parent),
 			_val(val),  _decimals(decimals), _width(width)
     {
-        UpDate();
+        display();
     }
     double    _val;
     unsigned  _decimals, _width;
     double Value(          )const{                    return _val;}
-    double Value(double val)     {_val=val; UpDate(); return _val;}
-    void UpDate()
+    double Value(double val)     {_val=val; display(); return _val;}
+void display()
     {
         string val(50,0);
         swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
@@ -43,31 +43,33 @@ class NumberBox : public textbox
 			_val(val),  _decimals(decimals), _width(width)
     {
         multi_lines(false);
-        UpDate();
+        display();
         make_event <events::focus>([&](const eventinfo& ei)
                 {  if (!ei.focus.getting) 
-                        add( 0    );
+                        validate_edit( );
                 }); 
     }
     double    _val;
     unsigned  _decimals, _width;
     double Value(          )const{                    return _val;}
-    double Value(double val)     {_val=val; UpDate(); return _val;}
-    void add(double step)
+    double Value(double val)     {_val=val; display(); return _val;}
+void read()
     {
         try    {  _val=std::stod (caption()  );     }
         catch (...)     {;     }
-        _val += step;
-        UpDate();
     }
-    void UpDate()
+void validate_edit()
+{
+    read();
+    display();
+}
+void display()
     {
         string val(50,0);
         swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-        ext_event().first_change= ([&](){});
            caption (val.c_str());
-        ext_event().first_change=     ([&](){add( 0    ); });
     }
+
 };
 
 class NumerUpDown : public  CompoWidget
@@ -83,35 +85,57 @@ class NumerUpDown : public  CompoWidget
     double  Step     (          )const{                        return _step;}
     unsigned Width    (          )const{                        return _width;}
     unsigned Decimals (          )const{                        return _decimals;}
-    double  Value    (double val)     {_val=val;   UpDate() ;  return _val;}
-    double  Min      (double val)     {_min=val; /*UpDate();*/ return _min;}
-    double  Max      (double val)     {_max=val; /*UpDate(); */return _max;}
-    double  Step     (double val)     {_step=val; /*UpDate();*/return _step;}
-    unsigned Width    (unsigned val)  {_width=val;/*UpDate();*/return _width;}
-    unsigned Decimals (unsigned val)  {_decimals=val;/*UpDate();*/return _decimals;}
-  private:
+    double  Value    (double val)
+    {
+        //if(_val==val) return val;
+        _val=val;
+        if     (_val < _min)   _val = _min;
+        else if(_val > _max)   _val = _max;
+        display () ;
+        return _val;
+    }
+    double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
+    double  Max      (double val)     {_max=val; /*validate(); */return _max;}
+    double  Step     (double val)     {_step=val; /* ();*/return _step;}
+    unsigned Width    (unsigned val)  {_width=val;/* display ();*/return _width;}
+    unsigned Decimals (unsigned val)  {_decimals=val;/* display();*/return _decimals;}
+
     textbox _num;
+  private:
     button  _up, _down;
     label   _label;
     double  _val, _min, _max, _step;
     unsigned _decimals, _width;
-
-void add(double step)
+void read()
 {
-    try    {  _val=std::stod (_num.caption()  );     }
-    catch (...)     {;     }
-    _val += step;
+    try    {  _val=std::stod (_num.caption()  );
+    }
+    catch (...)     {;
+    }
+}
+void validate()
+{
     if     (_val < _min)   _val = _min;
     else if(_val > _max)   _val = _max;
-    UpDate();
+    //else return;
+    display();
 }
-    void UpDate()
+void validate_edit()
+{
+    read();
+    validate();
+}
+void add(double step)
+{
+    read();
+    _val += step;
+    validate();
+}
+void display()
 {
     string val(50,0);
     swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-    _num.ext_event().first_change= ([&](){});
        _num.caption (val.c_str());
-    _num.ext_event().first_change=     ([&](){add( 0    ); });
 }
 
      void SetDefLayout       () override
