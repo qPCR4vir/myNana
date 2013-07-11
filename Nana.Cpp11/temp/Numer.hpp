@@ -24,11 +24,11 @@ class NumberLabel : public label
     double Value(          )const{                    return _val;}
     double Value(double val)     {_val=val; display(); return _val;}
 void display()
-    {
-        string val(50,0);
-        swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-           caption (val.c_str());
-    }
+{
+    string val(50,0);
+    swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
+    caption (val.c_str());
+}
 };
 
 
@@ -54,21 +54,21 @@ class NumberBox : public textbox
     double Value(          )const{                    return _val;}
     double Value(double val)     {_val=val; display(); return _val;}
 void read()
-    {
-        try    {  _val=std::stod (caption()  );     }
-        catch (...)     {;     }
-    }
+{
+    try    {  _val=std::stod (caption()  );     }
+    catch (...)     {;     }
+}
 void validate_edit()
 {
     read();
     display();
 }
 void display()
-    {
-        string val(50,0);
-        swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-           caption (val.c_str());
-    }
+{
+    string val(50,0);
+    swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
+    caption (val.c_str());
+}
 
 };
 
@@ -85,13 +85,13 @@ class NumerUpDown : public  CompoWidget
     double  Step     (          )const{                        return _step;}
     unsigned Width    (          )const{                        return _width;}
     unsigned Decimals (          )const{                        return _decimals;}
-    double  Value    (double val)
-    {
+    double  Value    (double val)     
+    { 
         //if(_val==val) return val;
-        _val=val;
+        _val=val;   
         if     (_val < _min)   _val = _min;
         else if(_val > _max)   _val = _max;
-        display () ;
+        display () ;  
         return _val;
     }
     double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
@@ -108,9 +108,9 @@ class NumerUpDown : public  CompoWidget
     unsigned _decimals, _width;
 void read()
 {
-    try    {  _val=std::stod (_num.caption()  );
+    try    {  _val=std::stod (_num.caption()  );   
     }
-    catch (...)     {;
+    catch (...)     {;     
     }
 }
 void validate()
@@ -211,9 +211,9 @@ public:
                     double defVal,    double min,     double max,    
                     const CUnit::unit_name& def  , 
                     const string& DefLayFile =STR("NumUnitUpDonw.Lay.txt"),   
-                    double step=1,  unsigned decimals=2)
+                    double step=1,   unsigned width=6, unsigned decimals=2)
         : CompoWidget (wd,label,STR("NumUnitUpDonw.Lay.txt")),
-          _num(*this,label, defVal, min,max,STR("Vert-Invert.NumUpDonw.Lay.txt"),step,decimals),
+          _num(*this,label, defVal, min,max,STR("Vert-Invert.NumUpDonw.Lay.txt"),step,width,decimals),
           _unit(*this, def), _curr_un(def) //_val(defVal)
     {
         _unit.ext_event().selected=[&](combox& cb)
