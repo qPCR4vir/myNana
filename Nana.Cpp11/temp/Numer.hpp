@@ -87,11 +87,13 @@ class NumerUpDown : public  CompoWidget
     unsigned Decimals (          )const{                        return _decimals;}
     double  Value    (double val)     
     { 
-        //if(_val==val) return val;
-        _val=val;   
-        if     (_val < _min)   _val = _min;
-        else if(_val > _max)   _val = _max;
+        if     (val < _min)   val = _min;
+        else if(val > _max)   val = _max;
+        if(_val==val) return val;
+        _val=val; 
         display () ;  
+        changed=true;
+        Validated();
         return _val;
     }
     double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
@@ -106,11 +108,14 @@ class NumerUpDown : public  CompoWidget
     label   _label;
     double  _val, _min, _max, _step;
     unsigned _decimals, _width;
-void read()
+double read()
 {
-    try    {  _val=std::stod (_num.caption()  );   
-    }
-    catch (...)     {;     
+    try    
+    {  
+        return std::stod (_num.caption()  );
+     }
+    catch (...)     
+    { return _val;     
     }
 }
 void validate()
@@ -122,20 +127,26 @@ void validate()
 }
 void validate_edit()
 {
-    read();
+    double v=_val;
+    _val=read();
     validate();
+    if (_val!=v) 
+    {
+        changed=true;
+        Validated();
+    }else
+        changed=false;
 }
 void add(double step)
 {
-    read();
-    _val += step;
-    validate();
+    Value(step+read());
 }
 void display()
 {
     string val(50,0);
     swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-       _num.caption (val.c_str());
+    _num.caption (val.c_str());
+
 }
 
      void SetDefLayout       () override
@@ -234,7 +245,7 @@ public:
         InitMyLayout();
         SelectClickableWidget( _num);
         SelectClickableWidget( _unit);
-
+        _num.add_validated ([&](){Validated ();});
     }
      void SetDefLayout       () override
     {

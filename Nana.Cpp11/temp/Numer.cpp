@@ -11,7 +11,7 @@ NumerUpDown::NumerUpDown (  widget &parent_,      const string &label,
             _val(val), _min(min), _max(max), _step(step), _decimals(decimals), _width(width)
     {
         _num.multi_lines(false);
-        display();
+        display();        
         _label.text_align(align::right  ); 
 
         InitMyLayout();
@@ -24,8 +24,27 @@ NumerUpDown::NumerUpDown (  widget &parent_,      const string &label,
         _down.make_event <events::click>    ([&](){add(-_step); });
         _down.make_event <events::dbl_click>([&](){add(-_step); });
          _num.make_event <events::focus>([&](const eventinfo& ei)
-                {  if (!ei.focus.getting)
+                {  
+                    std::cerr<< "\nBefore " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+                    std::wcerr<< _Titel << std::endl;
+                    //if (!ei.focus.getting) 
+                    //    validate_edit( );
+                }); 
+
+
+         _num.make_event <events::focus>([&](const eventinfo& ei)
+                {  
+                    std::cerr << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+                    std::wcerr<< _Titel << std::endl;
+                    if (!ei.focus.getting) 
                         validate_edit( );
+                }); 
+         _num.make_event <events::focus>([&](const eventinfo& ei)
+                {  
+                    std::cerr<< "After " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+                    std::wcerr<< _Titel << std::endl;
+                    //if (!ei.focus.getting) 
+                    //    validate_edit( );
                 }); 
     }
 

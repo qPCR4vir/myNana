@@ -19,7 +19,8 @@
                _thisEdWd   (thisEdWd), 
                _place      (_thisEdWd),    
                _Titel(std::move(Titel)),        //   ???
-               _DefLayoutFileName(DefLayoutFileName), _myEdLayForm(nullptr)
+               _DefLayoutFileName(DefLayoutFileName), _myEdLayForm(nullptr),
+               changed(false),validated (false)
      {  
          //nana::rectangle r;  //debugg
       //  r=nana::gui::API::window_size(ThisWidget);  //debugg
@@ -37,8 +38,8 @@
    //             _myEdLayForm->close();
    //         }
    //     }
-        std::cerr<<"\nConstructing EditableWidget: "; // debbug
-        std::wcerr<< this->_Titel; // debbug
+        //std::cerr<<"\nConstructing EditableWidget: "; // debbug
+        //std::wcerr<< this->_Titel; // debbug
 
    //     ThisWidget.make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
    //     {

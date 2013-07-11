@@ -73,6 +73,30 @@ class EditableWidget: public EnablingEditing
     nana::string        _DefLayoutFileName;	
     nana::gui::place	_place;
 
+    std::vector<std::function<void(void)>> _validate, _validated;
+    bool changed, validated;
+    void Validate()
+    {
+        for(auto &v:_validate)
+            v();
+        if (validated)
+            Validated();
+    }
+    void Validated()
+    {
+        for(auto &v:_validated)
+            v();
+    }
+    void add_validate(const std::function<void(void)>& v)
+    {
+        _validate.push_back (v); 
+    }
+    void add_validated(const std::function<void(void)>& v)
+    {
+        _validated.push_back (v); 
+    }
+
+
 	nana::gui::menu	    _menuProgram;
 	EditLayout_Form*    _myEdLayForm;    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
