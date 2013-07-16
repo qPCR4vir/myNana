@@ -59,22 +59,21 @@ namespace nana {namespace gui
 
 		 place(window parent_widget);
 		 place();
-		void              bind     (window parent_widget);
-		~place();
-
-		void              div      (const char* layout);
-		void              collocate();
-		field_reference    field   (const char* name);    /// TODO: Add min and max
-
-		static IField*     fixed   (window wd, unsigned size         );
-		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-
-        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
-		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
 		/** @brief Bind to a window
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
+		void               bind     (window parent_widget);
+		~place();
+
+		void               div      (const char* layout);
+		void               collocate();
+		field_reference    field   (const char* name);    /// TODO: Add min and max
+
+		static IField*     fixed   (window wd, unsigned size         );
+		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
+        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
+		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
 
 	  private:
 		implement * impl_;

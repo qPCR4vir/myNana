@@ -139,7 +139,7 @@ void validate_edit()
 }
 void add(double step)
 {
-    Value(step+read());
+    Value(step+Value());
 }
 void display()
 {
