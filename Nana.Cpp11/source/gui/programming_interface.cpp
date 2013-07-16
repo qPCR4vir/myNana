@@ -25,6 +25,17 @@ namespace nana{	namespace gui{
 		gui::detail::bedrock::window_manager_t& window_manager = bedrock.wd_manager;
 	}
 
+	namespace effects
+	{
+		class effects_accessor
+		{
+		public:
+			static bground_interface * create(const bground_factory_interface& factory)
+			{
+				return factory.create();
+			}
+		};
+	}
 namespace API
 {
 	void effects_edge_nimbus(window wd, effects::edge_nimbus en)
@@ -72,6 +83,52 @@ namespace API
 				return iwd->effect.edge_nimbus;
 		}
 		return effects::edge_nimbus::none;
+	}
+
+	void effects_bground(window wd, const effects::bground_factory_interface& factory, double fade_rate)
+	{
+		if(nullptr == wd)
+			return;
+		
+		restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard isg;
+		if(restrict::window_manager.available(iwd))
+		{
+			auto new_effect_ptr = effects::effects_accessor::create(factory);
+			if(nullptr == new_effect_ptr)
+				return;
+
+			delete iwd->effect.bground;
+			iwd->effect.bground = new_effect_ptr;
+			iwd->effect.bground_fade_rate = fade_rate;
+			restrict::window_manager.enable_effects_bground(iwd, true);
+			API::refresh_window(wd);
+		}
+	}
+
+	bground_mode effects_bground_mode(window wd)
+	{
+		if(nullptr == wd) return bground_mode::none;
+
+		restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard isg;
+		if(restrict::window_manager.available(iwd) && iwd->effect.bground)
+			return (iwd->effect.bground_fade_rate <= 0.009 ? bground_mode::basic : bground_mode::blend);
+
+		return bground_mode::none;
+	}
+
+	void effects_bground_remove(window wd)
+	{
+		if(nullptr == wd) return;
+
+		restrict::core_window_t * iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard isg;
+		if(restrict::window_manager.available(iwd))
+		{
+			if(restrict::window_manager.enable_effects_bground(iwd, false))
+				API::refresh_window(wd);
+		}
 	}
 
 	namespace dev
@@ -552,7 +609,7 @@ namespace API
 
 	bool track_window_size(window wd, const nana::size& sz, bool true_for_max)
 	{
-		if(wd == 0) return false;
+		if(nullptr == wd) return false;
 
 		restrict::core_window_t* iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard isg;
@@ -1024,22 +1081,20 @@ namespace API
 		return reinterpret_cast<window>(ts_wd);
 	}
 
-	//glass_window
+	//glass_window deprecated
 	//@brief: Test a window whether it is a glass attribute.
 	bool glass_window(window wd)
 	{
-		if(wd)
-		{
-			internal_scope_guard isg;
-			if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-				return reinterpret_cast<restrict::core_window_t*>(wd)->flags.glass;
-		}
-		return false;
+		return (bground_mode::basic == effects_bground_mode(wd));
 	}
 
-	bool glass_window(window wd, bool isglass)
+	bool glass_window(window wd, bool isglass)	//deprecated
 	{
-		return restrict::window_manager.glass_window(reinterpret_cast<restrict::core_window_t*>(wd), isglass);
+		if(isglass)
+			effects_bground(wd, effects::bground_transparent(0), 0);
+		else
+			effects_bground_remove(wd);
+		return true;
 	}
 
 	void take_active(window wd, bool active, window take_if_active_false)

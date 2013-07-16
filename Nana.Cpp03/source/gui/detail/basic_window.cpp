@@ -31,7 +31,7 @@ namespace nana{	namespace gui{
 				}
 			}
 
-			auto caret_descriptor::window() const ->core_window_t*
+			caret_descriptor::core_window_t* caret_descriptor::window() const
 			{
 				return wd_;
 			}
@@ -188,8 +188,8 @@ namespace nana{	namespace gui{
 
 		//struct basic_window
 			//struct basic_window::other_tag
-				basic_window::other_tag::other_tag(gui::category::flags categ)
-					: category(categ), active_window(nullptr), upd_state(update_state::none)
+				basic_window::other_tag::other_tag(gui::category::flags::t categ)
+					: category(categ), active_window(0), upd_state(update_state::none)
 				{
 					switch(categ)
 					{
@@ -227,22 +227,22 @@ namespace nana{	namespace gui{
 			//basic_window
 			//@brief: constructor for the root window
 			basic_window::basic_window(basic_window* owner, gui::category::root_tag**)
-				: other(category::root_tag::value)
+				: other(static_cast<category::flags::t>(category::root_tag::value))
 			{
 				drawer.attached(this);
 				_m_init_pos_and_size(0, rectangle());
-				//wait for constexpr
-				this->other.category = category::root_tag::value;
+
+				this->other.category = static_cast<gui::category::flags::t>(category::root_tag::value);
 				this->_m_initialize(owner);
 			}
 
 			basic_window::~basic_window()
 			{
 				delete together.caret;
-				together.caret = nullptr;
+				together.caret = 0;
 
 				delete effect.bground;
-				effect.bground = nullptr;
+				effect.bground = 0;
 			}
 
 			//bind_native_window
@@ -284,19 +284,19 @@ namespace nana{	namespace gui{
 				if(other.category == category::root_tag::value)
 				{
 					if(agrparent && (nana::system::this_thread_id() != agrparent->thread_id))
-						agrparent = nullptr;
+						agrparent = 0;
 
 					while(agrparent && (agrparent->other.category != category::root_tag::value))
 						agrparent = agrparent->parent;
 				
 					owner = agrparent;
-					parent = nullptr;
+					parent = 0;
 					index = 0;
 				}
 				else
 				{
 					parent = agrparent;
-					owner = nullptr;
+					owner = 0;
 					root_widget = agrparent->root_widget;
 					root = agrparent->root;
 					root_graph = agrparent->root_graph;
@@ -324,10 +324,10 @@ namespace nana{	namespace gui{
 				color.active = 0x60C8FD;
 
 				effect.edge_nimbus = effects::edge_nimbus::none;
-				effect.bground = nullptr;
+				effect.bground = 0;
 				effect.bground_fade_rate = 0;
 
-				together.caret = nullptr;
+				together.caret = 0;
 
 				extra_width = extra_height = 0;
 

@@ -205,7 +205,19 @@ namespace nana{ namespace gui{
 			_m_init();
 			create(wd, r, visible);
 		}
+		tabbar(window wd, const nana::string& text, bool visible)
+		{
+			_m_init();
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
 
+		tabbar(window wd, const nana::char_t* text, bool visible)
+		{
+			_m_init();
+			create(wd, rectangle(), visible);
+			caption(text);		
+		}
 		~tabbar()
 		{
 			get_drawer_trigger().event_adapter(nullptr);

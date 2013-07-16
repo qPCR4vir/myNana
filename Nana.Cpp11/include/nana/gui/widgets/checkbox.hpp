@@ -76,8 +76,8 @@ namespace gui
 
 		checkbox();
 		checkbox(window, bool visible);
-        checkbox(window wd, const string& caption_, bool visible= true);
-        checkbox(window wd, const char_t *caption_, bool visible= true);
+		checkbox(window, const nana::string& text, bool visible = true);
+		checkbox(window, const nana::char_t* text, bool visible = true);
 		checkbox(window, const rectangle& = rectangle(), bool visible = true);
 
 		void react(bool want);

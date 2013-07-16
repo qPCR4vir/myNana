@@ -540,6 +540,9 @@ namespace detail
 						break;
 					}
 
+					if(visible && wd->effect.bground)
+						wndlayout_type::make_bground(wd);
+
 					//Don't set the visible attr of a window if it is a root.
 					//The visible attr of a root will be set in the expose event.
 					if(category::root_tag::value != wd->other.category)
@@ -738,12 +741,11 @@ namespace detail
 						}
 						else
 						{
-							//update the glass buffer of glass window.
-							if(wd->flags.glass && wd->parent)
+							//update the bground buffer of glass window.
+							if(wd->effect.bground && wd->parent)
 							{
 								wd->other.glass_buffer.make(width, height);
-								wndlayout_type::make_glass(wd);
-								wd->other.glass_buffer.paste(wd->drawer.graphics, 0, 0);
+								wndlayout_type::make_bground(wd);
 							}
 						}
 					}
@@ -826,19 +828,10 @@ namespace detail
 			if(wd->visible)
 			{
 				for(core_window_t* pnt = wd->parent ; pnt; pnt = pnt->parent)
+				{
 					if(pnt->visible == false)
-					{
-						if(redraw)
-						{
-							if(wd->flags.glass)
-							{
-								wndlayout_type::make_glass(wd);
-								wd->other.glass_buffer.paste(wd->drawer.graphics, 0, 0);
-							}
-							wd->drawer.refresh();
-						}
 						return true;
-					}
+				}
 
 				if(force || (false == belong_to_lazy(wd)))
 				{
@@ -875,13 +868,7 @@ namespace detail
 					parent = parent->parent;
 				}
 
-				if(parent)	//only refreshing if it has an invisible parent
-				{
-					wd->flags.refreshing = true;
-					wd->drawer.refresh();
-					wd->flags.refreshing = false;
-				}
-				else
+				if(nullptr == parent)
 					wndlayout_type::paint(wd, true, true);
 			}
 		}
@@ -910,9 +897,7 @@ namespace detail
 
 				if(parent)	//only refreshing if it has an invisible parent
 				{
-					wd->flags.refreshing = true;
-					wd->drawer.refresh();
-					wd->flags.refreshing = false;
+					wndlayout_type::paint(wd, true, false);
 				}
 				else
 				{
@@ -1226,14 +1211,14 @@ namespace detail
 			handle_manager_.delete_trash(tid);
 		}
 
-		bool window_manager::glass_window(core_window_t* wd, bool isglass)
+		bool window_manager::enable_effects_bground(core_window_t* wd, bool enabled)
 		{
 			if(wd)
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if(handle_manager_.available(wd))
-					return wndlayout_type::glass_window(wd, isglass);
+					return wndlayout_type::enable_effects_bground(wd, enabled);
 			}
 			return false;
 		}
@@ -1334,8 +1319,7 @@ namespace detail
 			if(root_attr->menubar == wd)
 				root_attr->menubar = nullptr;
 
-			if(wd->flags.glass)
-				wndlayout_type::glass_window(wd, false);
+			wndlayout_type::enable_effects_bground(wd, false);
 
 			//test if wd is a TABSTOP window
 			if(wd->flags.tab & detail::tab_type::tabstop)

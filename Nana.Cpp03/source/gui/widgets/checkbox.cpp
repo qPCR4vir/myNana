@@ -134,7 +134,7 @@ namespace xcheckbox
 
 			void drawer::_m_draw_background(graph_reference graph)
 			{
-				if(false == API::glass_window(*widget_))
+				if(bground_mode::basic != API::effects_bground_mode(*widget_))
 					graph.rectangle(API::background(*widget_), true);
 			}
 
@@ -174,6 +174,18 @@ namespace xcheckbox
 			create(wd, rectangle(), visible);
 		}
 
+		checkbox::checkbox(window wd, const nana::string& text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
+		checkbox::checkbox(window wd, const nana::char_t* text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
 		checkbox::checkbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
@@ -210,15 +222,17 @@ namespace xcheckbox
 			return static_cast<checker_t>(get_drawer_trigger().style());
 		}
 
-		void checkbox::transparent(bool value)
+		void checkbox::transparent(bool enabled)
 		{
-			if(API::glass_window(*this, value) != value)
-				API::refresh_window(*this);
+			if(enabled)
+				API::effects_bground(*this, effects::bground_transparent(0), 0.0);
+			else
+				API::effects_bground_remove(*this);
 		}
 
 		bool checkbox::transparent() const
 		{
-			return API::glass_window(this->handle());
+			return (bground_mode::basic == API::effects_bground_mode(*this));
 		}
 
 		void checkbox::open_check_image(const nana::paint::image& img)
@@ -259,7 +273,7 @@ namespace xcheckbox
 			element_tag el;
 
 			el.uiobj = &uiobj;
-			el.eh_checked = uiobj.make_event<events::mouse_up>(*this, &radio_group::_m_checked);
+			el.eh_checked = uiobj.make_event<events::click>(*this, &radio_group::_m_checked);
 			el.eh_destroy = uiobj.make_event<events::destroy>(*this, &radio_group::_m_destroy);
 
 			ui_container_.push_back(el);

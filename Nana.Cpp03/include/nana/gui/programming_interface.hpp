@@ -23,6 +23,10 @@ namespace API
 	void effects_edge_nimbus(window, effects::edge_nimbus::t);
 	effects::edge_nimbus::t effects_edge_nimbus(window);
 
+	void effects_bground(window, const effects::bground_factory_interface&, double fade_rate);
+	bground_mode::t effects_bground_mode(window);
+	void effects_bground_remove(window);
+
 	//namespace dev
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
@@ -137,9 +141,15 @@ namespace API
 
 	void umake_event(window);
 	void umake_event(event_handle);
+
 	nana::point window_position(window);
 	void move_window(window, int x, int y);
 	void move_window(window, int x, int y, unsigned width, unsigned height);
+	inline void move_window(window wd, const rectangle& r)
+	{
+		move_window(wd, r.x, r.y, r.width, r.height);
+	}
+
 	bool set_window_z_order(window wd, window wd_after, z_order_action::t action_if_no_wd_after);
 
 	nana::size window_size(window);
