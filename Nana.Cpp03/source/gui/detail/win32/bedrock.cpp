@@ -954,6 +954,7 @@ namespace detail
 							fire_click = true;
 						}
 					}
+				
 					//Do mouse_up, this handle may be closed by click handler.
 					if(bedrock.wd_manager.available(msgwnd) && msgwnd->flags.enabled)
 					{

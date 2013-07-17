@@ -80,9 +80,6 @@ namespace nana{ namespace gui{
 		void load(const nana::char_t* file);
 		void store(const nana::char_t* file)  ;
 		void store(const nana::char_t* file, nana::unicode encoding) ;
-        
-        //void on_first_change ( std::function <void()>  on_change);
-
 		textbox& reset (const nana::string& newtext = STR("") );
 
 		///@brief	The file of last store operation.

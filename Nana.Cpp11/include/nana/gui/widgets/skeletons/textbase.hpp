@@ -125,17 +125,17 @@ namespace skeletons
 			ifs.clear();
 			ifs.seekg(0, std::ios::beg);
 
-			text_cont_.clear();		//Clear only if the file can be opened.          _m_saved(tfs);  ???????
+			text_cont_.clear();		//Clear only if the file can be opened.
 			attr_max_.reset();
 
-            _m_saved(tfs);            //          _m_saved(tfs);  ???????
+                        _m_saved(tfs);       
 
 			std::string str;
 			std::size_t lines = 0;
-			while(ifs.good()) 
+			while(ifs.good())
 			{
 				std::getline(ifs, str);
-                text_cont_.push_back(nana::charset(str));
+				text_cont_.push_back(nana::charset(str));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
 					attr_max_.size = text_cont_.back().size();
@@ -179,7 +179,7 @@ namespace skeletons
 			std::string str;
 			bool big_endian = true;
 
-			if(ifs.good() )    // only if(std::getline(ifs, str))  ??
+			if(ifs.good())
 			{
 				std::getline(ifs, str);
 				text_cont_.clear();		//Clear only if the file can be opened.        _m_saved(tfs);  ???????
@@ -218,11 +218,11 @@ namespace skeletons
 
 			std::size_t lines = 1;
 
-            while (ifs.good()  )   
+			while(ifs.good())
 			{
 				std::getline(ifs, str);
-                    
-                if(big_endian)
+
+				if(big_endian)
 				{
 					if(nana::unicode::utf16 == encoding)
 						byte_order_translate_2bytes(str);
@@ -260,7 +260,7 @@ namespace skeletons
 			}
 		}
 
-		void store(const char* tfs, nana::unicode encoding) const    ///    ??? const
+		void store(const char* tfs, nana::unicode encoding) const
 		{
 			std::ofstream ofs(tfs, std::ios::binary);
 			if(ofs && text_cont_.size())

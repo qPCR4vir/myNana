@@ -59,11 +59,6 @@ namespace nana{	namespace gui{	namespace widgets
                 return textbase_.saved() ;
             }
 
-            //void on_first_change ( std::function <void()>  on_change)
-            //{
-            //    textbase_.on_first_change=on_change;
-            //}
-
             void set_unchanged();
 
 			//text_area

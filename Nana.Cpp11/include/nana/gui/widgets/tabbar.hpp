@@ -200,11 +200,7 @@ namespace nana{ namespace gui{
 			create(wd, rectangle(), visible);
 		}
 
-		tabbar(window wd, const rectangle& r=rectangle(), bool visible=true)
-		{
-			_m_init();
-			create(wd, r, visible);
-		}
+
 		tabbar(window wd, const nana::string& text, bool visible)
 		{
 			_m_init();
@@ -218,6 +214,13 @@ namespace nana{ namespace gui{
 			create(wd, rectangle(), visible);
 			caption(text);		
 		}
+
+		tabbar(window wd, const rectangle& r=rectangle(), bool visible=true)
+		{
+			_m_init();
+			create(wd, r, visible);
+		}
+
 		~tabbar()
 		{
 			get_drawer_trigger().event_adapter(nullptr);

@@ -525,10 +525,6 @@ namespace API
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
-	//void move_window(window wd, const rectangle& r)
- //   {
- //       move_window( wd, r.x, r.y, r.width, r.height);
- //   }
 
 	void move_window(window wd, int x, int y, unsigned width, unsigned height)
 	{

@@ -144,7 +144,6 @@ namespace API
 
 	nana::point window_position(window);
 	void move_window(window, int x, int y);
-
 	void move_window(window, int x, int y, unsigned width, unsigned height);
 	inline void move_window(window wd, const rectangle& r)
 	{

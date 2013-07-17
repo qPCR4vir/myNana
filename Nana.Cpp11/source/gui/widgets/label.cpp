@@ -1036,16 +1036,6 @@ namespace gui
 		{
 			create(wd, r, visible);
 		}
-		label::label(window wd, const string& caption_, bool visible)
-	    {
-            create(wd, rectangle(), visible); 
-            caption(caption_);
-	    }
-		label::label(window wd, const char_t *caption_, bool visible)
-	    {
-            create(wd, rectangle(), visible); 
-            caption(caption_);
-	    }
 
 		void label::transparent(bool value)
 		{
