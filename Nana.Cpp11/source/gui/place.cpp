@@ -1,6 +1,5 @@
 /*
- *	An Alternative Implementation of Place for Layout
- *  (
+ *	An Implementation of Place for Layout
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -12,511 +11,70 @@
 #include <sstream>
 #include <cfloat>
 #include <cmath>
-#include <unordered_set>
-#include <cassert>
-//#include <unordered_map>
-#include <map>
-#include <vector>
 #include <stdexcept>
 #include <cstring>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
-#include <iostream>    // temp, for debugging
-#include <nana/gui/widgets/label.hpp>
 
-std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
-{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
-namespace nana{	namespace gui {
-
-namespace place_impl
+namespace nana{	namespace gui
 {
-    typedef place::minmax  minmax;
-    typedef place::field_t field_t;
-
-    struct adj{unsigned weigth,min,count_adj; adj():weigth(0),min(0),count_adj(0){}  };
-
-    struct IField  :minmax 
-    {
-                                IField      (){}
-                                IField      (unsigned min_,unsigned max_):minmax  (min_,max_){}
-            virtual adj         pre_place   (unsigned t_w,      adj& fixed=adj()                    )=0;
-            virtual adj         end_place   (unsigned t_w,const adj& fixed,       adj& adj_min=adj())=0;
-            virtual unsigned    weigth      (unsigned t_w,const adj& fixed, const adj& adj_min      )=0;
-            virtual            ~IField      (){}
-            virtual rectangle   cells       ()   const                              =0;
-            virtual void        collocate   (const rectangle& r)   =0;
-            virtual window      window_handle()const   =0;
-            virtual void        populate_children(	implement*   place_impl_)  =0;
-    };
- 	class  division : public IField
+	//number_t is used to store a number type variable
+	//such as integer, real and percent. Essentially, percent is a typo of real.
+	class number_t
 	{
-	  public:
-        std::vector <std::string> field_names;
-		std::vector<IField*>      children;   //  std::vector<div*> 
-		std::vector<window>       fastened_in_div;   //  
-		std::unique_ptr<IField>   gap;        //  
-	  public:
-        virtual int&      weigth_c(rectangle& r )=0;
-        virtual unsigned& weigth_s(rectangle& r )=0;
-        virtual int&       fixed_c(rectangle& r )=0;
-        virtual unsigned&  fixed_s(rectangle& r )=0;
-
-        window    window_handle    () const  override     { return nullptr; }
-        rectangle cells            () const  override     {return rectangle(-1,-1,1,1);}             
-                    /// populate childen in the same order in with they were introduced in the div layout str,
-                    /// and then in the order in with they were added to the field
-        void populate_children(	implement*   place_impl_);
-        /// add field names in the same order in with they are introduced in the div layout str
-		virtual void collocate( const rectangle& r) 
-		{   
-                                     //std::cerr<< "\ncollocating div in: "<<r; // debugg
-			rectangle area (r);
-
-            adj pre_adj, end_adj; auto t_w=weigth_s(area);
-			for(auto child: children)                            
-                child->pre_place(  t_w , pre_adj );  
-			for(auto child: children)                            
-                child->end_place(  t_w , pre_adj, end_adj );
-       
-			for(auto child : children)                          
-			{
-			    rectangle child_area (area);
-                weigth_s(child_area) = child->weigth(  t_w , pre_adj, end_adj )   ;
-                weigth_c(area)      += weigth_s(child_area);
-                weigth_s(area)      -= weigth_s(child_area);
-                                    //std::cerr<< "\ncollocating child in: "<<child_area; // debugg
-                child->collocate(child_area);
-			}
-			for(auto & fsn: fastened_in_div)
-			{	
-                API::move_window(fsn, r);
-                API::show_window(fsn, API::visible(fsn));
-            }
-		}
-        virtual ~division() 	{ }
-	};
-
-    struct Gap_field   : IField                     
-    { 
-        void     collocate    (const rectangle& r)override   {}
-        window   window_handle() const override              { return nullptr; }
-        void     populate_children(implement*   place_impl_) override {}
-        rectangle   cells         () const override          {return rectangle(-1,-1,0,0);}             
-
-        virtual  ~Gap_field (){}
-    };
-    struct Widget_field :  Gap_field                     
-    { 
-        //Widget_field    (window handle_):handle(handle_){}
-        window          handle; 
-        Widget_field    ():handle(nullptr){}
-        virtual        ~Widget_field    (){}
-        void            init (window handle_){handle=handle_;}
-
-        window          window_handle  () const override          { return handle; }
-        rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
-        void            collocate      (const rectangle& r)override
-        {  
-            API::move_window (handle,r ); 
-            API::show_window(handle, true);
-        }
-    };
-    struct Cell_field: virtual Widget_field    
-    { 
-        unsigned   row,column;
-        rectangle  cells         () const override          {return rectangle(column,row,1,1);}             
-        void       init(window handle_, unsigned row_,unsigned column_)
-        {  Widget_field::init( handle_); row=row_ ; column=column_ ; }
-    };
-    struct Room_field: virtual Widget_field    
-    { 
-        unsigned   rows,columns;
-        rectangle  cells         () const override          {return rectangle(-1,-1,columns,rows);}             
-        void       init(window handle_,unsigned rows_,unsigned columns_)
-        {  Widget_field::init( handle_);   rows=rows_;   columns=columns_;   }
-    };
-    struct Cells_field:  Cell_field, Room_field  
-    { 
-        rectangle  cells         () const override          {return rectangle(column,row,columns,rows);}             
-        void       init(window handle_, rectangle r)
-        { handle= handle_; row=r.y ; column=r.x ; rows=r.height ; columns=r.width ; }
-    };
-	class  div_h 	: public division
-	{
-	  public:
-         int&      weigth_c(rectangle& r )override{return r.x;}
-         unsigned& weigth_s(rectangle& r )override{return r.width;}
-         int&       fixed_c(rectangle& r )override{return r.y;}
-         unsigned&  fixed_s(rectangle& r )override{return r.height;}
-	};
-	class  div_v 	: public division
-	{
-	  public:
-         int&      weigth_c(rectangle& r )override{return r.y;}
-         unsigned& weigth_s(rectangle& r )override{return r.height;}
-         int&       fixed_c(rectangle& r )override{return r.x;}
-         unsigned&  fixed_s(rectangle& r )override{return r.width;}
-   	};
-	class  div_grid	: public div_h
-	{
-	  public:
-        std::string name; ///< field name to be refered in the field(name)<<room instr.
-        unsigned rows, columns;      ///< w=rows and h=columns   dim; 
-		void Init(const std::string& name_, size dim_)	
-        {  name=name_; rows=dim_.height ; columns =dim_.width ;}
-
-		void Init(const std::string& name_, unsigned rows_, unsigned columns_)	
-        {  name=name_; rows=rows_ ; columns =columns_;}
-
-        virtual void collocate(const rectangle& r) override
-	    {
-            if(! r.width || ! r.height ) return;
-
-            for(auto & fsn: fastened_in_div)
-			    API::move_window(fsn, r);
-
-            if(children.empty() ) return;
-
-                                    /// by now asept only one field name in grid div
-            assert (  field_names.size() ==1  ); 
-
-            rectangle area(r);
-		    if((rows<=1 && columns<=1) || !rows || !columns)
-		    {
-			    unsigned min_n_of_cells = _m_number_of_cells();
-
-			    unsigned edge=1;
-                while (edge*edge <= min_n_of_cells )
-                    ++edge;
-                rows=columns=edge;
-		    }
-		    double block_w = /*weigth_s( area )*/  area.width / double(columns );    // TODO: adapt to vert
-		    double block_h = /*fixed_s( area )*/   area.height/ double(rows );
-            std::vector<std::vector<size>> table(columns,std::vector<size>(rows,size(1,1)));  
-
-		    unsigned field=0;
-            size d_c, d_f;
-			for(unsigned rw = 0; rw < rows ; ++rw)
-		      for(unsigned clm = 0; clm < columns ; ++clm)
-              {
-				d_c=table[clm][rw];
-                if( ! d_c.height || ! d_c.width  )       /// pass collapsed cells
-						continue;
-
-                d_f = children[field]->cells();  
-                while ( ! d_f.height || ! d_f.width)      /// pass non dimension fields, the gaps
-                {
-                    if (++field >= children.size () )
-                        return;
-                    d_f = children[field]->cells(); 
-				}
-				if(clm + d_f.width  >= columns )
-						                            d_f.width = columns - clm;    /// adjust to borders
-				if(rw  + d_f.height >= rows    )
-						                            d_f.height = rows - rw;
-
-				for(unsigned cc = 0; cc < d_f.width ; ++cc)
-					for(unsigned cr = 0; cr < d_f.height ; ++cr)
-					{
-                        size&ccell ( table[clm+cc][rw+cr] );
-                        if ( ccell.height &&  ccell.width)          // cell usable? have height and width ?
-                            ccell=size(0,0);                        // make it un-usable
-                        else                                        // colision with allready used cells
-                        {
-                            d_f.width = cc;                         // limit the current room
-                            break;                                  // error: allready marked as used are not unmarked !!!
-                        }
-					}
-                table[clm][rw]=d_f;
-                rectangle cell(area);
-                cell.x     = area.x + static_cast<int>(clm * block_w);
-                cell.y     = area.y + static_cast<int>(rw  * block_h);
-                cell.width =  static_cast<unsigned>(block_w * d_f.width);
-                cell.height =  static_cast<unsigned>(block_h * d_f.height);
-
-                adj pre_adj_x, end_adj_x,  pre_adj_y, end_adj_y;
-                        children[field]->pre_place(  cell.width , pre_adj_x ); 
-                        children[field]->pre_place(  cell.height, pre_adj_y ); 
-                if(gap) {           gap->pre_place(  cell.width , pre_adj_x ); 
-                                    gap->pre_place(  cell.height, pre_adj_y );      }
-
-                        children[field]->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
-                        children[field]->end_place(  cell.height, pre_adj_y, end_adj_y  ); 
-                if(gap) {           gap->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
-                                    gap->end_place(  cell.height, pre_adj_y, end_adj_y  ); }
-			    rectangle child_area (cell);
-                child_area.width = children[field]->weigth(   cell.width  ,pre_adj_x, end_adj_x  )   ;
-                child_area.height= children[field]->weigth(   cell.height ,pre_adj_y, end_adj_y  )   ;
-                children[field]->collocate(child_area);
-
-                if (++field >= children.size () )
-                    return;
-            }
-    }
-	  private:
-		unsigned _m_number_of_cells() const
-		{
-			unsigned n = 0;
-			for(auto & child : children)
-                n += child->cells().width * child->cells().height ;      
-			return n;
-		}
-	};//end class div_grid
-	
-    template <class Base> struct IAdjust : Base
-    {    
-            IAdjust(){}
-            IAdjust(unsigned min_,unsigned max_=MAX) {MinMax(min_, max_);} 
-            virtual ~IAdjust(){}
-    };
-    template <class Base> struct IFixed:  IAdjust<Base>     
-    { 
-        unsigned weight_; 
-
-        IFixed(unsigned weight)                             : weight_(weight) {}
-        IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjust<Base>(min_,max_){}
-
-        adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
-                    {   fixed.weigth   += weigth_adj(t_w) ;   return  fixed;        }
-
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-                    {   adj_min.weigth += weigth_adj(t_w) ;   return  adj_min;      }   
-
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )  override              
-                    {   return weigth_adj(t_w);      }    
-
-        virtual unsigned weigth_adj(unsigned t_w )
-        {   
-            if ( weight_  < min )    {return min; }
-            if ( weight_  > max )    {return max; }
-                
-            return  weight_;          
-        }
-    };
-    template <class Base> struct IPercent: IFixed<Base> 
-    { 
-        IPercent(double percent_)                            
-            :IFixed<Base>(static_cast<unsigned>(100*percent_))          {}
-
-        IPercent(double percent_,unsigned min_,unsigned max_)
-            :IFixed<Base>(static_cast<unsigned>(100*percent_),min_,max_){}
-        unsigned weigth_adj(unsigned t_w )override
-        {   
-            if ( t_w * weight_ /100.0  < min )    {return min; }
-            if ( t_w * weight_ /100.0  > max )    {return max; }
-                
-            return  t_w * weight_ /100.0;          
-        }
-    };     
-    template <class Base> struct IAdjustable  :  IAdjust<Base>                      
-    { 
-        IAdjustable(         ){}
-        IAdjustable(unsigned min_,unsigned max_):IAdjust<Base>  (min_,max_){}
-
-        adj   pre_place(unsigned t_w,                        adj& fixed = adj() ) override    
-                    {  
-                        ++fixed.count_adj;     
-                        fixed.min += min;    
-                        return  fixed;        
-                    }
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )  
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += max; return adj_min; }
-
-            adj_min.min += min; 
-            ++adj_min.count_adj;   return  adj_min;        
-        }
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )override
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )   
-                                                                        {return min; }
-            if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return min; }
-            if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return max; }
-            if ( t_w <    min * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return min; }
-            if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return max; }
-
-            return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
-        }
-    };
-   
-    struct adj_gap:   IAdjustable<Gap_field> 
-    { 
-        adj_gap( )                                                   {}
-        adj_gap( unsigned min_,unsigned max_):IAdjustable<Gap_field> (min_,max_){}
-    };
-    struct adj_widget:    IAdjustable<Widget_field>
-    { 
-        adj_widget(window handle_)                      
-                {Widget_field::init (handle_);}
-        adj_widget(window handle_, unsigned min_,unsigned max_)
-            :IAdjustable<Widget_field>(min_,max_) {Widget_field::init (handle_);}
-    };
-    struct adj_room: IAdjustable<Room_field>   
-    { 
-        adj_room(window handle_,unsigned rows_,unsigned columns_)                             
-                {Room_field::init(handle_, rows_, columns_);}
-        adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_)
-                :IAdjustable<Room_field>(min_,max_){Room_field::init(handle_, rows_, columns_);}
-    };
-	struct adj_div_h : public IAdjustable<div_h> 
-    {
-        adj_div_h()                     {}
-        adj_div_h(unsigned min_,unsigned max_):IAdjustable<div_h> (min_,max_){}
-    };
-	struct adj_div_v : public IAdjustable<div_v>  
-    {
-        adj_div_v()                     {}
-        adj_div_v(unsigned min_,unsigned max_):IAdjustable<div_v>(min_,max_){}
-    };
-	struct adj_div_grid : public IAdjustable<div_grid> 
-    {
-        adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_)   
-                                                           { Init(name_,rows_,columns_);}
-
-        adj_div_grid(const std::string& name_, size dim_ , unsigned min_ ,  unsigned max_     )    
-            :  IAdjustable<div_grid>(min_   ,max_       )  {Init(name_,dim_); }
-
-        adj_div_grid(const std::string& name_, size dim_      )    
-                                                           {Init(name_,dim_); }
-
-        adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_,
-                                               unsigned min_,unsigned max_)   
-            :    IAdjustable<div_grid>(min_        ,max_       ) { Init(name_,rows_,  columns_);}
-    };
-
-    struct fixed_gap: IFixed<Gap_field> 
-    { 
-        fixed_gap(unsigned weight_                             ):IFixed<Gap_field> (weight_)          {}
-        fixed_gap(unsigned weight_, unsigned min_,unsigned max_):IFixed<Gap_field> (weight_,min_,max_){}
-    };
-    struct fixed_widget:   IFixed<Widget_field>
-    { 
-        fixed_widget(window handle_,unsigned weight_                             )
-            :IFixed<Widget_field>(weight_          ){Widget_field::init (handle_);}
-        fixed_widget(window handle_,unsigned weight_, unsigned min_,unsigned max_)
-            :IFixed<Widget_field>(weight_,min_,max_){Widget_field::init (handle_);}
-    };
-    struct fixed_room:  IFixed<Room_field>   
-    { 
-        fixed_room(window handle_, unsigned weight_  , 
-                   unsigned rows_, unsigned columns_  )
-            :IFixed<Room_field>   (weight_)              {Room_field::init(handle_, rows_, columns_);}
-        fixed_room(window handle_, unsigned weight_  ,
-                   unsigned rows_,unsigned columns_,    unsigned min_,unsigned max_)
-            :IFixed<Room_field>   (weight_,min_,max_)    {Room_field::init(handle_, rows_, columns_);}
-    };
-	struct fixed_div_h : public IFixed<div_h>
-    {
-        fixed_div_h(unsigned weight_                             )  :IFixed<div_h> (weight_ )        {}
-        fixed_div_h(unsigned weight_ , unsigned min_,unsigned max_):IFixed<div_h> (weight_ ,min_,max_){}
-    };
-	struct fixed_div_v : public IFixed<div_v> 
-    {
-        fixed_div_v(unsigned weight_                             ):IFixed<div_v>(weight_   )       {}
-        fixed_div_v(unsigned weight_, unsigned min_,unsigned max_):IFixed<div_v>(weight_,min_,max_){}
-    };
-	struct fixed_div_grid : public IFixed<div_grid> 
-    {
-        fixed_div_grid(const std::string& name_,unsigned weight_ ,  unsigned rows_, unsigned columns_)  
-            :IFixed<div_grid>(weight_)   { Init(name_,rows_,  columns_);}
-        fixed_div_grid(const std::string& name_,unsigned weight_  , size dim_)
-            :IFixed<div_grid>(weight_ )  {Init(name_,dim_); }
-
-        fixed_div_grid(const std::string& name_,unsigned weight_ ,  unsigned rows_, 
-                                                unsigned columns_, unsigned min_,unsigned max_)  
-            :IFixed<div_grid>(weight_,min_,max_) { Init(name_,rows_,  columns_);}
-        fixed_div_grid(const std::string& name_,unsigned weight_  , size dim_, 
-                                                 unsigned min_,unsigned max_)
-            :IFixed<div_grid>(weight_,min_,max_) {Init(name_,dim_); }
-    };
-
-    struct percent_gap: IPercent<Gap_field> 
-    { 
-        percent_gap(double   percent_):IPercent<Gap_field>(percent_){}
-        percent_gap(double   percent_,unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
-    };     
-    struct percent_widget: IPercent<Widget_field>
-    { 
-        percent_widget(window handle_,double   percent_)
-            :IPercent<Widget_field>(percent_){Widget_field::init (handle_);}
-        percent_widget(window handle_,double   percent_, unsigned min_,unsigned max_)
-            :IPercent<Widget_field>(percent_,min_,max_){Widget_field::init (handle_);}
-    };   
-    struct percent_room:  IPercent<Room_field>   
-    { 
-        percent_room(window handle_, double   percent_,
-                     unsigned rows_, unsigned columns_  )
-              :IPercent<Room_field>  (percent_          ) {Room_field::init(handle_, rows_, columns_);}
-
-        percent_room(window handle_, double   percent_,
-                     unsigned rows_, unsigned columns_,   unsigned min_, unsigned max_ )
-              :IPercent<Room_field>(percent_,min_,max_)   {Room_field::init(handle_, rows_, columns_);}
-    };     
-    struct percent_div_h : public IPercent<div_h> 
-    {
-        percent_div_h(double   percent_)  :IPercent<div_h> ( percent_   )                 {}
-        percent_div_h(double   percent_,unsigned min_,unsigned max_)
-                         :IPercent<div_h> ( percent_ ,min_,max_){}
-    };
-	struct percent_div_v : public IPercent<div_v> 
-    {
-        percent_div_v(double   percent_)   :IPercent<div_v> ( percent_   )                    {}
-        percent_div_v(double   percent_,unsigned min_,unsigned max_)
-                                 :IPercent<div_v>( percent_,min_,max_){}
-    };
-	struct percent_div_grid : public IPercent<div_grid>  
-    {
-        percent_div_grid(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_)   
-            :IPercent<div_grid> ( percent_    )        { Init(name_,rows_,  columns_);}
-        percent_div_grid(const std::string& name_,double   percent_, size dim_)
-            :IPercent<div_grid> ( percent_)            {Init(name_,dim_); }
-
-        percent_div_grid(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_, 
-                                                                     unsigned min_,unsigned max_)   
-            :IPercent<div_grid> ( percent_ ,min_,max_   )   { Init(name_,rows_,  columns_);}
-        percent_div_grid(const std::string& name_,double   percent_, size dim_, 
-                                                                     unsigned min_,unsigned max_)
-            :IPercent<div_grid> ( percent_,min_,max_)       {Init(name_,dim_); }
-    };
-
-    class number_t
-	{	//number_t is used to store a number type variable
-	    //such as integer, real and percent. Essentially, percent is a typo of real.
 	public:
-		enum class kind{/*empty, */integer, real, percent};
-		number_t() 			: kind_(kind::integer)		{	value_.integer = 0;		}
+		enum class kind{integer, real, percent};
 
-		kind kind_of() const		{			return kind_;		}
+		number_t()
+			: kind_(kind::integer)
+		{
+			value_.integer = 0;
+		}
+
+		kind kind_of() const
+		{
+			return kind_;
+		}
 
 		int integer() const
 		{
-           //        if( kind::empty  == kind_ )				//return 0;
-            if(kind::integer == kind_ )				return value_.integer;
+			if(kind::integer == kind_)
+				return value_.integer;
 			return static_cast<int>(value_.real);
 		}
+
 		double real() const
 		{
-            //        if( kind::empty  == kind_ )				//return 0;
-			if(kind::integer == kind_  )				return value_.integer;
+			if(kind::integer == kind_)
+				return value_.integer;
 			return value_.real;
 		}
-		void assign      (int i)      { kind_ = kind::integer;  value_.integer = i; }
-		void assign    (double d)     { kind_ = kind::real; 	value_.real    = d; }
-		void assign_percent(double d) { kind_ = kind::percent; value_.real = d / 100; }
-        void clear(){*this = number_t(); 	}
-    private:
+
+		void assign(int i)
+		{
+			kind_ = kind::integer;
+			value_.integer = i;
+		}
+
+		void assign(double d)
+		{
+			kind_ = kind::real;
+			value_.real = d;
+		}
+
+		void assign_percent(double d)
+		{
+			kind_ = kind::percent;
+			value_.real = d / 100;
+		}
+	private:
 		kind kind_;
-		union valueset 	{ int integer; double real; }value_;
+		union valueset
+		{
+			int integer;
+			double real;
+		}value_;
 	};//end class number_t
 
 	class tokenizer
@@ -525,17 +83,31 @@ namespace place_impl
 		enum class token
 		{
 			div_start, div_end,
-			identifier, vertical, horizontal, grid, number, array,
-			weight, gap, min, max,
+			identifier, vertical, grid, number, array,
+			weight, gap,
 			equal,
 			eof, error
 		};
 
-		tokenizer(const char* p)	: div_str(p), divstr_(div_str.c_str() ), sp_(div_str.c_str())	{}
+		tokenizer(const char* p)
+			: divstr_(p), sp_(p)
+		{}
 
-		const std::string& idstr() const		{			return idstr_;		}
-		number_t           number() const		{			return number_;		}
-		std::vector<number_t>& array()		{			return array_;		}
+		const std::string& idstr() const
+		{
+			return idstr_;
+		}
+
+		number_t number() const
+		{
+			return number_;
+		}
+
+		std::vector<number_t>& array()
+		{
+			return array_;
+		}
+
 		token read()
 		{
 			sp_ = _m_eat_whitespace(sp_);
@@ -543,14 +115,25 @@ namespace place_impl
 			std::size_t readbytes = 0;
 			switch(*sp_)
 			{
-			case '\0':				                    return token::eof;
-			case '=':		        ++sp_;				return token::equal;
-			case '<':				++sp_;				return token::div_start;
-			case '>':				++sp_;				return token::div_end;
+			case '\0':
+				return token::eof;
+			case '=':
+				++sp_;
+				return token::equal;
+			case '<':
+				++sp_;
+				return token::div_start;
+			case '>':
+				++sp_;
+				return token::div_end;
 			case '[':
 				array_.clear();
 				sp_ = _m_eat_whitespace(sp_ + 1);
-				if(*sp_ == ']')		{	++sp_;		return token::array;	}
+				if(*sp_ == ']')
+				{
+					++sp_;
+					return token::array;
+				}
 
 				while(true)
 				{
@@ -563,26 +146,40 @@ namespace place_impl
 					sp_ = _m_eat_whitespace(sp_);
 					char ch = *sp_++;
 
-					if(ch == ']')						break;
-					if(ch != ',')						_m_throw_error("invalid array");
+					if(ch == ']')
+						break;
+
+					if(ch != ',')
+						_m_throw_error("invalid array");
 				}
 				return token::array;
 			case '.': case '-':
 				if(*sp_ == '-')
 				{
 					readbytes = _m_number(sp_ + 1, true);
-					if(readbytes)			++ readbytes;
+					if(readbytes)
+						++ readbytes;
 				}
-				else 					readbytes = _m_number(sp_, false);
-						
-				if(readbytes){  sp_ += readbytes; 	return token::number;}
-				else    					        _m_throw_error(*sp_);
-				break; 
+				else
+					readbytes = _m_number(sp_, false);
+
+				if(readbytes)
+				{
+					sp_ += readbytes;
+					return token::number;
+				}
+				else
+					_m_throw_error(*sp_);
+				break;
 			default:
-				if(isdigit (*sp_))
+				if('0' <= *sp_ && *sp_ <= '9')
 				{
 					readbytes = _m_number(sp_, false);
-					if(readbytes) 	{	sp_ += readbytes; return token::number;		}
+					if(readbytes)
+					{
+						sp_ += readbytes;
+						return token::number;
+					}
 				}
 				break;
 			}
@@ -591,17 +188,27 @@ namespace place_impl
 			{
 				const char * idstart = sp_++;
 
-				while('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_)) 	++sp_;
+				while('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_))
+					++sp_;
 
 				idstr_.assign(idstart, sp_);
 
-				     if(idstr_ == "weight"){_m_attr_number_value();	return token::weight;}
-				else if(idstr_ == "gap")   {_m_attr_number_value();	return token::gap;   }
-				else if(idstr_ == "min")   {_m_attr_number_value(); return token::min;   }
-				else if(idstr_ == "max")   {_m_attr_number_value();	return token::max;   }
-				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
-				else if(idstr_ == "grid")       					return token::grid;
-                        				                            return token::identifier;
+				if(idstr_ == "weight")
+				{
+					_m_attr_number_value();
+					return token::weight;
+				}
+				else if(idstr_ == "gap")
+				{
+					_m_attr_number_value();
+					return token::gap;
+				}
+				else if(idstr_ == "vertical")
+					return token::vertical;
+				else if(idstr_ == "grid")
+					return token::grid;
+
+				return token::identifier;
 			}
 
 			return token::error;
@@ -633,7 +240,7 @@ namespace place_impl
 
 			if(0 == len)
 				_m_throw_error("the \'" + idstr_ + "\' requires a number(integer or real or percent)");
-						
+
 			sp_ += len + (p - sp_);
 		}
 
@@ -663,14 +270,22 @@ namespace place_impl
 			double real = 0;
 			//read the integral part.
 			const char* istart = sp;
-			while(isdigit (*sp))	{	integer = integer * 10 + (*sp - '0');	++sp;		}
+			while('0' <= *sp && *sp <= '9')
+			{
+				integer = integer * 10 + (*sp - '0');
+				++sp;
+			}
 			const char* iend = sp;
 
 			if('.' == *sp)
 			{
 				double div = 1;
 				const char* rstart = ++sp;
-				while(isdigit (*sp)){	real += (*sp - '0') / (div *= 10);		++sp;		}
+				while('0' <= *sp && *sp <= '9')
+				{
+					real += (*sp - '0') / (div *= 10);
+					++sp;
+				}
 
 				if(rstart != sp)
 				{
@@ -689,8 +304,9 @@ namespace place_impl
 			{
 				for(;*sp == ' '; ++sp);
 				if('%' == *sp)
-				{   
-                    number_.assign_percent(number_.real());
+				{
+					if(number_t::kind::integer == number_.kind_of())
+						number_.assign_percent(number_.integer());
 					return sp - allstart + 1;
 				}
 				return sp - allstart;
@@ -698,7 +314,6 @@ namespace place_impl
 			return 0;
 		}
 	private:
-        std::string div_str;   // for the future. kip a copy of the layout
 		const char* divstr_;
 		const char* sp_;
 		std::string idstr_;
@@ -706,362 +321,1042 @@ namespace place_impl
 		std::vector<number_t> array_;
 	};	//end class tokenizer
 
-    struct implement           //struct implement
+
+	//struct implement
+	struct place::implement
 	{
-        std::unique_ptr<field_t>        temp_field_t;
-		window                          parent_window_handle;
-		event_handle                    event_size_handle;
-		std::unique_ptr<division>       root_division;
-        std::unordered_set<std::string> names;     ///<  All the names defines. Garant no repited name.
-        unsigned                        div_numer; ///<  Used to generate unique div name.
+		class field_impl;
+		class division;
+		class div_arrange;
+		class div_vertical_arrange;
+		class div_grid;
 
-            /// All the fields defined by user with field(name)<<IField, 
-            /// plus the div. find from the layot in div()
-		std::multimap<std::string, std::unique_ptr<IField>> fields;    
-		std::multimap<std::string,    window              > fastened;
-        std::vector<std::unique_ptr <nana::gui::label>>     widgets;                                 
-			
-        implement()	 : event_size_handle(nullptr), div_numer(0), parent_window_handle(nullptr){}
-       ~implement() 	{ if (event_size_handle)   API::umake_event(event_size_handle);	    }
+		window window_handle;
+		event_handle event_size_handle;
+		division * root_division;
+		std::map<std::string, field_impl*> fields;
 
-        void              collocate();
-		void              div(const char* s);
-        bool              bind     (window parent_widget);
-		division *        scan_div       (tokenizer&);
+		implement()
+			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
+		{}
 
-        /// Generate and registre in the set a new unique div name from the current layout
-        std::string   add_div_name  ()  
-        {
-            std::string name= std::to_string (div_numer++);
-            names.insert (name);
-            return name; 
-        }
-        bool          add_field_name(const std::string& n)  /// is unique? (registre it)
-        {
-            if (names.insert (n).second)
-                return true; 
-            else return false;//trow name repit;
-        }
-	};	      //struct implement
+		//The following functions are defined behind the definition of class division.
+		//because the class division here is an incomplete type.
+		~implement();
+		static division * search_div_name(division* start, const std::string&);
+		division * scan_div(tokenizer&);
+	};	//end struct implement
 
-    void division::populate_children(	implement*   place_impl_)
-    {
-        children.clear ();             /// .clear(); the children or it is empty allways ????
-        for (const auto &name : field_names)      /// for all the names in this div
-        {                             /// find in the place global list of fields all the fields attached to it
-            auto r= place_impl_->fields.equal_range(name);     
-            for (auto fi=r.first ; fi != r.second ; ++fi)      
-            {
-                children.push_back (fi->second.get () );       /// to form the div children
-                fi->second->populate_children (place_impl_);
-                if (gap) 
-                    children.push_back (gap.get() );
-            }
-            auto f= place_impl_->fastened.equal_range(name);
-            for (auto fi=f.first ; fi != f.second ; ++fi)
-                fastened_in_div.push_back (fi->second );
-        }
-    }  
 
-    void implement::collocate()
-	{
-		if(root_division && parent_window_handle)
-		{
-			rectangle r(API::window_size(this->parent_window_handle));  //debugg
-            //if(r.width && r.height ) 
-            {      
-               root_division->populate_children (this);
-               root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
-            }
-            //			                                //rectangle r; // debugg
-            //root_division->collocate(r/*=API::window_size(parent_window_handle)*/);
-            ////std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
-		}
-	}
+	place::field_t::~field_t(){}
 
-    class field_impl 		:	public field_t , public minmax
+	class place::implement::field_impl
+		:	public place::field_t
 	{
 	public:
-		std::string name;
-
-	private:
-		implement * place_impl_;
-	 public:
-		//typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
-
-         field_impl(implement * p, const std::string& name_):	place_impl_(p),   name(name_){}
-
-	  public:
-        IField * create_field(window    wd                                      )
-                                      {return new adj_widget     ( wd )                   ;}
-        IField * create_field(unsigned gap                                      )
-                                      {return new fixed_gap      ( gap )                  ;}
-        IField * create_field(window handle_,unsigned weight_                   )
-                                      {return new fixed_widget   ( handle_, weight_)      ;}
-        IField * create_field(window handle_,double   percent_                  )
-                                      {return new percent_widget( handle_, percent_)      ;}
-        IField * create_field(window handle_,unsigned rows_,unsigned columns_   )
-                                      {return new adj_room    ( handle_, rows_, columns_ );}
-	 private:
-         field_t& add(IField * fld)
+		struct element_t
 		{
-			fld->MinMax (*this);
-            place_impl_->fields.emplace(name,std::unique_ptr<IField>( fld));
-			_m_make_destroy(fld->window_handle());
-			return *this;
-		}
-
-        field_t& operator<<(const std::string&  txt)	override 
-        {   
-            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, nana::charset (txt)  ));
-            return add(create_field( *place_impl_->widgets.back () ));
-        };
-        field_t& operator<<(const std::wstring&  txt)	override 
-        {   
-            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, nana::charset (txt)  ));
-            return add(create_field( *place_impl_->widgets.back () ));
-        };
-        field_t& operator<<(minmax Size_range)	override { MinMax(Size_range) ;return *this;};
-        field_t& operator<<(IField * fld)       override {return add(fld);                  }
-        field_t& operator<<(window   wd)        override {return add(create_field(wd));		}
-		field_t& operator<<(unsigned gap)       override {return add(create_field(gap));    }
-		field_t& fasten(window wd)              override
-		{
-			place_impl_->fastened.emplace (name , wd); 
-
-			//Listen to destroy of a window. The deleting a fastened window
-			//does not change the layout.
-			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+			enum class kind
 			{
-				for (auto f=place_impl_->fastened.begin(); f!=place_impl_->fastened.end(); ++f)
-                    if (f->second ==  ei.window )
+				window, gap, fixed, percent, room
+			};
+
+			kind kind_of_element;
+			union
+			{
+				window handle;
+				unsigned gap_value;
+				fixed_t	*	fixed_ptr;
+				percent_t *	percent_ptr;
+				room_t	*	room_ptr;
+			}u;
+
+			element_t(window wd)
+				: kind_of_element(kind::window)
+			{
+				u.handle = wd;
+			}
+
+			element_t(unsigned gap)
+				: kind_of_element(kind::gap)
+			{
+				u.gap_value = gap;
+			}
+
+			element_t(const fixed_t& fixed)
+				: kind_of_element(kind::fixed)
+			{
+				u.fixed_ptr = new fixed_t(fixed);
+			}
+
+			element_t(const percent_t& per)
+				: kind_of_element(kind::percent)
+			{
+				u.percent_ptr = new percent_t(per);
+			}
+
+			element_t(const room_t& rm)
+				: kind_of_element(kind::room)
+			{
+				u.room_ptr = new room_t(rm);
+			}
+
+			element_t(const element_t& rhs)
+				: kind_of_element(rhs.kind_of_element)
+			{
+				switch(kind_of_element)
+				{
+				case kind::fixed:
+					u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+					break;
+				case kind::percent:
+					u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
+					break;
+				case kind::room:
+					u.room_ptr = new room_t(*rhs.u.room_ptr);
+					break;
+				default:
+					u = rhs.u;
+					break;
+				}
+			}
+
+			element_t& operator=(const element_t& rhs)
+			{
+			    if(this != &rhs)
+                {
+                    kind_of_element = rhs.kind_of_element;
+
+                    switch(kind_of_element)
                     {
-                        place_impl_->fastened.erase(f);    // delete ???
+                    case kind::fixed:
+                        u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+                        break;
+                    case kind::percent:
+                        u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
+                        break;
+                    case kind::room:
+                        u.room_ptr = new room_t(*rhs.u.room_ptr);
+                        break;
+                    default:
+                        u = rhs.u;
                         break;
                     }
-			});	
-			return *this;
-		}
-		field_t& operator<<(const fixed_widget& fx)    {return add(new fixed_widget(fx));	 }
-    	field_t& operator<<(const percent_widget& pcnt){return add(new percent_widget(pcnt));}
-		field_t& operator<<(const adj_room& r) 
-		{
-			adj_room x = r;
-			if(x.rows == 0)   //  sure ????
-				x.rows = 1;
-			if(x.columns == 0)
-				x.columns = 1;
-			return add(new adj_room(x));
-		}
- 
-        //Listen to destroy of a window
+                }
+                return *this;
+			}
+
+			element_t(element_t && rv)
+				: kind_of_element(rv.kind_of_element), u(rv.u)
+			{
+				switch(kind_of_element)
+				{
+				case kind::fixed:
+					rv.u.fixed_ptr = nullptr;
+					break;
+				case kind::percent:
+					rv.u.percent_ptr = nullptr;
+					break;
+				case kind::room:
+					rv.u.room_ptr = nullptr;
+				default:	break;
+				}
+			}
+
+			element_t& operator=(element_t && rv)
+			{
+                if(this != &rv)
+                {
+					u = rv.u;
+                    kind_of_element = rv.kind_of_element;
+                    switch(kind_of_element)
+                    {
+                    case kind::fixed:
+                        rv.u.fixed_ptr = nullptr;
+                        break;
+                    case kind::percent:
+                        rv.u.percent_ptr = nullptr;
+                        break;
+                    case kind::room:
+                        rv.u.room_ptr = nullptr;
+                    default:	break;
+                    }
+                }
+                return *this;
+			}
+
+			~element_t()
+			{
+				switch(kind_of_element)
+				{
+				case kind::fixed:
+					delete u.fixed_ptr;
+					break;
+				case kind::percent:
+					delete u.percent_ptr;
+					break;
+				case kind::room:
+					delete u.room_ptr;
+					break;
+				default:	break;
+				}
+			}
+
+			window window_handle() const
+			{
+				switch(kind_of_element)
+				{
+				case kind::window:
+					return u.handle;
+				case kind::fixed:
+					return u.fixed_ptr->first;
+				case kind::percent:
+					return u.percent_ptr->first;
+				case kind::room:
+					return u.room_ptr->first;
+				default:	break;
+				}
+				return nullptr;
+			}
+		};
+	public:
+		typedef std::vector<element_t>::const_iterator const_iterator;
+
+		field_impl(place * p)
+			:	attached(false),
+				place_ptr_(p)
+		{}
+	private:
+		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
 		void _m_make_destroy(window wd)
 		{
 			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
 			{
-				for (auto f=place_impl_->fields.begin(); f!=place_impl_->fields.end(); ++f)
-                    if (f->second->window_handle() ==  ei.window )
-                    {
-                        place_impl_->fields.erase(f);    // delete ???
-				        place_impl_->collocate();
-                        break;
-                    }
+				for(auto i = elements.begin(), end = elements.end(); i != end; ++i)
+				{
+					if(ei.window != i->window_handle())
+						continue;
+					elements.erase(i);
+					break;
+				}
+				place_ptr_->collocate();
 			});
 		}
+
+		field_t& operator<<(window wd) override
+		{
+			elements.emplace_back(wd);
+			_m_make_destroy(wd);
+			return *this;
+		}
+
+		field_t& operator<<(unsigned gap) override
+		{
+			elements.emplace_back(gap);
+			return *this;
+		}
+
+		field_t& operator<<(const fixed_t& fx) override
+		{
+			elements.emplace_back(fx);
+			_m_make_destroy(fx.first);
+			return *this;
+		}
+
+		field_t& operator<<(const percent_t& pcnt) override
+		{
+			elements.emplace_back(pcnt);
+			_m_make_destroy(pcnt.first);
+			return *this;
+		}
+
+		field_t& operator<<(const room_t& r) override
+		{
+			room_t x = r;
+			if(x.second.first == 0)
+				x.second.first = 1;
+			if(x.second.second == 0)
+				x.second.second = 1;
+			elements.emplace_back(x);
+			_m_make_destroy(r.first);
+			return *this;
+		}
+
+		field_t& fasten(window wd) override
+		{
+			fastened.push_back(wd);
+
+			//Listen to destroy of a window. The deleting a fastened window
+			//does not change the layout.
+			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+			{
+				for(auto i = fastened.begin(), end = fastened.end(); i != end; ++i)
+				{
+					if(ei.window != *i)
+						continue;
+					fastened.erase(i);
+					break;
+				}
+			});
+			return *this;
+		}
+	public:
+
+		//returns the number of fixed pixels and the number of adjustable items
+		std::pair<unsigned, std::size_t> fixed_and_adjustable() const
+		{
+			std::pair<unsigned, std::size_t> vpair;
+			for(auto & e : elements)
+			{
+				switch(e.kind_of_element)
+				{
+				case element_t::kind::fixed:
+					vpair.first += e.u.fixed_ptr->second;
+					break;
+				case element_t::kind::gap:
+					vpair.first += e.u.gap_value;
+					break;
+				case element_t::kind::percent:	//the percent is not fixed and not adjustable.
+					break;
+				default:
+					++vpair.second;
+				}
+			}
+			return vpair;
+		}
+
+		unsigned percent_pixels(unsigned pixels) const
+		{
+			double perpx = 0;
+			for(auto & e : elements)
+			{
+				if(element_t::kind::percent == e.kind_of_element)
+					perpx += pixels * (e.u.percent_ptr->second / 100.0);
+			}
+			return static_cast<unsigned>(perpx);
+		}
+	public:
+		bool attached;
+		std::vector<element_t> elements;
+		std::vector<window>	fastened;
+	private:
+		place * place_ptr_;
 	};//end class field_impl
 
-	division* implement::scan_div(tokenizer& tknizer)
+	class place::implement::division
+	{
+	public:
+		enum class kind{arrange, vertical_arrange, grid};
+
+		division(kind k, std::string&& n)
+			: kind_of_division(k), name(std::move(n)), field(nullptr)
+		{}
+
+		virtual ~division()
+		{
+			//detach the field
+			if(field)
+				field->attached = false;
+
+			for(auto p : children)
+			{
+				delete p;
+			}
+		}
+
+		bool is_fixed() const
+		{
+			return ((weight.kind_of() == number_t::kind::integer) && (weight.integer() != 0));
+		}
+
+		bool is_percent() const
+		{
+			return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
+		}
+
+		//return the fixed pixels and adjustable items.
+		std::pair<unsigned, std::size_t> fixed_pixels(kind match_kind) const
+		{
+			std::pair<unsigned, std::size_t> pair;
+			if(field && (kind_of_division == match_kind))
+				pair = field->fixed_and_adjustable();
+
+			for(auto child : children)
+			{
+				if(false == child->is_fixed()) //it is adjustable
+				{
+					if(false == child->is_percent())
+						++pair.second;
+				}
+				else
+					pair.first += static_cast<unsigned>(child->weight.integer());
+			}
+			return pair;
+		}
+
+		virtual void collocate() = 0;
+
+	public:
+		kind kind_of_division;
+		const std::string name;
+		std::vector<division*> children;
+		nana::rectangle area;
+		number_t weight;
+		number_t gap;
+		field_impl * field;
+	};
+
+
+	/// Horizontal
+	class place::implement::div_arrange
+		: public division
+	{
+	public:
+		div_arrange(std::string&& name)
+			: division(kind::arrange, std::move(name))
+		{}
+
+		virtual void collocate()
+		{
+			auto pair = fixed_pixels(kind::arrange);				/// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields
+			if(field)												/// Have this div fields? (A pointer to fields in this div)
+				pair.first += field->percent_pixels(area.width);	/// Yes: Calcule summe of width ocupated by each percent-field in this div
+
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
+
+			double percent_pixels = 0;
+			for(auto child: children)	/// For each child div: summe of width of each percent-div 
+			{
+				if(child->is_percent())
+					percent_pixels += area.width * child->weight.real();
+			}
+
+			pair.first += static_cast<unsigned>(percent_pixels);	/// Calcule width ocupate by all percent fields and div in this div.
+			double adjustable_pixels = (pair.second && pair.first < area.width ? (double(area.width - pair.first) / pair.second) : 0.0);
+
+			double left = area.x;
+			for(auto child : children)					/// First collocate child div's !!!
+			{
+				child->area.x = static_cast<int>(left);	/// begening from the left, assing left x
+				child->area.y = area.y;
+				child->area.height = area.height;
+
+				double adj_px;							/// and calcule width of this div.
+
+				if(child->is_fixed())					/// with is fixed for fixed div 
+					adj_px = child->weight.integer();
+				else if(child->is_percent())			/// and calculated for others: if the child div is percent - simple take it full
+					adj_px = static_cast<unsigned>(area.width * child->weight.real());
+				else
+				{
+					adj_px = child->fixed_pixels(kind::arrange).first;	/// if child div is floating (no fixed and no percent) 
+					if(adj_px <= adjustable_pixels)						/// take it width only if it fit into the free place of this div.
+						adj_px = adjustable_pixels;
+				}
+
+				left += adj_px;
+				child->area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
+				child->collocate();	/// The child div have full position. Now we can collocate  inside it the child fields and child-div. 
+			}
+
+			if(field)
+			{
+				unsigned adj_px = static_cast<unsigned>(adjustable_pixels) - (static_cast<unsigned>(adjustable_pixels) > gap_size ? gap_size : 0);
+				nana::rectangle r = area;
+				for(auto & el : field->elements)
+				{
+					r.x = static_cast<int>(left);
+					typedef field_impl::element_t::kind ekind;
+					switch(el.kind_of_element)
+					{
+					case ekind::fixed:
+						r.width = el.u.fixed_ptr->second;
+						API::move_window(el.u.fixed_ptr->first, r.x, r.y, r.width, r.height);
+						left += r.width;
+						break;
+					case ekind::gap:
+						left += el.u.gap_value;
+						break;
+					case ekind::percent:
+						r.width = area.width * el.u.percent_ptr->second / 100;
+						API::move_window(el.u.percent_ptr->first, r.x, r.y, r.width, r.height);
+						left += r.width;
+						break;
+					case ekind::window:
+						API::move_window(el.u.handle, r.x, r.y, adj_px, r.height);
+						left += adjustable_pixels;
+						break;
+					case ekind::room:
+						API::move_window(el.u.room_ptr->first, r.x, r.y, adj_px, r.height);
+						left += adjustable_pixels;
+						break;
+					}
+				}
+
+				for(auto & fsn: field->fastened)
+				{
+					API::move_window(fsn, area.x, area.y, area.width, area.height);
+				}
+			}
+		}
+	};//end class div_arrange
+
+	class place::implement::div_vertical_arrange
+		: public division
+	{
+	public:
+		div_vertical_arrange(std::string&& name)
+			: division(kind::vertical_arrange, std::move(name))
+		{}
+
+		virtual void collocate()
+		{
+			auto pair = fixed_pixels(kind::vertical_arrange);		/// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields
+			if(field)												/// Have this div fields? (A pointer to fields in this div) 
+				pair.first += field->percent_pixels(area.height);	/// Yes: Calcule summe of height ocupated by each percent-field in this div
+
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.height * gap.real());
+
+			double percent_pixels = 0;
+			for(auto child: children)
+			{
+				if(child->is_percent())
+					percent_pixels += area.height * child->weight.real();
+			}
+
+			pair.first += static_cast<unsigned>(percent_pixels);
+			double adjustable_pixels = (pair.second && pair.first < area.height ? (double(area.height - pair.first) / pair.second) : 0.0);
+
+
+			double top = area.y;
+			for(auto child : children)
+			{
+				child->area.x = area.x;
+				child->area.y = static_cast<int>(top);
+				child->area.width = area.width;
+
+				double adj_px;
+				if(false == child->is_fixed()) //the child is adjustable
+				{
+					if(false == child->is_percent())
+					{
+						adj_px = child->fixed_pixels(kind::vertical_arrange).first;
+						if(adj_px <= adjustable_pixels)
+							adj_px = adjustable_pixels;
+					}
+					else
+						adj_px = area.height * child->weight.real();
+				}
+				else
+					adj_px = child->weight.integer();
+
+				top += adj_px;
+				child->area.height = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
+				child->collocate();
+			}
+
+			if(field)
+			{
+				unsigned adj_px = static_cast<unsigned>(adjustable_pixels) - (static_cast<unsigned>(adjustable_pixels) > gap_size ? gap_size : 0);
+				nana::rectangle r = area;
+				for(auto & el : field->elements)
+				{
+					r.y = static_cast<int>(top);
+					typedef field_impl::element_t::kind ekind;
+					switch(el.kind_of_element)
+					{
+					case ekind::fixed:
+						r.height = el.u.fixed_ptr->second;
+						API::move_window(el.u.fixed_ptr->first, r.x, r.y, r.width, r.height);
+						top += r.height;
+						break;
+					case ekind::gap:
+						top += el.u.gap_value;
+						break;
+					case ekind::percent:
+						r.height = area.height * el.u.percent_ptr->second / 100;
+						API::move_window(el.u.percent_ptr->first, r.x, r.y, r.width, r.height);
+						top += r.height;
+						break;
+					case ekind::window:
+						API::move_window(el.u.handle, r.x, r.y, r.width, adj_px);
+						top += adjustable_pixels;
+						break;
+					case ekind::room:
+						API::move_window(el.u.room_ptr->first, r.x, r.y, r.width, adj_px);
+						top += adjustable_pixels;
+						break;
+					}
+				}
+
+				for(auto & fsn: field->fastened)
+				{
+					API::move_window(fsn, area.x, area.y, area.width, area.height);
+				}
+			}
+		}
+	};//end class div_vertical_arrange
+
+	class place::implement::div_grid
+		: public division
+	{
+	public:
+		div_grid(std::string&& name)
+			: division(kind::grid, std::move(name))
+		{
+			dimension.first = dimension.second = 0;
+		}
+
+		virtual void collocate()
+		{
+			if(nullptr == field)
+				return;
+
+			unsigned gap_size = (gap.kind_of() == number_t::kind::percent ?
+				static_cast<unsigned>(area.width * gap.real()) : static_cast<unsigned>(gap.integer()));
+
+			if(dimension.first <= 1 && dimension.second <= 1)
+			{
+				std::size_t n_of_wd = _m_number_of_window();
+
+				std::size_t edge;
+				switch(n_of_wd)
+				{
+				case 0:
+				case 1:
+					edge = 1;	break;
+				case 2: case 3: case 4:
+					edge = 2;	break;
+				default:
+					edge = static_cast<std::size_t>(std::sqrt(n_of_wd));
+					if((edge * edge) < n_of_wd) ++edge;
+				}
+
+				bool exit_for = false;
+				double y = area.y;
+				double block_w = area.width / double(edge);
+				double block_h = area.height / double((n_of_wd / edge) + (n_of_wd % edge ? 1 : 0));
+				unsigned uns_block_w = static_cast<unsigned>(block_w);
+				unsigned uns_block_h = static_cast<unsigned>(block_h);
+				unsigned height = (uns_block_h > gap_size ? uns_block_h - gap_size : uns_block_h);
+
+				auto i = field->elements.cbegin(), end = field->elements.cend();
+
+				for(std::size_t u = 0; u < edge; ++u)
+				{
+					double x = area.x;
+					for(std::size_t v = 0; v < edge; ++v)
+					{
+						i = _m_search(i, end);
+						if(i == end)
+						{
+							exit_for = true;
+							break;
+						}
+
+						window wd = nullptr;
+						unsigned value = 0;
+						typedef field_impl::element_t::kind ekind;
+						switch(i->kind_of_element)
+						{
+						case ekind::fixed:
+							wd = i->u.fixed_ptr->first;
+							value = i->u.fixed_ptr->second;
+							break;
+						case ekind::percent:
+							wd = i->u.percent_ptr->first;
+							value = i->u.percent_ptr->second * area.width / 100;
+							break;
+						case ekind::window:
+							wd = i->u.handle;
+							value = static_cast<unsigned>(block_w);
+							break;
+						default:	break;
+						}
+						++i;
+
+						unsigned width = (value > uns_block_w ? uns_block_w : value);
+						if(width > gap_size)	width -= gap_size;
+						API::move_window(wd, static_cast<int>(x), static_cast<int>(y), width, height);
+						x += block_w;
+					}
+					if(exit_for) break;
+					y += block_h;
+				}
+			}
+			else
+			{
+				double block_w = area.width / double(dimension.first);
+				double block_h = area.height / double(dimension.second);
+
+				std::unique_ptr<char[]> table_ptr(new char[dimension.first * dimension.second]);
+
+				char *table = table_ptr.get();
+				std::memset(table, 0, dimension.first * dimension.second);
+
+				std::size_t lbp = 0;
+				bool exit_for = false;
+
+				auto i = field->elements.cbegin(), end = field->elements.cend();
+
+				for(std::size_t c = 0; c < dimension.second; ++c)
+				{
+					for(std::size_t l = 0; l < dimension.first; ++l)
+					{
+						if(table[l + lbp])
+							continue;
+
+						i = _m_search(i, end);
+						if(i == end)
+						{
+							exit_for = true;
+							break;
+						}
+
+						typedef field_impl::element_t::kind ekind;
+						std::pair<unsigned, unsigned> room(1, 1);
+
+						if(i->kind_of_element == ekind::room)
+						{
+							room = i->u.room_ptr->second;
+							if(room.first > dimension.first - l)
+								room.first = dimension.first - l;
+							if(room.second > dimension.second - c)
+								room.second = dimension.second - c;
+						}
+
+						window wd = nullptr;
+						switch(i->kind_of_element)
+						{
+						case ekind::fixed:
+							wd = i->u.fixed_ptr->first;
+							break;
+						case ekind::percent:
+							wd = i->u.percent_ptr->first;
+							break;
+						case ekind::window:
+							wd = i->u.handle;
+							break;
+						default:	break;
+						}
+
+						int pos_x = area.x + static_cast<int>(l * block_w);
+						int pos_y = area.y + static_cast<int>(c * block_h);
+						if(room.first <= 1 && room.second <= 1)
+						{
+							unsigned width = static_cast<unsigned>(block_w), height = static_cast<unsigned>(block_h);
+							if(width > gap_size)	width -= gap_size;
+							if(height > gap_size)	height -= gap_size;
+
+							API::move_window(wd, pos_x, pos_y, width, height);
+							table[l + lbp] = 1;
+						}
+						else
+						{
+							unsigned width = static_cast<unsigned>(block_w * room.first), height = static_cast<unsigned>(block_h * room.second);
+							if(width > gap_size)	width -= gap_size;
+							if(height > gap_size)	height -= gap_size;
+
+							API::move_window(i->u.room_ptr->first, pos_x, pos_y, width, height);
+
+							for(std::size_t y = 0; y < room.second; ++y)
+								for(std::size_t x = 0; x < room.first; ++x)
+								{
+									table[l + x + lbp + y * dimension.first] = 1;
+								}
+						}
+						++i;
+					}
+
+					if(exit_for)
+						break;
+
+					lbp += dimension.first;
+				}
+			}
+
+			for(auto & fsn: field->fastened)
+			{
+				API::move_window(fsn, area.x, area.y, area.width, area.height);
+			}
+		}
+	private:
+		static field_impl::const_iterator _m_search(field_impl::const_iterator i, field_impl::const_iterator end)
+		{
+			if(i == end) return end;
+
+			while(i->kind_of_element == field_impl::element_t::kind::gap)
+			{
+				if(++i == end) return end;
+			}
+			return i;
+		}
+
+		std::size_t _m_number_of_window() const
+		{
+			if(nullptr == field) return 0;
+
+			std::size_t n = 0;
+			for(auto & el : field->elements)
+			{
+				if(field_impl::element_t::kind::gap != el.kind_of_element)
+					++n;
+			}
+			return n;
+		}
+	public:
+		std::pair<unsigned, unsigned> dimension;
+	};//end class div_grid
+
+	place::implement::~implement()
+	{
+		API::umake_event(event_size_handle);
+		delete root_division;
+		for(auto & pair : fields)
+		{
+			delete pair.second;
+		}
+	}
+
+	//search_div_name
+	//search a division with the specified name.
+	place::implement::division * place::implement::search_div_name(division* start, const std::string& name)
+	{
+		if(nullptr == start) return nullptr;
+
+		if(start->name == name) return start;
+
+		for(auto child : start->children)
+		{
+			division * div = search_div_name(child, name);
+			if(div)
+				return div;
+		}
+		return nullptr;
+	}
+
+	place::implement::division* place::implement::scan_div(tokenizer& tknizer)
 	{
 		typedef tokenizer::token token;
 
-		token       div_type = token::eof;
-		number_t    weight , gap;
-        bool        have_gap=false, have_weight=false;
-        minmax      w; 
-        std::string gr_name;
- 
-        std::vector<number_t>    array;
-		std::vector<std::string> field_names_in_div;
- 
-        for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
+		division * div = nullptr;
+		token div_type = token::eof;
+		std::string name;
+
+		number_t weight;
+		number_t gap;
+		std::vector<number_t> array;
+
+		std::vector<division*> children;
+		for(token tk = tknizer.read(); tk != token::eof; tk = tknizer.read())
 		{
+			bool exit_for = false;
 			switch(tk)
 			{
-			    case token::div_start:	    
-                    {
-                       std::string div_name(add_div_name ());
-                       fields.emplace(div_name,std::unique_ptr<IField>(scan_div(tknizer)));
-                       field_names_in_div.push_back(div_name);				    break;
-                                                                               
-                    }
-			    case token::array:		    tknizer.array().swap(array);   		break;
-			    case token::identifier:		
-                {
-                    std::string field_name(tknizer.idstr());
-                    if (add_field_name (field_name))
-                       field_names_in_div.push_back(field_name );			    
-                    else ;     /* trow repeated name in layout !!!!!!! */       break;	     
-                }
-			    case token::horizontal:
-			    case token::vertical:    	div_type = tk;		   		        break;
-			    case token::grid:			
-                    div_type = tk;
-                    gr_name=field_names_in_div.back();                          break;
+			case token::div_start:
+				children.push_back(scan_div(tknizer));
+				break;
+			case token::vertical:
+			case token::grid:
+				div_type = tk;
+				break;
+			case token::array:
+				tknizer.array().swap(array);
+				break;
+			case token::weight:
+				weight = tknizer.number();
+				//If the weight is type of real, convert it to integer.
+				//the integer and percent are allowed for weight.
+				if(weight.kind_of() == number_t::kind::real)
+					weight.assign(static_cast<int>(weight.real()));
+				break;
+			case token::gap:
+				gap = tknizer.number();
+				//If the gap is type of real, convert it to integer.
+				//the integer and percent are allowed for gap.
+				if(gap.kind_of() == number_t::kind::real)
+					gap.assign(static_cast<int>(gap.real()));
+				break;
+			case token::div_end:
+				exit_for = true;
+				break;
+			case token::identifier:
+				name = tknizer.idstr();
+				break;
+			default:	break;
+			}
+			if(exit_for)
+				break;
+		}
 
-			    case token::weight:	weight = tknizer.number();have_weight=true; break;
-			    case token::gap:	   gap = tknizer.number();have_gap=true;    break;
-			    case token::min:		    
-                    {
-                        if(tknizer.number().kind_of() != number_t::kind::percent   )
-					        w.min = tknizer.number().integer();                                
-                         /*else trow no min percent possible */                 break;
-                    }
-			    case token::max:		    
-                    {
-                        if(tknizer.number().kind_of() != number_t::kind::percent   )
-					        w.max = tknizer.number().integer();                                
-                         /*else trow no max percent possible */                 break;
-                    }
-			    default:	break;
+		field_impl * field = nullptr;
+		if(name.size())
+		{
+			//find the field with specified name.
+			//the field may not be created.
+			auto i = fields.find(name);
+			if(fields.end() != i)
+			{
+				field = i->second;
+
+				//the field is attached to a division, it means there is another division with same name.
+				if(field->attached)
+					throw std::runtime_error("place, the name \'"+ name +"\' is redefined.");
+
+				//this field will be attached to the division that will be created later.
+				field->attached = true;
 			}
 		}
-        division *div;
-		unsigned rows=1, columns=1;		
 
-        if (div_type == token::grid)
+		switch(div_type)
 		{
-			if(array.size())
+		case token::eof:
+			div = new div_arrange(std::move(name));
+			break;
+		case token::vertical:
+			div = new div_vertical_arrange(std::move(name));
+			break;
+		case token::grid:
 			{
-				if(array[0].kind_of() != number_t::kind::percent)
-					columns = array[0].integer();
-                if(array.size() > 1)
-			    {
-				    if(array[1].kind_of() != number_t::kind::percent)
-					    rows = array[1].integer();
-			    }
+				div_grid * p = new div_grid(std::move(name));
+
+				if(array.size())
+				{
+					if(array[0].kind_of() != number_t::kind::percent)
+						p->dimension.first = array[0].integer();
+				}
+
+				if(array.size() > 1)
+				{
+					if(array[1].kind_of() != number_t::kind::percent)
+						p->dimension.second = array[1].integer();
+				}
+
+				if(0 == p->dimension.first)
+					p->dimension.first = 1;
+
+				if(0 == p->dimension.second)
+					p->dimension.second = 1;
+
+				div = p;
 			}
-			if( ! rows )    				rows    = 1;
-			if( ! columns )			  	    columns = 1;
-            if(gr_name.empty())             gr_name =field_names_in_div.back();  
-		} 
-        if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
-        {
-            double perc=weight.real ();
-            switch(div_type)
-            {
-                case token::eof:
-		        case token::horizontal:		div = new percent_div_h(perc,w.min,w.max);			     break;
-		        case token::vertical:		div = new percent_div_v(perc,w.min,w.max);			     break;
-                case token::grid:  div = new percent_div_grid(gr_name,perc,rows,columns,w.min,w.max);break;
-                default:
-                    throw std::runtime_error("nana.place: invalid division type.");
-		    }
-        } else 
-            {   unsigned fixed=weight.integer();
-                if (fixed)
-                    switch(div_type)
-                    {
-                        case token::eof:
-		                case token::horizontal:		div = new fixed_div_h(fixed,w.min,w.max);		break;
-		                case token::vertical:		div = new fixed_div_v(fixed,w.min,w.max);		break;
-                        case token::grid:           div = new fixed_div_grid(gr_name,fixed,
-                                                             rows,columns,   w.min,w.max);          break;
-                        default:
-                            throw std::runtime_error("nana.place: invalid division type.");
-		            }
-                else
-                    switch(div_type)
-                    {
-                        case token::eof:
-		                case token::horizontal:			div = new adj_div_h(w.min,w.max);			break;
-		                case token::vertical:			div = new adj_div_v(w.min,w.max);			break;
-                        case token::grid:               div = new adj_div_grid(gr_name,
-                                                             rows,columns,   w.min,w.max);          break;
-                        default:
-                            throw std::runtime_error("nana.place: invalid division type.");
-		            }
-        }
-        if (have_gap)
-        {
-            if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
-                div->gap.reset (new percent_gap(gap.real ()) );
-		    else 
-                if (gap.integer())          div->gap.reset (new fixed_gap(gap.integer()) );
-                else                        div->gap.reset (new adj_gap  () );
-        }
-		div->field_names.swap(field_names_in_div);
+			break;
+        default:
+            throw std::runtime_error("nana.place: invalid division type.");
+		}
+
+		div->weight = weight;
+		div->gap = gap;
+		div->field = field;		//attach the field to the division
+		div->children.swap(children);
 		return div;
-	} // scan_div
-
-    void implement::div(const char* s)
-    {
-        names.clear ();
-        while(div_numer)
-                fields.erase (std::to_string (--div_numer));
-
-		tokenizer tknizer(s);
-        root_division.reset();
-		root_division.reset( scan_div(tknizer));
-    }
-
-} // namespace place_impl
-
-	place::place(window wd)	: impl_(new implement)   {bind(wd);}
-	place::place()		    : impl_(new implement)	 {         }
-	place::~place()		{			delete impl_;		}
-    void        place::div      (const char* s)	{   impl_->div(s); 	    }
-	void        place::collocate(         ) 	{	impl_->collocate();	}
-	place::field_reference place::field  (const char* name)
-	{
-		name = name ? name : "";
-        impl_->temp_field_t.reset (new place_impl::field_impl(this->impl_,name)); 
-        return  *impl_->temp_field_t.get();
 	}
-	IField*         place::fixed  (window wd, unsigned size)
-	{
-		return new place_impl::fixed_widget(wd, size);
-	}
-	IField*         place::percent(window wd, double per, minmax w)
-	{
-		return new place_impl::percent_widget(wd, per, w.min ,w.max );
-	}
-	IField*         place::room   (window wd, unsigned width, unsigned height)
-	{
-		return new place_impl::adj_room(wd, height, width);
-	}
-    place::minmax::minmax (unsigned Min, unsigned Max) : min(Min), max(Max){}
-    place::field_t::~field_t(){}
 
-	void place::bind(window wd)
-	{
-		if( impl_->bind(wd))
-			throw std::runtime_error("place.bind: it has already binded to a window.");
-    }
-    bool implement::bind (window wd) 
-    {
-		if (parent_window_handle) return true; 
-        parent_window_handle = wd;
-     		//  rectangle r;  //debugg
-            //  r=API::window_size(this->parent_window_handle);  //debugg
-            //  std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
+	//class place
 
-        event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
+
+		place::place()
+			: impl_(new implement)
+		{}
+
+		place::place(window wd)
+			: impl_(new implement)
 		{
-            //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
-            //         <<ei.window <<" ]) ";  //debug
-			
-            if(this->root_division)
-            {
-				rectangle r(API::window_size(this->parent_window_handle));  //debugg
-                //if(r.width && r.height ) 
-                   this->root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
-                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
-            }
-		});
-        return false;
-	}
+			bind(wd);
+		}
+
+		place::~place()
+		{
+			delete impl_;
+		}
+
+		void place::bind(window wd)
+		{
+			if(impl_->window_handle)
+				throw std::runtime_error("place.bind: it has already binded to a window.");
+
+			impl_->window_handle = wd;
+			impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
+				{
+					if(impl_->root_division)
+					{
+						impl_->root_division->area = API::window_size(ei.window);
+						impl_->root_division->collocate();
+					}
+				});
+		}
+
+		void place::div(const char* s)
+		{
+			delete impl_->root_division;
+			impl_->root_division = nullptr;
+
+			tokenizer tknizer(s);
+			impl_->root_division = impl_->scan_div(tknizer);
+		}
+
+		place::fixed_t place::fixed(window wd, unsigned size)
+		{
+			return fixed_t(wd, size);
+		}
+
+		place::percent_t place::percent(window wd, int per)
+		{
+			return percent_t(wd, per);
+		}
+
+		place::room_t place::room(window wd, unsigned w, unsigned h)
+		{
+			return room_t(wd, std::pair<unsigned, unsigned>(w, h));
+		}
+
+		place::field_reference place::field(const char* name)
+		{
+			name = name ? name : "";
+
+			//get the field with specified name, if no such field with specified name
+			//then create one.
+			auto & p = impl_->fields[name];
+			if(nullptr == p)
+				p = new implement::field_impl(this);
+
+			if((false == p->attached) && impl_->root_division)
+			{
+				//search the division with the specified name,
+				//and attached the division to the field
+				implement::division * div = implement::search_div_name(impl_->root_division, name);
+				if(div)
+				{
+					if(div->field && (div->field != p))
+						throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
+
+					div->field = p;
+					p->attached = true;
+				}
+			}
+			return *p;
+		}
+
+		void place::collocate()
+		{
+			if(impl_->root_division && impl_->window_handle)
+			{
+				impl_->root_division->area = API::window_size(impl_->window_handle);
+				impl_->root_division->collocate();
+
+				for(auto & field : impl_->fields)
+				{
+					bool is_show = field.second->attached;
+					if(is_show)
+						is_show = (nullptr != implement::search_div_name(impl_->root_division, field.first));
+
+					for(auto & el : field.second->elements)
+						API::show_window(el.window_handle(), is_show);
+				}
+			}
+		}
+	//end class place
 
 }//end namespace gui
 }//end namespace nana
-

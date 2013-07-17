@@ -13,69 +13,51 @@
 #define NANA_GUI_PLACE_HPP
 #include <utility>
 #include <nana/gui/basis.hpp>
-#include <limits>
-#include <nana\gui\programming_interface.hpp>
 
-
-namespace nana {namespace gui
+namespace nana
 {
-	namespace place_impl
-    {
-        struct IField ;
-        struct implement;
-    }
-    using  place_impl::IField ;
-    using  place_impl::implement ;
-
-    class place		: nana::noncopyable
+namespace gui
+{
+	class place
+		: nana::noncopyable
 	{
-	  public:
-        struct minmax
-        {
-            minmax(unsigned Min=MIN, unsigned Max=MAX);
-            unsigned min,max /*, Min(), Max()*/;
-            void     MinMax      (minmax Size_Range) 
-                {
-                    min=Size_Range.min; 
-                    max=Size_Range.max;
-                };
-            void     MinMax      (unsigned min_,unsigned max_=MAX) {min=min_; max=max_;} 
-            minmax   MinMax      (                 )  { return *this;};
-            static const unsigned MIN=0,MAX=1000000;
-        };
-		struct field_t
+		typedef std::pair<window, unsigned>	fixed_t;
+		typedef std::pair<window, int>	percent_t;
+		typedef std::pair<window, std::pair<unsigned, unsigned> > room_t;
+
+		struct implement;
+
+		class field_t
 		{
-			virtual field_t& operator<<(minmax              Size_range)	= 0;
-            virtual field_t& operator<<(IField *            fld)		= 0;
-            virtual field_t& operator<<(const std::wstring& txt)		= 0;
-            virtual field_t& operator<<(const std::string&  txt)		= 0;
-			virtual field_t& operator<<(window              wd)		= 0;    
-			virtual field_t& operator<<(unsigned            gap)  	= 0;
-			virtual field_t& fasten(window wd)	    = 0;
-			virtual ~field_t()                      = 0;
+		public:
+			virtual ~field_t() = 0;
+			virtual field_t& operator<<(window wd)		= 0;
+			virtual field_t& operator<<(unsigned gap)	= 0;
+			virtual field_t& operator<<(const fixed_t& f)	= 0;
+			virtual field_t& operator<<(const percent_t& p)	= 0;
+			virtual field_t& operator<<(const room_t& r)	= 0;
+			virtual field_t& fasten(window wd)	= 0;
 		};
+	public:
+		typedef field_t & field_reference;
 
-		typedef field_t &             field_reference;
+		place();
+		place(window);
+		~place();
 
-		 place(window parent_widget);
-		 place();
 		/** @brief Bind to a window
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
-		void               bind     (window parent_widget);
-		~place();
+		void bind(window handle);
+		void div(const char* s);
+		field_reference field(const char* name);
+		void collocate();
 
-		void               div      (const char* layout);
-		void               collocate();
-		field_reference    field   (const char* name);    /// TODO: Add min and max
-
-		static IField*     fixed   (window wd, unsigned size         );
-		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
-		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
-
-	  private:
+		static fixed_t fixed(window wd, unsigned size);
+		static percent_t percent(window wd, int per);
+		static room_t room(window wd, unsigned w, unsigned h);
+	private:
 		implement * impl_;
 	};
 }//end namespace gui

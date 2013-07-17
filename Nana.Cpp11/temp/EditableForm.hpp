@@ -3,7 +3,7 @@
 
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/widgets/menubar.hpp>
-#include <nana/gui/place.hpp>
+#include <../temp/vplace.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 
 //#include <../temp/CompoWidget.hpp>
@@ -71,7 +71,7 @@ class EditableWidget: public EnablingEditing
 	nana::string		_Titel;   //  ????
     std::string         _myLayout, _DefLayout;
     nana::string        _DefLayoutFileName;	
-    nana::gui::place	_place;
+    nana::gui::vplace	_place;
 
     std::vector<std::function<void(void)>> _validate, _validated;
     bool changed, validated;
