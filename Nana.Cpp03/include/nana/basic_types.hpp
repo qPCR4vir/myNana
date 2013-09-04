@@ -2,8 +2,8 @@
  *	Basic Types definition
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.hpp
@@ -55,7 +55,7 @@ namespace nana
 			const char_type * end = s + n;
 			while((s != end) && (std::toupper(*s) != ua))
 				++s;
-			return (s == end ? nullptr : s);
+			return (s == end ? 0 : s);
 		}
 	};
 
@@ -117,6 +117,8 @@ namespace nana
 	{
 		point();
 		point(int x, int y);
+		point(const rectangle&);
+
 		bool operator==(const point&) const;
 		bool operator!=(const point&) const;
 		bool operator<(const point&) const;
@@ -150,6 +152,7 @@ namespace nana
 	{
 		size();
 		size(unsigned width, unsigned height);
+		size(const rectangle&);
 
 		bool is_zero() const;
 		bool operator==(const size& rhs) const;
