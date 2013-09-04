@@ -640,7 +640,10 @@ namespace vplace_impl
 		void _m_throw_error(const std::string& err)
 		{
 			std::stringstream ss;
-			ss<<"place: "<<err<<" at "<<static_cast<unsigned>(sp_ - divstr_);
+			ss  <<"NANA::vplace layout syntax error:\n\t"      <<  err 
+                <<" at "<<static_cast<unsigned>(sp_ - divstr_) 
+                <<" of:\n" << divstr_ ;
+            std::cerr<< ss.str();
 			throw std::runtime_error(ss.str());
 		}
 
