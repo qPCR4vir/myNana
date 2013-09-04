@@ -748,7 +748,7 @@ namespace vplace_impl
 	};	      //struct implement
 
     void division::populate_children(	implement*   place_impl_)
-    {
+    {   fastened_in_div.clear ();
         children.clear ();             /// .clear(); the children or it is empty allways ????
         for (const auto &name : field_names)      /// for all the names in this div
         {                             /// find in the place global list of fields all the fields attached to it
@@ -816,14 +816,29 @@ namespace vplace_impl
 
         field_t& operator<<(const std::string&  txt)	override 
         {   
-            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, nana::charset (txt)  ));
-            return add(create_field( *place_impl_->widgets.back () ));
+            return add_label( nana::charset (txt)  );
         };
         field_t& operator<<(const std::wstring&  txt)	override 
         {   
-            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, nana::charset (txt)  ));
-            return add(create_field( *place_impl_->widgets.back () ));
+            return add_label( nana::charset (txt)  );
         };
+        field_t&  add_label(const nana::string& txt )
+        {            
+            //std::unique_ptr <nana::gui::label> lab(new nana::gui::label(place_impl_->parent_window_handle, txt  ));
+            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, txt  ));
+            add(create_field( *place_impl_->widgets.back () ));
+			API::make_event<events::destroy>(*place_impl_->widgets.back (), [this](const eventinfo& ei)
+			{
+				for (auto f=place_impl_->widgets.begin(); f!=place_impl_->widgets.end(); ++f)
+                    if (f->get()->handle() ==  ei.window )
+                    {
+                        place_impl_->widgets.erase(f);    // delete ???
+				        place_impl_->collocate();
+                        break;
+                    }
+			});
+			return *this;
+        }
         field_t& operator<<(minmax Size_range)	override { MinMax(Size_range) ;return *this;};
         field_t& operator<<(IField * fld)       override {return add(fld);                  }
         field_t& operator<<(window   wd)        override {return add(create_field(wd));		}
