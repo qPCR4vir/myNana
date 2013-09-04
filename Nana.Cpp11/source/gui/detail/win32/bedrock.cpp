@@ -17,6 +17,7 @@
 #include <nana/system/platform.hpp>
 #include <sstream>
 #include <nana/system/timepiece.hpp>
+#include <nana/gui/wvl.hpp>
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL	0x020A
@@ -419,6 +420,15 @@ namespace detail
 				while(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE));
 			}
 		}
+        catch(std::exception& e)
+        {
+             (msgbox(modal_window, STR("std::exception have been trow during message pumping: ")) /*.icon(msgbox::icon_information)*/
+                                 <<STR("\n   in windows: ") << API::window_caption(modal_window)
+                                 <<STR("\n   exception : ") << e.what() 
+             ).show();
+
+        }
+
 		catch(...)
 		{
 			internal_scope_guard isg;
