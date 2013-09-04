@@ -287,6 +287,8 @@ protected:
         CUnit("cm"      , .1    , "dm"                  );
         CUnit("mm"      , .1    , "cm"                  );
         CUnit("rad"     , 1     , "m/m"    , "angle"    );
+        CUnit("x"       , 1     , ""    , "fraction"    );
+        CUnit("x"       , 100   , "%"                   );
         CUnit("sr"      , 1     , "m2/m2"  , "solidangle");
         CUnit("Hz"      , 1     , "s-1"    , "frequency");
         CUnit("N"       , 1     , "kg*m*s-2", "force"   );
