@@ -25,15 +25,24 @@ FilePickBox::FilePickBox (nana::gui::widget &fm,
     SelectClickableWidget( _label);
 }
     void FilePickBox::SetDefLayout       () 
+    {
+       SetDefLayout       (49); 
+    }
+
+    void FilePickBox::SetDefLayout       (unsigned lab) 
 {
-    _DefLayout= 
+    std::stringstream lay;
+    lay<<
         "vertical   <weight=1>    \n"
-        "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
+        "           <weight=20 <weight=3><   vertical weight="<<lab<<" <><label weight=15><>     ><weight=1>     \n"
         "					   <cbFL >       \n"
         "					   <pick weight=30>  \n"
         "					   <weight=3> 	>" 
         "            <weight=2>    \n"          ;  
+    _DefLayout=lay.str();    //ResetDefLayout();
 }
+
+
     void FilePickBox::AsignWidgetToFields() 
 {
 	_place.field("cbFL"        ) <<  _fileName ;

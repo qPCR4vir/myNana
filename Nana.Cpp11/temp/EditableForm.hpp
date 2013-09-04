@@ -23,7 +23,6 @@
  std::ostream& operator<<(std::ostream& o,const nana::rectangle &r);
 //{ o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
-class EditLayout_Form;
 
 class EnablingEditing
 {
@@ -57,6 +56,7 @@ class EnablingEditing
     }
 };
 
+class EditLayout_Form;
 
 class EditableWidget: public EnablingEditing
 {
@@ -136,6 +136,8 @@ class EditableWidget: public EnablingEditing
     {
         _myLayout=_DefLayout;
         //ReCollocate( );
+                //_place.div(_myLayout.c_str ());     //    ?????????????????
+
     }
             void ResetDefLayout( std::string  Layout)
     {
@@ -212,6 +214,14 @@ class FilePickBox : public  CompoWidget
 		fb_p.add_filter(description, filetype);
 	}
     void SetDefLayout       () override ;
+    void SetDefLayout       (unsigned lab) ;
+    void ResetLayout       (unsigned lab )
+    {
+        SetDefLayout       (lab );
+        ResetDefLayout();  
+        ReCollocate( );    
+    }
+
     void AsignWidgetToFields() override ;
 
 	nana::string FileName()const						{  return _fileName.caption();}

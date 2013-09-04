@@ -251,36 +251,37 @@ public:
     {
         SetDefLayout       (60);
         //_DefLayout= "  <                        \n"
-        //                        "  <vertical     min=125               Num                 >           \n"
-        //                        "  <vertical     min=50    <><vertical Unit weight=21><>  >             \n"
+        //                        "  <vertical     min=125               Num                >           \n"
+        //                        "  <vertical     min=50    <><vertical Unit weight=21><>  >           \n"
         //                 " > ";   
 
         //_num._DefLayout="  <                        \n"
         //                "                           \n"
-        //                        "  <vertical weight=60       <><label weight=15 gap=1>        <>          >           \n"
-        //                        "  <vertical weight=15       <><vertical UpDown weight=21><>          >               \n"
-        //                        "  <vertical                 <><Num weight=21>                    <>          >        \n"
+        //                        "  <vertical weight=60       <><label weight=15 gap=1>    <>          >        \n"
+        //                        "  <vertical weight=15       <><vertical UpDown weight=21><>          >        \n"
+        //                        "  <vertical min=50          <><Num weight=21>            <>          >        \n"
         //                 " > ";
     }
      void SetDefLayout       (unsigned lab, unsigned n=50, unsigned unit=50)
     {
-       
+         // redefine layot of this complete widget: NumUnitUpDown
+
         char d[]= "  <                        \n"
                                 "  <vertical     min=%u               Num                 >           \n"
-                                "  <vertical     min=%u    <><vertical Unit weight=21><>  >             \n"
+                                "  <vertical     min=%u    <><vertical Unit weight=21><>  >           \n"
                          " > ";   
-
+         // redefine layot of the NumUpDown part (inside the previus Num)
         char nd[]="  <                        \n"
                         "                           \n"
-                                "  <vertical weight=%u       <><label weight=15 gap=1>        <>          >           \n"
-                                "  <vertical weight=%u       <><vertical UpDown weight=21><>          >               \n"
-                                "  <vertical                 <><Num weight=21>                    <>          >        \n"
+                                "  <vertical weight=%u       <><label weight=15 gap=1>     <>          >        \n"
+                                "  <vertical weight=%u       <><vertical UpDown weight=21> <>          >        \n"
+                                "  <vertical min=%u          <><Num weight=21>             <>          >        \n"
                          " > ";
    
              _DefLayout.resize ( std::strlen ( d)+20);
        _num. _DefLayout.resize ( std::strlen (nd)+20);
        sprintf(&      _DefLayout[0], d,lab+15+n,unit);
-       sprintf(&_num. _DefLayout[0],nd,lab,15);
+       sprintf(&_num. _DefLayout[0],nd,lab,15,n);
              _DefLayout.resize ( std::strlen (&      _DefLayout[0]));
        _num. _DefLayout.resize ( std::strlen (&_num. _DefLayout[0]));
      }
