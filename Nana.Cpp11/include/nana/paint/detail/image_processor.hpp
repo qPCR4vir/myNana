@@ -14,6 +14,7 @@
 
 #ifndef NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
 #define NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
+#include <algorithm> 
 #include "../image_process_interface.hpp"
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
