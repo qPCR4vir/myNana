@@ -18,10 +18,13 @@
 #define NANA_GUI_WIDGETS_TREEBOX_HPP
 #include "widget.hpp"
 #include "scroll.hpp"
+#include "detail/compset.hpp"
 #include <nana/paint/gadget.hpp>
 #include "detail/tree_cont.hpp"
 #include <nana/gui/timer.hpp>
 #include <nana/any.hpp>
+#include <nana/pat/cloneable.hpp>
+
 namespace nana
 {
 namespace gui
@@ -30,6 +33,11 @@ namespace gui
 	{
 		namespace treebox
 		{
+			enum class component
+			{
+				expender, crook, bground, icon, text, end
+			};
+
 			class tooltip_window;
 
 			template<typename NodeType>
@@ -46,6 +54,32 @@ namespace gui
 				nana::paint::image normal;
 				nana::paint::image highlighted;
 				nana::paint::image expanded;
+			};
+
+			
+			struct node_attribute
+			{
+				bool expended;
+				bool checked;
+				bool selected;
+				bool mouse_pointed;
+				nana::paint::image icon;
+				nana::string text;
+			};
+
+			typedef ::nana::gui::widgets::detail::compset<component, node_attribute> compset_interface;
+			
+			class renderer_interface
+			{
+			public:
+				typedef ::nana::paint::graphics& graph_reference;
+				typedef compset_interface::item_attribute_t item_attribute_t;
+				typedef compset_interface::comp_attribute_t comp_attribute_t;
+
+				virtual ~renderer_interface()
+				{}
+
+				virtual void render(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
 			};
 
 			class trigger
@@ -72,12 +106,17 @@ namespace gui
 				typedef extra_events<pseudo_node_type*>	ext_event_type;
 
 				trigger();
+				~trigger();
+
+				void renderer(const nana::pat::cloneable_interface<renderer_interface>& );
+				const nana::pat::cloneable_interface<renderer_interface> & renderer() const;
+
 				void auto_draw(bool);
-				bool check(const node_type*) const;
+
+				const tree_cont_type & tree() const;
+				tree_cont_type & tree();
+
 				nana::any & value(node_type*) const;
-				node_type* find(const nana::string& key_path);
-				node_type* get_owner(const node_type*) const;
-				node_type* get_root() const;
 				node_type* insert(node_type* node, const nana::string& key, const nana::string& title, const nana::any& v);
 				node_type* insert(const nana::string& path, const nana::string& title, const nana::any& v);
 
@@ -99,18 +138,19 @@ namespace gui
 				bool rename(node_type *node, const nana::char_t* key, const nana::char_t* name);
 				ext_event_type& ext_event() const;
 			private:
-				void bind_window(widget_reference);
-				void attached(graph_reference);
-				void detached();
-				void refresh(graph_reference);
-				void dbl_click(graph_reference, const eventinfo&);
-				void mouse_down(graph_reference, const eventinfo&);
-				void mouse_up(graph_reference, const eventinfo&);
-				void mouse_move(graph_reference, const eventinfo&);
-				void mouse_wheel(graph_reference, const eventinfo&);
-				void resize(graph_reference, const eventinfo&);
-				void key_down(graph_reference, const eventinfo&);
-				void key_char(graph_reference, const eventinfo&);
+				//Overrides drawer_trigger methods
+				void bind_window(widget_reference)	override;
+				void attached(graph_reference)		override;
+				void detached()	override;
+				void refresh(graph_reference)	override;
+				void dbl_click(graph_reference, const eventinfo&)	override;
+				void mouse_down(graph_reference, const eventinfo&)	override;
+				void mouse_up(graph_reference, const eventinfo&)	override;
+				void mouse_move(graph_reference, const eventinfo&)	override;
+				void mouse_wheel(graph_reference, const eventinfo&)	override;
+				void resize(graph_reference, const eventinfo&)		override;
+				void key_down(graph_reference, const eventinfo&)	override;
+				void key_char(graph_reference, const eventinfo&)	override;
 			private:
 				void _m_find_first(unsigned long offset);
 				unsigned _m_node_height() const;
@@ -133,56 +173,12 @@ namespace gui
 				bool _m_set_expanded(node_type* node, bool value);
 				void _m_deal_adjust();
 			private:
-				//Functor
-				class item_renderer
-				{
-				public:
-					typedef tree_cont_type::node_type node_type;
-
-					item_renderer(trigger&, const nana::point&);
-
-					//affect
-					//0 = Sibling, the last is a sibling of node
-					//1 = Owner, the last is the owner of node
-					//>=2 = Children, the last is a child of a node that before this node.
-					int operator()(const node_type& node, int affect);
-					unsigned width(const node_type &node) const;
-				private:
-					void _m_draw_arrow(const node_type& node, unsigned item_height, bool expand);
-					void _m_background(const node_type& node, bool has_child, bool expand);
-				private:
-					trigger& drawer_;
-					nana::point pos_;
-				};
-
-				class item_locator
-				{
-				public:
-					struct object
-					{ enum{none, item, arrow};};
-
-					item_locator(trigger& drawer, int item_pos, int x, int y);
-					int operator()(tree_cont_type::node_type &node, int affect);
-					tree_cont_type::node_type * node() const;
-					unsigned what() const;
-					nana::point pos() const;
-					nana::size size() const;
-				private:
-					trigger& drawer_;
-					int item_pos_;
-					int item_ypos_;
-					nana::point pos_;
-					unsigned object_;
-					tree_cont_type::node_type * node_;
-				};
-
-				struct pred_allow_child
-				{
-					bool operator()(const tree_cont_type::node_type& node);
-				};
+				class item_renderer;
+				class item_locator;
 			private:
 				nana::paint::graphics	*graph_;
 				widget		*widget_;
+				nana::pat::cloneable_interface<renderer_interface> * renderer_;
 
 				struct drawing_flags
 				{
@@ -223,7 +219,8 @@ namespace gui
 					int	item_offset;	//the offset of item to the start pos
 					int	text_offset;	//the offset of text to the item
 
-					unsigned long image_width;
+					unsigned crook_pixels;
+					unsigned image_pixels;
 				}node_desc_;
 
 				struct node_state
@@ -233,7 +230,7 @@ namespace gui
 					tooltip_window	*tooltip;
 
 					tree_cont_type::node_type * highlight;
-					unsigned highlight_object;
+					component comp_highlighted;
 
 					tree_cont_type::node_type * selected;
 					tree_cont_type::node_type * event_node;
@@ -269,6 +266,12 @@ namespace gui
 		typedef typename drawer_trigger_t::pseudo_node_type* node_type;
 		typedef typename drawer_trigger_t::ext_event_type ext_event_type;
 		typedef drawerbase::treebox::node_image_tag node_image_type;
+		typedef drawerbase::treebox::renderer_interface renderer_interface;
+
+		template<typename Renderer>
+		class cloneable_renderer
+			: public nana::pat::cloneable<Renderer, renderer_interface>
+		{};
 
 		treebox(){}
 
@@ -281,6 +284,18 @@ namespace gui
 		{
 			create(wd, r, visible);
 		}
+
+		treebox & renderer(const ::nana::pat::cloneable_interface<renderer_interface> & rd)
+		{
+			get_drawer_trigger().renderer(rd);
+			return *this;
+		}
+
+		const nana::pat::cloneable_interface<renderer_interface> & renderer() const
+		{
+			return get_drawer_trigger().renderer();
+		}
+
 
 		void auto_draw(bool ad)
 		{
@@ -406,13 +421,14 @@ namespace gui
 			get_drawer_trigger().selected(reinterpret_cast<drawer_trigger_t::node_type*>(node));
 		}
 
-		unsigned children_size(node_type node) const
+		std::size_t children_size(node_type node) const
 		{
-			if(get_drawer_trigger().check(reinterpret_cast<drawer_trigger_t::node_type*>(node)))
+			typedef drawer_trigger_t::node_type * node_t;
+			if(get_drawer_trigger().check(reinterpret_cast<node_t*>(node)))
 			{
-				drawer_trigger_t::node_type* child = reinterpret_cast<drawer_trigger_t::node_type*>(node)->child;
+				node_t * child = reinterpret_cast<node_t*>(node)->child;
 
-				unsigned n = 0;
+				std::size_t n = 0;
 				for(; child; child = child->next)
 					++n;
 				return n;
@@ -447,10 +463,11 @@ namespace gui
 
 		nana::string make_key_path(node_type node, const nana::string& splitter) const
 		{
-			const typename drawer_trigger_t::node_type *pnode = reinterpret_cast<drawer_trigger_t::node_type*>(node);
-			if(get_drawer_trigger().check(pnode))
+			auto & tree = get_drawer_trigger().tree();
+			auto pnode = reinterpret_cast<drawer_trigger_t::node_type*>(node);
+			if(tree.check(pnode))
 			{
-				const typename drawer_trigger_t::node_type* root = get_drawer_trigger().get_root();
+				auto root = tree.get_root();
 				nana::string path;
 				nana::string temp;
 				while(pnode->owner != root)
