@@ -75,23 +75,44 @@ class EditableWidget: public EnablingEditing
 
     std::vector<std::function<void(void)>> _validate, _validated;
     bool changed, validated;
-    void Validate()
+    bool Validate()
     {
-        for(auto &v:_validate)
-            v();
+        try
+        {
+            for(auto &v:_validate)
+                v();                /// TODO: change to return bool: validated &= v();
+        }
+        catch ( ... )
+        { 
+            std::cerr << "\nError in Validate of ";
+            std::wcerr << _Titel;
+            return false; 
+        }
+
         if (validated)
-            Validated();
+            return Validated();
+        return true;
     }
-    void Validated()
+    bool Validated()
     {
-        for(auto &v:_validated)
-            v();
+        try
+        {
+            for ( auto &v : _validated )
+                v ();             /// TODO: change to return bool: validated &= v();   ????
+            return true;
+        }
+        catch ( ... )
+        { 
+            std::cerr << "\nError in Validated of ";
+            std::wcerr << _Titel;
+            return false; 
+        }
     }
     void add_validate(const std::function<void(void)>& v)
     {
         _validate.push_back (v); 
     }
-    void add_validated(const std::function<void(void)>& v)
+virtual    void add_validated(const std::function<void(void)>& v)
     {
         _validated.push_back (v); 
     }

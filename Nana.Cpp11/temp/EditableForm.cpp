@@ -66,18 +66,18 @@
                            *this,               ///< the form or panel, owner of place and all other widgets of the editable widget
                            Titel, DefLayoutFileName)
     {
-        std::cerr<<"\nConstructing CompoWidget: "; // debbug
-        std::wcerr<< this->_Titel;                 // debbug
+        //std::cerr<<"\nConstructing CompoWidget: "; // debbug
+        //std::wcerr<< this->_Titel;                 // debbug
 
         EdWd_owner.make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
         {
-            std::cerr<<"\nClosing CompoWidget: "; // debbug
-            std::wcerr<< this->_Titel;            // debbug
+            //std::cerr<<"\nClosing CompoWidget: "; // debbug
+            //std::wcerr<< this->_Titel;            // debbug
 
 			if (_myEdLayForm) 
             {
-                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
-                 std::wcerr<< _myEdLayForm->caption() ;          // debbug
+                 //std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                 //std::wcerr<< _myEdLayForm->caption() ;          // debbug
                 _myEdLayForm->Closable();
                 _myEdLayForm->close();
             }
@@ -96,18 +96,18 @@ EditableForm::EditableForm ( nana::gui::widget *EdWd_owner,                     
               _menuProgramInBar(nullptr)
      {
          thisEdWd.caption(_Titel);
-        std::cerr<<"\nConstructing EditableForm: "; // debbug
-        std::wcerr<< this->_Titel; // debbug
+        //std::cerr<<"\nConstructing EditableForm: "; // debbug
+        //std::wcerr<< this->_Titel; // debbug
 
         thisEdWd.make_event<nana::gui::events::   unload>([this](const nana::gui::eventinfo& ei)
         {
-            std::cerr<<"\nClosing EditableForm: "; // debbug
-            std::wcerr<< this->_Titel;             // debbug
+            //std::cerr<<"\nClosing EditableForm: "; // debbug
+            //std::wcerr<< this->_Titel;             // debbug
 
 			if (_myEdLayForm) 
             {
-                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
-                 std::wcerr<< _myEdLayForm->caption() ;          // debbug
+                 //std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                 //std::wcerr<< _myEdLayForm->caption() ;          // debbug
                  _myEdLayForm->Closable();
                  _myEdLayForm->close();
             }

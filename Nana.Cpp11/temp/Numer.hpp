@@ -87,13 +87,21 @@ class NumerUpDown : public  CompoWidget
     unsigned Decimals (          )const{                        return _decimals;}
     double  Value    (double val)     
     { 
+        auto old_v = _val;
+        changed=false;
+
+        // add_validate     // 
         if     (val < _min)   val = _min;
         else if(val > _max)   val = _max;
-        if(_val==val) return val;
-        _val=val; 
+        if ( _val != val )
+        {
+            _val=val; 
+            if (! Validated())
+                   _val=old_v;
+            else 
+             changed=true;
+        }
         display () ;  
-        changed=true;
-        Validated();
         return _val;
     }
     double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
@@ -115,7 +123,8 @@ double read()
         return std::stod (_num.caption()  );
      }
     catch (...)     
-    { return _val;     
+    { 
+        return _val;     
     }
 }
 void validate()
@@ -127,15 +136,17 @@ void validate()
 }
 void validate_edit()
 {
-    double v=_val;
-    _val=read();
-    validate();
-    if (_val!=v) 
-    {
-        changed=true;
-        Validated();
-    }else
-        changed=false;
+    Value (read());
+
+    //double v=_val;
+    //_val=read();
+    //validate();
+    //if (_val!=v) 
+    //{
+    //    changed=true;
+    //    Validated();
+    //}else
+    //    changed=false;
 }
 void add(double step)
 {
@@ -245,8 +256,15 @@ public:
         InitMyLayout();
         SelectClickableWidget( _num);
         SelectClickableWidget( _unit);
-        _num.add_validated ([&](){Validated ();});
+        
+        //_num.add_validated ( [&](){Validated ();}        );
     }
+    virtual    void add_validated(const std::function<void(void)>& v)
+    {
+        _num.add_validated (v); 
+        //_validated.push_back (v); 
+    }
+
      void SetDefLayout       () override
     {
         SetDefLayout       (60);
