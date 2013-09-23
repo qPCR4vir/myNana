@@ -87,13 +87,18 @@ class NumerUpDown : public  CompoWidget
     unsigned Decimals (          )const{                        return _decimals;}
     double  Value    (double val)     
     { 
+        auto old_v = _val;
+        changed=false;
+
+        // add_validate     // 
         if     (val < _min)   val = _min;
         else if(val > _max)   val = _max;
-        if(_val==val) return val;
+        if(_val==val) return val;         
         _val=val; 
+        if (! Validated())
+             return _val=old_v;
         display () ;  
         changed=true;
-        Validated();
         return _val;
     }
     double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
@@ -127,15 +132,17 @@ void validate()
 }
 void validate_edit()
 {
-    double v=_val;
-    _val=read();
-    validate();
-    if (_val!=v) 
-    {
-        changed=true;
-        Validated();
-    }else
-        changed=false;
+    Value (read());
+
+    //double v=_val;
+    //_val=read();
+    //validate();
+    //if (_val!=v) 
+    //{
+    //    changed=true;
+    //    Validated();
+    //}else
+    //    changed=false;
 }
 void add(double step)
 {

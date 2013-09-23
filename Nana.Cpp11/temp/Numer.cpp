@@ -23,29 +23,29 @@ NumerUpDown::NumerUpDown (  widget &parent_,      const string &label,
           _up.make_event <events::dbl_click>([&](){add( _step); });
         _down.make_event <events::click>    ([&](){add(-_step); });
         _down.make_event <events::dbl_click>([&](){add(-_step); });
-         _num.make_event <events::focus>([&](const eventinfo& ei)
-                {  
-                    std::cerr<< "\nBefore " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
-                    std::wcerr<< _Titel << std::endl;
-                    //if (!ei.focus.getting) 
-                    //    validate_edit( );
-                }); 
+         //_num.make_event <events::focus>([&](const eventinfo& ei)
+         //       {  
+         //           std::cerr<< "\nBefore " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+         //           std::wcerr<< _Titel << std::endl;
+         //           //if (!ei.focus.getting) 
+         //           //    validate_edit( );
+         //       }); 
 
 
          _num.make_event <events::focus>([&](const eventinfo& ei)
                 {  
-                    std::cerr << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
-                    std::wcerr<< _Titel << std::endl;
+                    std::cerr << std::endl<< (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+                    std::wcerr<< label << std::endl;
                     if (!ei.focus.getting) 
                         validate_edit( );
                 }); 
-         _num.make_event <events::focus>([&](const eventinfo& ei)
-                {  
-                    std::cerr<< "After " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
-                    std::wcerr<< _Titel << std::endl;
-                    //if (!ei.focus.getting) 
-                    //    validate_edit( );
-                }); 
+         //_num.make_event <events::focus>([&](const eventinfo& ei)
+         //       {  
+         //           std::cerr<< "After " << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
+         //           std::wcerr<< _Titel << std::endl;
+         //           //if (!ei.focus.getting) 
+         //           //    validate_edit( );
+         //       }); 
     }
 
 }} // namespace nana { namespace gui {
