@@ -316,15 +316,15 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
 	EditLayout_Form (EditableWidget &EdWd_owner );
     void Closable()
     { 
-        std::cerr<<"\nMaking Closeable EditLayout_Form: ";   // debbug
-        std::wcerr<< this->caption() ;  // debbug
-
+         //assert((     std::cerr<<"\nMaking Closeable EditLayout_Form: "   , true) );;   // debbug
+         //assert((     std::wcerr<< this->caption()  , true ) ); ;  // debbug
+ 
         umake_event ( hide_);
     }
     ~EditLayout_Form()
     {
-        std::cerr<<"\nDestroying EditLayout_Form: ";   // debbug
-        std::wcerr<< this->caption() ;  // debbug
+          //assert((    std::cerr<<"\nDestroying EditLayout_Form: " , true   ));;   // debbug
+          //assert((    std::wcerr<< this->caption()  , true  )); ;  // debbug
     }
 
  private:
@@ -342,13 +342,13 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
 
     nana::gui::event_handle Hidable()
     { 
-        std::cerr<<"\nMaking Hidable EditLayout_Form: "; // debbug
-        std::wcerr<< this->caption() ; // debbug
+        //assert((    std::cerr<<"\nMaking Hidable EditLayout_Form: " , true ) );; // debbug
+        //assert((    std::wcerr<< this->caption() , true ) ); ; // debbug
 
         return  make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
         {
-            std::cerr<<"\n Hiding, not closing EditLayout_Form: ";  // debbug
-            std::wcerr<< this->caption() ; // debbug
+            //assert((    std::cerr<<"\n Hiding, not closing EditLayout_Form: "  , true) );;  // debbug
+            //assert((    std::wcerr<< this->caption()  , true) );; // debbug
 
             ei.unload.cancel = true;    //Stop closing and then
             hide();

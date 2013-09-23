@@ -129,12 +129,12 @@ void EditableWidget::EditMyLayout(/*nana::gui::widget & EdWd_own, nana::gui::wid
 
 EditableWidget::~EditableWidget()
         {
-            std::cerr<<"\nDestroying Editable Widget: ";    // debbug
-            std::wcerr<< this->_Titel ;   // debbug
+            //std::cerr<<"\nDestroying Editable Widget: ";    // debbug
+            //std::wcerr<< this->_Titel ;   // debbug
 			if (_myEdLayForm) 
             {
-                 std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
-                std::wcerr<< _myEdLayForm->caption() ;   // debbug
+                // std::cerr<<"\nContaining EditLayout_Form: ";    // debbug
+                //std::wcerr<< _myEdLayForm->caption() ;   // debbug
                //_myEdLayForm->Closable();
                // _myEdLayForm->close();
             }
@@ -213,7 +213,7 @@ void EditLayout_Form::MakeResponsive()
 		    if(! _OSbx.UserSelected()) return;
 
             nana::string   fileN=_OSbx.FileName();  // The newly selected name
-            std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;
+            //std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;   // debbug
 			OpenFileN(fileN );
 		};
         //make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
@@ -282,7 +282,7 @@ void EditLayout_Form::ReloadDef()
 void EditLayout_Form::OpenFile()
 	{	 
       if(_OSbx.Canceled () ) return;
-      std::wcout<<std::endl<<STR("OpenFile: ")<<std::endl;
+      //std::wcout<<std::endl<<STR("OpenFile: ")<<std::endl;   // debbug
 
 	  OpenFileN(_OSbx.FileName());
 	}
@@ -290,7 +290,7 @@ void EditLayout_Form::OpenFileN(const nana::string   &file)
 	{	  
 		if( file.empty() ) 
             return;
-        std::wcout<<std::endl<<STR("OpenFileN: ")<<file<<std::endl;
+        //std::wcout<<std::endl<<STR("OpenFileN: ")<<file<<std::endl;   // debbug
         if ( _textBox.edited () )
         {
            _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
@@ -300,11 +300,11 @@ void EditLayout_Form::OpenFileN(const nana::string   &file)
 		_textBox.load(file.c_str() );
         _textBox.select(true);
         _textBox.show();
-        std::wcout<<std::endl<<STR("OpenedFileN: ")<<file<<std::endl;
+        //std::wcout<<std::endl<<STR("OpenedFileN: ")<<file<<std::endl;   // debbug
 	}
 void EditLayout_Form::SaveFileN(const nana::string   &fileTip)
 	{	
-        std::wcout<<std::endl<<STR("Seaving tip: ")<<fileTip<<std::endl;
+        //std::wcout<<std::endl<<STR("Seaving tip: ")<<fileTip<<std::endl;   // debbug
         _OSbx.save(fileTip);
         SaveFile();
 	}
@@ -316,16 +316,16 @@ void EditLayout_Form::SaveFile()
 	}
 void EditLayout_Form::ForceSave(const nana::string   &file)
 	{	
-        std::wcout<<std::endl<<STR("Direct save file: ")<<file<<std::endl;
+        ////std::wcout<<std::endl<<STR("Direct save file: ")<<file<<std::endl;   // debbug
 		_textBox.store(file.c_str () );
-		std::wcout<<std::endl<<STR("SavedFIle: ")<<file<<std::endl;
-	}
+		//assert(( std::wcout<<std::endl<<STR("SavedFIle: ")<<file<<std::endl               , true) );   // debbug
+    }   
 const char* EditableWidget::readLayout(const nana::string& FileName, std::string& Layout)
     {
 		std::ifstream loy(FileName);
 		std::string temp;
 		while (std::getline(loy,temp)) Layout+=temp + "\n";
-		std::cout<<std::endl<< Layout;
+		//assert((     std::cout<<std::endl<< Layout   , true  ));;
 		return Layout.c_str();
     }	
 

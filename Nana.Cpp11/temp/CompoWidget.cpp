@@ -55,17 +55,18 @@ void FilePickBox::pick(const nana::string &file_tip)
 }
 void FilePickBox::pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip)
 {
-	std::wcout<<std::endl<<action<<STR(" (with tip: ") << file_tip<<STR(")")<<std::endl;
+	//assert((      std::wcout<<std::endl<<action<<STR(" (with tip: ") << file_tip<<STR(")")<<std::endl , true  ));;
+
     fb.init_file(file_tip); 
 	if(fb())  
 	{	_user_selected=false;
         _fileName.push_back(fb.file()).option(_fileName.the_number_of_options());
-	    std::wcout<<std::endl<<action<<STR(" OK: ")<<std::endl;
+	    //assert((      std::wcout<<std::endl<<action<<STR(" OK: ")<<std::endl , true  ));;
         _user_selected=true;
         _canceled= false;
         return;
     }
-    std::wcout<<std::endl<<action<<STR(" Canceled: ")<<std::endl;
+    //assert((     std::wcout<<std::endl<<action<<STR(" Canceled: ")<<std::endl , true  ));;
     _canceled= true;
 }
 
