@@ -3,11 +3,21 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="..\Lib.PropertySheet.props" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <NANA_include_dir>..\..\include</NANA_include_dir>
+    <NANA_src_dir>..\..\scr</NANA_src_dir>
+  </PropertyGroup>
   <PropertyGroup>
     <OutDir>..\$(OutDir)</OutDir>
     <IntDir>..\$(IntDir)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup />
-  <ItemGroup />
+  <ItemGroup>
+    <BuildMacro Include="NANA_include_dir">
+      <Value>$(NANA_include_dir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="NANA_src_dir">
+      <Value>$(NANA_src_dir)</Value>
+    </BuildMacro>
+  </ItemGroup>
 </Project>
