@@ -38,14 +38,13 @@ namespace gui
 				expender, crook, bground, icon, text, end
 			};
 
-			class tooltip_window;
-
 			template<typename NodeType>
 			struct extra_events
 			{
 				typedef NodeType node_type;
 
 				nana::fn_group<void(nana::gui::window, node_type, bool)> expand;
+				nana::fn_group<void(nana::gui::window, node_type, bool)> checked;
 				nana::fn_group<void(nana::gui::window, node_type, bool)> selected;
 			};
 
@@ -56,11 +55,10 @@ namespace gui
 				nana::paint::image expanded;
 			};
 
-			
 			struct node_attribute
 			{
 				bool expended;
-				bool checked;
+				checkstate checked;
 				bool selected;
 				bool mouse_pointed;
 				nana::paint::image icon;
@@ -98,6 +96,7 @@ namespace gui
 					nana::string text;
 					nana::any value;
 					bool expanded;
+					checkstate checked;
 					nana::string img_idstr;
 				};
 
@@ -114,6 +113,10 @@ namespace gui
 				const nana::pat::cloneable_interface<renderer_interface> & renderer() const;
 
 				void auto_draw(bool);
+				void checkable(bool);
+				bool checkable() const;
+				void check(node_type*, checkstate);
+				bool draw();
 
 				const tree_cont_type & tree() const;
 				tree_cont_type & tree();
@@ -122,7 +125,9 @@ namespace gui
 				node_type* insert(node_type* node, const nana::string& key, const nana::string& title, const nana::any& v);
 				node_type* insert(const nana::string& path, const nana::string& title, const nana::any& v);
 
-				bool check_kinship(node_type* parent, node_type* child) const;
+				bool verify(const void*) const;
+				bool verify_kinship(node_type* parent, node_type* child) const;
+
 				void remove(node_type*);
 				node_type * selected() const;
 				void selected(node_type*);
@@ -204,10 +209,40 @@ namespace gui
 			return get_drawer_trigger().renderer();
 		}
 
-
 		void auto_draw(bool ad)
 		{
 			get_drawer_trigger().auto_draw(ad);
+		}
+
+		treebox & checkable(bool enable)
+		{
+			get_drawer_trigger().checkable(enable);
+			return *this;
+		}
+
+		bool checkable() const
+		{
+			return get_drawer_trigger().checkable();
+		}
+
+		treebox& check(node_type node, bool checked)
+		{
+			auto & trg = get_drawer_trigger();
+			if(trg.verify(node))
+			{
+				trg.check(reinterpret_cast<drawer_trigger_t::node_type*>(node), checked);
+				if(trg.draw())
+					API::update_window(this->handle());
+			}
+			return *this;
+		}
+
+		bool checked(node_type node) const
+		{
+			if(get_drawer_trigger().verify(node))
+				return (checkstate::checked == reinterpret_cast<drawer_trigger_t::node_type*>(node)->value.second.checked);
+
+			return false;
 		}
 
 		ext_event_type& ext_event() const
@@ -355,7 +390,7 @@ namespace gui
 
 		node_type get_child(node_type node) const
 		{
-			if(get_drawer_trigger().check(reinterpret_cast<drawer_trigger_t::node_type*>(node)))
+			if(get_drawer_trigger().verify(reinterpret_cast<drawer_trigger_t::node_type*>(node)))
 				return reinterpret_cast<node_type>(
 							reinterpret_cast<drawer_trigger_t::node_type*>(node)->child
 							);
@@ -373,7 +408,7 @@ namespace gui
 		{
 			auto & tree = get_drawer_trigger().tree();
 			auto pnode = reinterpret_cast<drawer_trigger_t::node_type*>(node);
-			if(tree.check(pnode))
+			if(tree.verify(pnode))
 			{
 				auto root = tree.get_root();
 				nana::string path;
@@ -389,7 +424,7 @@ namespace gui
 				path.insert(0, pnode->value.first);
 				return path;
 			}
-			return STR("");
+			return nana::string();
 		}
 	};
 }//end namespace gui
