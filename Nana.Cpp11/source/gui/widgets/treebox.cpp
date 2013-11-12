@@ -72,6 +72,38 @@ namespace gui
 
 			class tooltip_window;
 
+			//item_locator should be defined before the definition of basic_implement
+			class trigger::item_locator
+			{
+			public:
+				typedef tree_cont_type::node_type node_type;
+
+				item_locator(implement * impl, int item_pos, int x, int y);
+				int operator()(node_type &node, int affect);
+				node_type * node() const;
+				component what() const;
+				bool item_body() const;
+
+				nana::rectangle text_pos() const;
+			private:
+				trigger::implement * impl_;
+				nana::point item_pos_;
+				const nana::point pos_;		//Mouse pointer position
+				component	what_;
+				node_type * node_;
+				node_attribute node_attr_;
+				nana::rectangle node_r_;
+				nana::rectangle node_text_r_;
+			};
+
+			struct pred_allow_child
+			{
+				bool operator()(const trigger::tree_cont_type::node_type& node)
+				{
+					return node.value.second.expanded;
+				}
+			};
+
 			//struct implement
 			//@brief:	some data for treebox trigger
 			template<typename Renderer>
@@ -84,8 +116,9 @@ namespace gui
 					nana::paint::graphics * graph;
 					widget * widget_ptr;
 					trigger * trigger_ptr;
-					nana::pat::cloneable_interface<compset_placer_interface> * comp_placer;
-					nana::pat::cloneable_interface<renderer_interface> * renderer;
+
+					pat::cloneable<compset_placer_interface> comp_placer;
+					pat::cloneable<renderer_interface> renderer;
 					bool stop_drawing;
 				}data;
 
@@ -136,8 +169,6 @@ namespace gui
 				{
 					data.graph			= nullptr;
 					data.widget_ptr		= nullptr;
-					data.renderer		= nullptr;
-					data.comp_placer	= nullptr;
 					data.stop_drawing	= false;
 
 					shape.prev_first_value = 0;
@@ -162,7 +193,7 @@ namespace gui
 
 				void assign_node_attr(node_attribute& ndattr, const node_type* node) const
 				{
-					ndattr.has_children = (nullptr != node->child); 
+					ndattr.has_children = (nullptr != node->child);
 					ndattr.expended = node->value.second.expanded;
 					ndattr.text = node->value.second.text;
 					ndattr.checked = node->value.second.checked;
@@ -172,7 +203,7 @@ namespace gui
 					ndattr.icon_hover.close();
 					ndattr.icon_normal.close();
 					ndattr.icon_expanded.close();
-					if(data.comp_placer->refer().enabled(component::icon))
+					if(data.comp_placer->enabled(component::icon))
 					{
 						auto i = shape.image_table.find(node->value.second.img_idstr);
 						if(i != shape.image_table.end())
@@ -436,9 +467,9 @@ namespace gui
 							shape.prev_first_value = 0;
 							scroll.create(*data.widget_ptr, nana::rectangle(data.graph->width() - 16, 0, 16, data.graph->height()));
 							auto scroll_fn = nana::make_fun(*this, &basic_implement::event_scrollbar);
-							scroll.make_event<events::mouse_down>(scroll_fn);
-							scroll.make_event<events::mouse_move>(scroll_fn);
-							scroll.make_event<events::mouse_wheel>(scroll_fn);
+							scroll.template make_event<events::mouse_down>(scroll_fn);
+							scroll.template make_event<events::mouse_move>(scroll_fn);
+							scroll.template make_event<events::mouse_wheel>(scroll_fn);
 						}
 
 						scroll.amount(visual_items);
@@ -486,12 +517,12 @@ namespace gui
 				{
 					node_attribute node_attr;
 					assign_node_attr(node_attr, node);
-					return data.comp_placer->refer().item_width(*data.graph, node_attr);
+					return data.comp_placer->item_width(*data.graph, node_attr);
 				}
 
 				std::size_t max_allowed() const
 				{
-					return (data.graph->height() / data.comp_placer->refer().item_height(*data.graph));
+					return (data.graph->height() / data.comp_placer->item_height(*data.graph));
 				}
 
 				nana::paint::image* image(const node_type* node)
@@ -514,7 +545,7 @@ namespace gui
 							if(nodeimg.expanded.empty() == false)	return &nodeimg.expanded;
 
 						if(node->value.second.expanded == false && state == 0)
-							if(nodeimg.highlighted.empty() == false)	return &nodeimg.highlighted;
+							if(nodeimg.hovered.empty() == false)	return &nodeimg.hovered;
 
 						return &nodeimg.normal;
 					}
@@ -525,7 +556,7 @@ namespace gui
 				{
 					int xpos = attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
 					item_locator nl(this, xpos, x, y);
-					attr.tree_cont.for_each<item_locator&>(shape.first, nl);
+					attr.tree_cont.template for_each<item_locator&>(shape.first, nl);
 
 					bool redraw = false;
 					node_state.event_node = nl.node();
@@ -568,16 +599,16 @@ namespace gui
 
 						node_attribute node_attr;
 						assign_node_attr(node_attr, node_state.pointed);
-						node_state.tooltip->impl().assign(node_attr, data.renderer, data.comp_placer);
+						node_state.tooltip->impl().assign(node_attr, &data.renderer, &data.comp_placer);
 						node_state.tooltip->show();
 
-						node_state.tooltip->make_event<events::mouse_leave>(*this, &basic_implement::close_tooltip_window);
-						node_state.tooltip->make_event<events::mouse_move>(*this, &basic_implement::mouse_move_tooltip_window);
+						node_state.tooltip->template make_event<events::mouse_leave>(*this, &basic_implement::close_tooltip_window);
+						node_state.tooltip->template make_event<events::mouse_move>(*this, &basic_implement::mouse_move_tooltip_window);
 
 						auto click_fn = nana::make_fun(*this, &basic_implement::click_tooltip_window);
-						node_state.tooltip->make_event<events::mouse_down>(click_fn);
-						node_state.tooltip->make_event<events::mouse_up>(click_fn);
-						node_state.tooltip->make_event<events::dbl_click>(click_fn);
+						node_state.tooltip->template make_event<events::mouse_down>(click_fn);
+						node_state.tooltip->template make_event<events::mouse_up>(click_fn);
+						node_state.tooltip->template make_event<events::dbl_click>(click_fn);
 					}
 				}
 
@@ -642,6 +673,19 @@ namespace gui
 				item_proxy::item_proxy(trigger* trg, trigger::node_type* node)
 					: trigger_(trg), node_(node)
 				{
+					//Make it an end itertor if one of them is a nullptr
+					if(nullptr == trg || nullptr == node)
+					{
+						trigger_ = nullptr;
+						node_ = nullptr;
+					}
+				}
+
+				item_proxy item_proxy::append(const nana::string& key, const nana::string& name)
+				{
+					if(nullptr == trigger_ || nullptr == node_)
+						return item_proxy();
+					return item_proxy(trigger_, trigger_->insert(node_, key, name));
 				}
 
 				bool item_proxy::empty() const
@@ -683,10 +727,10 @@ namespace gui
 					return (trigger_->impl()->node_state.selected == node_);
 				}
 
-				item_proxy& item_proxy::select()
+				item_proxy& item_proxy::select(bool s)
 				{
 					auto * impl = trigger_->impl();
-					if(impl->set_selected(node_))
+					if(impl->set_selected(s ? node_ : nullptr))
 					{
 						impl->draw(true);
 						API::update_window(*impl->data.widget_ptr);
@@ -729,8 +773,6 @@ namespace gui
 
 				std::size_t item_proxy::size() const
 				{
-					trigger::node_type * child = node_->child;
-					
 					std::size_t n = 0;
 					for(trigger::node_type * child = node_->child; child; child = child->child)
 						++n;
@@ -830,14 +872,14 @@ namespace gui
 					//Not empty
 					if(node_ && trigger_)
 						return ((node_ == rhs.node_) && (trigger_ == rhs.trigger_));
-					
+
 					//Both are empty
 					return true;
 				}
 
 				bool item_proxy::operator!=(const item_proxy& rhs) const
 				{
-					return !(this->operator==(rhs));					
+					return !(this->operator==(rhs));
 				}
 
 				nana::any& item_proxy::_m_value()
@@ -965,7 +1007,7 @@ namespace gui
 			class internal_renderer
 				: public renderer_interface
 			{
-				void render(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				void bground(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
 
@@ -993,7 +1035,11 @@ namespace gui
 							graph.rectangle(attr.area.pare_off(1), *colptr, true);
 						}
 					}
+				}
 
+				void expander(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				{
+					comp_attribute_t attr;
 					if(compset->comp_attribute(component::expender, attr))
 					{
 						using namespace nana::paint;
@@ -1007,14 +1053,22 @@ namespace gui
 						}
 						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? 0x1CC4F7 : 0x0), style, dir);
 					}
+				}
 
+				void crook(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				{
+					comp_attribute_t attr;
 					if(compset->comp_attribute(component::crook, attr))
 					{
 						attr.area.y += (attr.area.height - 16) / 2;
 						crook_.check(compset->item_attribute().checked);
 						crook_.draw(graph, bgcolor, fgcolor, attr.area, attr.mouse_pointed ? element_state::hovered : element_state::normal);
 					}
+				}
 
+				virtual void icon(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				{
+					comp_attribute_t attr;
 					if(compset->comp_attribute(component::icon, attr))
 					{
 						const nana::paint::image * img = nullptr;
@@ -1027,12 +1081,29 @@ namespace gui
 							img = &(compset->item_attribute().icon_normal);
 
 						if(! img->empty())
-							img->paste(graph, attr.area.x + (attr.area.width - img->size().width) / 2, attr.area.y + (attr.area.height - img->size().height) / 2);
-					}
+						{
+							auto size = img->size();
+							if(size.width > attr.area.width || size.height > attr.area.height)
+							{
+								nana::size fit_size;
+								gui::fit_zoom(size, attr.area, fit_size);
 
+								attr.area.x += (attr.area.width - fit_size.width) / 2;
+								attr.area.y += (attr.area.height - fit_size.height) / 2;
+								attr.area = fit_size;
+								img->stretch(size, graph, attr.area);
+							}
+							else
+								img->paste(graph, attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2);
+						}
+					}
+				}
+
+				virtual void text(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				{
+					comp_attribute_t attr;
 					if(compset->comp_attribute(component::text, attr))
 						graph.string(attr.area.x, attr.area.y + 3, fgcolor, compset->item_attribute().text);
-
 				}
 
 			private:
@@ -1040,20 +1111,16 @@ namespace gui
 			};
 
 
-			class trigger::item_locator
-			{
-			public:
-				typedef tree_cont_type::node_type node_type;
-
-				item_locator(implement * impl, int item_pos, int x, int y)
+			//class trigger::item_locator
+				trigger::item_locator::item_locator(implement * impl, int item_pos, int x, int y)
 					:	impl_(impl),
 						item_pos_(item_pos, 1),
-						pos_(x, y), 
-						what_(component::end), 
+						pos_(x, y),
+						what_(component::end),
 						node_(nullptr)
 				{}
 
-				int operator()(node_type &node, int affect)
+				int trigger::item_locator::operator()(node_type &node, int affect)
 				{
 					auto & node_desc = impl_->shape;
 
@@ -1068,10 +1135,10 @@ namespace gui
 
 					impl_->assign_node_attr(node_attr_, &node);
 					nana::rectangle node_r;
-					auto & comp_placer = impl_->data.comp_placer->refer();
+					auto & comp_placer = impl_->data.comp_placer;
 
-					node_r.width = comp_placer.item_width(*impl_->data.graph, node_attr_);
-					node_r.height = comp_placer.item_height(*impl_->data.graph);
+					node_r.width = comp_placer->item_width(*impl_->data.graph, node_attr_);
+					node_r.height = comp_placer->item_height(*impl_->data.graph);
 
 					if(pos_.y < item_pos_.y + static_cast<int>(node_r.height))
 					{
@@ -1083,7 +1150,7 @@ namespace gui
 						for(int comp = static_cast<int>(component::begin); comp != static_cast<int>(component::end); ++comp)
 						{
 							nana::rectangle r = node_r;
-							if(comp_placer.locate(static_cast<component>(comp), node_attr_, &r))
+							if(comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
 							{
 								if(r.is_hit(logic_x, logic_y))
 								{
@@ -1108,38 +1175,29 @@ namespace gui
 					return 2;
 				}
 
-				node_type * node() const
+				trigger::item_locator::node_type * trigger::item_locator::node() const
 				{
 					return node_;
 				}
 
-				component what() const
+				component trigger::item_locator::what() const
 				{
 					return what_;
 				}
 
-				bool item_body() const
+				bool trigger::item_locator::item_body() const
 				{
 					return (component::text == what_ || component::icon == what_ || component::bground == what_);
 				}
 
-				nana::rectangle text_pos() const
+				nana::rectangle trigger::item_locator::text_pos() const
 				{
 					auto r = node_text_r_;
 					r.x += item_pos_.x;
 					r.y += item_pos_.y;
 					return r;
 				}
-			private:
-				trigger::implement * impl_;
-				nana::point item_pos_;
-				const nana::point pos_;		//Mouse pointer position
-				component	what_;
-				node_type * node_;
-				node_attribute node_attr_;
-				nana::rectangle node_r_;
-				nana::rectangle node_text_r_;
-			};
+			//end class item_locator
 
 			class trigger::item_renderer
 				: public compset_interface
@@ -1173,14 +1231,19 @@ namespace gui
 							pos_.x -= draw_impl->shape.indent_pixels * (affect - 1);
 					}
 
-					auto & comp_placer = impl_->data.comp_placer->refer();
+					auto & comp_placer = impl_->data.comp_placer;
 
 					impl_->assign_node_attr(node_attr_, iterated_node_);
 					node_r_.x = node_r_.y = 0;
-					node_r_.width = comp_placer.item_width(*impl_->data.graph, node_attr_);
-					node_r_.height = comp_placer.item_height(*impl_->data.graph);
+					node_r_.width = comp_placer->item_width(*impl_->data.graph, node_attr_);
+					node_r_.height = comp_placer->item_height(*impl_->data.graph);
 
-					draw_impl->data.renderer->refer().render(*draw_impl->data.graph, bgcolor_, fgcolor_, this); 
+					auto renderer = draw_impl->data.renderer;
+					renderer->bground(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
+					renderer->expander(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
+					renderer->crook(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
+					renderer->icon(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
+					renderer->text(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
 
 					pos_.y += node_r_.height;
 
@@ -1199,7 +1262,7 @@ namespace gui
 				virtual bool comp_attribute(component_t comp, comp_attribute_t& attr) const override
 				{
 					attr.area = node_r_;
-					if(impl_->data.comp_placer->refer().locate(comp, node_attr_, &attr.area))
+					if(impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
 					{
 						attr.area.x += pos_.x;
 						attr.area.y += pos_.y;
@@ -1216,14 +1279,6 @@ namespace gui
 				item_attribute_t node_attr_;
 				nana::rectangle node_r_;
 			};
-
-			struct pred_allow_child
-			{
-				bool operator()(const trigger::tree_cont_type::node_type& node)
-				{
-					return node.value.second.expanded;
-				}
-			};
 		}
 
 		//Treebox Implementation
@@ -1236,31 +1291,15 @@ namespace gui
 				typedef drawer_trigger::graph_reference graph_reference;
 
 				tlwnd_drawer()
-					:	renderer_(nullptr),
-						placer_(nullptr)
 				{
 				}
 
-				~tlwnd_drawer()
-				{
-					if(renderer_)
-						renderer_->self_delete();
-					
-					if(placer_)
-						placer_->self_delete();
-				}
-
-				void assign(const item_attribute_t & item_attr, const pat::cloneable_interface<renderer_interface> * renderer, const pat::cloneable_interface<compset_placer_interface> * compset_placer)
+				void assign(const item_attribute_t & item_attr, const pat::cloneable<renderer_interface>* renderer, const pat::cloneable<compset_placer_interface> * compset_placer)
 				{
 					if(renderer && compset_placer)
 					{
-						if(renderer_)
-							renderer_->self_delete();
-						renderer_ = renderer->clone();
-
-						if(placer_)
-							placer_->self_delete();
-						placer_ = compset_placer->clone();
+						renderer_ = *renderer;
+						placer_ = *compset_placer;
 
 						item_attr_ = item_attr;
 
@@ -1271,8 +1310,8 @@ namespace gui
 				void _m_draw()
 				{
 					item_r_.x = item_r_.y = 0;
-					item_r_.width = placer_->refer().item_width(*this->graph_, item_attr_);
-					item_r_.height = placer_->refer().item_height(*this->graph_);
+					item_r_.width = placer_->item_width(*this->graph_, item_attr_);
+					item_r_.height = placer_->item_height(*this->graph_);
 
 					comp_attribute_t attr;
 					if(comp_attribute(component::text, attr))
@@ -1280,7 +1319,13 @@ namespace gui
 						nana::paint::graphics item_graph(item_r_.width, item_r_.height);
 						item_graph.typeface(graph_->typeface());
 
-						renderer_->refer().render(item_graph, widget_->background(), widget_->foreground(), this);
+						auto bgcolor = widget_->background();
+						auto fgcolor = widget_->foreground();
+						renderer_->bground(item_graph, bgcolor, fgcolor, this);
+						renderer_->expander(item_graph, bgcolor, fgcolor, this);
+						renderer_->crook(item_graph, bgcolor, fgcolor, this);
+						renderer_->icon(item_graph, bgcolor, fgcolor, this);
+						renderer_->text(item_graph, bgcolor, fgcolor, this);
 
 						item_graph.paste(attr.area, *graph_, 1, 1);
 						graph_->rectangle(0x0, false);
@@ -1308,15 +1353,15 @@ namespace gui
 				virtual bool comp_attribute(component_t comp, comp_attribute_t& comp_attr) const override
 				{
 					comp_attr.area = item_r_;
-					if(placer_->refer().locate(comp, item_attr_, &comp_attr.area))
+					if(placer_->locate(comp, item_attr_, &comp_attr.area))
 						return true;
-					
+
 					return false;
 				}
 			private:
 				::nana::paint::graphics * graph_;
-				::nana::pat::cloneable_interface<renderer_interface> * renderer_;
-				::nana::pat::cloneable_interface<compset_placer_interface> * placer_;
+				::nana::pat::cloneable<renderer_interface> renderer_;
+				::nana::pat::cloneable<compset_placer_interface> placer_;
 				widget	*widget_;
 				item_attribute_t item_attr_;
 				nana::rectangle item_r_;
@@ -1366,8 +1411,8 @@ namespace gui
 					:	impl_(new implement)
 				{
 					impl_->data.trigger_ptr = this;
-					impl_->data.renderer = nana::pat::cloneable<internal_renderer, renderer_interface>().clone();
-					impl_->data.comp_placer = nana::pat::cloneable<internal_placer, compset_placer_interface>().clone();
+					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
+					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());
 					impl_->adjust.timer.enable(false);
 					impl_->adjust.timer.make_tick(std::bind(&trigger::_m_deal_adjust, this));
 					impl_->adjust.timer.interval(10);
@@ -1375,7 +1420,6 @@ namespace gui
 
 				trigger::~trigger()
 				{
-					impl_->data.renderer->self_delete();
 					delete impl_;
 				}
 
@@ -1396,11 +1440,11 @@ namespace gui
 
 				void trigger::checkable(bool enable)
 				{
-					auto & comp_placer = impl_->data.comp_placer->refer();
+					auto & comp_placer = impl_->data.comp_placer;
 
-					if(comp_placer.enabled(component::crook) != enable)
+					if(comp_placer->enabled(component::crook) != enable)
 					{
-						comp_placer.enable(component::crook, enable);
+						comp_placer->enable(component::crook, enable);
 						if(impl_->attr.auto_draw)
 						{
 							impl_->draw(false);
@@ -1411,10 +1455,9 @@ namespace gui
 
 				bool trigger::checkable() const
 				{
-					return impl_->data.comp_placer->refer().enabled(component::crook);
+					return impl_->data.comp_placer->enabled(component::crook);
 				}
 
-				
 				void trigger::check(node_type* node, checkstate cs)
 				{
 					if(checkstate::unchecked != cs)
@@ -1491,28 +1534,22 @@ namespace gui
 					return impl_->attr.tree_cont;
 				}
 
-				void trigger::renderer(const ::nana::pat::cloneable_interface<renderer_interface>& r)
+				void trigger::renderer(::nana::pat::cloneable<renderer_interface>&& r)
 				{
-					if(impl_->data.renderer)
-						impl_->data.renderer->self_delete();
-
-					impl_->data.renderer = r.clone();
+					impl_->data.renderer = std::move(r);
 				}
 
-				::nana::pat::cloneable_interface<renderer_interface>* trigger::renderer() const
+				const ::nana::pat::cloneable<renderer_interface>& trigger::renderer() const
 				{
 					return impl_->data.renderer;
 				}
 
-				void trigger::placer(const ::nana::pat::cloneable_interface<compset_placer_interface>& r)
+				void trigger::placer(::nana::pat::cloneable<compset_placer_interface>&& r)
 				{
-					if(impl_->data.comp_placer)
-						impl_->data.comp_placer->self_delete();
-
-					impl_->data.comp_placer = r.clone();				
+					impl_->data.comp_placer = std::move(r);
 				}
 
-				::nana::pat::cloneable_interface<compset_placer_interface>* trigger::placer() const
+				const ::nana::pat::cloneable<compset_placer_interface>& trigger::placer() const
 				{
 					return impl_->data.comp_placer;
 				}
@@ -1545,7 +1582,7 @@ namespace gui
 						API::update_window(impl_->data.widget_ptr->handle());
 					return x;
 				}
-				
+
 				bool trigger::verify(const void* node) const
 				{
 					return impl_->attr.tree_cont.verify(reinterpret_cast<const node_type*>(node));
@@ -1563,6 +1600,9 @@ namespace gui
 
 				void trigger::remove(node_type* node)
 				{
+					if(false == verify(node))
+						return;
+
 					auto & shape = impl_->shape;
 					auto & node_state = impl_->node_state;
 
@@ -1623,7 +1663,7 @@ namespace gui
 					if(i != impl_->shape.image_table.end())
 						return i->second;
 
-					impl_->data.comp_placer->refer().enable(component::icon, true);
+					impl_->data.comp_placer->enable(component::icon, true);
 
 					return impl_->shape.image_table[id];
 				}
@@ -1632,7 +1672,7 @@ namespace gui
 				{
 					impl_->shape.image_table.erase(id);
 					if(0 == impl_->shape.image_table.size())
-						impl_->data.comp_placer->refer().enable(component::icon, false);
+						impl_->data.comp_placer->enable(component::icon, false);
 				}
 
 				void trigger::node_icon(node_type* node, const nana::string& id)
@@ -1651,7 +1691,7 @@ namespace gui
 					//return (static_cast<int>(impl_->data.graph->text_extent_size(node->value.second.text).width) + impl_->shape.text_offset * 2 + static_cast<unsigned>(impl_->shape.crook_pixels + impl_->shape.image_pixels));
 					node_attribute node_attr;
 					impl_->assign_node_attr(node_attr, node);
-					return impl_->data.comp_placer->refer().item_width(*impl_->data.graph, node_attr);
+					return impl_->data.comp_placer->item_width(*impl_->data.graph, node_attr);
 				}
 
 				bool trigger::rename(node_type *node, const nana::char_t* key, const nana::char_t* name)
@@ -2044,14 +2084,14 @@ namespace gui
 			create(wd, r, visible);
 		}
 
-		const nana::pat::cloneable_interface<treebox::renderer_interface> & treebox::renderer() const
+		const nana::pat::cloneable<treebox::renderer_interface> & treebox::renderer() const
 		{
-			return *get_drawer_trigger().impl()->data.renderer;
+			return get_drawer_trigger().impl()->data.renderer;
 		}
 
-		const nana::pat::cloneable_interface<treebox::compset_placer_interface> & treebox::placer() const
+		const nana::pat::cloneable<treebox::compset_placer_interface> & treebox::placer() const
 		{
-			return *get_drawer_trigger().impl()->data.comp_placer;
+			return get_drawer_trigger().impl()->data.comp_placer;
 		}
 
 		void treebox::auto_draw(bool ad)
@@ -2085,6 +2125,12 @@ namespace gui
 			get_drawer_trigger().icon_erase(id);
 		}
 
+		auto treebox::find(const nana::string& keypath) -> item_proxy
+		{
+			auto * trg = &get_drawer_trigger();
+			return item_proxy(trg, trg->tree().find(keypath));
+		}
+
 		treebox::item_proxy treebox::insert(const nana::string& path_key, const nana::string& title)
 		{
 			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(path_key, title));
@@ -2102,11 +2148,11 @@ namespace gui
 			return next;
 		}
 
-		void treebox::erase(const nana::string& key_path)
+		void treebox::erase(const nana::string& keypath)
 		{
-			get_drawer_trigger().remove(
-				get_drawer_trigger().tree().find(key_path)
-				);
+			auto i = find(keypath);
+			if(false == i.empty())
+				get_drawer_trigger().remove(i._m_node());
 		}
 
 		nana::string treebox::make_key_path(item_proxy i, const nana::string& splitter) const
@@ -2127,9 +2173,14 @@ namespace gui
 				}
 
 				path.insert(0, pnode->value.first);
-				return path;
+				return std::move(path);
 			}
 			return nana::string();
+		}
+
+		treebox::item_proxy treebox::selected() const
+		{
+			return item_proxy(const_cast<drawer_trigger_t*>(&get_drawer_trigger()), get_drawer_trigger().selected());
 		}
 	//end class treebox
 }//end namespace gui

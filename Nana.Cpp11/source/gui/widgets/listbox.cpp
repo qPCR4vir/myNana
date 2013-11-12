@@ -2000,17 +2000,16 @@ namespace nana{ namespace gui{
 								ext_w = 18;
 								nana::rectangle chkarea = essence_->checkarea(item_xpos, y);
 
-								mouse_action act = mouse_action::normal;
-
+								element_state estate = element_state::normal;
 								if(essence_->pointer_where.first == essence_t::where_t::checker)
 								{
 									switch(state)
 									{
 									case essence_t::state_t::highlighted:
-										act = mouse_action::over;
+										estate = element_state::hovered;
 										break;
 									case essence_t::state_t::grabed:
-										act = mouse_action::pressed;
+										estate = element_state::pressed;
 										break;
 									default:	break;
 									}
@@ -2019,7 +2018,7 @@ namespace nana{ namespace gui{
 								typedef object<decltype(crook_renderer_)>::type::state state;
 
 								crook_renderer_.check(item.flags.checked ?  state::checked : state::unchecked);
-								crook_renderer_.draw(*graph, bkcolor, txtcolor, chkarea, element_state::normal);
+								crook_renderer_.draw(*graph, bkcolor, txtcolor, chkarea, estate);
 							}
 							nana::size ts = graph->text_extent_size(item.texts[index]);
 
@@ -2100,17 +2099,6 @@ namespace nana{ namespace gui{
 						drawer_lister_->draw(r);
 					_m_draw_border();
 				}
-
-				/*
-				void trigger::update()
-				{
-					if(essence_->auto_draw)
-					{
-						essence_->adjust_scroll_life();
-						API::refresh_window(*(essence_->lister.wd_ptr()));
-					}
-				}
-				*/
 
 				void trigger::_m_draw_border()
 				{
@@ -2596,7 +2584,7 @@ namespace nana{ namespace gui{
 					return ess_;
 				}
 
-				std::pair<std::size_t, std::size_t> item_proxy::_m_where() const
+				std::pair<std::size_t, std::size_t> item_proxy::pos() const
 				{
 					return std::pair<std::size_t, std::size_t>(cat_, pos_);
 				}
@@ -2604,6 +2592,16 @@ namespace nana{ namespace gui{
 				const nana::any & item_proxy::_m_resolver() const
 				{
 					return ess_->resolver;
+				}
+
+				nana::any * item_proxy::_m_value(bool alloc_if_empty)
+				{
+					return ess_->lister.anyobj(cat_, pos_, alloc_if_empty);
+				}
+
+				const nana::any * item_proxy::_m_value() const
+				{
+					return ess_->lister.anyobj(cat_, pos_, false);
 				}
 			//end class item_proxy
 
@@ -2671,6 +2669,13 @@ namespace nana{ namespace gui{
 				item_proxy cat_proxy::cend() const
 				{
 					return end();
+				}
+
+				item_proxy cat_proxy::at(std::size_t pos) const
+				{
+					if(pos >= size())
+						throw std::out_of_range("listbox.cat_proxy.at() invalid position");
+					return item_proxy(ess_, pos_, pos);
 				}
 
 				std::size_t cat_proxy::size() const
@@ -2809,6 +2814,10 @@ namespace nana{ namespace gui{
 			return cat_proxy(&ess, pos);
 		}
 
+		listbox::item_proxy listbox::at(std::size_t pos, std::size_t index) const
+		{
+			return at(pos).at(index);
+		}
 
 		void listbox::insert(size_type cat, size_type index, const nana::string& text)
 		{
@@ -2898,7 +2907,7 @@ namespace nana{ namespace gui{
 				return ip;
 
 			auto * ess = ip._m_ess();
-			auto _where = ip._m_where();
+			auto _where = ip.pos();
 			ess->lister.erase(_where.first, _where.second);
 			nana::upoint pos = ess->scroll_y();
 			if((pos.x == _where.first) && (_where.second <= pos.y))
@@ -2912,7 +2921,10 @@ namespace nana{ namespace gui{
 					--pos.y;
 				ess->scroll_y(pos);
 			}
-			ess->update();			
+			ess->update();
+			if(_where.second < ess->lister.size_item(_where.first))
+				return ip;
+			return item_proxy();
 		}
 
 		void listbox::set_sort_compare(size_type sub, std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> strick_ordering)

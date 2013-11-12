@@ -24,6 +24,7 @@
 #include <nana/gui/timer.hpp>
 #include <nana/any.hpp>
 #include <nana/pat/cloneable.hpp>
+#include <stdexcept>
 
 namespace nana
 {
@@ -74,6 +75,7 @@ namespace gui
 			class renderer_interface
 			{
 			public:
+				typedef drawerbase::treebox::component component;
 				typedef ::nana::paint::graphics& graph_reference;
 				typedef drawerbase::treebox::compset_interface compset_interface;
 				typedef compset_interface::item_attribute_t item_attribute_t;
@@ -82,7 +84,11 @@ namespace gui
 				virtual ~renderer_interface()
 				{}
 
-				virtual void render(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void bground(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void expander(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void crook(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void icon(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void text(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
 			};
 
 			class item_proxy;
@@ -131,10 +137,10 @@ namespace gui
 				const tree_cont_type & tree() const;
 				tree_cont_type & tree();
 
-				void renderer(const ::nana::pat::cloneable_interface<renderer_interface>&);
-				::nana::pat::cloneable_interface<renderer_interface>* renderer() const;
-				void placer(const ::nana::pat::cloneable_interface<compset_placer_interface>&);
-				::nana::pat::cloneable_interface<compset_placer_interface>* placer() const;
+				void renderer(::nana::pat::cloneable<renderer_interface>&&);
+				const ::nana::pat::cloneable<renderer_interface>& renderer() const;
+				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
+				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				nana::any & value(node_type*) const;
 				node_type* insert(node_type*, const nana::string& key, const nana::string& title);
@@ -187,6 +193,19 @@ namespace gui
 				item_proxy();
 				item_proxy(trigger*, trigger::node_type*);
 
+				/// Append a child.
+				item_proxy append(const nana::string& key, const nana::string& name);
+
+				/// Append a child with a specified value.
+				template<typename T>
+				item_proxy append(const nana::string& key, const nana::string& name, const T&t)
+				{
+					item_proxy ip = append(key, name);
+					if(false == ip.empty())
+						ip.value(t);
+					return ip;
+				}
+
 				/// Return true if the proxy does not refer to a node
 				bool empty() const;
 
@@ -206,7 +225,7 @@ namespace gui
 				bool selected() const;
 
 				/// Select the node.
-				item_proxy& select();
+				item_proxy& select(bool);
 
 				/// Return the icon.
 				const nana::string& icon() const;
@@ -275,9 +294,18 @@ namespace gui
 				bool operator!=(const item_proxy&) const;
 
 				template<typename T>
-				T * value() const
+				T * value_ptr() const
 				{
-					return _m_value().get<T>();
+					return _m_value().template get<T>();
+				}
+
+				template<typename T>
+				T& value() const
+				{
+					T* p = _m_value().template get<T>();
+					if(0 == p)
+						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
+					return *p;
 				}
 
 				template<typename T>
@@ -315,40 +343,57 @@ namespace gui
 
 		typedef drawer_trigger_t::ext_event_type ext_event_type;
 		typedef drawerbase::treebox::node_image_tag node_image_type;
+
+		/// The interface of treebox renderer
 		typedef drawerbase::treebox::renderer_interface renderer_interface;
+
+		/// The interface of treebox compset_placer
 		typedef drawerbase::treebox::compset_placer_interface compset_placer_interface;
 
+		/// The default constructor without creating the widget.
 		treebox();
+
+		/// The construct that creates a widget.
+		/// @param wd, A handle to the parent window of the widget being created.
+		/// @param visible, specifying the visible after creating.
 		treebox(window wd, bool visible);
+
+		/// The construct that creates a widget.
+		/// @param wd, A handle to the parent window of the widget being created.
+		/// @param r, the size and position of the widget in its parent window coordinate.
+		/// @param visible, specifying the visible after creating.
 		treebox(window, const nana::rectangle& = rectangle(), bool visible = true);
 
 		template<typename ItemRenderer>
 		treebox & renderer(const ItemRenderer & rd)
 		{
-			get_drawer_trigger().renderer(::nana::pat::cloneable<ItemRenderer, renderer_interface>(rd));
+			get_drawer_trigger().renderer(::nana::pat::cloneable<renderer_interface>(rd));
 			return *this;
 		}
 
-		const nana::pat::cloneable_interface<renderer_interface> & renderer() const;
+		const nana::pat::cloneable<renderer_interface> & renderer() const;
 
 		template<typename Placer>
 		treebox & placer(const Placer & r)
 		{
-			get_drawer_trigger().placer(::nana::pat::cloneable<Placer, compset_placer_interface>(r));
+			get_drawer_trigger().placer(::nana::pat::cloneable<compset_placer_interface>(r));
 			return *this;
 		}
 
-		const nana::pat::cloneable_interface<compset_placer_interface> & placer() const;
+		const nana::pat::cloneable<compset_placer_interface> & placer() const;
 
+		/// Eanble the widget that draws automatically when it is operating.
+		/// @param bool, whether to enable.
 		void auto_draw(bool);
 
+		/// Enable the checkbox for each item of the widget.
+		/// @param bool, wheter to enable.
 		treebox & checkable(bool enable);
 
+		/// Determinte whether the checkbox is enabled.
 		bool checkable() const;
 
 		ext_event_type& ext_event() const;
-
-		//treebox& icon(const nana::string& id, const nana::paint::image& img);
 
 		treebox& icon(const nana::string& id, const node_image_type& node_img);
 
@@ -356,15 +401,16 @@ namespace gui
 
 		void icon_erase(const nana::string& id);
 
+		item_proxy find(const nana::string& keypath);
+
 		item_proxy insert(const nana::string& path_key, const nana::string& title);
-
 		item_proxy insert(item_proxy i, const nana::string& key, const nana::string& title);
-
 		item_proxy erase(item_proxy i);
 
-		void erase(const nana::string& key_path);
+		void erase(const nana::string& keypath);
 
 		nana::string make_key_path(item_proxy i, const nana::string& splitter) const;
+		item_proxy selected() const;
 	};//end class treebox
 }//end namespace gui
 }//end namespace nana
