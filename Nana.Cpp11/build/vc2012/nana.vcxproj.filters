@@ -286,4 +286,7 @@
       <Filter>Source Files\gui</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\Readme.txt" />
+  </ItemGroup>
 </Project>
