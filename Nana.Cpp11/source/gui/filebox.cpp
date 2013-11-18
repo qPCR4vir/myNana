@@ -958,7 +958,7 @@ namespace nana{	namespace gui
 			ofn.lpstrFilter = filter;
 			ofn.lpstrTitle = (impl_->title.size() ? impl_->title.c_str() : nullptr);
 			ofn.nFilterIndex = 0;
-			ofn.lpstrFileTitle = NULL;
+			ofn.lpstrFileTitle = nullptr;
 			ofn.nMaxFileTitle = 0;
 			ofn.lpstrInitialDir = (impl_->path.size() ? impl_->path.c_str() : nullptr);
 			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
