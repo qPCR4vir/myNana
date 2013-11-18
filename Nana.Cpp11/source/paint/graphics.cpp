@@ -263,7 +263,7 @@ namespace paint
 					dw->string.tab_length = reuse->string.tab_length;
 				}
 				else
-					dw->font = spec.default_native_font();
+					dw->font = font_shadow_.impl_->font_ptr;
 
 #if defined(NANA_WINDOWS)
 				HDC hdc = ::GetDC(0);
@@ -337,6 +337,9 @@ namespace paint
 
 		void graphics::typeface(const font& f)
 		{
+			//Keep the font, even if the graphics is empty. Setting the font is futile when the size
+			//of a widget is zero.
+			font_shadow_ = f;
 			if(handle_ && (false == f.empty()))
 			{
 				handle_->font = f.impl_->font_ptr;
