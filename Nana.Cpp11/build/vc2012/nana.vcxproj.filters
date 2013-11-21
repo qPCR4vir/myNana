@@ -55,6 +55,12 @@
     <Filter Include="Source Files\audio\detail">
       <UniqueIdentifier>{a79b050a-0183-46ee-b263-1a6dcd8e53e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\temp">
+      <UniqueIdentifier>{15d4f5aa-f0ee-4fe2-a59a-3c70f93b6579}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\temp">
+      <UniqueIdentifier>{13cd0eb3-eedb-482d-96f6-3846bb13e047}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\any.cpp">
@@ -288,8 +294,40 @@
     <ClCompile Include="..\..\source\gui\element.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\element.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\CompoWidget.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\EditableForm.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\Numer.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\Units.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\vplace.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\temp\EditableForm.hpp">
+      <Filter>Header Files\temp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\temp\Numer.hpp">
+      <Filter>Header Files\temp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\temp\Units.hpp">
+      <Filter>Header Files\temp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\temp\vplace.hpp">
+      <Filter>Header Files\temp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -123,43 +123,43 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MTdebug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MDdebug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MTdebug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MDdebug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MTrelease|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_rel_XP|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MDrelease|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MTrelease|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_rel_XP|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MDrelease|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Nana.PropertySheet.props" />
+    <Import Project="..\..\..\..\..\PropertySheet\Nana.PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MTdebug|Win32'" />
@@ -420,9 +420,20 @@
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
+    <ClCompile Include="..\..\temp\CompoWidget.cpp" />
+    <ClCompile Include="..\..\temp\EditableForm.cpp" />
+    <ClCompile Include="..\..\temp\Numer.cpp" />
+    <ClCompile Include="..\..\temp\Units.cpp" />
+    <ClCompile Include="..\..\temp\vplace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\temp\EditableForm.hpp" />
+    <ClInclude Include="..\..\temp\Numer.hpp" />
+    <ClInclude Include="..\..\temp\Units.hpp" />
+    <ClInclude Include="..\..\temp\vplace.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
