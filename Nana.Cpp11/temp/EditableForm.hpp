@@ -312,7 +312,17 @@ class OpenSaveBox : public  FilePickBox
 //};
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
-{public:
+{
+    EditableWidget     &_owner;
+	OpenSaveBox			_OSbx       {*this, STR("Layout:" )};
+	nana::gui::button	_ReCollocate{*this, STR("Apply"	  )},    _hide{*this, STR("Hide"	 )}, 
+                        _panic      {*this, STR("Panic !" )},     _def{*this, STR("Default"  )}, 
+                        _cpp        {*this, STR("C++ code")};
+    nana::gui::textbox	_textBox{ *this };
+    nana::gui::menu	   &_menuFile{_menuBar.push_back(STR("&File"))};
+    nana::gui::event_handle hide_{Hidable()};  // hide_(),
+
+public:
 	EditLayout_Form (EditableWidget &EdWd_owner );
     void Closable()
     { 
@@ -328,13 +338,6 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
     }
 
  private:
-    EditableWidget     &_owner  ;
-	OpenSaveBox			_OSbx;
-	nana::gui::button	_ReCollocate, _hide, _panic, _def;
-	nana::gui::textbox	_textBox;
-	nana::gui::menu	   &_menuFile;
-    nana::gui::event_handle hide_;
-
     void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
     void on_edited();
@@ -362,6 +365,7 @@ class EditLayout_Form : public nana::gui::form, public EditableForm
 	void SaveFileN(const nana::string   &fileTip=STR(""));
     void ForceSave(const nana::string   &file);
 	void SaveFile ();
+    void toCppCode();
 }	;
 #endif 
 

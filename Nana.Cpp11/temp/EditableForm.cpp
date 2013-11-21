@@ -145,15 +145,9 @@ EditableWidget::~EditableWidget()
 EditLayout_Form::EditLayout_Form  (	EditableWidget &EdWd_owner)
 		:nana::gui::form (EdWd_owner._thisEdWd , nana::rectangle( nana::point(300,100), nana::size(500,300) )),
          EditableForm (&(EdWd_owner._thisEdWd), *this,  STR("Editing Layout of: "),STR("Layout_Form.lay.txt")),
-         hide_(Hidable()), _owner(EdWd_owner),          //_fm             (fm),
-				    _OSbx			(*this, STR("Layout:" )),      
-					_ReCollocate	(*this, STR("Apply"	  )),   _panic  (*this, STR("Panic !")),
-                    _def            (*this, STR("Default" )), 	_hide	(*this, STR("Hide"	 )),
-					_textBox		(*this),
-					_menuFile		(_menuBar.push_back(STR("&File")))
+         _owner(EdWd_owner)
 	{	
-		//if (fm) 
-            caption(_Titel += _owner._Titel) ;  
+        caption(_Titel += _owner._Titel) ;  
 		_textBox.tip_string		(STR("type or load a Layout to be applied to the calling window..."		));
 		InitMyLayout();
 
@@ -225,6 +219,7 @@ void EditLayout_Form::MakeResponsive()
         _panic.make_event       <nana::gui::events::click> ([&](){_owner.ResetDefLayout(); _owner.ReCollocate( );}); 
         _def.make_event         <nana::gui::events::click> ([&](){ReloadDef() ;}   ); 
         _hide.make_event        <nana::gui::events::click> ([&](){hide()      ;}   ); 
+        _cpp.make_event         <nana::gui::events::click> ([&](){toCppCode() ;}   ); 
 	}
 void EditLayout_Form::on_edited()
 {
@@ -235,7 +230,8 @@ void EditLayout_Form::on_edited()
 }
 void EditLayout_Form::SetDefLayout   ()
 {
-    _DefLayout= "vertical   gap=2                                    \n\t"
+    _DefLayout=
+        "vertical   gap=2                                    \n\t"
                             "<weight=25>                             \n\t"
                             "<weight=25  OpenSave>                   \n\t"
                             "<textBox>                               \n\t"
@@ -243,7 +239,7 @@ void EditLayout_Form::SetDefLayout   ()
                             "           <re weight=50 gap=2>         \n\t"
                             "           <panic weight=50>            \n\t"
                             "           < >                          \n\t"
-                            "           <def weight=50>              \n\t"
+                            "           <def  gap=2 weight=120>      \n\t"
                             "           < >                          \n\t"
                             "           <hide weight=50>             \n\t"
                             "           <weight=15> >                \n\t" 
@@ -255,7 +251,7 @@ void EditLayout_Form::AsignWidgetToFields()
 	_place.field("textBox"	   )<< _textBox;
 	_place.field("re"		   )<< _ReCollocate ;
 	_place.field("panic"	   )<< _panic ;
-	_place.field("def"		   )<< _def ;
+	_place.field("def"		   )<< _def << _cpp ;
 	_place.field("hide"		   )<< _hide ;
 }
 void EditLayout_Form::ReLayout()
@@ -264,6 +260,26 @@ void EditLayout_Form::ReLayout()
 			lay+=line;
         _owner.ReCollocate( std::string(nana::charset (lay)) );  // try std::runtime_error msgbox
 	}
+void EditLayout_Form::toCppCode()
+{
+    if ( _textBox.edited () )
+    {
+        _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
+        SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
+        _OSbx.fb_s.title(STR("")); 
+    }
+    nana::string lay,line;
+	for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
+			lay+= STR("\t\"")+ line + STR("\t\\n\\t\"\n");
+
+    _textBox.reset(lay );
+    _textBox.select(true);
+    _textBox.copy();
+    _textBox.show();
+}
+
+
+
 void EditLayout_Form::ReloadDef()
 {
     if ( _textBox.edited () )
