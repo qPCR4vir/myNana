@@ -1465,7 +1465,8 @@ namespace gui
 
 					if(node->value.second.checked != cs)
 					{
-						impl_->set_checked(node, cs);
+                        if (node->owner   )   /// SUPER NODE, have no value
+						  impl_->set_checked(node, cs);
 						//First, check the children of node
 						node_type * child = node->child;
 						while(child)
@@ -1507,8 +1508,8 @@ namespace gui
 
 							if(cs == owner->value.second.checked)
 								break;
-
-							impl_->set_checked(owner, cs);
+                            if (owner->owner   )   /// SUPER NODE, have no value
+							  impl_->set_checked(owner, cs);
 							owner = owner->owner;
 						}
 					}
