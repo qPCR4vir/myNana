@@ -2455,7 +2455,7 @@ namespace nana{ namespace gui{
 
 				item_proxy& item_proxy::fgcolor(nana::color_t col)
 				{
-					ess_->lister.at_abs(cat_,pos_).fgcolor = col;
+                    ess_->lister.at_abs(cat_, pos_).fgcolor = col;   // why = 0 ; ???? works ??? How to color an item?
 					ess_->update();
 					return *this;
 				}
