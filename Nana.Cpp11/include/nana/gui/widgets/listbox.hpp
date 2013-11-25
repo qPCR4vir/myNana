@@ -165,7 +165,7 @@ namespace nana{ namespace gui{
 				template<typename T>
 				T & value() const
 				{
-					nana::any * pany = _m_value() ;
+					const nana::any * pany = _m_value() ;
 					if(nullptr == pany)
 						throw std::runtime_error("treebox::item_proxy.value<T>() is empty");
 
