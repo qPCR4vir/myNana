@@ -317,6 +317,7 @@ namespace nana{ namespace gui{
 		typedef drawerbase::listbox::extra_events ext_event_type;
 		typedef drawerbase::listbox::cat_proxy	cat_proxy;
 		typedef drawerbase::listbox::item_proxy item_proxy;
+        using selection = std::vector<index_pair_t>; 
 
 		/// An interface that performances a translation between the object of T and an item of listbox.
 		template<typename T>
@@ -342,7 +343,10 @@ namespace nana{ namespace gui{
 		void insert(size_type cat, size_type index, const nana::string&);
 
 		void checkable(bool);
-		void checked(std::vector<std::pair<size_type, size_type> >&);
+		void checked(selection&);
+		void selected(selection&);
+        selection checked(void) { selection s; checked(s) ; return s; };
+		selection selected(void){ selection s; selected(s); return s; };
 
 		void clear(size_type cat);
 		void clear();
@@ -361,7 +365,6 @@ namespace nana{ namespace gui{
 		void set_sort_compare(size_type sub, std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> strick_ordering);
 		void show_header(bool);
 		bool visible_header() const;
-		void selected(std::vector<index_pair_t>&);
 		void move_select(bool upwards);
 		void icon(size_type cat, size_type index, const nana::paint::image&);
 		nana::paint::image icon(size_type cat, size_type index) const;
