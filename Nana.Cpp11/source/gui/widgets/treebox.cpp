@@ -1460,58 +1460,56 @@ namespace gui
 
 				void trigger::check(node_type* node, checkstate cs)
 				{
-					if(checkstate::unchecked != cs)
+                    if (!node->owner) return;   /// SUPER NODE, have no value
+					if(cs != checkstate::unchecked )
 						cs = checkstate::checked;
+                    if (node->value.second.checked == cs)   return;
 
-					if(node->value.second.checked != cs)
+					//First, check the children of node
+					node_type * child = node->child;
+					while(child)
 					{
-                        if (node->owner   )   /// SUPER NODE, have no value
-						  impl_->set_checked(node, cs);
-						//First, check the children of node
-						node_type * child = node->child;
+						impl_->check_child(child, cs != checkstate::unchecked);
+						child = child->next;
+					}
+					impl_->set_checked(node, cs);
+
+					//Then, change the parent node check state
+					node_type * owner = node->owner;
+					while(owner->owner)   /// SUPER NODE, have no value
+					{
+						std::size_t len_checked = 0;
+						std::size_t size = 0;
+						checkstate cs = checkstate::unchecked;
+						child = owner->child;
 						while(child)
 						{
-							impl_->check_child(child, cs != checkstate::unchecked);
-							child = child->next;
-						}
-
-						//Then, change the parent node check state
-						node_type * owner = node->owner;
-						while(owner)
-						{
-							std::size_t len_checked = 0;
-							std::size_t size = 0;
-							checkstate cs = checkstate::unchecked;
-							child = owner->child;
-							while(child)
+							++size;
+							if(checkstate::checked == child->value.second.checked)
 							{
-								++size;
-								if(checkstate::checked == child->value.second.checked)
-								{
-									++len_checked;
-									if(size != len_checked)
-									{
-										cs = checkstate::partial;
-										break;
-									}
-								}
-								else if((checkstate::partial == child->value.second.checked) || (len_checked && (len_checked < size)))
+								++len_checked;
+								if(size != len_checked)
 								{
 									cs = checkstate::partial;
 									break;
 								}
-								child = child->next;
 							}
-
-							if(size && (size == len_checked))
-								cs = checkstate::checked;
-
-							if(cs == owner->value.second.checked)
+							else if((checkstate::partial == child->value.second.checked) || (len_checked && (len_checked < size)))
+							{
+								cs = checkstate::partial;
 								break;
-                            if (owner->owner   )   /// SUPER NODE, have no value
-							  impl_->set_checked(owner, cs);
-							owner = owner->owner;
+							}
+							child = child->next;
 						}
+
+						if(size && (size == len_checked))
+							cs = checkstate::checked;
+
+						if(cs == owner->value.second.checked)
+							break;
+                        if (owner->owner   )   /// SUPER NODE, have no value
+							impl_->set_checked(owner, cs);
+						owner = owner->owner;
 					}
 				}
 
