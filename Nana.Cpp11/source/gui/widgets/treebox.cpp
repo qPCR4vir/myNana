@@ -1465,23 +1465,24 @@ namespace gui
 
 				void trigger::check(node_type* node, checkstate cs)
 				{
-                    if (!node->owner) return;   /// SUPER NODE, have no value
+                    if (!node->owner) return;   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
 					if(cs != checkstate::unchecked )
 						cs = checkstate::checked;
                     if (node->value.second.checked == cs)   return;
 
-					//First, check the children of node
+					//First, check the children of node. This prevent the use of unactualized child nodes during "on_checked" 
 					node_type * child = node->child;
 					while(child)
 					{
 						impl_->check_child(child, cs != checkstate::unchecked);
 						child = child->next;
 					}
+					//Then, check self
 					impl_->set_checked(node, cs);
 
 					//Then, change the parent node check state
 					node_type * owner = node->owner;
-					while(owner->owner)   /// SUPER NODE, have no value
+					while(owner->owner)   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
 					{
 						std::size_t len_checked = 0;
 						std::size_t size = 0;
@@ -1512,8 +1513,7 @@ namespace gui
 
 						if(cs == owner->value.second.checked)
 							break;
-                        if (owner->owner   )   /// SUPER NODE, have no value
-							impl_->set_checked(owner, cs);
+                        impl_->set_checked(owner, cs);
 						owner = owner->owner;
 					}
 				}

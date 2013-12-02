@@ -1283,7 +1283,7 @@ namespace nana{ namespace gui{
 						if(lister.expand(item.first) == false)
 						{
 							if(lister.categ_selected(item.first))
-								scroll.offset_y.y = npos;    // 1>..\..\source\gui\widgets\listbox.cpp(1286): warning C4309: '=' : truncation of constant value
+								scroll.offset_y.y = npos;    // : warning C4309: '=' : truncation of constant value
 							else
 								lister.expand(item.first, true);
 						}
@@ -2887,7 +2887,7 @@ namespace nana{ namespace gui{
 				{
 					if(pos.x == ess.lister.size_categ())
 						--pos.x;
-					pos.y = npos;   // 1>..\..\source\gui\widgets\listbox.cpp(2890): warning C4309: '=' : truncation of constant value
+					pos.y = npos;   //   warning C4309: '=' : truncation of constant value
 					ess.scroll_y(pos);
 				}
 			}
