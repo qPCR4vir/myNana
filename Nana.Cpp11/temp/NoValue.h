@@ -18,3 +18,25 @@ struct WithNoValue
 WithNoValue<int> I;
 
 #endif
+
+
+//using MIndex = unsigned char;
+//
+//const MIndex  Invalid_Menu_idx = std::numeric_limits<MIndex>::max();     // global ?? Could be another "logical" value, for example, just 100.
+// 
+//
+////struct SmartMIndex
+////{
+//// MIndex  i {Invalid_Menu_idx};       
+//// operator size_t(size_t idx)
+////  {
+////   if ( idx >= Invalid_Menu_idx )                                  // or if ( idx == npos)     ?????
+////           return SmartMIndex{} ;                                    // not found
+////   else
+////          return SmartMIndex{  MIndex (t_idx)}  ;                          
+////  }
+////
+////};
+////SmartMIndex Invalid_SMenu_idx;        // global ??
+
+
