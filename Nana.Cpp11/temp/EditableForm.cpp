@@ -186,7 +186,7 @@ void EditLayout_Form::MakeResponsive()
         //   }
         //   if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
         //}); 
-		_menuFile.append  (STR("&Open..."   ),[&](nana::gui::menu::item_proxy& ip){ /*_OSbx.open();*/OpenFile()  ;}                );
+		_menuFile.append  (STR("&Open..."   ),[this](nana::gui::menu::item_proxy& ip){ this->_OSbx.open(nana::string(nana::charset(this->_textBox.filename())));this->OpenFile()  ;}                );
         _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip){  ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;}   );
 		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip){ _OSbx.save(nana::string(nana::charset(_textBox.filename())));SaveFile() ;} );
          AddMenuProgram ();
@@ -198,18 +198,20 @@ void EditLayout_Form::MakeResponsive()
         SelectClickableWidget( _textBox, *_menuProgramInBar );
         SelectClickableWidget( _menuBar, *_menuProgramInBar);
 
-        _OSbx.Open.make_event	<nana::gui::events::click> ([&](){ OpenFile() ;} );
-		_OSbx.Save.make_event	<nana::gui::events::click> ([&](){ SaveFile() ;} );
+        _OSbx.onOpenFile/*.make_event	<nana::gui::events::click>*/ ([this]( const std::string   &file){ this->OpenFileN(nana::charset(file)) ;} );
+        //_OSbx.onOpenFile/*.make_event	<nana::gui::events::click>*/ ([this]( const std::string   &file){ this->OpenFileN(file) ;} );
+		_OSbx.onSave/*.make_event	<nana::gui::events::click>*/ ([this](){  this->SaveFile() ;} );
 		//_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
         _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout();}); 
-		_OSbx._fileName.ext_event().selected = [&](nana::gui::combox&cb)
-		{
-		    if(! _OSbx.UserSelected()) return;
+        _OSbx.onSelect([&](const nana::string& file){OpenFileN(file); });
+  //          _fileName.ext_event().selected = [&](nana::gui::combox&cb)
+		//{
+		//    if(! _OSbx.UserSelected()) return;
 
-            nana::string   fileN=_OSbx.FileName();  // The newly selected name
-            //std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;   // debbug
-			OpenFileN(fileN );
-		};
+  //          nana::string   fileN=_OSbx.FileName();  // The newly selected name
+  //          //std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;   // debbug
+		//	OpenFileN(fileN );
+		//};
         //make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
         //{
         //    ei.unload.cancel = true;    //Stop closing and then
