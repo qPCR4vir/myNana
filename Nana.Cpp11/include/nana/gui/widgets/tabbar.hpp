@@ -194,7 +194,7 @@ namespace nana{ namespace gui{
 			caption(text);		
 		}
 
-		tabbar(window wd, const rectangle& r=rectangle(), bool visible=true)
+		tabbar(window wd, const rectangle& r = rectangle(), bool visible = true)
 		{
 			_m_init();
 			create(wd, r, visible);

@@ -209,11 +209,9 @@ namespace gui
 				/// Return true if the proxy does not refer to a node
 				bool empty() const;
 
-				/// Return true if the proxy refer to ...
-                bool isRoot() const { return ! owner()->owner()->empty(); }
-
-				/// Return true if the proxy refer to ...
-				bool isSuperRoot() const{ return ! owner()->empty(); }
+				/// Return the distance between the ROOT node and this node.
+				/// @return, only available when emtpy() is false.
+				std::size_t level() const;
 
 				/// Return the check state
 				bool checked() const;

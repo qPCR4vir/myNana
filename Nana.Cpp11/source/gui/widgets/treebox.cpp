@@ -698,6 +698,21 @@ namespace gui
 					return !(trigger_ && node_);
 				}
 
+				std::size_t item_proxy::level() const
+				{
+					if (nullptr == trigger_ || nullptr == node_)
+						return 0;
+
+					std::size_t n = 0;
+					auto owner = node_->owner;
+					while (owner)
+					{
+						++n;
+						owner = owner->owner;
+					}
+					return n;
+				}
+
 				bool item_proxy::checked() const
 				{
 					return (node_ && (checkstate::checked == node_->value.second.checked));
@@ -1465,24 +1480,31 @@ namespace gui
 
 				void trigger::check(node_type* node, checkstate cs)
 				{
-                    if (!node->owner) return;   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
+                                        if (!node->owner) return;   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
+					                            /// The ROOT node is not operational and leave the user-node independent
 					if(cs != checkstate::unchecked )
 						cs = checkstate::checked;
-                    if (node->value.second.checked == cs)   return;
+					//Return if thay are same.
+                                        if (node->value.second.checked == cs)   return;
 
-					//First, check the children of node. This prevent the use of unactualized child nodes during "on_checked" 
+					//First, check the children of node, it prevents the use of
+					//unactualized child nodes during "on_checked".
 					node_type * child = node->child;
 					while(child)
 					{
 						impl_->check_child(child, cs != checkstate::unchecked);
 						child = child->next;
 					}
-					//Then, check self
+
+					//After that, check self.
 					impl_->set_checked(node, cs);
 
 					//Then, change the parent node check state
 					node_type * owner = node->owner;
+
 					while(owner->owner)   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
+					                      /// Make sure that the owner is not the ROOT node.
+
 					{
 						std::size_t len_checked = 0;
 						std::size_t size = 0;
@@ -1513,7 +1535,8 @@ namespace gui
 
 						if(cs == owner->value.second.checked)
 							break;
-                        impl_->set_checked(owner, cs);
+
+						impl_->set_checked(owner, cs);
 						owner = owner->owner;
 					}
 				}
