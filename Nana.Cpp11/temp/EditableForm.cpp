@@ -157,7 +157,7 @@ EditLayout_Form::EditLayout_Form  (	EditableWidget &EdWd_owner)
 	    if   ( _owner._myLayout.empty())    
         {    if (! _owner._DefLayoutFileName.empty())
              {   _OSbx.FileName	(   _owner._DefLayoutFileName  );
-                 OpenFile();
+                 OpenFileN( _owner._DefLayoutFileName );
              }
         } else   		          
         {   _textBox.append(nana::string(nana::charset(_owner._myLayout)),false );
@@ -186,9 +186,22 @@ void EditLayout_Form::MakeResponsive()
         //   }
         //   if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
         //}); 
-		_menuFile.append  (STR("&Open..."   ),[this](nana::gui::menu::item_proxy& ip){ this->_OSbx.open(nana::string(nana::charset(this->_textBox.filename())));this->OpenFile()  ;}                );
-        _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip){  ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;}   );
-		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip){ _OSbx.save(nana::string(nana::charset(_textBox.filename())));SaveFile() ;} );
+		_menuFile.append  (STR("&Open..."   ),[this](nana::gui::menu::item_proxy& ip)
+        { 
+            _OSbx.OpenClick();
+            //this->_OSbx.open(nana::string(nana::charset(this->_textBox.filename())));
+            //this->OpenFile() ;
+        }                );
+        _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip)
+        {  
+            ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;
+        }   );
+		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip)
+        { 
+             _OSbx.SaveClick();
+            //_OSbx.save(nana::string(nana::charset(_textBox.filename())));
+            //SaveFile() ;
+        } );
          AddMenuProgram ();
 
          //InitMenu    ();
@@ -198,9 +211,11 @@ void EditLayout_Form::MakeResponsive()
         SelectClickableWidget( _textBox, *_menuProgramInBar );
         SelectClickableWidget( _menuBar, *_menuProgramInBar);
 
-        _OSbx.onOpenFile/*.make_event	<nana::gui::events::click>*/ ([this]( const std::string   &file){ this->OpenFileN(nana::charset(file)) ;} );
+        _OSbx.onOpenFile ([this]( const nana::string   &file){ this->OpenFileN(file) ;} );
+		_OSbx.onSaveFile ([this]( const nana::string   &file){ this->ForceSave(file) ;} );
+        /*.make_event	<nana::gui::events::click>*//*.make_event	<nana::gui::events::click>*/
         //_OSbx.onOpenFile/*.make_event	<nana::gui::events::click>*/ ([this]( const std::string   &file){ this->OpenFileN(file) ;} );
-		_OSbx.onSave/*.make_event	<nana::gui::events::click>*/ ([this](){  this->SaveFile() ;} );
+        //{  this->SaveFile() ;} );
 		//_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
         _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout();}); 
         _OSbx.onSelect([&](const nana::string& file){OpenFileN(file); });
@@ -265,11 +280,7 @@ void EditLayout_Form::ReLayout()
 void EditLayout_Form::toCppCode()
 {
     if ( _textBox.edited () )
-    {
-        _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
-        SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
-        _OSbx.fb_s.title(STR("")); 
-    }
+        SaveFileN(nana::string(nana::charset(_textBox.filename())),STR("Do you want to save your edited Layout?")); 
     nana::string lay,line;
 	for (size_t linum=0; _textBox.getline(linum , line) ; ++linum )
 			lay+= STR("\t\"")+ line + STR("\t\\n\\t\"\n");
@@ -285,11 +296,7 @@ void EditLayout_Form::toCppCode()
 void EditLayout_Form::ReloadDef()
 {
     if ( _textBox.edited () )
-    {
-        _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
-        SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
-        _OSbx.fb_s.title(STR("")); 
-    }
+        SaveFileN(nana::string(nana::charset(_textBox.filename())),STR("Do you want to save your edited Layout?")); 
     _owner.ResetDefLayout(); 
     _owner.ReCollocate( );
     _textBox.reset(nana::string(nana::charset(_owner._myLayout)) );
@@ -297,40 +304,35 @@ void EditLayout_Form::ReloadDef()
     _textBox.show();
 }
 
-void EditLayout_Form::OpenFile()
-	{	 
-      if(_OSbx.Canceled () ) return;
-      //std::wcout<<std::endl<<STR("OpenFile: ")<<std::endl;   // debbug
-
-	  OpenFileN(_OSbx.FileName());
-	}
+//void EditLayout_Form::OpenFile()
+//	{	 
+//      if(_OSbx.Canceled () ) return;
+//      //std::wcout<<std::endl<<STR("OpenFile: ")<<std::endl;   // debbug
+//
+//	  OpenFileN(_OSbx.FileName());
+//	}
+//void EditLayout_Form::SaveFile()
+//	{	
+//      if( ! _OSbx.Canceled () ) 
+//          ForceSave(_OSbx.FileName()  );
+//	}
 void EditLayout_Form::OpenFileN(const nana::string   &file)
 	{	  
 		if( file.empty() ) 
             return;
         //std::wcout<<std::endl<<STR("OpenFileN: ")<<file<<std::endl;   // debbug
         if ( _textBox.edited () )
-        {
-           _OSbx.fb_s.title(STR("Do you want to save your edited Layout?")); 
-            SaveFileN(nana::string(nana::charset(_textBox.filename()))); 
-           _OSbx.fb_s.title(STR("")); 
-        }
+            SaveFileN(nana::string(nana::charset(_textBox.filename())),STR("Do you want to save your edited Layout?")); 
 		_textBox.load(file.c_str() );
         _textBox.select(true);
         _textBox.show();
         //std::wcout<<std::endl<<STR("OpenedFileN: ")<<file<<std::endl;   // debbug
-	}
-void EditLayout_Form::SaveFileN(const nana::string   &fileTip)
+}
+void EditLayout_Form::SaveFileN(const nana::string   &fileTip, const nana::string   &tmp_title )
 	{	
         //std::wcout<<std::endl<<STR("Seaving tip: ")<<fileTip<<std::endl;   // debbug
-        _OSbx.save(fileTip);
+        _OSbx.save(fileTip, tmp_title);
         SaveFile();
-	}
-void EditLayout_Form::SaveFile()
-	{	
-      if(_OSbx.Canceled () ) 
-          return;
-      ForceSave(_OSbx.FileName().c_str() );
 	}
 void EditLayout_Form::ForceSave(const nana::string   &file)
 	{	

@@ -52,9 +52,9 @@ void FilePickBox::pick(const nana::string &file_tip)
 }
 void FilePickBox::pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip)
 {
-	//assert((      std::wcout<<std::endl<<action<<STR(" (with tip: ") << file_tip<<STR(")")<<std::endl , true  ));;
+    nana::string old_t;
     if (!action.empty())
-        fb.title(action);
+        old_t=fb.title(action);
     fb.init_file(file_tip); 
 	if(fb())  
 	{	_user_selected=false;
@@ -66,11 +66,8 @@ void FilePickBox::pick_file(nana::gui::filebox&  fb, const nana::string &action,
     else 
         _canceled= true;
     if (!action.empty()) // revisar !!
-        fb.title(action);
-
-
-    //assert((     std::wcout<<std::endl<<action<<STR(" Canceled: ")<<std::endl , true  ));;
-}
+        fb.title(old_t);
+ }
 
 
 OpenSaveBox::OpenSaveBox (nana::gui::widget &fm, 
@@ -107,8 +104,8 @@ void OpenSaveBox::open(const nana::string &file_tip)
 {
 	pick_file( fb_o, STR("open"), file_tip);
 }
-void OpenSaveBox::save(const nana::string &file_tip)
+void OpenSaveBox::save(const nana::string &file_tip,  const nana::string &action)
 {
-	pick_file( fb_s, STR("save"), file_tip);
+	pick_file( fb_s, action /*.empty() ? STR("Save")*/, file_tip);
 }
 

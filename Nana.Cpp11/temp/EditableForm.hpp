@@ -227,6 +227,7 @@ class FilePickBox : public  CompoWidget
                         _canceled{false};
 	nana::gui::button	 Pick    {*this, STR("...")};
 	nana::gui::filebox   fb_p    {*this, true};
+	nana::gui::combox	_fileName{*this};    //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
@@ -235,7 +236,6 @@ class FilePickBox : public  CompoWidget
 	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
 
  public:
-	nana::gui::combox	_fileName{*this};    //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 	FilePickBox     (	nana::gui::widget    &EdWd_owner, 
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
@@ -280,19 +280,22 @@ class FilePickBox : public  CompoWidget
 		//	OpenFileN(fileN );
 		//};
  	}
-
+    nana::gui::widget& _file_w()
+    {
+        return _fileName;
+    }
 };
 class OpenSaveBox : public  FilePickBox
 {
     nana::gui::button	Open{*this, STR("Open") }, 
                         Save{*this, STR("Save")};
+	nana::gui::filebox  fb_o{*this, true },                      //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        fb_s{*this, false };
 
     void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
 
 public:
-	nana::gui::filebox  fb_o{*this, true },                      //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        fb_s{*this, false };
 	OpenSaveBox     (	nana::gui::widget    &EdWd_owner, 
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
@@ -304,14 +307,19 @@ public:
 		fb_s.add_filter(description, filetype);
         return *this;
 	}
-	void		open(const nana::string &file_tip=STR(""));
-	void		save(const nana::string &file_tip=STR(""));
-    nana::gui::event_handle onOpenFile(std::function<void(const std::string& file)> opn)
-	{	 
+	void		open(const nana::string &file_tip=STR("")); 
+    void		save(const nana::string &file_tip = STR(""),  const nana::string &action=STR(""));
+    void onOpenAndSelectFile(std::function<void(const nana::string& file)> opn)
+    {
+        onSelect(opn);
+        onOpenFile(opn);
+    }
+    nana::gui::event_handle onOpenFile(std::function<void(const nana::string& file)> opn)
+    {
         return Open.make_event	<nana::gui::events::click> ([this, opn]()
                     { 
                       if( ! this->Canceled () )   
-                         opn ( nana::charset ( this->FileName() )) ; 
+                         opn ( this->FileName() ) ; 
                     } );
  	}
     nana::gui::event_handle onOpen    (std::function<void(                       )> opn)
@@ -322,12 +330,12 @@ public:
                          opn (  ) ; 
                     } );
  	}
-    nana::gui::event_handle onSaveFile(std::function<void(const std::string& file)> sve)
+    nana::gui::event_handle onSaveFile(std::function<void(const nana::string& file)> sve)
 	{	 
         return Save.make_event	<nana::gui::events::click> ([this,sve]()
                     { 
                       if( ! Canceled () )   
-                         sve ( nana::charset ( FileName() )) ; 
+                         sve ( FileName() ) ; 
                     } );
  	}
     nana::gui::event_handle onSave    (std::function<void(                       )> sve)
@@ -338,6 +346,17 @@ public:
                          sve (  ) ; 
                     } );
  	}
+
+	void OpenClick() 	{Click(Open);}
+	void SaveClick() 	{Click(Save);}
+	static  void Click(nana::gui::window w)
+			{
+				nana::gui::eventinfo ei;
+				ei.mouse.x= 0, ei.mouse.y = 0;
+				ei.mouse.left_button = true;
+				ei.mouse.ctrl = ei.mouse.shift = false;
+				nana::gui::API::raise_event<nana::gui::events::click>(w, ei);
+			}
 };
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
@@ -391,9 +410,12 @@ public:
     void ReloadDef();
 	void OpenFile ();
 	void OpenFileN(const nana::string   &file=STR(""));
-	void SaveFileN(const nana::string   &fileTip=STR(""));
+	void SaveFileN(const nana::string   &fileTip=STR("") , const nana::string   &tmp_title = nana::string{} );
     void ForceSave(const nana::string   &file);
-	void SaveFile ();
+    void SaveFile(){     // temporal !!!!!!!!!!!!!!
+        if (!_OSbx.Canceled())
+            ForceSave(_OSbx.FileName());
+    };
     void toCppCode();
 }	;
 #endif 
