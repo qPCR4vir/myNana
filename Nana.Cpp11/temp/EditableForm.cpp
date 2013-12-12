@@ -19,8 +19,7 @@
                _thisEdWd   (thisEdWd), 
                _place      (_thisEdWd),    
                _Titel(std::move(Titel)),        //   ???
-               _DefLayoutFileName(DefLayoutFileName), _myEdLayForm(nullptr),
-               changed(false),validated (false)
+               _DefLayoutFileName(DefLayoutFileName) 
      {  
          //nana::rectangle r;  //debugg
       //  r=nana::gui::API::window_size(ThisWidget);  //debugg
@@ -66,9 +65,10 @@
                            *this,               ///< the form or panel, owner of place and all other widgets of the editable widget
                            Titel, DefLayoutFileName)
     {
-        //std::cerr<<"\nConstructing CompoWidget: "; // debbug
+        
+            //std::cerr<<"\nConstructing CompoWidget: "; // debbug
         //std::wcerr<< this->_Titel;                 // debbug
-
+                      //   ???????????????????????????????????????????????????????????????????????????????????
         EdWd_owner.make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
         {
             //std::cerr<<"\nClosing CompoWidget: "; // debbug
@@ -176,6 +176,9 @@ void EditLayout_Form::InitCaptions()
 	}
 void EditLayout_Form::MakeResponsive()
 	{
+        _OSbx.onOpenAndSelectFile([this]( const nana::string   &file){ this->OpenFileN(file) ;} );
+		_OSbx.onSaveFile         ([this]( const nana::string   &file){ this->ForceSave(file) ;} );
+
         _textBox.ext_event().first_change=  ([&](){on_edited();});
         //_textBox.make_event <nana::gui::events::click> ([&](const nana::gui::eventinfo& ei)
         //{
@@ -186,57 +189,27 @@ void EditLayout_Form::MakeResponsive()
         //   }
         //   if (ei.mouse.left_button )         std::wcout<<std::endl<<STR("Left  Click")<<std::endl;
         //}); 
-		_menuFile.append  (STR("&Open..."   ),[this](nana::gui::menu::item_proxy& ip)
-        { 
-            _OSbx.OpenClick();
-            //this->_OSbx.open(nana::string(nana::charset(this->_textBox.filename())));
-            //this->OpenFile() ;
-        }                );
-        _menuFile.append  (STR("&Save"      ),[&](nana::gui::menu::item_proxy& ip)
+		_menuFile.append  (STR("&Open..."   ),[this](nana::gui::menu::item_proxy& ip)  {  _OSbx.OpenClick(); } );
+        _menuFile.append  (STR("&Save"      ),[this](nana::gui::menu::item_proxy& ip)
         {  
             ForceSave(nana::string(nana::charset(_textBox.filename())) ) ;
         }   );
-		_menuFile.append  (STR("Save &As..."),[&](nana::gui::menu::item_proxy& ip)
-        { 
-             _OSbx.SaveClick();
-            //_OSbx.save(nana::string(nana::charset(_textBox.filename())));
-            //SaveFile() ;
-        } );
+		_menuFile.append  (STR("Save &As..."),[this](nana::gui::menu::item_proxy& ip)  {  _OSbx.SaveClick(); } );
          AddMenuProgram ();
 
          //InitMenu    ();
         _menuProgramInBar->append_splitter();
-		_menuProgramInBar->append (STR("&Apply Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip){ReLayout();});
+		_menuProgramInBar->append (STR("&Apply Layout to calling windows"         ),[&](nana::gui::menu::item_proxy& ip) {ReLayout ();});
 		_menuProgramInBar->append (STR("&Restet Default Layout to calling windows"),[&](nana::gui::menu::item_proxy& ip) {ReloadDef();});
+
         SelectClickableWidget( _textBox, *_menuProgramInBar );
         SelectClickableWidget( _menuBar, *_menuProgramInBar);
 
-        _OSbx.onOpenFile ([this]( const nana::string   &file){ this->OpenFileN(file) ;} );
-		_OSbx.onSaveFile ([this]( const nana::string   &file){ this->ForceSave(file) ;} );
-        /*.make_event	<nana::gui::events::click>*//*.make_event	<nana::gui::events::click>*/
-        //_OSbx.onOpenFile/*.make_event	<nana::gui::events::click>*/ ([this]( const std::string   &file){ this->OpenFileN(file) ;} );
-        //{  this->SaveFile() ;} );
-		//_OSbx.Pick.make_event	<nana::gui::events::click> (*this , &EditLayout_Form::OpenFile		);
-        _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout();}); 
-        _OSbx.onSelect([&](const nana::string& file){OpenFileN(file); });
-  //          _fileName.ext_event().selected = [&](nana::gui::combox&cb)
-		//{
-		//    if(! _OSbx.UserSelected()) return;
-
-  //          nana::string   fileN=_OSbx.FileName();  // The newly selected name
-  //          //std::wcout<<std::endl<<STR("Selected: ")<<fileN<<std::endl;   // debbug
-		//	OpenFileN(fileN );
-		//};
-        //make_event<nana::gui::events::unload>([this](const nana::gui::eventinfo& ei)
-        //{
-        //    ei.unload.cancel = true;    //Stop closing and then
-        //    hide();
-        //});
-        _ReCollocate.make_event <nana::gui::events::click> ([&](){ReLayout()  ;}   ); 
-        _panic.make_event       <nana::gui::events::click> ([&](){_owner.ResetDefLayout(); _owner.ReCollocate( );}); 
-        _def.make_event         <nana::gui::events::click> ([&](){ReloadDef() ;}   ); 
-        _hide.make_event        <nana::gui::events::click> ([&](){hide()      ;}   ); 
-        _cpp.make_event         <nana::gui::events::click> ([&](){toCppCode() ;}   ); 
+        _panic      .make_event <nana::gui::events::click> ([&](){ _owner.ResetDefLayout(); _owner.ReCollocate( );}); 
+        _def        .make_event <nana::gui::events::click> ([&](){ ReloadDef() ;}   ); 
+        _hide       .make_event <nana::gui::events::click> ([&](){ hide()      ;}   ); 
+        _cpp        .make_event <nana::gui::events::click> ([&](){ toCppCode() ;}   ); 
+        _ReCollocate.make_event <nana::gui::events::click> ([&](){ ReLayout()  ;}   ); 
 	}
 void EditLayout_Form::on_edited()
 {

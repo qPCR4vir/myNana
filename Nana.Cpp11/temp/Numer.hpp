@@ -259,7 +259,7 @@ public:
         
         //_num.add_validated ( [&](){Validated ();}        );
     }
-    virtual    void add_validated(const std::function<void(void)>& v)
+    virtual    void add_validated(const std::function<bool(void)>& v)
     {
         _num.add_validated (v); 
         //_validated.push_back (v); 

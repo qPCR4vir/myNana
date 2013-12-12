@@ -73,14 +73,15 @@ class EditableWidget: public EnablingEditing
     nana::string        _DefLayoutFileName;	
     nana::gui::vplace	_place;
 
-    std::vector<std::function<void(void)>> _validate, _validated;
-    bool changed, validated;
-    bool Validate()
+    std::vector<std::function<bool(void)>> _validate, _validated;
+    bool changed{false}, validated{true};
+    bool validate_only(/*bool validate_only=true*/)
     {
         try
         {
             for(auto &v:_validate)
-                v();                /// TODO: change to return bool: validated &= v();
+               if( !v()) return false;                /// TODO: change to return bool: validated &= v();
+            return true;
         }
         catch ( ... )
         { 
@@ -88,18 +89,14 @@ class EditableWidget: public EnablingEditing
             std::wcerr << _Titel;
             return false; 
         }
-
-        if (validated)
-            return Validated();
-        return true;
     }
     bool Validated()
     {
         try
         {
             for ( auto &v : _validated )
-                v ();             /// TODO: change to return bool: validated &= v();   ????
-            return true;
+                validated &= v ();             /// TODO: change to return bool: validated &= v();   ???? actualize validate ????????
+            return validated;
         }
         catch ( ... )
         { 
@@ -108,18 +105,24 @@ class EditableWidget: public EnablingEditing
             return false; 
         }
     }
-    void add_validate(const std::function<void(void)>& v)
+    bool Validate(bool _validate_only=false)
+    {
+        if (validate_only() && !_validate_only)
+              Validated();    /// return ?????
+        return true;
+    }
+    void add_validate(const std::function<bool(void)>& v)
     {
         _validate.push_back (v); 
     }
-virtual    void add_validated(const std::function<void(void)>& v)
+virtual    void add_validated(const std::function<bool(void)>& v)
     {
         _validated.push_back (v); 
     }
 
 
 	nana::gui::menu	    _menuProgram;
-	EditLayout_Form*    _myEdLayForm;    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
+	EditLayout_Form*    _myEdLayForm{nullptr};    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
     virtual     ~EditableWidget     ();
     virtual void SetDefLayout       ()=0;
@@ -223,35 +226,24 @@ class CompoWidget : public  nana::gui::panel<false> , public EditableWidget
 
 class FilePickBox : public  CompoWidget
 {	nana::gui::label	_label   {*this};
-    bool                _user_selected{false}, 
-                        _canceled{false};
-	nana::gui::button	 Pick    {*this, STR("...")};
-	nana::gui::filebox   fb_p    {*this, true};
 	nana::gui::combox	_fileName{*this};    //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
+	nana::gui::button	 Pick    {*this, STR("...")};
+
+	nana::gui::filebox   fb_p    {*this, true};
 
     void SetDefLayout       () override ;
     void AsignWidgetToFields() override ;
 	void		pick(const nana::string &file_tip=STR(""));
  protected:
-	void pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip);
+	void select_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip, bool select_only=false);
+    bool                _user_selected{ false }, _validate_only{false},
+                        _canceled{false};
 
  public:
 	FilePickBox     (	nana::gui::widget    &EdWd_owner, 
 						const nana::string   &label,
 						const nana::string   &DefLayoutFileName=STR("") );
 
-	virtual FilePickBox& add_filter(const nana::string& description, const nana::string& filetype)
-	{ 
-		fb_p.add_filter(description, filetype);
-        return *this;
-	}
-	virtual FilePickBox& add_filter(const std::vector<std::pair<nana::string, nana::string>> &filtres)
-        {
-            fb_p.add_filter(filtres );
-            //for (auto &f : filtres)
-            //    add_filter(f.first, f.second);
-            return *this;
-        };
     void SetDefLayout       (unsigned lab) ;
     void ResetLayout        (unsigned lab )
     {
@@ -260,17 +252,27 @@ class FilePickBox : public  CompoWidget
         ReCollocate( );    
     }
 
-	nana::string FileName()const						{  return _fileName.caption();}
-	void		 FileName(const nana::string&  FileName){ _fileName.push_back(FileName).option(_fileName.the_number_of_options());}
-    bool        UserSelected() const {return _user_selected ;}
-    bool        Canceled()     const {return _canceled;}
-    void        onSelect( std::function<void(const nana::string& file)> slt)
+    virtual FilePickBox& add_filter(const nana::string& description, const nana::string& filetype)
+	{ 
+		fb_p.add_filter(description, filetype);
+        return *this;
+	}
+	virtual FilePickBox& add_filter(const nana::gui::filebox::filtres &filtres)
+        {
+            fb_p.add_filter(filtres );
+            //for (auto &f : filtres)
+            //    add_filter(f.first, f.second);
+            return *this;
+        };
+    void        onSelectFile( std::function<void(const nana::string& file)> slt)
 	{	 
-        _fileName.ext_event().selected = ([this, slt](nana::gui::combox&cb)
+        add_validate([this, slt](/*nana::gui::combox&cb*/)
                     { 
-                      if( this->UserSelected() )   
+                      //if( this->UserSelected() )   
                           slt ( nana::charset ( this->FileName() )) ; 
-                    } );
+                      return true;   // or cath exception to said false
+                    } ); 
+        //_fileName.ext_event().selected = (
 
   //      _fileName.ext_event().selected = [&]()
 		//{
@@ -280,11 +282,37 @@ class FilePickBox : public  CompoWidget
 		//	OpenFileN(fileN );
 		//};
  	}
-    nana::gui::widget& _file_w()
-    {
-        return _fileName;
+
+	nana::string FileName()const						{  return _fileName.caption();}
+	void		 FileName(const nana::string&  FileName)
+    { 
+        _fileName.push_back(FileName).option(_fileName.the_number_of_options());
+        nana::gui::API::update_window (_fileName);
     }
+	void		 FileNameOnly(const nana::string&  FileN )  /// validate only
+    { 
+        bool  vo{ true };
+        std::swap(vo,_validate_only);
+        FileName ( FileN  ) ;
+        std::swap(vo,_validate_only);
+    }
+    void         FileNameOpen(const nana::string&  item)  /// validate and validated
+    {
+        bool us{ false }, vo{ false };
+        //std::swap(us,_user_selected); 
+        std::swap(vo,_validate_only);
+        FileName(item) ;
+        //std::swap(us,_user_selected); 
+        std::swap(vo,_validate_only);
+    }
+    bool        UserSelected() const {return _user_selected ;}
+    bool        Canceled()     const {return _canceled;}
+    //nana::gui::widget& _file_w()
+    //{
+    //    return _fileName;
+    //}
 };
+
 class OpenSaveBox : public  FilePickBox
 {
     nana::gui::button	Open{*this, STR("Open") }, 
@@ -307,13 +335,35 @@ public:
 		fb_s.add_filter(description, filetype);
         return *this;
 	}
-	void		open(const nana::string &file_tip=STR("")); 
-    void		save(const nana::string &file_tip = STR(""),  const nana::string &action=STR(""));
-    void onOpenAndSelectFile(std::function<void(const nana::string& file)> opn)
+	OpenSaveBox& add_filter(const nana::gui::filebox::filtres &filtres) override
+	{ 
+		FilePickBox::add_filter(filtres);
+		fb_o.add_filter(filtres);
+		fb_s.add_filter(filtres);
+        return *this;
+	}
+
+    OpenSaveBox& onOpenAndSelect(std::function<bool( )> opn)    {    add_validated( opn);  return *this; }
+    OpenSaveBox& onSave         (std::function<void( )> sve)	{	 _onSave_     ( sve);  return *this; }
+
+    void OpenClick() 	{Click(Open);}
+	void SaveClick() 	{Click(Save);}
+
+    OpenSaveBox& onOpenAndSelectFile(std::function<void(const nana::string& file)> opn)
     {
-        onSelect(opn);
-        onOpenFile(opn);
+        add_validated([this, opn](/*nana::gui::combox&cb*/)
+                    { 
+                      if( this->UserSelected() )   
+                          opn ( nana::charset ( this->FileName() )) ; 
+                      return true;
+                    } ); 
+        
+        return *this;
     }
+	
+    void		open(const nana::string &file_tip=STR("")); 
+    void		save(const nana::string &file_tip = STR(""),  const nana::string &action=STR(""));
+    
     nana::gui::event_handle onOpenFile(std::function<void(const nana::string& file)> opn)
     {
         return Open.make_event	<nana::gui::events::click> ([this, opn]()
@@ -338,7 +388,7 @@ public:
                          sve ( FileName() ) ; 
                     } );
  	}
-    nana::gui::event_handle onSave    (std::function<void(                       )> sve)
+    nana::gui::event_handle _onSave_  (std::function<void(                       )> sve)
 	{	 
         return Save.make_event	<nana::gui::events::click> ([this,sve]()
                     { 
@@ -347,8 +397,6 @@ public:
                     } );
  	}
 
-	void OpenClick() 	{Click(Open);}
-	void SaveClick() 	{Click(Save);}
 	static  void Click(nana::gui::window w)
 			{
 				nana::gui::eventinfo ei;

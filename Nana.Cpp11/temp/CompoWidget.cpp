@@ -17,9 +17,28 @@ FilePickBox::FilePickBox (nana::gui::widget &fm,
 
 	_fileName.editable(true);
 
-    _user_selected=true;
     InitMyLayout();
     SelectClickableWidget( _label);
+
+    _fileName.ext_event().selected = ([this](nana::gui::combox&cb)
+            { 
+            //assert((  std::cerr<< "\nBefore calling Validate,in select FilePickBox._fileName: " , true  ));;
+            //assert((  std::wcerr<< caption() << std::endl , true  ));;
+                      
+                //if( this->UserSelected() )   
+                    this->Validate(this->_validate_only);
+            } );
+    _fileName.make_event <nana::gui::events::focus>([this](const nana::gui::eventinfo& ei)
+        {  
+            //assert((  std::cerr<< "\nBefore calling validating_only," << (ei.focus.getting ? "geting ":"lossing ") << "Focus: , FilePickBox._fileName: " , true  ));;
+            //assert((  std::wcerr<< caption() << std::endl , true  ));;
+            
+            if (!ei.focus.getting) 
+                          this->validate_only();
+        });
+
+
+    _user_selected=true;
 }
     void FilePickBox::SetDefLayout       () 
     {
@@ -48,19 +67,20 @@ FilePickBox::FilePickBox (nana::gui::widget &fm,
 }
 void FilePickBox::pick(const nana::string &file_tip)
 {
-	pick_file( fb_p, STR("pick"), file_tip);
+    bool  vo{ true };
+    std::swap(vo,_validate_only);
+    select_file( fb_p, STR(""), file_tip,true);
+    std::swap(vo,_validate_only);
 }
-void FilePickBox::pick_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip)
+void FilePickBox::select_file(nana::gui::filebox&  fb, const nana::string &action, const nana::string &file_tip, bool select_only)
 {
     nana::string old_t;
     if (!action.empty())
         old_t=fb.title(action);
     fb.init_file(file_tip); 
 	if(fb())  
-	{	_user_selected=false;
-        _fileName.push_back(fb.file()).option(_fileName.the_number_of_options());
-	    //assert((      std::wcout<<std::endl<<action<<STR(" OK: ")<<std::endl , true  ));;
-        _user_selected=true;
+	{	
+        select_only ? FileNameOnly (fb.file()) : FileNameOpen (fb.file());
         _canceled= false;
     }
     else 
@@ -102,10 +122,16 @@ OpenSaveBox::OpenSaveBox (nana::gui::widget &fm,
 	
 void OpenSaveBox::open(const nana::string &file_tip)
 {
-	pick_file( fb_o, STR("open"), file_tip);
+    bool us{ false }, vo{ false };
+    std::swap(vo,_validate_only);
+	select_file( fb_o, STR(""), file_tip,false);
+    std::swap(vo,_validate_only);
 }
 void OpenSaveBox::save(const nana::string &file_tip,  const nana::string &action)
 {
-	pick_file( fb_s, action /*.empty() ? STR("Save")*/, file_tip);
+    bool  vo{ true };
+    std::swap(vo,_validate_only);
+	select_file( fb_s, action , file_tip, true);
+    std::swap(vo,_validate_only);
 }
 
