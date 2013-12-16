@@ -71,7 +71,9 @@ class EditableWidget: public EnablingEditing
 	nana::string		_Titel;   //  ????
     std::string         _myLayout, _DefLayout;
     nana::string        _DefLayoutFileName;	
+	nana::gui::menu	    _menuProgram;
     nana::gui::vplace	_place;
+	EditLayout_Form*    _myEdLayForm{nullptr};    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
     std::vector<std::function<bool(void)>> _validate, _validated;
     bool changed{false}, validated{true};
@@ -121,8 +123,6 @@ virtual    void add_validated(const std::function<bool(void)>& v)
     }
 
 
-	nana::gui::menu	    _menuProgram;
-	EditLayout_Form*    _myEdLayForm{nullptr};    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
     virtual     ~EditableWidget     ();
     virtual void SetDefLayout       ()=0;
@@ -219,7 +219,7 @@ class EditableForm: public EditableWidget
 
 class CompoWidget : public  nana::gui::panel<false> , public EditableWidget  
 {public:
-	CompoWidget ( nana::gui::widget& EdWd_owner,              ///< The ownwer of the panel 
+	CompoWidget ( nana::gui::widget& owner,              ///< The ownwer of the panel 
                   nana::string Titel, 
                   const nana::string &DefLayoutFileName=STR(""));
 };
@@ -409,28 +409,31 @@ public:
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
 {
-    EditableWidget     &_owner;
+    EditableWidget     &_owner;   /// intercambiar nombre con owner de EditableWidget
 	OpenSaveBox			_OSbx       {*this, STR("Layout:" )};
 	nana::gui::button	_ReCollocate{*this, STR("Apply"	  )},    _hide{*this, STR("Hide"	 )}, 
                         _panic      {*this, STR("Panic !" )},     _def{*this, STR("Default"  )}, 
                         _cpp        {*this, STR("C++ code")};
     nana::gui::textbox	_textBox{ *this };
     nana::gui::menu	   &_menuFile{_menuBar.push_back(STR("&File"))};
-    nana::gui::event_handle hide_{Hidable()};  // hide_(),
+    nana::gui::event_handle _hide_not_unload{Hidable()};  // hide_(),
 
 public:
-	EditLayout_Form (EditableWidget &EdWd_owner );
+	EditLayout_Form (EditableWidget &EdWd_owner , int i=0);
     void Closable()
     { 
          //assert((     std::cerr<<"\nMaking Closeable EditLayout_Form: "   , true) );;   // debbug
          //assert((     std::wcerr<< this->caption()  , true ) ); ;  // debbug
  
-        umake_event ( hide_);
+        umake_event ( _hide_not_unload);
+        _hide_not_unload = nullptr;
     }
     ~EditLayout_Form()
     {
           //assert((    std::cerr<<"\nDestroying EditLayout_Form: " , true   ));;   // debbug
           //assert((    std::wcerr<< this->caption()  , true  )); ;  // debbug
+        //umake_event ( hide_);
+        Closable();
     }
 
  private:

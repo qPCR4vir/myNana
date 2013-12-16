@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <../temp/vplace.hpp>
+#include <nana/gui/wvl.hpp>
 #include <nana/gui/programming_interface.hpp>
 #include <iostream>    // temp, for debugging
 #include <nana/gui/widgets/label.hpp>
@@ -90,7 +91,7 @@ namespace vplace_impl
 			}
 			for(auto & fsn: fastened_in_div)
 			{	
-                API::move_window(fsn, r);
+                API::move_window(fsn, r);   // si alguien habia cerrado la w fsn despues del populate children, tendremos problemas? make unload fastened erase?
                 API::show_window(fsn, API::visible(fsn));
             }
 		}
@@ -712,20 +713,19 @@ namespace vplace_impl
     struct implement           //struct implement
 	{
         std::unique_ptr<field_t>        temp_field_t;
-		window                          parent_window_handle;
-		event_handle                    event_size_handle;
+        window                          parent_window_handle{nullptr};
+        event_handle                    event_size_handle{nullptr};
 		std::unique_ptr<division>       root_division;
         std::unordered_set<std::string> names;     ///<  All the names defines. Garant no repited name.
-        unsigned                        div_numer; ///<  Used to generate unique div name.
+        unsigned                        div_numer{0}; ///<  Used to generate unique div name.
 
             /// All the fields defined by user with field(name)<<IField, 
             /// plus the div. find from the layot in div()
 		std::multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::multimap<std::string,    window              > fastened;
-        std::vector<std::unique_ptr <nana::gui::label>>     widgets;                                 
+        std::vector/*<std::unique_ptr */<nana::gui::label*>/*>*/     widgets;                                 
 			
-        implement()	 : event_size_handle(nullptr), div_numer(0), parent_window_handle(nullptr){}
-       ~implement() 	{ if (event_size_handle)   API::umake_event(event_size_handle);	    }
+       ~implement() 	{ API::umake_event(event_size_handle);	    }
 
         void              collocate();
 		void              div(const char* s);
@@ -816,27 +816,38 @@ namespace vplace_impl
 
         field_t& operator<<(const std::string&  txt)	override 
         {   
+			//return *this;  //  ttttttttttttttttttttttttttttttttttttttttttt
             return add_label( nana::charset (txt)  );
         };
         field_t& operator<<(const std::wstring&  txt)	override 
         {   
+			//return *this;    //  ttttttttttttttttttttttttttttttttttttttttttt
             return add_label( nana::charset (txt)  );
         };
         field_t&  add_label(const nana::string& txt )
         {            
             //std::unique_ptr <nana::gui::label> lab(new nana::gui::label(place_impl_->parent_window_handle, txt  ));
-            place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, txt  ));
+            //API::
+            nana::gui::label*lab = std::addressof(nana::gui::form_loader <nana::gui::label>()(place_impl_->parent_window_handle, txt));
+            place_impl_->widgets.push_back (lab);/*newstd::addressof (nana::gui::form_loader <nana::gui::label>()(place_impl_->parent_window_handle, txt  ))*/ 
+            //place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, txt  ));
             add(create_field( *place_impl_->widgets.back () ));
-			API::make_event<events::destroy>(*place_impl_->widgets.back (), [this](const eventinfo& ei)
+            auto pi = place_impl_;
+			auto dtr = API::make_event<events::destroy>(*lab, [pi](const eventinfo& ei)
 			{
-				for (auto f=place_impl_->widgets.begin(); f!=place_impl_->widgets.end(); ++f)
-                    if (f->get()->handle() ==  ei.window )
+				for (auto f=pi->widgets.begin(); f!=pi->widgets.end(); ++f)
+                    if (/*->get()*/(*f)->handle() ==  ei.window )
                     {
-                        place_impl_->widgets.erase(f);    // delete ???
-				        place_impl_->collocate();
+                        pi->widgets.erase(f);    // delete ???
+				        pi->collocate();
                         break;
                     }
 			});
+            //API::make_event<events::destroy>(*lab, [dtr](const eventinfo& ei)
+            //{
+            //    API::umake_event(dtr); 
+            //});	
+
 			return *this;
         }
         field_t& operator<<(minmax Size_range)	override { MinMax(Size_range) ;return *this;};
@@ -846,18 +857,23 @@ namespace vplace_impl
 		field_t& fasten(window wd)              override
 		{
 			place_impl_->fastened.emplace (name , wd); 
-
+            
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
-			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+            auto pi = place_impl_;
+			auto dtr = API::make_event<events::destroy>(wd, [pi](const eventinfo& ei)
 			{
-				for (auto f=place_impl_->fastened.begin(); f!=place_impl_->fastened.end(); ++f)
+				for (auto f=pi->fastened.begin(); f!=pi->fastened.end(); ++f)
                     if (f->second ==  ei.window )
                     {
-                        place_impl_->fastened.erase(f);    // delete ???
+                        pi->fastened.erase(f);    // delete ???
                         break;
                     }
 			});	
+            //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
+            //{
+            //    API::umake_event(dtr); 
+            //});	
 			return *this;
 		}
 		field_t& operator<<(const fixed_widget& fx)    {return add(new fixed_widget(fx));	 }
@@ -876,16 +892,21 @@ namespace vplace_impl
 		//It will delete the element and recollocate when the window destroyed.
 		void _m_make_destroy(window wd)
 		{
-			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+            auto pi = place_impl_;
+            auto dtr = API::make_event<events::destroy>(wd, [pi](const eventinfo& ei)
 			{
-				for (auto f=place_impl_->fields.begin(); f!=place_impl_->fields.end(); ++f)
+				for (auto f=pi->fields.begin(); f!=pi->fields.end(); ++f)
                     if (f->second->window_handle() ==  ei.window )
                     {
-                        place_impl_->fields.erase(f);    // delete ???
-				        place_impl_->collocate();
+                        pi->fields.erase(f);    // delete ???
+				        pi->collocate();
                         break;
                     }
 			});
+            //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
+            //{
+            //    API::umake_event(dtr); 
+            //});	
 		}
 	};//end class field_impl
 
@@ -1028,12 +1049,11 @@ namespace vplace_impl
 	vplace::vplace(window wd)	: impl_(new implement)   {bind(wd);}
 	vplace::vplace()		    : impl_(new implement)	 {         }
 	vplace::~vplace()		{			delete impl_;		}
-    void        vplace::div      (const char* s)	{   impl_->div(s); 	    }
+    void        vplace::div      (const std::string& s)	{   impl_->div(s.c_str()); 	    }
 	void        vplace::collocate(         ) 	{	impl_->collocate();	}
-	vplace::field_reference vplace::field  (const char* name)
+	vplace::field_reference vplace::field  (const std::string& name)
 	{
-		name = name ? name : "";
-        impl_->temp_field_t.reset (new vplace_impl::field_impl(this->impl_,name)); 
+         impl_->temp_field_t.reset (new vplace_impl::field_impl(this->impl_,name)); 
         return  *impl_->temp_field_t.get();
 	}
 	IField*         vplace::fixed  (window wd, unsigned size)

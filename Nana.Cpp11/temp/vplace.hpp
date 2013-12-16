@@ -15,6 +15,7 @@
 #include <nana/gui/basis.hpp>
 #include <limits>
 #include <nana\gui\programming_interface.hpp>
+#include <string>
 
 
 namespace nana {namespace gui
@@ -27,7 +28,7 @@ namespace nana {namespace gui
     using  vplace_impl::IField ;
     using  vplace_impl::implement ;
 
-    class vplace		: nana::noncopyable
+    class vplace		: noncopyable
 	{
 	  public:
         struct minmax
@@ -66,9 +67,24 @@ namespace nana {namespace gui
 		void               bind     (window parent_widget);
 		~vplace();
 
-		void               div      (const char* layout);
+		void               div      (const ::std::string & layout);
 		void               collocate();
-		field_reference    field   (const char* name);    /// TODO: Add min and max
+		field_reference    field   (const ::std::string & name);    /// TODO: Add min and max
+
+  //      struct element{};
+  //      vplace& operator ()  (const ::std::string & name){ Set_def_field(name); return *this; }
+		//vplace& operator<<(minmax              Size_range)	;
+  //      vplace& operator<<(const std::wstring& txt)	;
+  //      vplace& operator<<(const std::string&  txt)	;
+		//vplace& operator<<(window              wd)	;    
+		//vplace& operator<<(unsigned            gap) ;
+		//vplace& fasten(window wd)	    ;
+  //      vplace& operator<<(element             e )	;
+		//element    Fixed   (window wd, unsigned size         );
+		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
+		//element    Room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
+                                                        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
+
 
 		static IField*     fixed   (window wd, unsigned size         );
 		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
@@ -77,6 +93,7 @@ namespace nana {namespace gui
 
 	  private:
 		implement * impl_;
+        //void Set_def_field  (const ::std::string & name);   
 	};
 }//end namespace gui
 }//end namespace nana
