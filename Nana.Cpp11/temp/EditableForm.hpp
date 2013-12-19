@@ -186,6 +186,7 @@ virtual    void add_validated(const std::function<bool(void)>& v)
     {
         _place.div(_myLayout.c_str ());     
 	    _place.collocate ();
+
     }
 };
 

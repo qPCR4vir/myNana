@@ -717,7 +717,8 @@ namespace vplace_impl
         event_handle                    event_size_handle{nullptr};
 		std::unique_ptr<division>       root_division;
         std::unordered_set<std::string> names;     ///<  All the names defines. Garant no repited name.
-        unsigned                        div_numer{0}; ///<  Used to generate unique div name.
+        unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
+        bool                            recollocate{ true };
 
             /// All the fields defined by user with field(name)<<IField, 
             /// plus the div. find from the layot in div()
@@ -773,7 +774,8 @@ namespace vplace_impl
 			rectangle r(API::window_size(this->parent_window_handle));  //debugg
             //if(r.width && r.height ) 
             {      
-               root_division->populate_children (this);
+               if (recollocate) root_division->populate_children (this);
+               recollocate = false;
                root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
             }
             //			                                //rectangle r; // debugg
@@ -810,6 +812,7 @@ namespace vplace_impl
 		{
 			fld->MinMax (*this);
             place_impl_->fields.emplace(name,std::unique_ptr<IField>( fld));
+            place_impl_->recollocate = true;
 			_m_make_destroy(fld->window_handle());
 			return *this;
 		}
@@ -839,6 +842,7 @@ namespace vplace_impl
                     if (/*->get()*/(*f)->handle() ==  ei.window )
                     {
                         pi->widgets.erase(f);    // delete ???
+				        pi->recollocate = true;
 				        pi->collocate();
                         break;
                     }
@@ -857,7 +861,7 @@ namespace vplace_impl
 		field_t& fasten(window wd)              override
 		{
 			place_impl_->fastened.emplace (name , wd); 
-            
+            place_impl_->recollocate = true;
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
             auto pi = place_impl_;
@@ -867,6 +871,7 @@ namespace vplace_impl
                     if (f->second ==  ei.window )
                     {
                         pi->fastened.erase(f);    // delete ???
+				        pi->recollocate = true;
                         break;
                     }
 			});	
@@ -899,6 +904,7 @@ namespace vplace_impl
                     if (f->second->window_handle() ==  ei.window )
                     {
                         pi->fields.erase(f);    // delete ???
+				        pi->recollocate = true;
 				        pi->collocate();
                         break;
                     }
@@ -1042,6 +1048,7 @@ namespace vplace_impl
 		tokenizer tknizer(s);
         root_division.reset();
 		root_division.reset( scan_div(tknizer));
+        recollocate = true;
     }
 
 } // namespace place_impl
@@ -1086,16 +1093,16 @@ namespace vplace_impl
 
         event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
 		{
-            //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
-            //         <<ei.window <<" ]) ";  //debug
-			
-            if(this->root_division)
-            {
-				rectangle r(API::window_size(this->parent_window_handle));  //debugg
-                //if(r.width && r.height ) 
-                   this->root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
-                //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
-            }
+            this->collocate(); 
+    //        //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
+    //        //         <<ei.window <<" ]) ";  //debug
+    //        if(this->root_division)
+    //        {
+				//rectangle r(API::window_size(this->parent_window_handle));  //debugg
+    //            //if(r.width && r.height ) 
+    //               this->root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
+    //            //std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r;  //debugg
+    //        }
 		});
         return false;
 	}
