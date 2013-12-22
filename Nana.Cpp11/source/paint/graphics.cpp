@@ -1,5 +1,6 @@
 /*
  *	Paint Graphics Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -344,7 +345,7 @@ namespace paint
 
 		void graphics::typeface(const font& f)
 		{
-			//Keep the font, even if the graphics is empty. Setting the font is futile when the size
+			//Keep the font as a shadow, even if the graphics is empty. Setting the font is futile when the size
 			//of a widget is zero.
 			font_shadow_ = f;
 			if(handle_ && (false == f.empty()))
@@ -361,7 +362,9 @@ namespace paint
 
 		font graphics::typeface() const
 		{
-			return (handle_ ? font(handle_) : font());
+			//The font may be set when the graphics is still empty.
+			//it should return the shadow font when the graphics is empty.
+			return (handle_ ? font(handle_) : font_shadow_);
 		}
 
 		nana::size	graphics::text_extent_size(const nana::char_t* text)	const
