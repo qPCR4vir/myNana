@@ -366,7 +366,7 @@ namespace nana{ namespace gui{
 
 				void sort()
 				{
-					if(sorted_index_ != npos)
+					if(sorted_index_ != npos && resort_)
 					{
 						auto weak_ordering_comp = fetch_ordering_comparer(sorted_index_);
 						if(weak_ordering_comp)
@@ -418,10 +418,30 @@ namespace nana{ namespace gui{
 					sorted_index_ = npos;
 					return false;
 				}
+				bool set_sort_index(std::size_t index, bool reverse=false)
+				{
+					if(npos != index)
+					{
+						if( ! (index == sorted_index_   &&   reverse == sorted_reverse_)  )
+                        {
+                            sorted_index_ = index;
+						    sorted_reverse_ = reverse;
+					        sort();
+                        }
+						return true;
+					}
+					sorted_index_ = npos;
+					return false;
+				}
 
 				std::size_t sort_index() const
 				{
 					return sorted_index_;
+				}
+				bool active_sort(bool resort)  
+				{
+					std::swap(resort, resort_);
+                    return resort;
 				}
 
 				bool sort_reverse() const
@@ -1181,6 +1201,7 @@ namespace nana{ namespace gui{
 				essence_t * ess_;
 				nana::gui::listbox * widget_;
 				std::size_t sorted_index_;		//It stands for the index of header which is used for sorting.
+                bool        resort_{true};
 				bool		sorted_reverse_;
 				container list_;
 			};//end class es_lister
@@ -2936,6 +2957,26 @@ namespace nana{ namespace gui{
 		{
 			get_drawer_trigger().essence().header.get_item(sub).weak_ordering = std::move(strick_ordering);
 		}
+
+        std::size_t listbox::sort_col( )
+        { 
+            return get_drawer_trigger().essence().lister.sort_index( ) ;
+        }
+
+        void listbox::sort_col(std::size_t col, bool reverse)
+        { 
+            get_drawer_trigger().essence().lister.set_sort_index(col, reverse) ;
+        }
+
+        void listbox::unsort()
+        {
+            get_drawer_trigger().essence().lister.set_sort_index(npos) ;
+        }
+
+        bool  listbox::freeze_sort(bool freeze) 
+        {
+            return ! get_drawer_trigger().essence().lister.active_sort( ! freeze)  ;
+        }
 
 		auto listbox::selected() const -> selection
 		{
