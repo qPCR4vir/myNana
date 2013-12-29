@@ -1063,10 +1063,22 @@ namespace vplace_impl
          impl_->temp_field_t.reset (new vplace_impl::field_impl(this->impl_,name)); 
         return  *impl_->temp_field_t.get();
 	}
+
+	//IField*         vplace::fixed  (const std::wstring& txt ,  unsigned size)
+	//{
+	//	return new vplace_impl::fixed_widget(txt, size);
+	//}
+	//IField*         vplace::fixed  (const std::string&  txt ,  unsigned size)
+	//{
+	//	return new vplace_impl::fixed_widget(nana::charset( txt), w);
+	//}
+
 	IField*         vplace::fixed  (window wd, unsigned size)
 	{
 		return new vplace_impl::fixed_widget(wd, size);
 	}
+
+
 	IField*         vplace::percent(window wd, double per, minmax w)
 	{
 		return new vplace_impl::percent_widget(wd, per, w.min ,w.max );

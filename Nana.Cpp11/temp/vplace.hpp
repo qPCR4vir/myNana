@@ -86,7 +86,9 @@ namespace nana {namespace gui
                                                         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
 
 
-		static IField*     fixed   (window wd, unsigned size         );
+		static IField*     fixed   (window wd                    , unsigned size    );
+		static IField*     fixed   (const std::wstring& txt      , unsigned size    );
+		static IField*     fixed   (const std::string&  txt      , unsigned size    );
 		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
 		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
