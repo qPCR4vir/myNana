@@ -65,6 +65,14 @@ class EditableWidget: public EnablingEditing
                      nana::gui::widget& thisEdWd,    ///< the form or panel, owner of place and all other widgets of the editable widget
                      nana::string Titel, 
                      const nana::string &DefLayoutFileName=STR("")           );
+    static  void Click(nana::gui::window w)
+		{
+			nana::gui::eventinfo ei;
+			ei.mouse.x= 0, ei.mouse.y = 0;
+			ei.mouse.left_button = true;
+			ei.mouse.ctrl = ei.mouse.shift = false;
+			nana::gui::API::raise_event<nana::gui::events::click>(w, ei);
+		}
 
     nana::gui::widget  *_EdWd_owner ;                                    ///< The ownwer of the form or panel 
     nana::gui::widget  &_thisEdWd;   ///< the form or panel, owner of place and all other widgets of the editable widget
@@ -184,7 +192,7 @@ virtual    void add_validated(const std::function<bool(void)>& v)
    }
     void ReCollocate( )
     {
-        _place.div(_myLayout.c_str ());     
+        _place.div(_myLayout );     
 	    _place.collocate ();
 
     }
@@ -398,14 +406,6 @@ public:
                     } );
  	}
 
-	static  void Click(nana::gui::window w)
-			{
-				nana::gui::eventinfo ei;
-				ei.mouse.x= 0, ei.mouse.y = 0;
-				ei.mouse.left_button = true;
-				ei.mouse.ctrl = ei.mouse.shift = false;
-				nana::gui::API::raise_event<nana::gui::events::click>(w, ei);
-			}
 };
 
 class EditLayout_Form : public nana::gui::form, public EditableForm
