@@ -607,11 +607,12 @@ namespace drawerbase
 				}
 			}
 
-			void button::enable_pushed(bool eb)
+			button& button::enable_pushed(bool eb)
 			{
 				internal_scope_guard isg;
 				if(get_drawer_trigger().enable_pushed(eb))
 					API::refresh_window(handle());
+                return *this;
 			}
 
 			bool button::pushed() const

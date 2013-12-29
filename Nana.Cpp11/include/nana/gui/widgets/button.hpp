@@ -100,7 +100,7 @@ namespace nana{namespace gui{
 			void image_join(state target, state from);
 			void image_stretch(nana::arrange, int beg, int end);
 			void image_valid_area(nana::arrange, const nana::rectangle&);
-			void enable_pushed(bool);
+			button&  enable_pushed(bool);
 			bool pushed() const;
 			void pushed(bool);
 			void omitted(bool);
