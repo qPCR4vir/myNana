@@ -878,24 +878,25 @@ namespace nana{	namespace gui
 			delete impl_;
 		}
 
-		nana::string filebox::title( nana::string s)
+		nana::string filebox::title(nana::string s)
 		{
-			impl_->title.swap( s);
-            return s;
+			impl_->title.swap(s);
+			return s;
 		}
 
 		filebox& filebox::init_path(const nana::string& ipstr)
 		{
-			if(  ipstr.empty() )
+			if(ipstr.empty())
 			{
 				impl_->path.clear();
-				return *this;
 			}
-
-			nana::filesystem::attribute attr;
-			if(nana::filesystem::file_attrib(ipstr, attr))
-				if(attr.is_directory)
+			else
+			{
+				nana::filesystem::attribute attr;
+				if (nana::filesystem::file_attrib(ipstr, attr))
+				if (attr.is_directory)
 					impl_->path = ipstr;
+			}
 			return *this;
 		}
 

@@ -330,7 +330,11 @@ namespace nana{ namespace gui{
 				std::function<std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
 
 				es_lister()
-					: ess_(nullptr), widget_(nullptr), sorted_index_(npos), sorted_reverse_(false)
+					:	ess_(nullptr),
+						widget_(nullptr),
+						sorted_index_(npos),
+						resort_(true),
+						sorted_reverse_(false)
 				{
 					category cg;
 					cg.expand = true;
@@ -366,82 +370,87 @@ namespace nana{ namespace gui{
 
 				void sort()
 				{
-					if(sorted_index_ != npos && resort_)
+  
+					if((sorted_index_ == npos) || (!resort_))
+						return;
+
+					auto weak_ordering_comp = fetch_ordering_comparer(sorted_index_);
+					if(weak_ordering_comp)
 					{
-						auto weak_ordering_comp = fetch_ordering_comparer(sorted_index_);
-						if(weak_ordering_comp)
+						for(auto & cat: list_)
 						{
-							for(auto & cat: list_)
-							{
-								auto bi = std::begin(cat.sorted);
-								auto ei = std::end(cat.sorted);
-								std::sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
-										//The predicate must be a strict weak ordering.
-										//!comp(x, y) != comp(x, y)
-										auto & mx = cat.items[x];
-										auto & my = cat.items[y];
-										auto & a = mx.texts[sorted_index_];
-										auto & b = my.texts[sorted_index_];
-										return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
-									});
-							}
+							auto bi = std::begin(cat.sorted);
+							auto ei = std::end(cat.sorted);
+							std::sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
+									//The predicate must be a strict weak ordering.
+									//!comp(x, y) != comp(x, y)
+									auto & mx = cat.items[x];
+									auto & my = cat.items[y];
+									auto & a = mx.texts[sorted_index_];
+									auto & b = my.texts[sorted_index_];
+									return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
+								});
 						}
-						else
-						{	//No user-defined comparer is provided, and default comparer is applying.
-							for(auto & cat: list_)
-							{
-								std::sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
-										auto & a = cat.items[x].texts[sorted_index_];
-										auto & b = cat.items[y].texts[sorted_index_];
-										return (sorted_reverse_ ? a > b : a < b);
-									});
-							}
+					}
+					else
+					{	//No user-defined comparer is provided, and default comparer is applying.
+						for(auto & cat: list_)
+						{
+							std::sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
+									auto & a = cat.items[x].texts[sorted_index_];
+									auto & b = cat.items[y].texts[sorted_index_];
+									return (sorted_reverse_ ? a > b : a < b);
+								});
 						}
 					}
 				}
 
 				bool sort_index(std::size_t index)
 				{
-					if(npos != index)
+					if (npos == index)
 					{
-						if(index != sorted_index_)
-						{
-							sorted_index_ = index;
-							sorted_reverse_ = false;
-						}
-						else
-							sorted_reverse_ = !sorted_reverse_;
+						sorted_index_ = npos;
+						return false;
+					}
 
-						sort();
-						return true;
-					}
-					sorted_index_ = npos;
-					return false;
-				}
-				bool set_sort_index(std::size_t index, bool reverse=false)
-				{
-					if(npos != index)
+					if(index != sorted_index_)
 					{
-						if( ! (index == sorted_index_   &&   reverse == sorted_reverse_)  )
-                        {
-                            sorted_index_ = index;
-						    sorted_reverse_ = reverse;
-					        sort();
-                        }
-						return true;
+						sorted_index_ = index;
+						sorted_reverse_ = false;
 					}
-					sorted_index_ = npos;
-					return false;
+					else
+						sorted_reverse_ = !sorted_reverse_;
+
+					sort();
+					return true;
+				}
+
+				bool set_sort_index(std::size_t index, bool reverse)
+				{
+					if (npos == index)
+					{
+						sorted_index_ = npos;
+						return false;
+					}
+
+					if(index != sorted_index_ || reverse != sorted_reverse_)
+					{
+						sorted_index_ = index;
+						sorted_reverse_ = reverse;
+						sort();
+					}
+					return true;
 				}
 
 				std::size_t sort_index() const
 				{
 					return sorted_index_;
 				}
-				bool active_sort(bool resort)  
+
+				bool active_sort(bool resort)
 				{
 					std::swap(resort, resort_);
-                    return resort;
+					return resort;
 				}
 
 				bool sort_reverse() const
@@ -1201,7 +1210,7 @@ namespace nana{ namespace gui{
 				essence_t * ess_;
 				nana::gui::listbox * widget_;
 				std::size_t sorted_index_;		//It stands for the index of header which is used for sorting.
-                bool        resort_{true};
+				bool		resort_;
 				bool		sorted_reverse_;
 				container list_;
 			};//end class es_lister
@@ -1304,7 +1313,8 @@ namespace nana{ namespace gui{
 						if(lister.expand(item.first) == false)
 						{
 							if(lister.categ_selected(item.first))
-								scroll.offset_y.y = npos;    // : warning C4309: '=' : truncation of constant value
+								scroll.offset_y.y = static_cast<std::size_t>(npos);          // : warning C4309: '=' : truncation of constant value
+
 							else
 								lister.expand(item.first, true);
 						}
@@ -2476,7 +2486,7 @@ namespace nana{ namespace gui{
 
 				item_proxy& item_proxy::fgcolor(nana::color_t col)
 				{
-                    ess_->lister.at_abs(cat_, pos_).fgcolor = col;   // why = 0 ; ???? works ??? How to color an item?
+					ess_->lister.at_abs(cat_,pos_).fgcolor = col;
 					ess_->update();
 					return *this;
 				}
@@ -2958,25 +2968,25 @@ namespace nana{ namespace gui{
 			get_drawer_trigger().essence().header.get_item(sub).weak_ordering = std::move(strick_ordering);
 		}
 
-        std::size_t listbox::sort_col( )
-        { 
-            return get_drawer_trigger().essence().lister.sort_index( ) ;
-        }
+		void listbox::sort_col(std::size_t col, bool reverse)
+		{
+			get_drawer_trigger().essence().lister.set_sort_index(col, reverse);
+		}
 
-        void listbox::sort_col(std::size_t col, bool reverse)
-        { 
-            get_drawer_trigger().essence().lister.set_sort_index(col, reverse) ;
-        }
+		std::size_t listbox::sort_col() const
+		{
+			return get_drawer_trigger().essence().lister.sort_index();
+		}
 
-        void listbox::unsort()
-        {
-            get_drawer_trigger().essence().lister.set_sort_index(npos) ;
-        }
+		void listbox::unsort()
+		{
+			get_drawer_trigger().essence().lister.set_sort_index(npos, false);
+		}
 
-        bool  listbox::freeze_sort(bool freeze) 
-        {
-            return ! get_drawer_trigger().essence().lister.active_sort( ! freeze)  ;
-        }
+		bool listbox::freeze_sort(bool freeze)
+		{
+			return !get_drawer_trigger().essence().lister.active_sort(!freeze);
+		}
 
 		auto listbox::selected() const -> selection
 		{
