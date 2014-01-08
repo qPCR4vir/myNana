@@ -33,6 +33,8 @@ namespace gui
 		bool empty() const;
 		void close();
 
+        widget& tooltip(const nana::string &tip);
+
 		window parent() const;
 
 		nana::string caption() const;

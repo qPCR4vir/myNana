@@ -10,6 +10,8 @@
  */
 
 #include <nana/gui/widgets/widget.hpp>
+#include <nana/gui/tooltip.hpp>
+
 
 namespace nana
 {
@@ -49,6 +51,12 @@ namespace gui
 			return _m_typeface();
 		}
 
+        widget& widget::tooltip(const nana::string &tip)
+        {
+			static nana::gui::tooltip ttip;
+            ttip.set(*this,tip);
+            return *this;
+		}
 		void widget::close()
 		{
 			_m_close();
