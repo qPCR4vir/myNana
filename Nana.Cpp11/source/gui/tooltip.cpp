@@ -129,7 +129,7 @@ namespace nana{ namespace gui{
 
 				static controller* object(bool destroy = false)
 				{
-					static controller* ptr;
+                    static controller* ptr/*{nullptr}*/;
 					if(destroy)
 					{
 						delete ptr;
@@ -217,11 +217,14 @@ namespace nana{ namespace gui{
 						if(pr->first == wd)
 							return pr;
 					}
+     //               API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
+					//auto leave_fn = [this](const eventinfo& ei){_m_leave(ei);} ;   
 
 					API::make_event<events::mouse_enter>(wd, std::bind(&self_type::_m_enter, this, std::placeholders::_1));
 					auto leave_fn = std::bind(&self_type::_m_leave, this, std::placeholders::_1);
 					API::make_event<events::mouse_leave>(wd, leave_fn);
 					API::make_event<events::mouse_down>(wd, leave_fn);
+                    //API::make_event<events::destroy>(wd, [this](const eventinfo& ei){_m_destroy(ei);});
 					API::make_event<events::destroy>(wd, std::bind(&self_type::_m_destroy, this, std::placeholders::_1));
 
 					pair_t * newp = new pair_t(wd, nana::string());
