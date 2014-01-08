@@ -58,6 +58,7 @@ namespace nana{ namespace gui{
 				void refresh(graph_reference graph)
 				{
 					nana::size text_s = graph.text_extent_size(text_);
+					widget_->size(text_s.width + 10, text_s.height   + 10);
 
 					graph.rectangle(0x0, false);
 					graph.rectangle(1, 1, graph.width() - 2, graph.height() - 2, 0xF0F0F0, true);
