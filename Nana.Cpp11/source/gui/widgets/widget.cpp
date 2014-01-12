@@ -53,7 +53,7 @@ namespace gui
 
         widget& widget::tooltip(const nana::string &tip)
         {
-			static nana::gui::tooltip ttip;
+			static nana::gui::tooltip &ttip= *new nana::gui::tooltip;
             ttip.set(*this,tip);
             return *this;
 		}
