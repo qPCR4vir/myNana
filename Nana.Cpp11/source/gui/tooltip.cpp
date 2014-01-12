@@ -25,41 +25,38 @@ namespace nana{ namespace gui{
 				{
 					text_ = text;
 
-					nana::size txt_s;
-					nana::string::size_type beg = 0;
-					nana::string::size_type off = text.find('\n', beg);
+					widget_->size(10,   10); // trick to get the correct graph
 
-					for(;off != nana::string::npos; off = text.find('\n', beg))
+                    nana::size txt_s, s;
+					nana::string::size_type beg = 0;
+					nana::string::size_type off = text_.find('\n', beg);
+
+					for(;off != nana::string::npos; off = text_.find('\n', beg))
 					{
-						nana::size s = graph_->text_extent_size(text_.c_str() + beg, off - beg);
+						s = graph_->text_extent_size(text_.c_str() + beg, off - beg);
 						if(s.width > txt_s.width)
 							txt_s.width = s.width;
 						txt_s.height += (s.height + 2);
 						beg = off + 1;
 					}
 
-					nana::size s = graph_->text_extent_size(text_.c_str() + beg);
+					s = graph_->text_extent_size(text_.c_str() + beg);// here return 0. Invalid graph (graphic::handle_ == 0? No call to atached?
 					if(s.width > txt_s.width)
 						txt_s.width = s.width;
 
 					widget_->size(txt_s.width + 10, txt_s.height + s.height + 10);
 				}
 			private:
-				void bind_window(widget_reference widget)
-				{
-					widget_ = &widget;
-				}
-
-				void attached(graph_reference graph)
-				{
-					graph_ = &graph;
-				}
-
 				void refresh(graph_reference graph)
 				{
-					nana::size text_s = graph.text_extent_size(text_);
-					widget_->size(text_s.width + 10, text_s.height   + 10);
+                    if (! graph_ ) 
+				{
+                        attached (graph);
+                        return;
+				}
 
+
+					nana::size s = graph.text_extent_size(text_);
 					graph.rectangle(0x0, false);
 					graph.rectangle(1, 1, graph.width() - 2, graph.height() - 2, 0xF0F0F0, true);
 
@@ -72,15 +69,25 @@ namespace nana{ namespace gui{
 					for(;off != nana::string::npos; off = text_.find('\n', beg))
 					{
 						graph.string(x, y, 0x0, text_.substr(beg, off - beg));
-						y += text_s.height + 2;
+						y += s.height + 2;
 						beg = off + 1;
 					}
 
 					graph.string(x, y, 0x0, text_.c_str() + beg, text_.size() - beg);
 				}
+				void bind_window(widget_reference widget)
+				{
+					widget_ = &widget;
+				}
+
+				void attached(graph_reference graph)
+				{
+					graph_ = &graph;
+				}
+
 			private:
 				widget	*widget_;
-				nana::paint::graphics * graph_;
+                nana::paint::graphics * graph_{nullptr};
 				nana::string text_;
 			};
 
@@ -129,7 +136,7 @@ namespace nana{ namespace gui{
 
 				static controller* object(bool destroy = false)
 				{
-                    static controller* ptr/*{nullptr}*/;
+                    static controller* ptr/*{nullptr}*/;   // Singleton....
 					if(destroy)
 					{
 						delete ptr;
