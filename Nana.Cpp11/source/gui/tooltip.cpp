@@ -11,6 +11,7 @@
 
 #include <nana/gui/tooltip.hpp>
 #include <nana/gui/timer.hpp>
+#include <assert.h>
 
 namespace nana{ namespace gui{
 	namespace drawerbase
@@ -23,7 +24,7 @@ namespace nana{ namespace gui{
 			public:
 				void set_tooltip_text(const nana::string& text)
 				{
-					text_ = text;
+					text_ = text;    
 
 					widget_->size(10,   10); // trick to get the correct graph
 
@@ -50,11 +51,11 @@ namespace nana{ namespace gui{
 				void refresh(graph_reference graph)
 				{
                     if (! graph_ ) 
-				{
+                    {
                         attached (graph);
                         return;
-				}
-
+                    }
+					
 
 					nana::size s = graph.text_extent_size(text_);
 					graph.rectangle(0x0, false);
@@ -119,13 +120,13 @@ namespace nana{ namespace gui{
 				timer timer_;
 			};//class uiform
 
-			class controller
+			class controller    /// The only direct implementator of gui::tooltip. Reference counted Singleton global map of widget/tip and a dynamic tip window.
 			{
 				typedef std::pair<window, nana::string> pair_t;
 				typedef controller self_type;
 
 				controller()
-					:window_(nullptr), count_ref_(0)
+					: count_ref_(0)
 				{}
 			public:
 				static std::recursive_mutex& mutex()
@@ -154,20 +155,22 @@ namespace nana{ namespace gui{
 					++count_ref_;
 				}
 
-				unsigned long dec()
+				void dec()
 				{
-					return --count_ref_;
+					 assert(count_ref_);
+                    if (! --count_ref_)
+                        object(true);
 				}
 
 				void set(window wd, const nana::string& str)
 				{
-					_m_get(wd)->second = str;
+					_m_get(wd).second = str;
 				}
 
-				void show(int x, int y, const nana::string& text)
+				void show(int x, int y, const nana::string& text)   /// Set the tip text and correct coordenates. And for a 2dn monitor ????
 				{
-					if(nullptr == window_)
-						window_ = new uiform;
+					if( ! window_ )
+						window_.reset( new uiform);   //  call refresh with tip ""
 
 					window_->set_tooltip_text(text);
 					nana::size sz = window_->size();
@@ -185,31 +188,28 @@ namespace nana{ namespace gui{
 
 				void close()
 				{
-					delete window_;
-					window_ = nullptr;
+					 window_.reset();
 				}
 			private:
 				void _m_enter(const eventinfo& ei)
 				{
-					pair_t * p = _m_get(ei.window);
-					if(p && p->second.size())
-					{
-						nana::point pos = API::cursor_position();
-						this->show(pos.x, pos.y + 20, p->second);
-					}
+					auto p = _m_get(ei.window);
+					if(p.second.empty()) return ;
+
+					nana::point pos = API::cursor_position();
+					show(pos.x, pos.y + 20, p.second);
 				}
 
 				void _m_leave(const eventinfo& ei)
 				{
-					delete window_;
-					window_ = nullptr;
+					close();
 				}
 
 				void _m_destroy(const eventinfo& ei)
 				{
 					for(auto i = cont_.begin(); i != cont_.end(); ++i)
 					{
-						if((*i)->first == ei.window)
+						if((*i).first == ei.window)  // here it was leaking pair_t ?
 						{
 							cont_.erase(i);
 							return;
@@ -217,65 +217,57 @@ namespace nana{ namespace gui{
 					}
 				}
 			private:
-				pair_t* _m_get(window wd)
+				pair_t& _m_get(window wd)
 				{
-					for(auto pr : cont_)
+					for(auto &pr : cont_)
 					{
-						if(pr->first == wd)
+						if(pr.first == wd)
 							return pr;
 					}
-     //               API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
-					//auto leave_fn = [this](const eventinfo& ei){_m_leave(ei);} ;   
+                    API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
+					auto leave_fn = [this](const eventinfo& ei){_m_leave(ei);} ;   
 
-					API::make_event<events::mouse_enter>(wd, std::bind(&self_type::_m_enter, this, std::placeholders::_1));
-					auto leave_fn = std::bind(&self_type::_m_leave, this, std::placeholders::_1);
 					API::make_event<events::mouse_leave>(wd, leave_fn);
-					API::make_event<events::mouse_down>(wd, leave_fn);
-                    //API::make_event<events::destroy>(wd, [this](const eventinfo& ei){_m_destroy(ei);});
-					API::make_event<events::destroy>(wd, std::bind(&self_type::_m_destroy, this, std::placeholders::_1));
+					API::make_event<events::mouse_down >(wd, leave_fn);
+                    API::make_event<events::destroy    >(wd, [this](const eventinfo& ei){_m_destroy(ei);});
 
-					pair_t * newp = new pair_t(wd, nana::string());
-					cont_.push_back(newp);
-					return newp;
+					cont_.emplace_back(wd, nana::string());
+					return cont_.back();
 				}
 			private:
-				uiform * window_;
-				std::vector<pair_t*> cont_;
-				unsigned long count_ref_;
+				std::unique_ptr<uiform> window_;
+				std::vector<pair_t>     cont_;
+				unsigned long           count_ref_;
 			};
 		}//namespace tooltip
 	}//namespace drawerbase
 
 	//class tooltip
+		using ctrl = drawerbase::tooltip::controller ;
+
 		tooltip::tooltip()
 		{
-			typedef drawerbase::tooltip::controller ctrl;
 			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
 			ctrl::object()->inc();
 		}
 
 		tooltip::~tooltip()
 		{
-			typedef drawerbase::tooltip::controller ctrl;
 			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
 
-			if(0 == ctrl::object()->dec())
-				ctrl::object(true);
+			ctrl::object()->dec();
 		}
 
 		void tooltip::set(window wd, const nana::string& text)
 		{
-			if(false == API::empty_window(wd))
-			{
-				typedef drawerbase::tooltip::controller ctrl;
-				std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-				ctrl::object()->set(wd, text);
-			}
+			if( API::empty_window(wd)) return;
+
+			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
+			ctrl::object()->set(wd, text);
 		}
 
 		void tooltip::show(window wnd, int x, int y, const nana::string& text)
 		{
-			typedef drawerbase::tooltip::controller ctrl;
 			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
 
 			nana::point pos(x, y);
@@ -285,7 +277,6 @@ namespace nana{ namespace gui{
 
 		void tooltip::close()
 		{
-			typedef drawerbase::tooltip::controller ctrl;
 			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
 			ctrl::object()->close();
 		}

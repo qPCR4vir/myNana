@@ -383,7 +383,7 @@ namespace detail
 					::WaitMessage();
 					while(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 					{
-						if(msg.message == WM_QUIT)	break;
+						if(msg.message == WM_QUIT)   break;
 
 						if((msg.message == WM_CHAR || msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) || !::IsDialogMessage(ntv_modal, &msg))
 						{
