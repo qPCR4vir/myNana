@@ -20,7 +20,7 @@ namespace nana{ namespace gui
 	public:
 		tooltip();
         tooltip(window w, const nana::string &tip):tooltip(){set(w,tip);}
-		~tooltip();
+		//~tooltip();
 
 		void set(window, const nana::string&);
 		void show(window, int x, int y, const nana::string&);

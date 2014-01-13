@@ -150,17 +150,17 @@ namespace nana{ namespace gui{
 					return ptr;
 				}
 
-				void inc()
-				{
-					++count_ref_;
-				}
+				//void inc()
+				//{
+				//	++count_ref_;
+				//}
 
-				void dec()
-				{
-					 assert(count_ref_);
-                    if (! --count_ref_)
-                        object(true);
-				}
+				//void dec()
+				//{
+				//	 assert(count_ref_);
+    //                if (! --count_ref_)
+    //                    object(true);
+				//}
 
 				void set(window wd, const nana::string& str)
 				{
@@ -188,7 +188,9 @@ namespace nana{ namespace gui{
 
 				void close()
 				{
-					 window_.reset();
+					window_.reset();
+					if (cont_.empty())
+                        object(true);
 				}
 			private:
 				void _m_enter(const eventinfo& ei)
@@ -211,7 +213,9 @@ namespace nana{ namespace gui{
 					{
 						if((*i).first == ei.window)  // here it was leaking pair_t ?
 						{
-							cont_.erase(i);
+                            cont_.erase(i);
+							if (cont_.empty())
+                                object(true);
 							return;
 						}
 					}
@@ -247,16 +251,16 @@ namespace nana{ namespace gui{
 
 		tooltip::tooltip()
 		{
-			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-			ctrl::object()->inc();
+			//std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
+			//ctrl::object()->inc();
 		}
 
-		tooltip::~tooltip()
-		{
-			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
+		//tooltip::~tooltip()
+		//{
+		//	//std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
 
-			ctrl::object()->dec();
-		}
+		//	//ctrl::object()->dec();
+		//}
 
 		void tooltip::set(window wd, const nana::string& text)
 		{
