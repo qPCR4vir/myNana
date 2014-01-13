@@ -50,12 +50,8 @@ namespace nana{ namespace gui{
 			private:
 				void refresh(graph_reference graph)
 				{
-                    if (! graph_ ) 
-                    {
-                        attached (graph);
-                        return;
-                    }
-					
+					if (! graph_ ) 
+						return attached (graph);  // will need to calcule text size and set the windows-tip size first
 
 					nana::size s = graph.text_extent_size(text_);
 					graph.rectangle(0x0, false);
@@ -88,7 +84,7 @@ namespace nana{ namespace gui{
 
 			private:
 				widget	*widget_;
-                nana::paint::graphics * graph_{nullptr};
+				nana::paint::graphics * graph_{nullptr};
 				nana::string text_;
 			};
 
@@ -120,14 +116,12 @@ namespace nana{ namespace gui{
 				timer timer_;
 			};//class uiform
 
-			class controller    /// The only direct implementator of gui::tooltip. Reference counted Singleton global map of widget/tip and a dynamic tip window.
+			class controller    /// The only direct implementator of gui::tooltip. (Reference counted?) Singleton global map of widget/tip and a dynamic tip window.
 			{
 				typedef std::pair<window, nana::string> pair_t;
 				typedef controller self_type;
 
-				controller()
-					: count_ref_(0)
-				{}
+				controller() {}
 			public:
 				static std::recursive_mutex& mutex()
 				{
@@ -137,7 +131,7 @@ namespace nana{ namespace gui{
 
 				static controller* object(bool destroy = false)
 				{
-                    static controller* ptr/*{nullptr}*/;   // Singleton....
+					static controller* ptr{nullptr};   // Singleton....
 					if(destroy)
 					{
 						delete ptr;
@@ -149,18 +143,6 @@ namespace nana{ namespace gui{
 					}
 					return ptr;
 				}
-
-				//void inc()
-				//{
-				//	++count_ref_;
-				//}
-
-				//void dec()
-				//{
-				//	 assert(count_ref_);
-    //                if (! --count_ref_)
-    //                    object(true);
-				//}
 
 				void set(window wd, const nana::string& str)
 				{
@@ -190,7 +172,7 @@ namespace nana{ namespace gui{
 				{
 					window_.reset();
 					if (cont_.empty())
-                        object(true);
+						object(true);
 				}
 			private:
 				void _m_enter(const eventinfo& ei)
@@ -213,14 +195,14 @@ namespace nana{ namespace gui{
 					{
 						if((*i).first == ei.window)  // here it was leaking pair_t ?
 						{
-                            cont_.erase(i);
+							cont_.erase(i);
 							if (cont_.empty())
-                                object(true);
+								object(true);
 							return;
 						}
 					}
 				}
-			private:
+
 				pair_t& _m_get(window wd)
 				{
 					for(auto &pr : cont_)
@@ -228,12 +210,12 @@ namespace nana{ namespace gui{
 						if(pr.first == wd)
 							return pr;
 					}
-                    API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
+					API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
 					auto leave_fn = [this](const eventinfo& ei){_m_leave(ei);} ;   
 
 					API::make_event<events::mouse_leave>(wd, leave_fn);
 					API::make_event<events::mouse_down >(wd, leave_fn);
-                    API::make_event<events::destroy    >(wd, [this](const eventinfo& ei){_m_destroy(ei);});
+					API::make_event<events::destroy    >(wd, [this](const eventinfo& ei){_m_destroy(ei);});
 
 					cont_.emplace_back(wd, nana::string());
 					return cont_.back();
@@ -241,26 +223,12 @@ namespace nana{ namespace gui{
 			private:
 				std::unique_ptr<uiform> window_;
 				std::vector<pair_t>     cont_;
-				unsigned long           count_ref_;
 			};
 		}//namespace tooltip
 	}//namespace drawerbase
 
 	//class tooltip
 		using ctrl = drawerbase::tooltip::controller ;
-
-		tooltip::tooltip()
-		{
-			//std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-			//ctrl::object()->inc();
-		}
-
-		//tooltip::~tooltip()
-		//{
-		//	//std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-
-		//	//ctrl::object()->dec();
-		//}
 
 		void tooltip::set(window wd, const nana::string& text)
 		{

@@ -53,8 +53,6 @@ namespace gui
 
         widget& widget::tooltip(const nana::string &tip)
         {
-			//static nana::gui::tooltip /*&*/ttip/*= *new nana::gui::tooltip*/; // temp: doppel leak, a tip here and the global controler 
-   //         ttip.set(*this,tip);
             nana::gui::tooltip{*this,tip};
             return *this;
 		}

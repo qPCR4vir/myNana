@@ -18,13 +18,12 @@ namespace nana{ namespace gui
 	class tooltip
 	{
 	public:
-		tooltip();
-        tooltip(window w, const nana::string &tip):tooltip(){set(w,tip);}
-		//~tooltip();
+		tooltip(){}
+		tooltip(window w, const nana::string &tip){set(w,tip);}
 
-		void set(window, const nana::string&);
-		void show(window, int x, int y, const nana::string&);
-		void close();
+		static void set (window, const nana::string&);
+		static void show(window, int x, int y, const nana::string&);
+		static void close();
 	};//class tooltip
 
 }//namespace gui
