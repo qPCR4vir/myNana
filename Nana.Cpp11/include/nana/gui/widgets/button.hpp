@@ -93,7 +93,6 @@ namespace nana{namespace gui{
 			button(window, const nana::string& caption, bool visible = true);
 			button(window, const nana::char_t* caption, bool visible = true);
 			button(window, const nana::rectangle& = rectangle(), bool visible = true);
-
 			button& icon(const nana::paint::image&);
 			button& image(const char_t * filename);
 			button& image(const nana::paint::image&);
@@ -102,7 +101,6 @@ namespace nana{namespace gui{
 			button& image_stretch(nana::arrange, int beg, int end);
 			button& image_valid_area(nana::arrange, const nana::rectangle&);
 			button& enable_pushed(bool);
-
 			bool pushed() const;
 			button& pushed(bool);
 			button& omitted(bool);
