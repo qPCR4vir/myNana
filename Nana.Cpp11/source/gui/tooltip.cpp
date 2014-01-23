@@ -146,6 +146,9 @@ namespace nana{ namespace gui{
 
 				void set(window wd, const nana::string& str)
 				{
+					if (str.empty())
+						return _m_untip(wd);
+
 					_m_get(wd).second = str;
 				}
 
@@ -191,9 +194,14 @@ namespace nana{ namespace gui{
 
 				void _m_destroy(const eventinfo& ei)
 				{
+					_m_untip(ei.window);
+				}
+
+				void _m_untip(window w)
+				{
 					for(auto i = cont_.begin(); i != cont_.end(); ++i)
 					{
-						if((*i).first == ei.window)  // here it was leaking pair_t ?
+						if((*i).first == w)  // here it was leaking pair_t ?
 						{
 							cont_.erase(i);
 							if (cont_.empty())
@@ -202,6 +210,7 @@ namespace nana{ namespace gui{
 						}
 					}
 				}
+
 
 				pair_t& _m_get(window wd)
 				{
