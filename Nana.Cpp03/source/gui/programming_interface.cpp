@@ -559,6 +559,11 @@ namespace API
 		}
 	}
 
+	void bring_to_top(window wd)
+	{
+		restrict::interface_type::bring_to_top(root(wd));
+	}
+
 	bool set_window_z_order(window wd, window wd_after, z_order_action::t action_if_no_wd_after)
 	{
 		if(wd)
@@ -799,6 +804,17 @@ namespace API
 				return (iwd->root_widget->other.attribute.root->focus == iwd);
 		}
 		return false;
+	}
+
+	void activate_window(window wd)
+	{
+		restrict::core_window_t* iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard isg;
+		if(restrict::window_manager.available(iwd))
+		{
+			if(iwd->flags.take_active)
+				restrict::interface_type::activate_window(iwd->root);
+		}
 	}
 
 	window focus_window()

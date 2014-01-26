@@ -670,7 +670,9 @@ namespace nana{ namespace gui{
 				typedef menu_builder::item_type item_type;
 
 				menu_window(window wd, const point& pos, renderer_interface * rdptr)
-					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>())
+					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
+						want_focus_(nullptr == wd),
+						event_focus_(nullptr)
 				{
 					get_drawer_trigger().renderer = rdptr;
 					state_.owner_menubar = state_.self_submenu = false;
@@ -685,7 +687,17 @@ namespace nana{ namespace gui{
 				void popup(menu_type& menu, bool owner_menubar)
 				{
 					get_drawer_trigger().data(menu);
-					API::take_active(this->handle(), false, nullptr);
+
+					if (!want_focus_)
+					{
+						API::activate_window(this->parent());
+						API::take_active(this->handle(), false, nullptr);
+					}
+					else
+					{
+						activate();
+						focus();
+					}
 
 					if(submenu_.parent == nullptr)
 					{
@@ -699,6 +711,9 @@ namespace nana{ namespace gui{
 					make_event<events::destroy>(*this, &menu_window::_m_destroy);
 					make_event<events::key_down>(*this, &menu_window::_m_key_down);
 					make_event<events::mouse_up>(*this, &menu_window::_m_strike);
+
+					if (want_focus_)
+						event_focus_ = make_event<events::focus>(*this, &menu_window::_m_focus_changed);
 
 					show();
 				}
@@ -737,12 +752,12 @@ namespace nana{ namespace gui{
 
 					state_.auto_popup_submenu = false;
 
-					menu_window * parent = object->submenu_.parent;
-
-					if(parent)
+					if (object->submenu_.parent)
 					{
-						parent->submenu_.child = nullptr;
-						parent->submenu_.object = nullptr;
+						auto & sub = object->submenu_.parent->submenu_;
+						sub.child = nullptr;
+						sub.object = nullptr;
+
 						object->close();
 						return true;
 					}
@@ -787,6 +802,10 @@ namespace nana{ namespace gui{
 					menu_window * root = this;
 					while(root->submenu_.parent)
 						root = root->submenu_.parent;
+
+					//Avoid generating a focus event when the menu is destorying and a focus event.
+					if (event_focus_)
+						umake_event(event_focus_);
 
 					if(root != this)
 					{
@@ -869,6 +888,23 @@ namespace nana{ namespace gui{
 								}
 							}
 						}
+					}
+				}
+
+				//when the focus of the menu window is losing, close the menu.
+				//But here is not every menu window may have focus event installed,
+				//It is only installed when the owner of window is the desktop window.
+				void _m_focus_changed(const eventinfo& ei)
+				{
+					if (false == ei.focus.getting)
+					{
+						for (auto child = submenu_.child; child; child = child->submenu_.child)
+						{
+							if (API::root(child->handle()) == ei.focus.receiver)
+								return;
+						}
+
+						_m_close_all();
 					}
 				}
 
@@ -979,6 +1015,9 @@ namespace nana{ namespace gui{
 					}
 				}
 			private:
+				const bool want_focus_;
+				event_handle event_focus_;
+
 				timer timer_;
 				struct state_type
 				{
@@ -1102,17 +1141,9 @@ namespace nana{ namespace gui{
 			return nullptr;
 		}
 
-		void menu::popup(window wd, int x, int y, bool owner_menubar)
+		void menu::popup(window wd, int x, int y)
 		{
-			if(impl_->mbuilder.data().items.size())
-			{
-				close();
-
-				typedef drawerbase::menu::menu_window menu_window;
-				impl_->uiobj = &(form_loader<menu_window>()(wd, point(x, y), &(* impl_->mbuilder.renderer())));
-				impl_->uiobj->make_event<events::destroy>(*this, &menu::_m_destroy_menu_window);
-				impl_->uiobj->popup(impl_->mbuilder.data(), owner_menubar);
-			}
+			_m_popup(wd, x, y, false);
 		}
 
 		void menu::close()
@@ -1218,6 +1249,20 @@ namespace nana{ namespace gui{
 			if(impl_->destroy_answer)
 				impl_->destroy_answer();
 		}
+
+		void menu::_m_popup(window wd, int x, int y, bool called_by_menubar)
+		{
+			if (impl_->mbuilder.data().items.size())
+			{
+				close();
+
+				typedef drawerbase::menu::menu_window menu_window;
+
+				impl_->uiobj = &(form_loader<menu_window>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
+				impl_->uiobj->make_event<events::destroy>(*this, &menu::_m_destroy_menu_window);
+				impl_->uiobj->popup(impl_->mbuilder.data(), called_by_menubar);
+			}
+		}
 	//end class menu
 
 	detail::popuper menu_popuper(menu& mobj, mouse ms)
@@ -1274,7 +1319,7 @@ namespace nana{ namespace gui{
 				popup = true;
 			}
 			if(popup)
-				mobj_.popup(owner_, pos_.x, pos_.y, false);
+				mobj_.popup(owner_, pos_.x, pos_.y);
 		}
 	//end class
 	}//end namespace detail

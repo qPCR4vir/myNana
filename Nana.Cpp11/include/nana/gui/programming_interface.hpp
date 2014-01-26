@@ -211,6 +211,7 @@ namespace API
 		move_window(wd, r.x, r.y, r.width, r.height);
 	}
 
+	void bring_to_top(window);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);
 
 	nana::size window_size(window);
@@ -244,6 +245,7 @@ namespace API
 	bool tray_make_event(native_window_type, unsigned identifier, const std::function<void(const eventinfo&)>&);
 	void tray_umake_event(native_window_type);
 
+	void activate_window(window);
 	bool is_focus_window(window);
 	window focus_window();
 	void focus_window(window);
