@@ -2293,7 +2293,8 @@ namespace nana{ namespace gui{
 							auto * item_ptr = (item.second != npos ? &lister.at(item.first, item.second) : nullptr);
 							if(ptr_where.first == essence_t::where_t::lister)
 							{
-								lister.select_for_all(false);
+								if(! ei.mouse.ctrl)
+									lister.select_for_all(false);
 								if(item_ptr)
 								{
 									item_ptr->flags.selected = true;
