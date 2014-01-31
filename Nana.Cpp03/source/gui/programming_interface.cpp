@@ -622,8 +622,7 @@ namespace API
 		if(false == restrict::window_manager.available(iwd))
 			return false;
 		
-		r = iwd->pos_owner;
-		r = iwd->dimension;
+		r = rectangle(iwd->pos_owner, iwd->dimension);
 		return true;
 	}
 
@@ -782,16 +781,6 @@ namespace API
 	void tray_icon(native_window_type wd, const char_t* icon)
 	{
 		restrict::interface_type::notify_icon(wd, icon);
-	}
-
-	bool tray_make_event(native_window_type wd, unsigned identifier, const nana::functor<void(const eventinfo&)> & f)
-	{
-		return restrict::window_manager.tray_make_event(wd, identifier, f);
-	}
-
-	void tray_umake_event(native_window_type wd)
-	{
-		restrict::window_manager.tray_umake_event(wd);
 	}
 
 	bool is_focus_window(window wd)
