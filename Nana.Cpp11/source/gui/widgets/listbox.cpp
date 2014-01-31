@@ -870,7 +870,7 @@ namespace nana{ namespace gui{
 						if(good == false) return;
 					}
 
-					//start moving
+					//start moving   -------------- ???? 
 					while(true)
 					{
 						if(upwards == false)
@@ -915,7 +915,7 @@ namespace nana{ namespace gui{
 
 						if(good(spos.first))
 						{
-							if(expand(spos.first) == false)
+							//if(expand(spos.first) == false)
 								expand(spos.first, true);
 
 							if(good(spos.first, spos.second))
