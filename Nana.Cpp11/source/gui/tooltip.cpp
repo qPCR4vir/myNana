@@ -10,8 +10,9 @@
  */
 
 #include <nana/gui/tooltip.hpp>
+#include <nana/gui/widgets/label.hpp>
 #include <nana/gui/timer.hpp>
-#include <assert.h>
+#include <memory>
 
 namespace nana{ namespace gui{
 	namespace drawerbase
@@ -21,117 +22,129 @@ namespace nana{ namespace gui{
 			class drawer
 				: public drawer_trigger
 			{
-			public:
-				void set_tooltip_text(const nana::string& text)
-				{
-					text_ = text;    
-
-					widget_->size(10,   10); // trick to get the correct graph
-
-                    nana::size txt_s, s;
-					nana::string::size_type beg = 0;
-					nana::string::size_type off = text_.find('\n', beg);
-
-					for(;off != nana::string::npos; off = text_.find('\n', beg))
-					{
-						s = graph_->text_extent_size(text_.c_str() + beg, off - beg);
-						if(s.width > txt_s.width)
-							txt_s.width = s.width;
-						txt_s.height += (s.height + 2);
-						beg = off + 1;
-					}
-
-					s = graph_->text_extent_size(text_.c_str() + beg);// here return 0. Invalid graph (graphic::handle_ == 0? No call to atached?
-					if(s.width > txt_s.width)
-						txt_s.width = s.width;
-
-					widget_->size(txt_s.width + 10, txt_s.height + s.height + 10);
-				}
 			private:
 				void refresh(graph_reference graph)
 				{
-					if (! graph_ ) 
-						return attached (graph);  // will need to calcule text size and set the windows-tip size first
-
-					nana::size s = graph.text_extent_size(text_);
 					graph.rectangle(0x0, false);
 					graph.rectangle(1, 1, graph.width() - 2, graph.height() - 2, 0xF0F0F0, true);
-
-					const int x = 5;
-					int y = 5;
-
-					nana::string::size_type beg = 0;
-					nana::string::size_type off = text_.find('\n', beg);
-
-					for(;off != nana::string::npos; off = text_.find('\n', beg))
-					{
-						graph.string(x, y, 0x0, text_.substr(beg, off - beg));
-						y += s.height + 2;
-						beg = off + 1;
-					}
-
-					graph.string(x, y, 0x0, text_.c_str() + beg, text_.size() - beg);
 				}
-				void bind_window(widget_reference widget)
-				{
-					widget_ = &widget;
-				}
-
-				void attached(graph_reference graph)
-				{
-					graph_ = &graph;
-				}
-
-			private:
-				widget	*widget_;
-				nana::paint::graphics * graph_{nullptr};
-				nana::string text_;
 			};
 
-			class uiform
-				: public widget_object<category::root_tag, drawer>
+			class tip_form
+				:	public widget_object<category::root_tag, drawer>,
+					public tooltip_interface
 			{
 				typedef widget_object<category::root_tag, drawer> base_type;
 			public:
-				uiform()
+				tip_form()
 					:base_type(nana::rectangle(), appear::bald<appear::floating>())
 				{
 					API::take_active(this->handle(), false, nullptr);
+					label_.create(*this);
+					label_.format(true);
+					label_.transparent(true);
+				}
+			private:
+				//tooltip_interface implementation
+				void tooltip_text(const nana::string& text) override
+				{
+					label_.caption(text);
+					auto text_s = label_.measure(API::screen_size().width * 2 / 3);
+					this->size(text_s.width + 10, text_s.height + 10);
+					label_.move(5, 5, text_s.width, text_s.height);
+
 					timer_.interval(500);
-					timer_.make_tick(std::bind(&uiform::_m_tick, this));
+					timer_.make_tick(std::bind(&tip_form::_m_tick, this));
 				}
 
-				void set_tooltip_text(const nana::string& text)
+				virtual nana::size tooltip_size() const override
 				{
-					get_drawer_trigger().set_tooltip_text(text);
+					return this->size();
+				}
+
+				virtual void tooltip_move(const nana::point& scr_pos, bool ignore_pos) override
+				{
+					ignore_pos_ = ignore_pos;
+					pos_ = scr_pos;
 				}
 			private:
 				void _m_tick()
 				{
+					if (ignore_pos_)
+					{
+						auto pos = API::cursor_position();
+						
+						//The cursor must be stay here for half second.
+						if (pos != pos_)
+						{
+							pos_ = pos;
+							return;
+						}
+
+						nana::size sz = size();
+						nana::size screen_size = API::screen_size();
+						if (pos.x + sz.width >= screen_size.width)
+							pos.x = static_cast<int>(screen_size.width) - static_cast<int>(sz.width);
+
+						if (pos.y + sz.height >= screen_size.height)
+							pos.y = static_cast<int>(screen_size.height) - static_cast<int>(sz.height);
+						else
+							pos.y += 20;
+
+						if (pos.x < 0) pos.x = 0;
+						if (pos.y < 0) pos.y = 0;
+
+						pos_ = pos;
+					}
+
 					timer_.enable(false);
+					move(pos_.x, pos_.y);
 					show();
 				}
 
 			private:
 				timer timer_;
-			};//class uiform
+				gui::label label_;
+				nana::point pos_;
+				bool		ignore_pos_;
+			};//end class tip_form
 
-			class controller    /// The only direct implementator of gui::tooltip. (Reference counted?) Singleton global map of widget/tip and a dynamic tip window.
+			class controller
 			{
 				typedef std::pair<window, nana::string> pair_t;
-				typedef controller self_type;
 
-				controller() {}
-			public:
-				static std::recursive_mutex& mutex()
+				typedef std::function<void(tooltip_interface*)> deleter_type;
+
+				class tip_form_factory
+					: public gui::tooltip::factory_if_type
 				{
-					static std::recursive_mutex rcs_mutex;
-					return rcs_mutex;
+					tooltip_interface * create() override
+					{
+						return new tip_form;
+					}
+
+					void destroy(tooltip_interface* p) override
+					{
+						delete p;
+					}
+				};
+
+			public:
+				static std::shared_ptr<gui::tooltip::factory_if_type>& factory()
+				{
+					static std::shared_ptr<gui::tooltip::factory_if_type> fp;
+					if (nullptr == fp)
+					{
+						fp.reset(new tip_form_factory());
+					}
+					return fp;
 				}
 
-				static controller* object(bool destroy = false)
+				//external synchronization.
+				static controller* instance(bool destroy = false)
 				{
-					static controller* ptr{nullptr};   // Singleton....
+					static controller* ptr;
+
 					if(destroy)
 					{
 						delete ptr;
@@ -147,47 +160,73 @@ namespace nana{ namespace gui{
 				void set(window wd, const nana::string& str)
 				{
 					if (str.empty())
-						return _m_untip(wd);
-
-					_m_get(wd).second = str;
+						_m_untip(wd);
+					else
+						_m_get(wd).second = str;
 				}
 
-				void show(int x, int y, const nana::string& text)   /// Set the tip text and correct coordenates. And for a 2dn monitor ????
+				void show(const nana::string& text)
 				{
-					if( ! window_ )
-						window_.reset( new uiform);   //  call refresh with tip ""
+					if (nullptr == window_)
+					{
+						auto fp = factory();
 
-					window_->set_tooltip_text(text);
-					nana::size sz = window_->size();
+						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
+						{
+							fp->destroy(ti);
+						});
+					}
+
+					window_->tooltip_text(text);
+					window_->tooltip_move(API::cursor_position(), true);
+				}
+
+				void show(point pos, const nana::string& text)
+				{
+					if (nullptr == window_)
+					{
+						auto fp = factory();
+
+						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
+						{
+							fp->destroy(ti);
+						});
+					}
+
+					window_->tooltip_text(text);
+					nana::size sz = window_->tooltip_size();
 					nana::size screen_size = API::screen_size();
-					if(x + sz.width >= screen_size.width)
-						x = static_cast<int>(screen_size.width) - static_cast<int>(sz.width);
+					if(pos.x + sz.width >= screen_size.width)
+						pos.x = static_cast<int>(screen_size.width) - static_cast<int>(sz.width);
 
-					if(y + sz.height >= screen_size.height)
-						y = static_cast<int>(screen_size.height) - static_cast<int>(sz.height);
+					if (pos.y + sz.height >= screen_size.height)
+						pos.y = static_cast<int>(screen_size.height) - static_cast<int>(sz.height);
 
-					if(x < 0) x = 0;
-					if(y < 0) y = 0;
-					window_->move(x, y);
+					if (pos.x < 0) pos.x = 0;
+					if (pos.y < 0) pos.y = 0;
+
+					window_->tooltip_move(pos, false);
 				}
 
 				void close()
 				{
 					window_.reset();
+
+					//Destroy the tooltip controller when there are not tooltips.
 					if (cont_.empty())
-						object(true);
+						instance(true);
 				}
 			private:
 				void _m_enter(const eventinfo& ei)
 				{
-					auto p = _m_get(ei.window);
-					if(p.second.empty()) return ;
-
-					nana::point pos = API::cursor_position();
-					show(pos.x, pos.y + 20, p.second);
+					pair_t & pr = _m_get(ei.window);
+					if(pr.second.size())
+					{
+						this->show(pr.second);
+					}
 				}
 
-				void _m_leave(const eventinfo& ei)
+				void _m_leave(const eventinfo&)
 				{
 					close();
 				}
@@ -197,72 +236,79 @@ namespace nana{ namespace gui{
 					_m_untip(ei.window);
 				}
 
-				void _m_untip(window w)
+				void _m_untip(window wd)
 				{
-					for(auto i = cont_.begin(); i != cont_.end(); ++i)
+					for (auto i = cont_.begin(); i != cont_.end(); ++i)
 					{
-						if((*i).first == w)  // here it was leaking pair_t ?
+						if (i->first == wd)
 						{
 							cont_.erase(i);
+
 							if (cont_.empty())
-								object(true);
+							{
+								window_.reset();
+								instance(true);
+							}
 							return;
 						}
 					}
 				}
-
-
+			private:
 				pair_t& _m_get(window wd)
 				{
-					for(auto &pr : cont_)
+					for (auto & pr : cont_)
 					{
-						if(pr.first == wd)
+						if (pr.first == wd)
 							return pr;
 					}
-					API::make_event<events::mouse_enter>(wd, [this](const eventinfo& ei){_m_enter(ei);});
-					auto leave_fn = [this](const eventinfo& ei){_m_leave(ei);} ;   
 
+					API::make_event<events::mouse_enter>(wd, std::bind(&controller::_m_enter, this, std::placeholders::_1));
+					auto leave_fn = std::bind(&controller::_m_leave, this, std::placeholders::_1);
 					API::make_event<events::mouse_leave>(wd, leave_fn);
-					API::make_event<events::mouse_down >(wd, leave_fn);
-					API::make_event<events::destroy    >(wd, [this](const eventinfo& ei){_m_destroy(ei);});
+					API::make_event<events::mouse_down>(wd, leave_fn);
+					API::make_event<events::destroy>(wd, std::bind(&controller::_m_destroy, this, std::placeholders::_1));
 
 					cont_.emplace_back(wd, nana::string());
 					return cont_.back();
 				}
 			private:
-				std::unique_ptr<uiform> window_;
-				std::vector<pair_t>     cont_;
+				std::unique_ptr<tooltip_interface, deleter_type> window_;
+				std::vector<pair_t> cont_;
 			};
 		}//namespace tooltip
 	}//namespace drawerbase
 
 	//class tooltip
-		using ctrl = drawerbase::tooltip::controller ;
+		typedef drawerbase::tooltip::controller ctrl;
 
 		void tooltip::set(window wd, const nana::string& text)
 		{
-			if( API::empty_window(wd)) return;
-
-			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-			ctrl::object()->set(wd, text);
+			if(false == API::empty_window(wd))
+			{
+				internal_scope_guard lock;
+				ctrl::instance()->set(wd, text);
+			}
 		}
 
-		void tooltip::show(window wnd, int x, int y, const nana::string& text)
+		void tooltip::show(window wd, int x, int y, const nana::string& text)
 		{
-			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-
+			internal_scope_guard lock;
 			nana::point pos(x, y);
-			API::calc_screen_point(wnd, pos);
-			ctrl::object()->show(pos.x, pos.y, text);
+			API::calc_screen_point(wd, pos);
+			ctrl::instance()->show(pos, text);
 		}
 
 		void tooltip::close()
 		{
-			std::lock_guard<decltype(ctrl::mutex())> lock(ctrl::mutex());
-			ctrl::object()->close();
+			internal_scope_guard lock;
+			ctrl::instance()->close();
+		}
+
+		void tooltip::_m_hold_factory(factory_interface* p)
+		{
+			ctrl::factory().reset(p);
 		}
 	//end class tooltip
 
 }//namespace gui
 }//namespace nana
-

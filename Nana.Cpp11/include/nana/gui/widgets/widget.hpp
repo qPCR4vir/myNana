@@ -14,6 +14,8 @@
 #include <nana/traits.hpp>
 #include "../basis.hpp"
 #include "../programming_interface.hpp"
+#include <nana/gui/detail/drawer.hpp>
+#include <nana/gui/layout_utility.hpp>
 #include <nana/functor.hpp>
 #include <functional>
 
@@ -21,6 +23,8 @@ namespace nana
 {
 namespace gui
 {
+	class drawer_trigger;
+
 	//class widget
 	//@brief: this is a abstract class for defining the capacity interface.
 	class widget
@@ -99,6 +103,8 @@ namespace gui
 		}
 
 		void umake_event(event_handle eh) const;
+		widget& tooltip(const nana::string&);
+
 		operator dummy_bool_type() const;
 		operator window() const;
 	protected:
@@ -181,18 +187,22 @@ namespace gui
 			return trigger_;
 		}
 	private:
-		void signal(int message, const detail::signals& sig)
+		void signal(detail::signals::code code, const detail::signals& sig)
 		{
-			switch(message)
+			typedef detail::signals::code codes;
+			switch(code)
 			{
-			case detail::signals::caption:
+			case codes::caption:
 				this->_m_caption(sig.info.caption);
 				break;
-			case detail::signals::read_caption:
+			case codes::read_caption:
 				*sig.info.str = this->_m_caption();
 				break;
-			case detail::signals::destroy:
-				handle_ = nullptr; break;
+			case codes::destroy:
+				handle_ = nullptr;
+				break;
+			default:
+				break;
 			}
 		}
 	private:
@@ -239,18 +249,22 @@ namespace gui
 			return handle_;
 		}
 	private:
-		void signal(int message, const detail::signals& sig)
+		void signal(detail::signals::code code, const detail::signals& sig)
 		{
-			switch(message)
+			typedef detail::signals::code codes;
+			switch(code)
 			{
-			case detail::signals::caption:
+			case codes::caption:
 				this->_m_caption(sig.info.caption);
 				break;
-			case detail::signals::read_caption:
+			case codes::read_caption:
 				*sig.info.str = this->_m_caption();
 				break;
-			case detail::signals::destroy:
-				handle_ = nullptr; break;
+			case codes::destroy:
+				handle_ = nullptr;
+				break;
+			default:
+				break;
 			}
 		}
 	private:
@@ -265,13 +279,13 @@ namespace gui
 	public:
 
 		widget_object()
-			:handle_(API::dev::create_window(0, false, API::make_center(300, 150), appearance()))
+			:handle_(API::dev::create_window(nullptr, false, API::make_center(300, 150), appearance()))
 		{
 			_m_bind_and_attach();
 		}
 
 		widget_object(const rectangle& r, const appearance& apr = appearance())
-			: handle_(API::dev::create_window(0, false, r, apr))
+			: handle_(API::dev::create_window(nullptr, false, r, apr))
 		{
 			_m_bind_and_attach();
 		}
@@ -343,18 +357,22 @@ namespace gui
 			return trigger_;
 		}
 	private:
-		void signal(int message, const detail::signals& sig)
+		void signal(detail::signals::code code, const detail::signals& sig)
 		{
-			switch(message)
+			typedef detail::signals::code codes;
+			switch(code)
 			{
-			case detail::signals::caption:
+			case codes::caption:
 				this->_m_caption(sig.info.caption);
 				break;
-			case detail::signals::read_caption:
+			case codes::read_caption:
 				*sig.info.str = this->_m_caption();
 				break;
-			case detail::signals::destroy:
-				handle_ = nullptr; break;
+			case codes::destroy:
+				handle_ = nullptr;
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -412,21 +430,25 @@ namespace gui
 	private:
 		virtual drawer_trigger* get_drawer_trigger()
 		{
-			return 0;
+			return nullptr;
 		}
 
-		void signal(int message, const detail::signals& sig)
+		void signal(detail::signals::code code, const detail::signals& sig)
 		{
-			switch(message)
+			typedef detail::signals::code codes;
+			switch(code)
 			{
-			case detail::signals::caption:
+			case codes::caption:
 				this->_m_caption(sig.info.caption);
 				break;
-			case detail::signals::read_caption:
+			case codes::read_caption:
 				*sig.info.str = this->_m_caption();
 				break;
-			case detail::signals::destroy:
-				handle_ = 0; break;
+			case codes::destroy:
+				handle_ = nullptr;
+				break;
+			default:
+				break;
 			}
 		}
 	private:

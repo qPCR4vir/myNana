@@ -2,8 +2,8 @@
  *	A Tooltip Implementation
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/tooltip.hpp
@@ -15,16 +15,56 @@
 
 namespace nana{ namespace gui
 {
-	class tooltip
+	///tooltip_interface
+	///An interface for user-defined tooltip window.
+	class tooltip_interface
 	{
 	public:
-		tooltip(){}
-		tooltip(window w, const nana::string &tip=nana::string{}){set(w,tip);}
-		//untip(window w);
+		virtual ~tooltip_interface(){}
 
-		static void set (window, const nana::string&tip=nana::string{});
+		virtual nana::size tooltip_size() const = 0;
+		virtual void tooltip_text(const nana::string&)	= 0;
+		virtual void tooltip_move(const nana::point& screen_pos, bool ignore_pos)	= 0;
+	};
+
+	class tooltip
+	{
+		class factory_interface
+		{
+		public:
+			virtual ~factory_interface(){}
+			virtual tooltip_interface* create() = 0;
+			virtual void destroy(tooltip_interface*) = 0;
+		};
+
+		template<typename TooltipWindow>
+		class factory
+			: public factory_interface
+		{
+			tooltip_interface * create() override
+			{
+				return new TooltipWindow;
+			}
+
+			void destroy(tooltip_interface* p) override
+			{
+				delete p;
+			}
+		};
+	public:
+		typedef factory_interface factory_if_type;
+
+		template<typename TooltipWindow>
+		static void make_factory()
+		{
+			_m_hold_factory(new factory<TooltipWindow>);
+		}
+
+		static void set(window, const nana::string&);
 		static void show(window, int x, int y, const nana::string&);
 		static void close();
+	private:
+		static void _m_hold_factory(factory_interface*);
 	};//class tooltip
 
 }//namespace gui

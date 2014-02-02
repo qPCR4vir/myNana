@@ -326,5 +326,8 @@
     <ClInclude Include="..\..\temp\NoValue.h">
       <Filter>Header Files\temp</Filter>
     </ClInclude>
+    <ClCompile Include="..\..\source\gui\detail\window_layout.cpp">
+      <Filter>Source Files\gui\detail</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

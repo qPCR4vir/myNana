@@ -2,8 +2,8 @@
  *	Nana GUI Programming Interface Implementation
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.hpp
@@ -17,6 +17,7 @@
 #include <nana/paint/image.hpp>
 
 namespace nana{	namespace gui{
+	class drawer_trigger;
 
 namespace API
 {
@@ -32,18 +33,13 @@ namespace API
 	namespace dev
 	{
 		template<typename Object, typename Concept>
-		bool attach_signal(window wd, Object& object, void (Concept::*f)(int, const gui::detail::signals&))
+		void attach_signal(window wd, Object& object, void (Concept::*f)(detail::signals::code, const gui::detail::signals&))
 		{
 			using namespace gui::detail;
-			return bedrock::instance().wd_manager.attach_signal(reinterpret_cast<bedrock::core_window_t*>(wd), object, f);
+			bedrock::instance().wd_manager.attach_signal(reinterpret_cast<bedrock::core_window_t*>(wd), object, f);
 		}
 
-		template<typename Function>
-		bool attach_signal(window wd, Function f)
-		{
-			using namespace gui::detail;
-			return bedrock::instance().wd_manager.attach_signal(reinterpret_cast<bedrock::core_window_t*>(wd), f);
-		}
+		event_handle make_drawer_event(event_code, window);
 
 		template<typename Event>
 		event_handle make_drawer_event(window wd)
@@ -51,15 +47,10 @@ namespace API
 			using namespace gui::detail;
 			typedef typename std::remove_pointer<typename std::remove_reference<Event>::type>::type event_t;
 			if(std::is_base_of<detail::event_type_tag, event_t>::value)
-			{
-				auto & wd_manager = bedrock::instance().wd_manager;
-				internal_scope_guard isg;
-				if(wd_manager.available(reinterpret_cast<bedrock::core_window_t*>(wd)))
-					return reinterpret_cast<bedrock::core_window_t*>(wd)->drawer.make_event(event_t::identifier, wd);
-			}
+				return make_drawer_event(event_t::identifier, wd);
+
 			return nullptr;
 		}
-
 #if  defined(_MSC_VER)
 	#if _MSC_VER >= 1800
 		#define NANA_API_MAKE_EVENTS
@@ -71,10 +62,10 @@ namespace API
 #endif
 
 #ifdef NANA_API_MAKE_EVENTS
-		
+
 		template<typename ...Events>
 		struct make_drawer_events;
-		
+
 		template<typename Event, typename ...Events>
 		struct make_drawer_events<Event, Events...>
 		{
@@ -185,7 +176,7 @@ namespace API
 		if(std::is_base_of<detail::event_type_tag, event_t>::value)
 			gui::detail::bedrock::raise_event(event_t::identifier, reinterpret_cast<gui::detail::bedrock::core_window_t*>(wd), ei, true);
 	}
-	
+
 
 	template<typename Event, typename Function>
 	event_handle bind_event(window trigger, window listener, Function function)
@@ -196,7 +187,7 @@ namespace API
 			gui::detail::bedrock & b = gui::detail::bedrock::instance();
 			return b.evt_manager.bind(event_t::identifier, trigger, listener, b.category(reinterpret_cast<gui::detail::bedrock::core_window_t*>(trigger)), function);
 		}
-		
+
 		return 0;
 	}
 
@@ -220,7 +211,7 @@ namespace API
 	bool track_window_size(window, const nana::size&, bool true_for_max);
 	void window_enabled(window, bool);
 	bool window_enabled(window);
-	
+
 	/**	@brief	A widget drawer draws the widget surface in answering an event. this function will tell the drawer to copy the graphics into window after event answering.
 	 */
 	void lazy_refresh();
@@ -273,7 +264,7 @@ namespace API
 	void tabstop(window);
 	void eat_tabstop(window, bool);
 	window move_tabstop(window, bool next);
-	
+
 	bool glass_window(window);			//deprecated
 	bool glass_window(window, bool);	//deprecated
 

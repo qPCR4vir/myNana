@@ -156,6 +156,12 @@ namespace gui
 			API::umake_event(eh);
 		}
 
+		widget& widget::tooltip(const nana::string& text)
+		{
+			nana::gui::tooltip::set(*this, text);
+			return *this;
+		}
+
 		widget::operator widget::dummy_bool_type() const
 		{
 			return (handle()? dummy_bool_type(1):0);
