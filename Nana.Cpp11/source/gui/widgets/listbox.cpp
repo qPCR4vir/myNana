@@ -913,6 +913,7 @@ namespace nana{ namespace gui{
 							{
 								at(spos.first, spos.second).flags.selected = true;
 								ext_event.selected(item_proxy(ess_, spos.first, absolute(spos.first, spos.second)), true);
+								return; 
 							}
 							else break;
 						}
