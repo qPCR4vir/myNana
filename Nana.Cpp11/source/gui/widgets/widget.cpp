@@ -51,11 +51,6 @@ namespace gui
 			return _m_typeface();
 		}
 
-        widget& widget::tooltip(const nana::string &tip)
-        {
-            nana::gui::tooltip{*this,tip};
-            return *this;
-		}
 		void widget::close()
 		{
 			_m_close();
