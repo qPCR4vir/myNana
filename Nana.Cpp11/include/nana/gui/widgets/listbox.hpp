@@ -271,12 +271,14 @@ namespace nana{ namespace gui{
 				/// Behavior of a container
 				void push_back(const nana::string&);
 				void push_back(nana::string&&);
+
 				item_proxy begin() const;
 				item_proxy end() const;
 				item_proxy cbegin() const;
 				item_proxy cend() const;
 
 				item_proxy at( size_type pos) const;
+				item_proxy back() const;
 
 				size_type size() const;      // how many cat?
 
