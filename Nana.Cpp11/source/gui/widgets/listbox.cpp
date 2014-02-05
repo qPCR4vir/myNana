@@ -361,7 +361,6 @@ namespace nana{ namespace gui{
 
 				void sort()
 				{
-  
 					if((sorted_index_ == npos) || (!resort_))
 						return;
 
@@ -861,7 +860,7 @@ namespace nana{ namespace gui{
 						if(good == false) return;
 					}
 
-					//start moving   -------------- ???? 
+					//start moving
 					while(true)
 					{
 						if(upwards == false)
@@ -914,7 +913,6 @@ namespace nana{ namespace gui{
 							{
 								at(spos.first, spos.second).flags.selected = true;
 								ext_event.selected(item_proxy(ess_, spos.first, absolute(spos.first, spos.second)), true);
-								return; 
 							}
 							break;
 						}
