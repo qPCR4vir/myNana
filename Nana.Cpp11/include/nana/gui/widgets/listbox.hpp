@@ -58,6 +58,7 @@ namespace nana{ namespace gui{
 				void dbl_click(graph_reference, const eventinfo&);
 				void resize(graph_reference, const eventinfo&);
 				void key_down(graph_reference, const eventinfo&);
+				void key_char(graph_reference, const eventinfo&);  // I want " " to check/uncheck selected items, and Ctrl-A to select all
 			private:
 				essence_t * essence_;
 				drawer_header_impl *drawer_header_;

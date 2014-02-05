@@ -25,13 +25,13 @@ namespace nana{ namespace gui{
 	{
 		namespace listbox
 		{
-			class es_header
+			class es_header   /// Essence of the columns Header
 			{
 			public:
 				typedef std::size_t size_type;
 				struct item_t
 				{
-					nana::string text;
+					nana::string text;  //< "text" header of the column number "index" with weigth "pixels"
 					unsigned pixels;
 					bool visible;
 					size_type index;
@@ -329,7 +329,7 @@ namespace nana{ namespace gui{
 				{
 					category cg;
 					cg.expand = true;
-					list_.push_back(cg);
+					list_.push_back(cg);   // we allwais have cat # 0
 				}
 
 				void bind(essence_t* ess, widget& wd)
@@ -449,7 +449,7 @@ namespace nana{ namespace gui{
 					return sorted_reverse_;
 				}
 
-				void create(const nana::string& text)
+				void create(const nana::string& text) /// Append a new category 
 				{
 					category cg;
 					cg.expand = true;
@@ -457,7 +457,7 @@ namespace nana{ namespace gui{
 					list_.push_back(cg);
 				}
 
-				void push_back(size_type cat, const nana::string& text)
+				void push_back(size_type cat, const nana::string& text)  /// Append to category "cat" a new item with "text" in column 0
 				{
 					item_t item;
 					item.texts.push_back(text);
@@ -470,14 +470,14 @@ namespace nana{ namespace gui{
 													//generates a size_t-to-unsigned conversion.
 				}
 
-				void push_back(std::size_t pos, nana::string&& s)
+				void push_back(std::size_t cat, nana::string&& text)  /// Append to category "cat" a new item with "text" in column 0
 				{
-					auto & catobj = *_m_at(pos);
-					catobj.items.emplace_back(std::move(s));
+					auto & catobj = *_m_at(cat);
+					catobj.items.emplace_back(std::move(text));
 					catobj.sorted.push_back(catobj.items.size() - 1);
 				}
 
-				bool insert(size_type cat, size_type index, const nana::string& text)
+				bool insert(size_type cat, size_type index, const nana::string& text)  /// Insert to category "cat", before item "index" a new item with "text" in column 0
 				{
 					auto & catobj = *_m_at(cat);
 
@@ -491,7 +491,7 @@ namespace nana{ namespace gui{
 					item.texts.push_back(text);
 
 					if(index < n)
-						catobj.items.insert(catobj.items.begin() + index, item);
+						catobj.items.insert(catobj.items.begin() + index, std::move(item));
 					else
 						catobj.items.emplace_back(std::move(item));
 
@@ -2160,6 +2160,7 @@ namespace nana{ namespace gui{
 					make_drawer_event<events::size>(wd);
 					make_drawer_event<events::mouse_wheel>(wd);
 					make_drawer_event<events::key_down>(wd);
+					make_drawer_event<events::key_char>(wd);  // I want " " to check/uncheck selected items, and Ctrl-A to select all
 				}
 
 				void trigger::detached()
@@ -2404,18 +2405,30 @@ namespace nana{ namespace gui{
 					API::lazy_refresh();
 				}
 
+				void trigger::key_char(graph_reference graph, const eventinfo& ei)
+				{}
 				void trigger::key_down(graph_reference graph, const eventinfo& ei)
 				{
+						bool up{false}, clear_old{false}, selct_range{false};
 					switch(ei.keyboard.key)
 					{
-					case keyboard::os_arrow_up:
+					case keyboard::os_arrow_up: up=true;
 					case keyboard::os_arrow_down:
-						essence_->lister.move_select(ei.keyboard.key == static_cast<char_t>(keyboard::os_arrow_up));
+						essence_->lister.move_select( up );
 						essence_->trace_selected_item();
 						draw();
 						API::lazy_refresh();
 						break;
+					case keyboard::select_all :
+						essence_->lister.select_for_all ( true  );
+						break;
+
+					default:
+						return ;
 					}
+					essence_->trace_selected_item();
+					draw();
+					API::lazy_refresh();
 				}
 			//end class trigger
 
