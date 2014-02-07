@@ -68,7 +68,7 @@ namespace gui
 		{
 			mutable nana::char_t key;
 			mutable bool ignore;
-			unsigned char ctrl;
+			unsigned char ctrl;     // do we need shift ?? what about Alt ?
 		};
 
 		struct tag_wheel
@@ -80,9 +80,9 @@ namespace gui
 			bool ctrl;
 		};
 
-		struct tag_dropinfo
+		struct tag_dropinfo    // drop files ?
 		{
-			std::vector<nana::string> filenames;
+			std::vector<nana::string> filenames;    // ? what filenames? could be anyobject and associated "id"?
 			nana::point pos;
 		};
 	}//end namespace detail
@@ -91,8 +91,8 @@ namespace gui
 	//@brief:
 	struct eventinfo
 	{
-		event_code identifier;	//for identifying what event is
-		gui::window window;		//which window the event triggered on
+		event_code identifier;	//< for identifying what event is
+		gui::window window;		//< which window the event triggered on
 
 		union
 		{
