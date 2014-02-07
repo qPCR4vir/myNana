@@ -15,6 +15,7 @@
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/concepts.hpp>
+#include <cassert>
 
 namespace nana{ namespace gui{
 	class listbox;
@@ -23,19 +24,31 @@ namespace nana{ namespace gui{
 		namespace listbox
 		{
 			typedef std::size_t size_type;
-
 			struct index_pair
 			{
-				size_type cat=0, item=0;
-				index_pair(){}
-				index_pair(size_type cat_ , size_type item_ ): cat(cat_),item(item_){}
+				size_type cat, item;
+				index_pair(size_type cat_=0 , size_type item_=0 ): cat(cat_),item(item_){}
+				bool operator == (index_pair idx) const {return cat==idx.cat && item == idx.item;}
+				bool operator != (index_pair idx) const {return cat!=idx.cat || item != idx.item;}
 			};
 			struct super_index_pair: index_pair
 			{
-				super_index_pair(){}
-				super_index_pair(size_type cat_ , size_type item_ =npos): index_pair(cat_ , item_){}
-				bool isCat() const{return item==npos;}
+				super_index_pair(size_type cat_ = npos, size_type item_ = npos): index_pair(cat_ , item_){}
+				super_index_pair(index_pair i): index_pair(i){}
+				bool empty() const {return cat==npos ;}
+				bool isCat() const {return item==npos && !empty();}
+				bool isItem() const{return !empty() && item!=npos ;}
+				operator index_pair(){ assert( isItem() ); return {cat,item};}
+				bool operator == (super_index_pair idx) const 
+				{
+					return  cat==idx.cat && ( item == idx.item || isCat() && idx.isCat() )
+						 || empty() && idx.empty()   ;
+				}
+				bool operator != (super_index_pair idx) const {return !operator == (idx) ;}
 			};
+
+			using selection       = std::vector<      index_pair>;
+			using super_selection = std::vector<super_index_pair>;
 
 			//struct essence_t
 			//@brief:	this struct gives many data for listbox,
@@ -331,13 +344,14 @@ namespace nana{ namespace gui{
 		typedef drawerbase::listbox::size_type size_type;
 		typedef drawerbase::listbox::index_pair index_pair;
 		typedef drawerbase::listbox::super_index_pair super_index_pair;
+		typedef drawerbase::listbox::selection selection;
 
 		typedef std::pair<size_type, size_type>	index_pair_t;
 
 		typedef drawerbase::listbox::extra_events ext_event_type;
 		typedef drawerbase::listbox::cat_proxy	cat_proxy;
 		typedef drawerbase::listbox::item_proxy item_proxy;
-		typedef std::vector<index_pair_t> selection;
+		//typedef std::vector<index_pair_t> selection;
 
 		/// An interface that performances a translation between the object of T and an item of listbox.
 		template<typename T>
