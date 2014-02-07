@@ -824,6 +824,15 @@ namespace nana{ namespace gui{
 					}
 				}
 
+				bool select_range(super_index_pair fr, super_index_pair to, bool sel=true)
+				{
+					if (fr.cat > to.cat || ( fr.cat==to.cat && fr.item > to.item)  )
+						std::swap(fr,to);
+					for (; fr != to ; forward(fr,1,fr))
+						item_proxy(ess_, fr).select(sel);
+					return true;
+				}
+
 				bool select_for_all(bool sel)
 				{
 					bool changed = false;
@@ -865,6 +874,27 @@ namespace nana{ namespace gui{
 						++id.cat;
 					}
 				}
+				bool item_selected_all_checked(selection& vec) const
+				{
+					index_pair id;
+					bool ck = true;
+					for(auto & cat : list_)
+					{
+						id.item = 0;
+						for(auto & m : cat.items)
+						{
+							if(m.flags.selected)
+							{
+								vec.push_back(id);
+								ck &= m.flags.checked;
+							}
+							++id.item;
+						}
+						++id.cat;
+					}
+					return ck;
+				}
+
 
 				void move_select(bool upwards)
 				{
@@ -2379,17 +2409,21 @@ namespace nana{ namespace gui{
 							auto * item_ptr = (  item.isCat() ? nullptr  : &lister.at(item) );
 							if(ptr_where.first == essence_t::where_t::lister)
 							{
-								if(! ei.mouse.ctrl)
-									lister.select_for_all(false);
+								bool sel=true;
+								if(ei.mouse.shift)
+									lister.select_range(lister.last_selected,item, sel);
+								else if( ei.mouse.ctrl)
+									     sel= ! item_proxy(essence_, item).selected();
+								else
+									  lister.select_for_all(false);
 								if(item_ptr)
 								{
-									item_ptr->flags.selected = true;
+									item_ptr->flags.selected = sel;
 									super_index_pair last_selected(item.cat,lister.absolute(item.cat, item.item));
-									lister.ext_event.selected(item_proxy(essence_, item.cat, last_selected.item ), true);
+									lister.ext_event.selected(item_proxy(essence_, item.cat, last_selected.item ), sel);
 									if (item_ptr->flags.selected ) essence_->lister.last_selected=last_selected;
 							        else if(essence_->lister.last_selected==last_selected)
 									        essence_->lister.last_selected =super_index_pair{ }; // empty !!
-
 								}
 								else
 									lister.categ_selected(item.cat, true);
@@ -2513,12 +2547,15 @@ namespace nana{ namespace gui{
 					case keyboard::os_arrow_down:
 						essence_->lister.move_select( up );
 						essence_->trace_selected_item();
-						draw();
-						API::lazy_refresh();
 						break;
 					case STR(' ') :
-						essence_->lister.select_for_all ( true  );
-						break;
+						{
+							selection s; 
+							bool ck = ! essence_->lister.item_selected_all_checked(s);
+							for (auto i : s)
+								item_proxy(essence_,i).check(ck);
+							break;
+						}
 
 					default:
 						return ;
