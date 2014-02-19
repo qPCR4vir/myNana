@@ -47,8 +47,8 @@ namespace nana{ namespace gui{
 				bool operator != (super_index_pair idx) const {return !operator == (idx) ;}
 			};
 
-			using selection       = std::vector<      index_pair>;
-			using super_selection = std::vector<super_index_pair>;
+			using selection       = std::vector<      index_pair>;   ///<A container type for \a items.
+			using super_selection = std::vector<super_index_pair>;   ///<A container type for \a items AND \a categories.
 
 			//struct essence_t
 			//@brief:	this struct gives many data for listbox,
@@ -91,13 +91,13 @@ namespace nana{ namespace gui{
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-			/// An interface that performances a translation between the object of T and an item of listbox.
+		    /// An interface that performances a translation between the object of T and an item of listbox.
 			template<typename T>
 			class resolver_interface
 			{
 			public:
-				/// The type that will be resolved.
-				typedef T target;
+				
+				typedef T target;               ///< The type that will be resolved.
 
 				/// The destructor
 				virtual ~resolver_interface(){}
@@ -336,6 +336,18 @@ namespace nana{ namespace gui{
 		}
 	}//end namespace drawerbase
 
+	/*! \class listbox
+        \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain \a items. 
+	A category is a text with can be \a selected, \a checked and \a expanded to show the items.
+	An item is formed by \a columns field, each corresponding to one of the \a headers. 
+	An item can be \a selected and \a checked.
+	The user can \a drag the header to \a reisize it or to \a reorganize it. 
+	By \a clicking on a header the list get \a reorder, first up, and then down alternatively,
+	 
+	\see drawerbase::listbox::cat_proxy
+	\see drawerbase::listbox::item_proxy
+    */
+
 	class listbox
 		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
@@ -344,7 +356,8 @@ namespace nana{ namespace gui{
 		typedef drawerbase::listbox::size_type size_type;
 		typedef drawerbase::listbox::index_pair index_pair;
 		typedef drawerbase::listbox::super_index_pair super_index_pair;
-		typedef drawerbase::listbox::selection selection;
+		typedef drawerbase::listbox::selection selection;                ///<A container type for items.
+		typedef drawerbase::listbox::super_selection super_selection;  	 ///<A container type for items AND categories.
 
 		typedef std::pair<size_type, size_type>	index_pair_t;
 
@@ -366,25 +379,26 @@ namespace nana{ namespace gui{
 
 		ext_event_type& ext_event() const;
 
-		void auto_draw(bool);
+		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
 
-		void append_header(const nana::string&, unsigned width = 120);
+		void append_header(const nana::string &header_txt, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
 
-		cat_proxy append(const nana::string& text);
+		cat_proxy append(const nana::string& text);          ///<Appends a new category at the end
 		cat_proxy at(size_type pos) const;
 		item_proxy at(size_type pos, size_type index) const;
 		item_proxy at( index_pair idx) const{return at(idx.cat, idx.item);} // npos???
 
-		void insert(size_type cat, size_type index, const nana::string&);
-		void insert( index_pair idx, const nana::string& col1){return insert(idx.cat, idx.item, col1);}// npos???
+		void insert(size_type cat, size_type index, const nana::string&first_col_txt);///<Insert a new item with a text in the first column.
+		// npos???
+		void insert( index_pair idx, const nana::string& col1){return insert(idx.cat, idx.item, col1);}///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
-		selection checked() const;
+		selection checked() const;                         ///<Returns the items which are checked.                       
 
-		void clear(size_type cat);
-		void clear();
-		void erase(size_type cat);
-		void erase();
+		void clear(size_type cat);                         ///<Removes all the items from the specified category
+		void clear();                                      ///<Removes all the items from all categories
+		void erase(size_type cat);                         ///<Erases a category
+		void erase();                                      ///<Erases all categories.
 		item_proxy erase(item_proxy);
 
 		template<typename Resolver>
@@ -395,6 +409,7 @@ namespace nana{ namespace gui{
 			_m_resolver(nana::any(proxy));
 		}
 
+		            ///Sets a strick weak ordering comparer for a column
 		void set_sort_compare(size_type sub, std::function<bool(const nana::string&, nana::any*, 
 			                                                    const nana::string&, nana::any*, bool reverse)> strick_ordering);
 		void sort_col(size_type col, bool reverse = false);
@@ -402,20 +417,20 @@ namespace nana{ namespace gui{
 		void unsort();
 		bool freeze_sort(bool freeze);
 
-		selection selected() const;
+		selection selected() const;                         ///<Get the indexs of all the selected items
 
 		void show_header(bool);
 		bool visible_header() const;
-		void move_select(bool upwards);
+		void move_select(bool upwards);                     ///<Selects an item besides the current selected item.
 		void icon(size_type cat, size_type index, const nana::paint::image&);
 		void icon(index_pair idx, const nana::paint::image&);
 
 		nana::paint::image icon(size_type cat, size_type index) const;
 		nana::paint::image icon(index_pair idx) const;
 
-		size_type size_categ() const;
-		size_type size_item() const;
-		size_type size_item(size_type cat) const;
+		size_type size_categ() const;                      ///<Get the number of categories
+		size_type size_item() const;                       ///<The number of items in the default category 
+		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
 	private:
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
 		nana::any* _m_anyobj(index_pair idx, bool allocate_if_empty) const;
