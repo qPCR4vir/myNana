@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="MDdebNov13|Win32">
@@ -683,6 +683,7 @@
     <ClCompile Include="..\..\temp\vplace.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\7-Impl Button.md" />
     <Text Include="..\..\..\Readme.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -691,6 +692,15 @@
     <ClInclude Include="..\..\temp\Numer.hpp" />
     <ClInclude Include="..\..\temp\Units.hpp" />
     <ClInclude Include="..\..\temp\vplace.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\3-Getting Started.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\2-Hello World.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\1-Introduction.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\4-Desing.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\5- Creating Forms.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\6- Events.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\8-NoUIBlock.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

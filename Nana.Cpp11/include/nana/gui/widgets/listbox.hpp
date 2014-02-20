@@ -335,19 +335,17 @@ namespace nana{ namespace gui{
 			};
 		}
 	}//end namespace drawerbase
+/*!\class nana::gui::listbox
+\brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain \a items. 
+A category is a text with can be \a selected, \a checked and \a expanded to show the items.
+An item is formed by \a column-fields, each corresponding to one of the \a headers. 
+An item can be \a selected and \a checked.
+The user can \a drag the header to \a reisize it or to \a reorganize it. 
+By \a clicking on a header the list get \a reordered, first up, and then down alternatively,
 
-	/*! \class listbox
-        \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain \a items. 
-	A category is a text with can be \a selected, \a checked and \a expanded to show the items.
-	An item is formed by \a columns field, each corresponding to one of the \a headers. 
-	An item can be \a selected and \a checked.
-	The user can \a drag the header to \a reisize it or to \a reorganize it. 
-	By \a clicking on a header the list get \a reorder, first up, and then down alternatively,
-	 
-	\see drawerbase::listbox::cat_proxy
-	\see drawerbase::listbox::item_proxy
-    */
+\example listbox_Resolver.cpp
 
+*/
 	class listbox
 		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
@@ -366,7 +364,7 @@ namespace nana{ namespace gui{
 		typedef drawerbase::listbox::item_proxy item_proxy;
 		//typedef std::vector<index_pair_t> selection;
 
-		/// An interface that performances a translation between the object of T and an item of listbox.
+		      /// An interface that performances a translation between the object of T and an item of listbox.
 		template<typename T>
 		class resolver_interface
 			: public drawerbase::listbox::resolver_interface<T>

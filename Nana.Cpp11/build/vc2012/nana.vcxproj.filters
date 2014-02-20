@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -60,6 +60,9 @@
     </Filter>
     <Filter Include="Header Files\temp">
       <UniqueIdentifier>{13cd0eb3-eedb-482d-96f6-3846bb13e047}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Doxygen-docs">
+      <UniqueIdentifier>{1db41224-f02a-48b3-b343-1cf4ac3ae563}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -309,6 +312,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
+    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\7-Impl Button.md">
+      <Filter>Doxygen-docs</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\temp\EditableForm.hpp">
@@ -329,5 +335,28 @@
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp">
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\2-Hello World.markdown">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\1-Introduction.markdown">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\3-Getting Started.markdown">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\4-Desing.markdown">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\5- Creating Forms.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\6- Events.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\8-NoUIBlock.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
   </ItemGroup>
 </Project>
