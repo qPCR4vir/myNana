@@ -130,7 +130,6 @@ Make sure that enable the compiler for supports of RTTI, MultiThreading and exce
 	Create a project, then open "Project->Build options...->Compiler settings->Compiler flags", and enable "-std=c++0x" or "-std=c++11" if it is Nana.C++11.
 	Switch the tab to "Linker settings" in "Project build options", and link these static libraries in "Other linker options".
 	##### Windows:
-
 				- lnana -lgdi32 -lcomdlg32
 	##### Linux:
 
@@ -485,4 +484,7 @@ It is right because Nana.GUI guarantees a program correctnets even when an inval
 		
 \example subclass.cpp
 
+\example calculator.cpp
+
+\example demo.cpp11.cpp
 

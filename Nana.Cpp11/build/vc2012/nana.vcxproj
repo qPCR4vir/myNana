@@ -599,6 +599,9 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\demo\calculator.cpp" />
+    <ClCompile Include="..\..\..\demo\subclass.cpp" />
+    <ClCompile Include="..\..\..\demo\widget_show\demo.cpp11.cpp" />
     <ClCompile Include="..\..\source\any.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />

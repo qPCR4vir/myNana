@@ -309,6 +309,15 @@
     <ClCompile Include="..\..\temp\vplace.cpp">
       <Filter>Source Files\temp</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\demo\calculator.cpp">
+      <Filter>Doxygen-docs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\demo\subclass.cpp">
+      <Filter>Doxygen-docs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\demo\widget_show\demo.cpp11.cpp">
+      <Filter>Doxygen-docs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
