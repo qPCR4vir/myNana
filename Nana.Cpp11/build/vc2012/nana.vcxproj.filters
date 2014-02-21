@@ -338,16 +338,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.markdown">
-      <Filter>Doxygen-docs</Filter>
-    </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.markdown">
-      <Filter>Doxygen-docs</Filter>
-    </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.markdown">
-      <Filter>Doxygen-docs</Filter>
-    </None>
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.md">
       <Filter>Doxygen-docs</Filter>
     </None>
   </ItemGroup>

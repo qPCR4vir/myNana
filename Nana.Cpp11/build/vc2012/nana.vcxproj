@@ -695,9 +695,9 @@
     <ClInclude Include="..\..\temp\vplace.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.md" />
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
