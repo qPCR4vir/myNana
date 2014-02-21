@@ -683,7 +683,7 @@
     <ClCompile Include="..\..\temp\vplace.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\7-Impl Button.md" />
+    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\04-Impl Button.md" />
     <Text Include="..\..\..\ReadME - solution config.md" />
     <Text Include="..\..\..\Readme.txt" />
   </ItemGroup>
@@ -695,13 +695,10 @@
     <ClInclude Include="..\..\temp\vplace.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\3-Getting Started.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\2-Hello World.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\1-Introduction.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\4-Desing.markdown" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\5- Creating Forms.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\6- Events.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\8-NoUIBlock.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.markdown" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

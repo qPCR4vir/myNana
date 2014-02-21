@@ -1,4 +1,4 @@
-# 4. Think about the Design #
+#  Think about the Design  
 Assuming the design of a framework that generates some data and it requires a module 
 for representing these data in GUI. In general, we just introduce an interface for outputting these data, for example: 
 

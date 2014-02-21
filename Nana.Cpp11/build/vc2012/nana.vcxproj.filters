@@ -312,10 +312,10 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
-    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\7-Impl Button.md">
+    <Text Include="..\..\..\ReadME - solution config.md" />
+    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\04-Impl Button.md">
       <Filter>Doxygen-docs</Filter>
     </Text>
-    <Text Include="..\..\..\ReadME - solution config.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\temp\EditableForm.hpp">
@@ -338,25 +338,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\2-Hello World.markdown">
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.markdown">
       <Filter>Doxygen-docs</Filter>
     </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\1-Introduction.markdown">
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.markdown">
       <Filter>Doxygen-docs</Filter>
     </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\3-Getting Started.markdown">
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.markdown">
       <Filter>Doxygen-docs</Filter>
     </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\4-Desing.markdown">
-      <Filter>Doxygen-docs</Filter>
-    </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\5- Creating Forms.md">
-      <Filter>Doxygen-docs</Filter>
-    </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\6- Events.md">
-      <Filter>Doxygen-docs</Filter>
-    </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\8-NoUIBlock.md">
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md">
       <Filter>Doxygen-docs</Filter>
     </None>
   </ItemGroup>

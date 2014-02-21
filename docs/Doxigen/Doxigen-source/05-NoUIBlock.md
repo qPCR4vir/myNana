@@ -1,5 +1,4 @@
-# 8- A Method to prevent UI from blocking while busy #
-
+#  A Method to prevent UI from blocking while busy  
 The GUI of Nana C++ Library (0.1.12 or later) is designed to save developers from the difficulties of threading, however, no UI framework will ever be able to provide a single-threaded solution for every sort of problem.
 
 Most respondence to user interactions in events are finished immediately, and does not affect the responsiveness of the UI. The Nana C++ Library event model deals with events in sequence; this means the next event will be processed after current event is finished.

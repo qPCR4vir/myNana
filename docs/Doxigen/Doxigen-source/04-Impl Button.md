@@ -1,6 +1,6 @@
 
-# 7 How to implement a button #
-## 1 Introduction ###
+#   How to implement a button  
+## 1 Introduction  
 This article explain how to implement a button widget and some basic knowledge about nana::gui::button. 
 It is a simple widget and a good start point to learn the implementation of a widget. The implementation 
 of nana::gui::button is defined in "include/nana/gui/widgets/button.hpp" and "source/gui/widgets/button.cpp".
