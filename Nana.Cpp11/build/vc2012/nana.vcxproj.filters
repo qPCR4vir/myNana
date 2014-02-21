@@ -315,6 +315,7 @@
     <Text Include="..\..\..\docs\Doxigen\Doxigen-source\7-Impl Button.md">
       <Filter>Doxygen-docs</Filter>
     </Text>
+    <Text Include="..\..\..\ReadME - solution config.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\temp\EditableForm.hpp">
