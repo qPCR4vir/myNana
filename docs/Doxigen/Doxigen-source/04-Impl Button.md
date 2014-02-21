@@ -1,5 +1,6 @@
 
 #   How to implement a button  
+
 ## 1 Introduction  
 This article explain how to implement a button widget and some basic knowledge about nana::gui::button. 
 It is a simple widget and a good start point to learn the implementation of a widget. The implementation 

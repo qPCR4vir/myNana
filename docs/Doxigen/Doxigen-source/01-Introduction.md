@@ -1,5 +1,7 @@
 # Nana C++ library.                {#index}  
-\tableofcontents
+
+[TOC]
+
 \section WhatIs  What is Nana C++ Library? 
 
 The Nana project is aimed at providing a software framework for cross-platform GUI programming, 
@@ -31,12 +33,12 @@ There is a general steps to install the library.
 #### Step One:
 Start the IDE you use, set C++ include path and library path.
 + Include Path: *NanaPath*/include
-+ Library Path: *NanaPath*/extrlib, *NanaPath*/build/bin/*IDEName*.
++ Library Path: *NanaPath*/extrlib, *NanaPath*/build/bin/IDEName.
 
 #### Step Two:
 Create a static linkage library solution within a IDE which you use, and add all the files 
-which are placed in "*NanaPath*/source" and in its all sub directiories to the solution. 
-Then compile the solution and you will get a static linkage file *NanaStatic* in the path "*NanaPath*/build/bin/*IDEName*".
+which are placed in *NanaPath*/source and in its all sub directiories to the solution. 
+Then compile the solution and you will get a static linkage file *NanaStatic* in the path *NanaPath*/build/bin/IDEName.
 
 #### Step Three:
 Write a program and use Nana to create a GUI, and compile it with the *NanaStatic* file linked. 
@@ -45,9 +47,10 @@ Make sure that enable the compiler for supports of RTTI, MultiThreading and exce
 \subsection Microsoft Microsoft Visual C++
 1. Set directories
 
-	Add the Include Path "*NanaPath*/include" and the Library Path "*NanaPath*/build/bin/*IDEName*" and "*NanaPath*/extrlib".
+	Add the Include Path *NanaPath*/include and the Library Path *NanaPath*/build/bin/IDEName and *NanaPath*/extrlib.
 	#### Microsoft Visual C++ 2010/2012/2013
-	Open the directory of "%UserProfile%/AppData/Local/Microsoft/MSBuild/v4.0", the %UserProfile% is a system environment variable. Then you can find some files which are named like "Microsoft.CPP.XXX.user.props", choose one of them for your target platform, and edit it as follow:
+	Open the directory of "%UserProfile%/AppData/Local/Microsoft/MSBuild/v4.0", the %UserProfile% is a system environment variable. 
+	Then you can find some files which are named like "Microsoft.CPP.XXX.user.props", choose one of them for your target platform, and edit it as follow:
 	
 	Insert "NanaPath/include" to the section <IncludePath>.
 	
