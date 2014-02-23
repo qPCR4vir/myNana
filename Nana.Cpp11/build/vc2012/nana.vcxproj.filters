@@ -309,22 +309,10 @@
     <ClCompile Include="..\..\temp\vplace.cpp">
       <Filter>Source Files\temp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\demo\calculator.cpp">
-      <Filter>Doxygen-docs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\demo\subclass.cpp">
-      <Filter>Doxygen-docs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\demo\widget_show\demo.cpp11.cpp">
-      <Filter>Doxygen-docs</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\Readme.txt" />
     <Text Include="..\..\..\ReadME - solution config.md" />
-    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\04-Impl Button.md">
-      <Filter>Doxygen-docs</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\temp\EditableForm.hpp">
@@ -345,18 +333,30 @@
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp">
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.button.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.menu.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.listbox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.categorize.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md">
-      <Filter>Doxygen-docs</Filter>
-    </None>
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md">
       <Filter>Doxygen-docs</Filter>
     </None>
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.md">
       <Filter>Doxygen-docs</Filter>
     </None>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.md">
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Advanced.md">
       <Filter>Doxygen-docs</Filter>
     </None>
   </ItemGroup>

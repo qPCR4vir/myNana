@@ -1,9 +1,23 @@
 
 # Getting Started #
-This chapter shows how to create a small graphical user interface (GUI) application with Nana C++ Library. 
+
+See also:
+ 
+ + [An application of Clone Method to Nana C++ Library](http://nanaproject.wordpress.com/2011/03/20/clone_method/)
+ + [An introduction to the image processing interfaces from release of 0.2.2](http://nanaproject.wordpress.com/2012/04/17/an-introduction-to-the-image-processing-interfaces-from-release-of-0-2-2/)
+ + [Blending Images](http://nanaproject.wordpress.com/2012/02/22/blending-images/)
+ + [Introduction to The Support of Bidirectional Language](https://nanaproject.wordpress.com/2012/06/18/introduce-to-the-support-of-bidirectional-language/)
+ + [Nana Tutorial: Creating A GUI Calculator ](https://sourceforge.net/p/nanapro/blog/2013/03/nana-tutorial-creating-a-gui-calculator/)
+ + [The FreeMe](http://nanapro.sourceforge.net/help/tutorials/thefreeme.htm)
+ + Demo of Nana C++ Library
+ + See the examples in this documentation.
 
 \tableofcontents
+
 \section exam Examples
+
+This chapter shows how to create a small graphical user interface (GUI) application with Nana C++ Library. 
+
 \subsection HelloN Hello Nana 
 Let's start with a simple program, we will study it line by line. 
 
@@ -240,7 +254,7 @@ The use of lambda is creating an anonymous function object and so the arguments 
 			{ std::cout<<"mouse pos=("<<ei.mouse.x<<", "<<ei.mouse.y <<std::endl;} 
 		); 
 
-The lambda-declarator () is used like a parameter-list. Let’s stop the introduction to the lambda, if you want more details of lambda, please refer to other C++ books. 
+The lambda-declarator () is used like a parameter-list. Let's stop the introduction to the lambda, if you want more details of lambda, please refer to other C++ books. 
 
 
 
@@ -260,7 +274,7 @@ Our first example is a Monty Hall Problem. This is a game that tests you whether
 
 ![Figure.  The Monty Hall Problem.](MontyHall.jpg) 
 
-Let’s start creating this application. First we are going to design architecture for the application. 
+Let's start creating this application. First we are going to design architecture for the application. 
 As we saw in figure 3.1, the application needs a form, a label and three buttons. 
 
 	1 #include <nana/gui/wvl.hpp> 
@@ -312,7 +326,7 @@ Lines 16 to 19 define the data members including label and buttons. The integer 
  
 Lines 21 to 26 define the main function; an object of class monty_hall is defined, sets the form visible and enters the event loop.
  
-Let’s implement the default constructor and three private member functions. 
+Let's implement the default constructor and three private member functions. 
 
 	27 monty_hall() 
 	28        : nana::gui::form(nana::gui::API::make_center(400, 150), 
@@ -340,7 +354,7 @@ Let’s implement the default constructor and three private member functions.
 	50 } 
 
 Line 28 and 29 initialize the base class of monty_hall. make_center() is a function that returns 
-a rectangle that specifies an area in the center of screen with size of 400 × 150. The typedef name 
+a rectangle that specifies an area in the center of screen with size of 400 X 150. The typedef name 
 appear is used for the abstraction of form appearance. The appear::decorate defines the form with caption 
 bar, border, a close button and displaying in taskbar. 
 
@@ -456,6 +470,8 @@ Press Tab key to navigate through the buttons with keyboard, the default tabstop
 
 
 \subsection loader Creating An Instance of the Form with form_loader<form>()  
+
+
 In the previous chapters we provided examples of defining the form objects. 
 They are usually local objects. When the local object goes out of scope, its destructor is called automatically. 
 Sometimes we need to keep the object alive when it goes out of the scope: another way to create an object is to declare 
@@ -473,7 +489,7 @@ Nana C++ Library will manage the form objects created by form_loader and destroy
 	} 
 
 nana::gui::form_loader is a template functor class. It creates an object of the template 
-parameter class. nana::gui::form_loader is useful when you create a form and don’t want to 
+parameter class. nana::gui::form_loader is useful when you create a form and don't want to 
 take care about the lifetime of the object. Continuing with the next example, we see a form 
 is created when the button is being clicked. 
 
@@ -521,7 +537,7 @@ execution and wait for a user input. For example:
 	{ 
 		using namespace nana::gui; 
 		form fm(ei.window, API::make_center(ei.window, 400, 300)); 
-		fobj.caption(STR("I am a modal form")); 
+		fm.caption(STR("I am a modal form")); 
 		std::cout<<"Block execution till modal form is closed"<<std::endl; 
 		API::modal_window(fm); 
 		std::cout<<"modal form is closed"<<std::endl; 
@@ -846,6 +862,123 @@ Likein the  below code:
 		ei.ignore = (ei.key < '0' || ei.key > '9'); 
 	}
 
+\section PNG Enable the PNG support for Nana C++ Library
 
-A helper class for subclassing under Windows:
+In the release of 0.2, Nana provides the support for PNG, but by defaul Nana disables the feature 
+of PNG for easy and fast configuration.
+The support for PNG is introduced to Nana C++ Library by employing [libpng](http://www.libpng.org), there are two strategies for the support:
+1. use the libpng bundled with Nana;
+2. use the libpng from operating system, it means that we have to install the libpng by ourselves.
+
+\subsection pnge Enable the support for PNG
+
+Open the config.hpp in nana include folder, you can find a line of comment like is
+
+	//#define NANA_ENABLE_PNG
+
+Cancel the comment to enable the support for PNG.
+Now, the result looks like this:
+
+	#define NANA_ENABLE_PNG 1
+	#if defined(NANA_ENABLE_PNG)
+	//Comment it for using the libpng from operating system.
+	#define NANA_LIBPNG 1
+	#endif
+
+Keep the #defined NANA_LIBPNG for using the `libpng` bundled with Nana.
+Comment it for using the libpng from operating system.
+By default, Nana uses the libpng bundled with it in win32 package, and the libpng 
+from operating system in linux X11 package.
+After configuration, rebuild the Nana C++ Library, and create an application for trial.
+
+	#include <nana/gui/wvl.hpp>
+	#include <nana/gui/widgets/picture.hpp>
+	#include <nana/gui/layout.hpp>
+	int main()
+	{
+		using namespace nana::gui;
+		form fm;
+		picture pic(fm);
+		gird gd(fm);
+		gd.push(pic, 0, 0);
+		pic.load(STR("a_png_file.png"));
+		fm.show();
+		exec();
+	}
+
+Under Windows, link the static library of libpng in "%nana%/extrlib" folder.
+
+libpng.a: For Dev-C++ and Code::Blocks
+
+libpng.md.lib/libpng.md.x64.lib: For VC and Multi-threaded DLL runtime library.
+
+libpng.mt.lib/libpng.mt.x64.lib: For VC and Multi-threaded runtime library.
+
+Under Linux, modify the makefile and add a "-lpng" for compiler.
+
+\section msg Message box
+
+The `class nana::gui::msgbox` is used for displaying a modal dialog box to prompt a brief message. A brief example.
+
+	nana::gui::msgbox m(STR("msgbox example"));
+	m<<STR("This is a msgbox example.");
+	m();
+
+![Modal dialog box to prompt a brief message](msgbox.jpg)
+
+The msgbox is a C++ stream style, so we can easy to display strings, numbers and all the objects 
+whose type overloads an operator<<() for std::ostream.
+Sometimes, the application should ask user for a decision, for example, ask user whether to exit.
+
+	void when_exit(const nana::gui::eventinfo& ei)
+	{
+		nana::gui::msgbox m(ei.window, STR("msgbox example"), nana::gui::msgbox::yes_no);
+		m.icon(m.icon_question);
+		m<<STR("Are you sure you want to exit the game?");
+		ei.unload.cancel = (m() != m.pick_yes);
+	}
+	int main()
+	{
+		using namespace nana::gui;
+		form fm;
+		fm.make_event<events::unload>(when_exit);
+		fm.show();
+		exec();
+	}
+
+![Exit game](exitgame.jpg)
+
+\section icon Window Icon
+There are two interfaces to set an icon for a window which is a root_widget, such as form 
+and nested_form, thay are defined in namespace nana::gui::API.
+
+	void window_icon_default(const nana::paint::image&);
+	void window_icon(nana::gui::window, const nana::paint::image&);
+
+window_icon_default() sets a default icon, and after calling it, all windows will set 
+the default icon automatically while they are creating.
+Although the Nana C++ Library is aimed for cross-platform, there is a distinction in Nana 
+between Windows and Linux(X11). The icon of a window only could be an ICON file in Windows. 
+If cross-platform is desired, the code should be treated differently.
+
+	using namespace nana::gui;
+	form fm;
+	#if defined(NANA_WINDOWS)
+	API::window_icon(fm, nana::paint::image(STR("icon.ico")));
+	#else
+	API::window_icon(fm, nana::paint::image(STR("icon.bmp")));
+	#endif
+
+Under Windows, the icon of window is the icon of exe file usually, the icon file is 
+stored in the exe file as a resouce. To set the icon resouce for the window, we just 
+open the exe with class image in this way.
+
+	API::window_icon_default(nana::paint::image(STR("program.exe")));
+
+or
+
+	API::window_icon(a_form_object, nana::paint::image(STR("program.exe")));
+
+Posted in Nana C++ Library | Tags: c++, Cross-platform, gui, nana
+
 

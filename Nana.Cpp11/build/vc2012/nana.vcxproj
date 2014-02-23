@@ -599,9 +599,6 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\demo\calculator.cpp" />
-    <ClCompile Include="..\..\..\demo\subclass.cpp" />
-    <ClCompile Include="..\..\..\demo\widget_show\demo.cpp11.cpp" />
     <ClCompile Include="..\..\source\any.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />
@@ -686,11 +683,15 @@
     <ClCompile Include="..\..\temp\vplace.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\docs\Doxigen\Doxigen-source\04-Impl Button.md" />
     <Text Include="..\..\..\ReadME - solution config.md" />
     <Text Include="..\..\..\Readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.button.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.categorize.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.listbox.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.menu.h" />
     <ClInclude Include="..\..\temp\EditableForm.hpp" />
     <ClInclude Include="..\..\temp\NoValue.h" />
     <ClInclude Include="..\..\temp\Numer.hpp" />
@@ -700,8 +701,7 @@
   <ItemGroup>
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.md" />
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Desing.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\05-NoUIBlock.md" />
+    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Advanced.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

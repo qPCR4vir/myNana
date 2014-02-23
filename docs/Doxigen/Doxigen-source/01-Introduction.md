@@ -139,6 +139,9 @@ Make sure that enable the compiler for supports of RTTI, MultiThreading and exce
 
 
 \section Intro Introduction     
+
+[(Original site)](https://sourceforge.net/p/nanapro/blog/2012/11/preliminary-study-of-nana-c-library/)
+
 Nana is a C++ framework with provides GUI, threads and file system API. 
 It provides many basic classes and functions for cross-platform programming.
 Although C++ is a powerful and syntax-agile language, in fact, many programmers don't 
@@ -370,121 +373,6 @@ It is right because Nana.GUI guarantees a program correctnets even when an inval
 
 
 
-\class nana::gui::listbox
-	 
-1. The resolver is used to resolute an object of the specified type for a listbox item.
-2. The any_objective of listbox have a 2-Dimension indexing. The first dimension is for the category, and the second one is for the item of the specified category.
-
-		int main()
-		{
-		   using namespace nana::gui;
-		   form fm;
-		   listbox lb(fm, nana::rectangle(10, 10, 280, 120));
-		   lb.append_header(STR("Header"), 200);
-		   lb.append_item(STR("int"));
-		   lb.append_item(STR("double"));
-
-		   lb.anyobj(0, 0, 10);
-		   lb.anyobj(0, 1, 0.1);
-
-		   int * pi = lb.anyobj<int>(0, 0); 	  // it returns a nullptr if there is not an int object specified.
-		   double * pd = lb.anyobj<double>(0, 1); // it returns a nullptr if there is not an double object specified.
-
-		   fm.show();
-		   exec();
-		 }
-
-3. nana::gui::listbox creates the category 0 by default. The member functions without the categ parameter operate the items that belong to category 0.
 
 
-
-\see nana::gui::drawerbase::listbox::cat_proxy
-\see nana::gui::drawerbase::listbox::item_proxy
-
-
-
-
-
-
-
-
-\class nana::gui::menu
-\brief  a list of items that specify options or group of options for an application.
-
-1. The widget sets the shortkey that is a character behind the first of &-character in text for the item. e.g. "File(&F)" or "&File".
-2. The type item_proxy is used for callbacking. A programmer should not take care about the object item_proxy. It is created and destroyed by menu. The definition is
-
-		class item_proxy: nana::noncopyable
-		{
-		  public:
-			implementation-specified constructor
-			void enabled(bool); 			//Sets the enable state of the item.
-			bool enabled() const; 		//Gets the enable state of the item.
-			std::size_t index() const; 	//Gets the index of the item.
-		  private:
-			//Private data members...
-		};
-
-3. There is a helper for automatically popping a menu.
-
-		class menu_popuper
-		{
-		  public:
-					//C++03
-			menu_popuper(menu&, mouse::t = mouse::right_button);
-			menu_popuper(menu&, window owner, const point& pos, 
-			mouse::t =  mouse::right_button	);
-
-					//C++11
-			menu_popuper(menu&, mouse = mouse::right_button);
-			menu_popuper(menu&, window owner, const point& pos, mouse = mouse::right_button);
-
-			void operator()(const eventinfo&);
-		private:
-			//Implemented-Specified private members
-		};
-
-	Now let's use it. There is a button, it popups the menu when it is clicked.
-
-		#include <nana/gui/wvl.hpp>
-		#include <nana/gui/widgets/button.hpp>
-		#include <nana/gui/widgets/menu.hpp>
-
-		void on_menu_item(nana::gui::menu::item_proxy& ip)
-		{
-			 std::size_t index = ip.index(); //Get the index of the clicking item.
-		}
-
-		int main()
-		{
-			using namespace nana::gui;
-			form fm;
-
-			//We need a menu object
-			menu mobj;
-			mobj.append ( STR("Item 0"), &on_menu_item);
-			mobj.append_splitter();
-			mobj.append ( STR("Item 1"), &on_menu_item);
-
-			//Now we need a button.
-			button btn(fm, nana::rectangle(nana::point(10, 10), nana::size(100, 25)));
-			btn.caption(STR("Popup Menu"));
-
-			//Popup the menu when right clicking the button.
-			btn.make_event<events::click>(menu_popuper(mobj));
-
-			//Or popuping the menu with a specified coordinate when any mouse button is clicked.
-			//btn.make_event<events::click> ( menu_popuper( mobj, btn, nana::point(0, 26),
-			//                                mouse::any_button );
-
-			fm.show();
-			exec();
-		}
-
-		
-\example subclass.cpp
-
-\example calculator.cpp
-
-\example demo.cpp11.cpp
 
