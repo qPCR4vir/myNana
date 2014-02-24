@@ -2507,8 +2507,6 @@ namespace nana{ namespace gui{
 					case keyboard::os_arrow_down:
 						essence_->lister.move_select(up);
 						essence_->trace_selected_item();
-						draw();
-						API::lazy_refresh();
 						break;
 					case STR(' ') :
 						{
@@ -2521,6 +2519,8 @@ namespace nana{ namespace gui{
 					default:
 						return;
 					}
+					draw();
+					API::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const eventinfo& ei)
