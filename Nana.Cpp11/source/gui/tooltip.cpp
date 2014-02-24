@@ -30,6 +30,25 @@ namespace nana{ namespace gui{
 				}
 			};
 
+			nana::point pos_by_screen(nana::point pos, const nana::size& sz)
+			{
+				auto scr_area = API::screen_area_from_point(pos);
+				if (pos.x + sz.width > scr_area.x + scr_area.width)
+					pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
+				if (pos.x < scr_area.x)
+					pos.x = scr_area.x;
+
+				if (pos.y + sz.height >= scr_area.y + scr_area.height)
+					pos.y = static_cast<int>(scr_area.y + scr_area.height - sz.height);
+				else
+					pos.y += 20;
+
+				if (pos.y < scr_area.y)
+					pos.y = scr_area.y;
+
+				return pos;
+			}
+
 			class tip_form
 				:	public widget_object<category::root_tag, drawer>,
 					public tooltip_interface
@@ -81,20 +100,11 @@ namespace nana{ namespace gui{
 							pos_ = pos;
 							return;
 						}
-
-						nana::size sz = size();
-						auto scr_area = API::screen_area_from_point(pos);
-						if(pos.x + sz.width > scr_area.x + scr_area.width)
-							pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
-						if(pos.x < scr_area.x) pos.x = scr_area.x;
-
-						if(pos.y + sz.height > scr_area.y + scr_area.height)
-							pos.y = static_cast<int>(scr_area.y + scr_area.height - sz.height);
-						else
-							pos.y += 20;
-						if(pos.y < scr_area.y) pos.y = scr_area.y;
-
-					} else pos=pos_;
+						
+						pos = pos_by_screen(pos, size());
+					}
+					else
+						pos = pos_;
 
 					timer_.enable(false);
 					move(pos.x, pos.y);
@@ -193,18 +203,7 @@ namespace nana{ namespace gui{
 					}
 
 					window_->tooltip_text(text);
-					nana::size sz = window_->tooltip_size();
-
-					auto scr_area = API::screen_area_from_point(pos);
-					if(pos.x + sz.width > scr_area.x + scr_area.width)
-						pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
-					if(pos.x < scr_area.x) pos.x = scr_area.x;
-
-					if(pos.y + sz.height > scr_area.y + scr_area.height)
-						pos.y = static_cast<int>(scr_area.y + scr_area.height - sz.height);
-					else
-						pos.y += 20;
-					if(pos.y < scr_area.y) pos.y = scr_area.y;
+					pos = pos_by_screen(pos, window_->tooltip_size());
 					window_->tooltip_move(pos, false);
 				}
 

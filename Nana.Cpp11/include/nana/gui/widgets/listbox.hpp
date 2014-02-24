@@ -15,7 +15,6 @@
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/concepts.hpp>
-#include <cassert>
 
 namespace nana{ namespace gui{
 	class listbox;
@@ -24,31 +23,58 @@ namespace nana{ namespace gui{
 		namespace listbox
 		{
 			typedef std::size_t size_type;
+
 			struct index_pair
 			{
-				size_type cat, item;
-				index_pair(size_type cat_=0 , size_type item_=0 ): cat(cat_),item(item_){}
-				bool operator == (index_pair idx) const {return cat==idx.cat && item == idx.item;}
-				bool operator != (index_pair idx) const {return cat!=idx.cat || item != idx.item;}
-			};
-			struct super_index_pair: index_pair
-			{
-				super_index_pair(size_type cat_ = npos, size_type item_ = npos): index_pair(cat_ , item_){}
-				super_index_pair(index_pair i): index_pair(i){}
-				bool empty() const {return cat==npos ;}
-				bool isCat() const {return item==npos && !empty();}
-				bool isItem() const{return !empty() && item!=npos ;}
-				operator index_pair(){ assert( isItem() ); return {cat,item};}
-				bool operator == (super_index_pair idx) const 
+				size_type cat;	//The pos of category
+				size_type item;	//the pos of item in a category.
+
+				index_pair()
+					:	cat(0), item(0)
+				{}
+
+				index_pair(size_type cat_pos, size_type item_pos)
+					:	cat(cat_pos),
+						item(item_pos)
+				{}
+
+				bool empty() const
 				{
-					return  cat==idx.cat && ( item == idx.item || isCat() && idx.isCat() )
-						 || empty() && idx.empty()   ;
+					return (npos == cat);
 				}
-				bool operator != (super_index_pair idx) const {return !operator == (idx) ;}
+
+				void set_both(size_type n)
+				{
+					cat = item = n;
+				}
+
+				bool is_category() const
+				{
+					return (npos != cat && npos == item);
+				}
+
+				bool is_item() const
+				{
+					return (npos != cat && npos != item);
+				}
+
+				bool operator==(const index_pair& r) const
+				{
+					return (r.cat == cat && r.item == item);
+				}
+
+				bool operator!=(const index_pair& r) const
+				{
+					return !this->operator==(r);
+				}
+
+				bool operator>(const index_pair& r) const
+				{
+					return (cat > r.cat) || (cat == r.cat && item > r.item);
+				}
 			};
 
-			using selection       = std::vector<      index_pair>;   ///<A container type for \a items.
-			using super_selection = std::vector<super_index_pair>;   ///<A container type for \a items AND \a categories.
+			typedef std::vector<index_pair> selection;
 
 			//struct essence_t
 			//@brief:	this struct gives many data for listbox,
@@ -60,8 +86,6 @@ namespace nana{ namespace gui{
 			class trigger: public drawer_trigger
 			{
 			public:
-				typedef listbox::size_type size_type;  // once again? = nana::gui::drawerbase::listbox::size_type
-
 				trigger();
 				~trigger();
 				essence_t& essence();
@@ -84,7 +108,7 @@ namespace nana{ namespace gui{
 				void dbl_click(graph_reference, const eventinfo&);
 				void resize(graph_reference, const eventinfo&);
 				void key_down(graph_reference, const eventinfo&);
-				void key_char(graph_reference, const eventinfo&);  // I want " " to check/uncheck selected items, and Ctrl-A to select all
+				void key_char(graph_reference, const eventinfo&);	//Deal with whitespace
 			private:
 				essence_t * essence_;
 				drawer_header_impl *drawer_header_;
@@ -96,13 +120,13 @@ namespace nana{ namespace gui{
 			class resolver_interface
 			{
 			public:
-				
-				typedef T target;               ///< The type that will be resolved.
+				/// The type that will be resolved.
+				typedef T target;
 
 				/// The destructor
 				virtual ~resolver_interface(){}
 
-				virtual nana::string decode( size_type, const target&) const = 0;
+				virtual nana::string decode(size_type, const target&) const = 0;
 				virtual void encode(target&, size_type, const nana::string&) const = 0;
 			};
 
@@ -124,13 +148,12 @@ namespace nana{ namespace gui{
 			};
 
 
-			class item_proxy 
-				: public std::iterator<std::input_iterator_tag, item_proxy> , public index_pair
+			class item_proxy
+				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
 				item_proxy();
-				item_proxy(essence_t* ess, size_type cat, size_type pos);
-				item_proxy(essence_t* ess, index_pair idx);
+				item_proxy(essence_t*, const index_pair&);
 
 				bool empty() const;
 
@@ -161,7 +184,7 @@ namespace nana{ namespace gui{
 						throw std::invalid_argument("Nana.Listbox.ItemProxy: the type passed to value() does not match the resolver.");
 					
 					auto * res = proxy->res.get();
-					const size_type headers = columns();
+					auto headers = columns();
 
 					for(size_type i = 0; i < headers; ++i)
 						text(i, res->decode(i, t));
@@ -177,7 +200,7 @@ namespace nana{ namespace gui{
 						throw std::invalid_argument("Nana.Listbox.ItemProxy: the type passed to value() does not match the resolver.");
 					
 					auto * res = proxy->res.get();
-					const size_type headers = columns();
+					auto headers = columns();
 					for(size_type i = 0; i < headers; ++i)
 						res->encode(t, i, text(i));
 				}
@@ -249,8 +272,7 @@ namespace nana{ namespace gui{
 				const nana::any * _m_value() const;
 			private:
 				essence_t * ess_;
-				//std::size_t cat_;
-				//std::size_t pos_;
+				index_pair	pos_;
 			};
 
 			class cat_proxy
@@ -258,7 +280,7 @@ namespace nana{ namespace gui{
 			{
 			public:
 				cat_proxy();
-				cat_proxy(essence_t * ess, size_type cat_pos);
+				cat_proxy(essence_t * ess, size_type pos);
 
 				/// Append an item at end of the category
 				template<typename T>
@@ -268,18 +290,18 @@ namespace nana{ namespace gui{
 					if(proxy)
 					{
 						auto & res = proxy->res;
-						index_pair idx( pos_ , size()    );                // an iterator to the next created item
-						push_back(res->decode( 0, t)  );                   // Create a new item and Set txt in first column
-						item_proxy ip(ess_, idx  );                        // an iterator to the last created item
-						const size_type headers = columns();
-						for(size_type i = 1; i < headers; ++i) // Set txt in the rest of the columns
+						push_back(res->decode(0, t));
+
+						item_proxy ip(ess_, index_pair(pos_, size() - 1));
+						auto headers = columns();
+						for(size_type i = 1; i < headers; ++i)
 							ip.text(i, res->decode(i, t));
 						return ip;
 					}
 					return item_proxy();
 				}
 
-				std::size_t columns() const;
+				size_type columns() const;
 
 				/// Behavior of a container
 				void push_back(const nana::string&);
@@ -290,7 +312,7 @@ namespace nana{ namespace gui{
 				item_proxy cbegin() const;
 				item_proxy cend() const;
 
-				item_proxy at( size_type pos) const;
+				item_proxy at(size_type pos) const;
 				item_proxy back() const;
 
 				size_type size() const;      // how many cat?
@@ -324,8 +346,8 @@ namespace nana{ namespace gui{
 			private:
 				const nana::any & _m_resolver() const;
 			private:
-				essence_t * ess_;
-				nana::gui::drawerbase::listbox::size_type pos_;
+				essence_t*	ess_;
+				size_type	pos_;
 			};
 
 			struct extra_events
@@ -348,18 +370,12 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
-		typedef drawerbase::listbox::size_type size_type;
-		typedef drawerbase::listbox::index_pair index_pair;
-		typedef drawerbase::listbox::super_index_pair super_index_pair;
-		typedef drawerbase::listbox::selection selection;                ///<A container type for items.
-		typedef drawerbase::listbox::super_selection super_selection;  	 ///<A container type for items AND categories.
-
-		typedef std::pair<size_type, size_type>	index_pair_t;
-
-		typedef drawerbase::listbox::extra_events ext_event_type;
+		typedef drawerbase::listbox::size_type	size_type;
+		typedef drawerbase::listbox::index_pair	index_pair;
+		typedef drawerbase::listbox::extra_events	ext_event_type;
 		typedef drawerbase::listbox::cat_proxy	cat_proxy;
-		typedef drawerbase::listbox::item_proxy item_proxy;
-		//typedef std::vector<index_pair_t> selection;
+		typedef drawerbase::listbox::item_proxy	item_proxy;
+		typedef drawerbase::listbox::selection	selection;    ///<A container type for items.
 
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
 		template<typename T>
@@ -380,12 +396,10 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 
 		cat_proxy append(const nana::string& text);          ///<Appends a new category at the end
 		cat_proxy at(size_type pos) const;
-		item_proxy at(size_type pos, size_type index) const;
-		item_proxy at( index_pair idx) const{return at(idx.cat, idx.item);} // npos???
+		item_proxy at(const index_pair&) const;
 
-		void insert(size_type cat, size_type index, const nana::string&first_col_txt);///<Insert a new item with a text in the first column.
-		// npos???
-		void insert( index_pair idx, const nana::string& col1){return insert(idx.cat, idx.item, col1);}///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, const nana::string&);    ///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, nana::string&&);         ///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
 		selection checked() const;                         ///<Returns the items which are checked.                       
@@ -405,10 +419,11 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		}
 
 		            ///Sets a strick weak ordering comparer for a column
-		void set_sort_compare(size_type sub, std::function<bool(const nana::string&, nana::any*, 
-			                                                    const nana::string&, nana::any*, bool reverse)> strick_ordering);
+		void set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*,
+				                                        const nana::string&, nana::any*, bool reverse)> strick_ordering);
+
 		void sort_col(size_type col, bool reverse = false);
-		std::size_t sort_col() const;
+		size_type sort_col() const;
 		void unsort();
 		bool freeze_sort(bool freeze);
 
@@ -417,22 +432,16 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void show_header(bool);
 		bool visible_header() const;
 		void move_select(bool upwards);                     ///<Selects an item besides the current selected item.
-		void icon(size_type cat, size_type index, const nana::paint::image&);
-		void icon(index_pair idx, const nana::paint::image&);
-
-		nana::paint::image icon(size_type cat, size_type index) const;
-		nana::paint::image icon(index_pair idx) const;
-
-		size_type size_categ() const;                      ///<Get the number of categories
-		size_type size_item() const;                       ///<The number of items in the default category 
+		void icon(const index_pair&, const nana::paint::image&);
+		nana::paint::image icon(const index_pair&) const;
+		size_type size_categ() const;                   ///<Get the number of categories
+		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
 	private:
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
-		nana::any* _m_anyobj(index_pair idx, bool allocate_if_empty) const;
-
 		void _m_resolver(const nana::any&);
 		const nana::any & _m_resolver() const;
-		size_type _m_headers() const;
+		std::size_t _m_headers() const;
 	};
 }//end namespace gui
 }//end namespace nana
