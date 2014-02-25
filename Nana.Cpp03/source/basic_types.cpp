@@ -16,6 +16,9 @@ namespace nana
 	//struct point
 		point::point():x(0), y(0){}
 		point::point(int x, int y):x(x), y(y){}
+		point::point(const rectangle& r)
+			: x(r.x), y(r.y)
+		{}
 
 		bool point::operator==(const point& rhs) const
 		{
@@ -40,6 +43,13 @@ namespace nana
 		bool point::operator>=(const point& rhs) const
 		{
 			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
+		}
+
+		point& point::operator=(const nana::rectangle& r)
+		{
+			x = r.x;
+			y = r.y;
+			return *this;
 		}
 	//end struct point
 
@@ -75,6 +85,9 @@ namespace nana
 	//struct size
 		size::size():width(0), height(0){}
 		size::size(unsigned width, unsigned height):width(width), height(height){}
+		size::size(const rectangle& r)
+			: width(r.width), height(r.height)
+		{}
 
 		bool size::is_zero() const
 		{
@@ -88,6 +101,13 @@ namespace nana
 		bool size::operator!=(const size& rhs) const
 		{
 			return (width != rhs.width) || (height != rhs.height);
+		}
+
+		size& size::operator=(const nana::rectangle& r)
+		{
+			width = r.width;
+			height = r.height;
+			return *this;
 		}
 	//end struct size
 
@@ -139,6 +159,12 @@ namespace nana
 			width -= (pixels << 1);
 			height -= (pixels << 1);
 			return *this;
+		}
+
+		bool rectangle::is_hit(int pos_x, int pos_y) const
+		{
+			return	(x <= pos_x && pos_x < x + static_cast<int>(width)) &&
+					(y <= pos_y && pos_y < y + static_cast<int>(height));		
 		}
 	//end struct rectangle
 

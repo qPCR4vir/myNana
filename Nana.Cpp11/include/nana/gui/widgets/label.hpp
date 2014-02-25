@@ -1,5 +1,6 @@
 /*
  *	A Label Control Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
@@ -19,17 +20,17 @@ namespace nana{ namespace gui{
 	{
 		namespace label
 		{
-			enum class command
+			enum class command  /// Defines the event type for format listener.
 			{
 				enter, leave, click
 			};
 
-			//class trigger
-			//@brief:	draw the label
+			/// draw the label
 			class trigger: public drawer_trigger
 			{
-				struct impl_t;
 			public:
+				struct impl_t;
+
 				trigger();
 				~trigger();
 				void bind_window(widget_reference);
@@ -48,8 +49,6 @@ namespace nana{ namespace gui{
 		}//end namespace label
 	}//end namespace drawerbase
 
-	//class label
-	//@brief: defaine a label widget and it provides the interfaces to be operationa
 	class label
 		: public widget_object<category::widget_tag, drawerbase::label::trigger>
 	{
@@ -57,15 +56,20 @@ namespace nana{ namespace gui{
 		typedef drawerbase::label::command command;
 		label();
 		label(window, bool visible);
+		label(window, const nana::string& text, bool visible = true);
+		label(window, const nana::char_t* text, bool visible = true);
 		label(window, const rectangle& = rectangle(), bool visible = true);
-		void transparent(bool);
+		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const;
-		void format(bool);
-		void add_format_listener(const std::function<void(command, const nana::string&)> &);
-		void add_format_listener(std::function<void(command, const nana::string&)> &&);
-		nana::size measure() const;
-		unsigned extent_size() const;
-		void text_align(align);
+		label& format(bool);		///< Switches the format mode of the widget.
+		label& add_format_listener(const std::function<void(command, const nana::string&)> &);
+		label& add_format_listener(std::function<void(command, const nana::string&)> &&);
+
+		/// \briefReturn the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
+		/// "corrected" size that changes lines to fit the text into the specified width
+		nana::size measure(unsigned allowed_width_in_pixel) const;
+
+		label& text_align(align horizontal_align, align_v vertical_align= align_v::top);
 	private:
 		void _m_caption(const nana::string&);
 	};

@@ -237,6 +237,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\source\memory.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\source\traits.cpp"
 					>
 				</File>
@@ -273,6 +277,14 @@
 					</File>
 					<File
 						RelativePath="..\..\source\gui\drawing.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\source\gui\effects.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\source\gui\element.cpp"
 						>
 					</File>
 					<File
@@ -341,6 +353,10 @@
 					<Filter
 						Name="detail"
 						>
+						<File
+							RelativePath="..\..\source\gui\detail\basic_window.cpp"
+							>
+						</File>
 						<File
 							RelativePath="..\..\source\gui\detail\drawer.cpp"
 							>

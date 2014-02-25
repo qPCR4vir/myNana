@@ -46,6 +46,9 @@ namespace gui
 		bool enabled() const;
 		void enabled(bool);
 
+		void focus();
+		bool focused() const;
+
 		void show();
 		void hide();
 		bool visible() const;
@@ -56,8 +59,6 @@ namespace gui
 		nana::point pos() const;
 		void move(int x, int y);
 		void move(int x, int y, unsigned width, unsigned height);
-
-		bool focused() const;
 
 		void foreground(nana::color_t);
 		nana::color_t foreground() const;
@@ -110,6 +111,8 @@ namespace gui
 		}
 
 		void umake_event(event_handle eh) const;
+		widget&	tooltip(const nana::string&);
+
 		operator dummy_bool_type() const;
 		operator nana::gui::window() const;
 	protected:
@@ -299,9 +302,24 @@ namespace gui
 				API::close_window(handle_);
 		}
 
+		void activate()
+		{
+			API::activate_window(handle_);
+		}
+
+		void bring_to_top()
+		{
+			API::bring_to_top(handle_);
+		}
+
 		window handle() const
 		{
 			return handle_;
+		}
+
+		native_window_type native_handle() const
+		{
+			return API::root(handle_);
 		}
 
 		window owner() const
@@ -312,6 +330,21 @@ namespace gui
 		void icon(const nana::paint::image& ico)
 		{
 			API::window_icon(handle_, ico);
+		}
+
+		void restore()
+		{
+			API::restore_window(handle_);
+		}
+
+		void zoom(bool ask_for_max)
+		{
+			API::zoom_window(handle_, ask_for_max);
+		}
+
+		bool is_zoomed(bool ask_for_max) const
+		{
+			return API::is_window_zoomed(handle_, ask_for_max);
 		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()

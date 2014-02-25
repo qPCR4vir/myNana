@@ -22,18 +22,19 @@ namespace nana
 namespace detail
 {
 	drawable_impl_type::drawable_impl_type()
-		: fgcolor_(0xFFFFFFFF)
+		:	pixbuf_ptr(nullptr), bytes_per_line(0),
+			fgcolor_(0xFFFFFFFF)
 	{
-		pen.handle = 0;
+		pen.handle = nullptr;
 		pen.color = nana::null_color;
 		pen.style = -1;
 		pen.width = -1;
 
-		brush.handle = 0;
+		brush.handle = nullptr;
 		brush.style = brush_spec::Solid;
 		brush.color = nana::null_color;
 
-		round_region.handle = 0;
+		round_region.handle = nullptr;
 		round_region.radius_x = round_region.radius_y = 0;
 
 		string.tab_length = 4;
@@ -168,6 +169,11 @@ namespace detail
 		return def_font_ptr_;
 	}
 
+	void platform_spec::default_native_font(const font_ptr_t& fp)
+	{
+		def_font_ptr_ = fp;
+	}
+
 	unsigned platform_spec::font_size_to_height(unsigned size) const
 	{
 		HDC hdc = ::GetDC(0);
@@ -224,13 +230,15 @@ namespace detail
 
 	//event_register
 	//@brief: some event is needed to register for system.
-	void platform_spec::event_register_filter(gui::native_window_type wd, unsigned eventid)
+	void platform_spec::event_register_filter(native_window_type wd, event_code eventid)
 	{
 		switch(eventid)
 		{
-		case gui::detail::event_tag::mouse_drop:
+		case event_code::mouse_drop:
 			::DragAcceptFiles(reinterpret_cast<HWND>(wd), true);
 			break;
+        default:
+            break;
 		}
 	}
 

@@ -19,30 +19,28 @@ namespace nana
 				struct stretch_tag
 				{
 					typedef paint::image_process::stretch_interface	interface_t;
-					typedef pat::cloneable_interface<interface_t>	cloneable_t;
-					typedef	std::map<std::string, cloneable_t*>		table_t;
-
-					template<typename ImageProcessor>
-					struct generator
-					{
-						typedef pat::cloneable<ImageProcessor, interface_t> type;
-					};
+					typedef pat::mutable_cloneable<interface_t>	cloneable_t;
+					typedef	std::map<std::string, cloneable_t>		table_t;
 
 					table_t table;
 					interface_t* employee;
 				}stretch_;
 
+				struct alpha_blend_tag
+				{
+					typedef paint::image_process::alpha_blend_interface	interface_t;
+					typedef pat::mutable_cloneable<interface_t>	cloneable_t;
+					typedef std::map<std::string, cloneable_t>		table_t;
+
+					table_t	table;
+					interface_t	* employee;				
+				}alpha_blend_;
+
 				struct blend_tag
 				{
 					typedef paint::image_process::blend_interface	interface_t;
-					typedef pat::cloneable_interface<interface_t>	cloneable_t;
-					typedef std::map<std::string, cloneable_t*>		table_t;
-
-					template<typename ImageProcessor>
-					struct generator
-					{
-						typedef pat::cloneable<ImageProcessor, interface_t> type;
-					};
+					typedef pat::mutable_cloneable<interface_t>	cloneable_t;
+					typedef std::map<std::string, cloneable_t>		table_t;
 
 					table_t	table;
 					interface_t	* employee;
@@ -51,26 +49,32 @@ namespace nana
 				struct line_tag
 				{
 					typedef paint::image_process::line_interface	interface_t;
-					typedef pat::cloneable_interface<interface_t>	cloneable_t;
-					typedef std::map<std::string, cloneable_t*>		table_t;
-
-					template<typename ImageProcessor>
-					struct generator
-					{
-						typedef pat::cloneable<ImageProcessor, interface_t>	type;
-					};
+					typedef pat::mutable_cloneable<interface_t>	cloneable_t;
+					typedef std::map<std::string, cloneable_t>		table_t;
 
 					table_t	table;
 					interface_t * employee;
 				}line_;
-			public:
 
-				~image_process_provider();
+				struct blur_tag
+				{
+					typedef paint::image_process::blur_interface	interface_t;
+					typedef pat::mutable_cloneable<interface_t>	cloneable_t;
+					typedef std::map<std::string, cloneable_t>		table_t;
+
+					table_t	table;
+					interface_t * employee;				
+				}blur_;
+			public:
 				static image_process_provider & instance();
 
 				stretch_tag & ref_stretch_tag();
 				paint::image_process::stretch_interface * const * stretch() const;
 				paint::image_process::stretch_interface * ref_stretch(const std::string& name) const;
+
+				alpha_blend_tag & ref_alpha_blend_tag();
+				paint::image_process::alpha_blend_interface * const * alpha_blend() const;
+				paint::image_process::alpha_blend_interface * ref_alpha_blend(const std::string& name) const;
 
 				blend_tag & ref_blend_tag();
 				paint::image_process::blend_interface * const * blend() const;
@@ -79,13 +83,17 @@ namespace nana
 				line_tag & ref_line_tag();
 				paint::image_process::line_interface * const * line() const;
 				paint::image_process::line_interface * ref_line(const std::string& name) const;
+
+				blur_tag & ref_blur_tag();
+				paint::image_process::blur_interface * const * blur() const;
+				paint::image_process::blur_interface * ref_blur(const std::string& name) const;
 			public:
 				template<typename Tag>
 				void set(Tag & tag, const std::string& name)
 				{
 					typename Tag::table_t::iterator i = tag.table.find(name);
 					if(i != tag.table.end())
-						tag.employee = &(i->second->refer());
+						tag.employee = &(*(i->second));
 				}
 
 				//add
@@ -97,10 +105,11 @@ namespace nana
 				{
 					if(tag.table.count(name) == 0)
 					{
-						typename Tag::cloneable_t * obj = typename Tag::template generator<ImageProcessor>::type().clone();
-						tag.table[name] = obj;
+						typedef typename Tag::cloneable_t cloneable_t;
+						cloneable_t& obj = tag.table[name];
+						obj = cloneable_t(ImageProcessor());
 						if(0 == tag.employee)
-							tag.employee = &(obj->refer());
+							tag.employee = &(*obj);
 					}
 				}
 			private:
@@ -108,17 +117,7 @@ namespace nana
 				typename Tag::interface_t* _m_read(const Tag& tag, const std::string& name) const
 				{
 					typename Tag::table_t::const_iterator i = tag.table.find(name);
-					return (i != tag.table.end() ? &(i->second->refer()) : tag.employee);
-				}
-
-				template<typename Tag>
-				void _m_release(Tag & tag)
-				{
-					for(typename Tag::table_t::iterator i = tag.table.begin(); i != tag.table.end(); ++i)
-					{
-						i->second->self_delete();
-					}
-					tag.table.clear();
+					return (i != tag.table.end() ? &(*(i->second)) : tag.employee);
 				}
 			};
 		}

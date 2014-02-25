@@ -20,8 +20,10 @@
 #include <locale>
 #include <map>
 #include <set>
+#include <algorithm>
 #include <nana/paint/graphics.hpp>
 #include GUI_BEDROCK_HPP
+#include <nana/gui/detail/basic_window.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>
 #include <sstream>
@@ -267,10 +269,20 @@ namespace detail
 	{
 		if(color != fgcolor_)
 		{
+			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard psg;
+
 			fgcolor_ = color;
-			::XSetForeground(nana::detail::platform_spec::instance().open_display(), context, color);
-			::XSetBackground(nana::detail::platform_spec::instance().open_display(), context, color);
+			switch(spec.screen_depth())
+			{
+			case 16:
+				color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
+					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
+					(color & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, color);
+			::XSetBackground(spec.open_display(), context, color);
 #if defined(NANA_UNICODE)
 			xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
@@ -280,22 +292,24 @@ namespace detail
 		}
 	}
 
-	//struct font_tag::deleter
-	void font_tag::deleter::operator()(const font_tag* tag) const
+	class font_deleter
 	{
-		if(tag && tag->handle)
-		{
-			platform_scope_guard psg;
+    public:
+        void operator()(const font_tag* fp) const
+        {
+            if(fp && fp->handle)
+            {
+                platform_scope_guard psg;
 #if defined(NANA_UNICODE)
-			::XftFontClose(nana::detail::platform_spec::instance().open_display(), tag->handle);
+                ::XftFontClose(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #else
-			::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), tag->handle);
+                ::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #endif
-		}
-		delete tag;
-	}
-	//end struct font_tag::deleter
-	//
+            }
+            delete fp;
+        }
+	};//end class font_deleter
+
 	platform_scope_guard::platform_scope_guard()
 	{
 		platform_spec::instance().lock_xlib();
@@ -357,6 +371,7 @@ namespace detail
 		xdnd_.good_type = None;
 
 		atombase_.wm_protocols = ::XInternAtom(display_, "WM_PROTOCOLS", False);
+		atombase_.wm_change_state = ::XInternAtom(display_, "WM_CHANGE_STATE", False);
 		atombase_.wm_delete_window = ::XInternAtom(display_, "WM_DELETE_WINDOW", False);
 		atombase_.net_wm_state = ::XInternAtom(display_, "_NET_WM_STATE", False);
 		atombase_.net_wm_state_skip_taskbar = ::XInternAtom(display_, "_NET_WM_STATE_SKIP_TASKBAR", False);
@@ -404,7 +419,12 @@ namespace detail
 
 	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
 	{
-		return this->def_font_ptr_;
+		return def_font_ptr_;
+	}
+	
+	void platform_spec::default_native_font(const font_ptr_t& fp)
+	{
+		def_font_ptr_ = fp;
 	}
 
 	unsigned platform_spec::font_size_to_height(unsigned size) const
@@ -423,7 +443,7 @@ namespace detail
 #if defined(NANA_UNICODE)
 		if(0 == name || *name == 0)
 			name = STR("*");
-		
+
 		std::string nmstr = nana::charset(name);
 		XftFont* handle = 0;
 		std::stringstream ss;
@@ -457,9 +477,9 @@ namespace detail
 			impl->underline = underline;
 			impl->strikeout = strike_out;
 			impl->handle = handle;
-			ref = std::shared_ptr<font_tag>(impl, font_tag::deleter());
+			return font_ptr_t(impl, font_deleter());
 		}
-		return ref;
+		return font_ptr_t();
 	}
 
 	Display* platform_spec::open_display()
@@ -808,7 +828,7 @@ namespace detail
 			crt.graph.paste(crt.window, crt.rev, 0, 0);
 		}
 	}
-	
+
 	bool platform_spec::caret_update(native_window_type wd, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph)
 	{
 		platform_scope_guard psg;
@@ -818,7 +838,7 @@ namespace detail
 			caret_tag & crt = *i->second;
 			if(is_erase_caret_from_root_graph)
 			{
-				root_graph.bitblt(crt.rev, crt.rev_graph);	
+				root_graph.bitblt(crt.rev, crt.rev_graph);
 			}
 			else
 			{
@@ -828,11 +848,11 @@ namespace detail
 				{
 					crt.rev_graph.bitblt(crt.size, root_graph, crt.pos);
 					crt_graph = &crt.graph;
-					owns_caret = true;	
+					owns_caret = true;
 				}
 				else
 					crt_graph = &crt.rev_graph;
-					
+
 				root_graph.bitblt(crt.rev, *crt_graph);
 				return owns_caret;
 			}
@@ -888,16 +908,18 @@ namespace detail
 		}
 	}
 
-	void platform_spec::event_register_filter(native_window_type wd, unsigned eventid)
+	void platform_spec::event_register_filter(native_window_type wd, event_code eventid)
 	{
 		switch(eventid)
 		{
-		case gui::detail::event_tag::mouse_drop:
+		case event_code::mouse_drop:
 			{
 				int dndver = 4;
 				::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
 									PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
 			}
+			break;
+		default:
 			break;
 		}
 	}
@@ -962,7 +984,7 @@ namespace detail
 	}
 
 	void platform_spec::msg_dispatch(native_window_type modal)
-	{	
+	{
 		msg_dispatcher_->dispatch(reinterpret_cast<Window>(modal));
 	}
 
@@ -1069,12 +1091,12 @@ namespace detail
 							}
 						}
 
-						
+
 						self.selection_.items.erase(self.selection_.items.begin());
 
 						std::lock_guard<decltype(im->cond_mutex)> lock(im->cond_mutex);
 						im->cond.notify_one();
-						
+
 					}
 				}
 				else if(evt.xselection.property == self.atombase_.xdnd_selection)
@@ -1109,7 +1131,7 @@ namespace detail
 								msg.u.mouse_drop.y = self.xdnd_.pos.y;
 								msg.u.mouse_drop.files = files;
 							}
-							
+
 							accepted = true;
 							::XFree(data);
 						}
@@ -1158,7 +1180,7 @@ namespace detail
 				std::string str;
 				if(self.selection_.content.utf8_string)
 					str = *self.selection_.content.utf8_string;
-				
+
 				::XChangeProperty(self.display_, evt.xselectionrequest.requestor, evt.xselectionrequest.property, evt.xselectionrequest.target, 8, 0,
 									reinterpret_cast<unsigned char*>(str.size() ? const_cast<std::string::value_type*>(str.c_str()) : 0), static_cast<int>(str.size()));
 			}
@@ -1258,7 +1280,7 @@ namespace detail
 				respond.xclient.data.l[2] = 0;
 				respond.xclient.data.l[3] = 0;
 				respond.xclient.data.l[4] = self.atombase_.xdnd_action_copy;
-				
+
 				::XSendEvent(self.display_, wd_src, True, NoEventMask, &respond);
 				return 2;
 			}

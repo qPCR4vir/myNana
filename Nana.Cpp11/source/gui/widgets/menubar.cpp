@@ -5,6 +5,15 @@ namespace nana
 {
 namespace gui
 {
+	class menu_accessor
+	{
+	public:
+		static void popup(menu& m, window wd, int x, int y)
+		{
+			m._m_popup(wd, x, y, true);
+		}
+	};
+
 	namespace drawerbase
 	{
 		namespace menubar
@@ -26,7 +35,6 @@ namespace gui
 			{
 			public:
 				typedef std::vector<item_type*> container;
-				static const unsigned npos = static_cast<unsigned>(-1);
 
 				~itembase()
 				{
@@ -76,25 +84,26 @@ namespace gui
 			};
 
 			//class item_renderer
-				item_renderer::item_renderer(graph_reference graph)
-					:graph_(graph)
+				item_renderer::item_renderer(window wd, graph_reference graph)
+					:handle_(wd), graph_(graph)
 				{}
 
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state_t state)
 				{
+					nana::color_t bground = API::background(handle_);
 					nana::color_t border, body, corner;
 
 					switch(state)
 					{
 					case item_renderer::state_highlight:
 						border = nana::gui::color::highlight;
-						corner = 0xC0DDFC;
 						body = 0xC0DDFC;
+						corner = paint::graphics::mix(body, bground, 0.5);
 						break;
 					case item_renderer::state_selected:
 						border = nana::gui::color::dark_border;
-						corner = nana::gui::color::button_face;
 						body = 0xFFFFFF;
+						corner = paint::graphics::mix(border, bground, 0.5);
 						break;
 					default:	//Don't process other states.
 						return;
@@ -266,6 +275,8 @@ namespace gui
 					if((ei.focus.getting == false) && (state_.active != npos))
 					{
 						state_.behavior = state_type::behavior_none;
+						state_.nullify_mouse = true;
+						state_.menu_active = false;
 						_m_close_menu();
 						state_.active = npos;
 						_m_draw();
@@ -280,20 +291,20 @@ namespace gui
 					{
 						switch(ei.keyboard.key)
 						{
-						case keyboard::down:
+						case keyboard::os_arrow_down:
 							state_.menu->goto_next(true);  break;
 						case keyboard::backspace:
-						case keyboard::up:
+						case keyboard::os_arrow_up:
 							state_.menu->goto_next(false); break;
-						case keyboard::right:
+						case keyboard::os_arrow_right:
 							if(state_.menu->goto_submen() == false)
 								_m_move(false);
 							break;
-						case keyboard::left:
+						case keyboard::os_arrow_left:
 							if(state_.menu->exit_submenu() == false)
 								_m_move(true);
 							break;
-						case keyboard::esc:
+						case keyboard::escape:
 							if(state_.menu->exit_submenu() == false)
 							{
 								_m_close_menu();
@@ -321,14 +332,14 @@ namespace gui
 					{
 						switch(ei.keyboard.key)
 						{
-						case keyboard::right:
+						case keyboard::os_arrow_right:
 							_m_move(false);
 							break;
 						case keyboard::backspace:
-						case keyboard::left:
+						case keyboard::os_arrow_left:
 							_m_move(true);
 							break;
-						case keyboard::esc:
+						case keyboard::escape:
 							if(state_.behavior == state_.behavior_focus)
 							{
 								state_.active= npos;
@@ -430,7 +441,7 @@ namespace gui
 						{
 							const item_type &m = items_->at(state_.active);
 							state_.menu->destroy_answer(std::bind(&trigger::_m_unload_menu_window, this));
-							state_.menu->popup(widget_->handle(), m.pos.x, m.pos.y + m.size.height, true);
+							menu_accessor::popup(*state_.menu, widget_->handle(), m.pos.x, m.pos.y + m.size.height);
 							return true;
 						}
 					}
@@ -509,9 +520,10 @@ namespace gui
 
 				void trigger::_m_draw()
 				{
-					graph_->rectangle(color::button_face, true);
+					nana::color_t bground_color = API::background(*widget_);
+					graph_->rectangle(bground_color, true);
 
-					item_renderer ird(*graph_);
+					item_renderer ird(*widget_, *graph_);
 
 					nana::point item_pos(2, 2);
 					nana::size item_s(0, 23);
@@ -538,8 +550,8 @@ namespace gui
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph_->line(x, y1, x, y2, color::gray_border);
-							graph_->line(x + 1, y1, x + 1, y2, color::button_face_shadow_end);
+							graph_->line(x, y1, x, y2, paint::graphics::mix(color::gray_border, bground_color, 0.6));
+							graph_->line(x + 1, y1, x + 1, y2, paint::graphics::mix(color::button_face_shadow_end, bground_color, 0.5));
 						}
 
 						//Draw text, the text is transformed from orignal for hotkey character

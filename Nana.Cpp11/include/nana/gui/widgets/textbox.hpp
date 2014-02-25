@@ -1,6 +1,7 @@
 #ifndef NANA_GUI_WIDGET_TEXTBOX_HPP
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
 #include <nana/gui/widgets/widget.hpp>
+#include "skeletons/textbase_extra_evtbase.hpp"
 
 namespace nana{ namespace gui{
 	namespace widgets
@@ -21,6 +22,12 @@ namespace nana{ namespace gui{
 			{
 			public:
 				typedef widgets::skeletons::text_editor text_editor;
+
+				struct extra_evtbase_t
+					: widgets::skeletons::textbase_extra_evtbase<nana::char_t>
+				{};
+
+				mutable extra_evtbase_t	extra_evtbase;
 
 				drawer();
 				bool border(bool);
@@ -60,18 +67,55 @@ namespace nana{ namespace gui{
 	class textbox
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer>
 	{
+		typedef drawer_trigger_t::extra_evtbase_t ext_event_type;
 	public:
+		/// The default constructor without creating the widget.
 		textbox();
+
+		/// The construct that creates a widget.
+		/// @param wd, A handle to the parent window of the widget being created.
+		/// @param visible, specifying the visible after creating.
 		textbox(window, bool visible);
+
+		/// The construct that creates a widget with a specified text.
+		/// @param window, A handle to the parent window of the widget being created.
+		/// @param text, the text that will be displayed.
+		/// @param visible, specifying the visible after creating.
+		textbox(window, const nana::string& text, bool visible = true);
+
+		/// The construct that creates a widget with a specified text.
+		/// @param window, A handle to the parent window of the widget being created.
+		/// @param text, the text that will be displayed.
+		/// @param visible, specifying the visible after creating.
+		textbox(window, const nana::char_t* text, bool visible = true);
+
+		/// The construct that creates a widget.
+		/// @param window, A handle to the parent window of the widget being created.
+		/// @param rectangle, the size and position of the widget in its parent window coordinate.
+		/// @param visible, specifying the visible after creating.
 		textbox(window, const rectangle& = rectangle(), bool visible = true);
 
-		void load(const nana::char_t* file);
-		void store(const nana::char_t* file) const;
-		void store(const nana::char_t* file, nana::unicode encoding) const;
+		ext_event_type & ext_event() const;
 
-		bool getline(std::size_t n, nana::string&) const;
-		textbox& append(const nana::string&, bool at_caret);
+		void load(const nana::char_t* file);
+		void store(const nana::char_t* file)  ;
+		void store(const nana::char_t* file, nana::unicode encoding) ;
+		textbox& reset (const nana::string& newtext = STR("") );
+
+		/// The file of last store operation.
+		std::string filename() const;
+
+		/// Determine whether the text is edited.
+		bool edited() const;
+
+		/// Determine whether the changed text has been saved into the file.
+		bool saved() const;
+
+		bool getline(std::size_t line_index, nana::string&) const;
+		textbox& append(const nana::string& text, bool at_caret);
 		textbox& border(bool);
+
+		/// Determine whether the text is multi-line enabled.
 		bool multi_lines() const;
 		textbox& multi_lines(bool);
 		bool editable() const;

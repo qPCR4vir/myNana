@@ -19,7 +19,7 @@
 
 namespace nana{	namespace gui
 {
-	//number_t is used to store a number type variable
+	//number_t is used for storing a number type variable
 	//such as integer, real and percent. Essentially, percent is a typo of real.
 	class number_t
 	{
@@ -145,8 +145,10 @@ namespace nana{	namespace gui
 
 					sp_ = _m_eat_whitespace(sp_);
 					char ch = *sp_++;
+
 					if(ch == ']')
 						break;
+
 					if(ch != ',')
 						_m_throw_error("invalid array");
 				}
@@ -160,7 +162,7 @@ namespace nana{	namespace gui
 				}
 				else
 					readbytes = _m_number(sp_, false);
-						
+
 				if(readbytes)
 				{
 					sp_ += readbytes;
@@ -182,13 +184,12 @@ namespace nana{	namespace gui
 				break;
 			}
 
-			char ch = *sp_;
-			if('_' == ch || isalpha(ch) )
+			if('_' == *sp_ || isalpha(*sp_))
 			{
 				const char * idstart = sp_++;
-				ch = *sp_;
-				while('_' == ch || isalnum(ch) )
-					ch = *++sp_;
+
+				while('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_))
+					++sp_;
 
 				idstr_.assign(idstart, sp_);
 
@@ -216,7 +217,7 @@ namespace nana{	namespace gui
 		void _m_throw_error(char err_char)
 		{
 			std::stringstream ss;
-			ss<<"place: invalid character '"<<err_char<<"' at "<<static_cast<std::size_t>(sp_ - divstr_);
+			ss<<"place: invalid character '"<<err_char<<"' at "<<static_cast<unsigned>(sp_ - divstr_);
 			throw std::runtime_error(ss.str());
 		}
 
@@ -239,14 +240,14 @@ namespace nana{	namespace gui
 
 			if(0 == len)
 				_m_throw_error("the \'" + idstr_ + "\' requires a number(integer or real or percent)");
-						
+
 			sp_ += len + (p - sp_);
 		}
 
 		void _m_throw_error(const std::string& err)
 		{
 			std::stringstream ss;
-			ss<<"place: "<<err<<" at "<<static_cast<std::size_t>(sp_ - divstr_);
+			ss<<"place: "<<err<<" at "<<static_cast<unsigned>(sp_ - divstr_);
 			throw std::runtime_error(ss.str());
 		}
 
@@ -334,7 +335,7 @@ namespace nana{	namespace gui
 		event_handle event_size_handle;
 		division * root_division;
 		std::map<std::string, field_impl*> fields;
-			
+
 		implement()
 			: window_handle(nullptr), event_size_handle(nullptr), root_division(nullptr)
 		{}
@@ -420,6 +421,31 @@ namespace nana{	namespace gui
 				}
 			}
 
+			element_t& operator=(const element_t& rhs)
+			{
+			    if(this != &rhs)
+                {
+                    kind_of_element = rhs.kind_of_element;
+
+                    switch(kind_of_element)
+                    {
+                    case kind::fixed:
+                        u.fixed_ptr = new fixed_t(*rhs.u.fixed_ptr);
+                        break;
+                    case kind::percent:
+                        u.percent_ptr = new percent_t(*rhs.u.percent_ptr);
+                        break;
+                    case kind::room:
+                        u.room_ptr = new room_t(*rhs.u.room_ptr);
+                        break;
+                    default:
+                        u = rhs.u;
+                        break;
+                    }
+                }
+                return *this;
+			}
+
 			element_t(element_t && rv)
 				: kind_of_element(rv.kind_of_element), u(rv.u)
 			{
@@ -436,7 +462,29 @@ namespace nana{	namespace gui
 				default:	break;
 				}
 			}
-				
+
+			element_t& operator=(element_t && rv)
+			{
+                if(this != &rv)
+                {
+					u = rv.u;
+                    kind_of_element = rv.kind_of_element;
+                    switch(kind_of_element)
+                    {
+                    case kind::fixed:
+                        rv.u.fixed_ptr = nullptr;
+                        break;
+                    case kind::percent:
+                        rv.u.percent_ptr = nullptr;
+                        break;
+                    case kind::room:
+                        rv.u.room_ptr = nullptr;
+                    default:	break;
+                    }
+                }
+                return *this;
+			}
+
 			~element_t()
 			{
 				switch(kind_of_element)
@@ -453,17 +501,53 @@ namespace nana{	namespace gui
 				default:	break;
 				}
 			}
+
+			window window_handle() const
+			{
+				switch(kind_of_element)
+				{
+				case kind::window:
+					return u.handle;
+				case kind::fixed:
+					return u.fixed_ptr->first;
+				case kind::percent:
+					return u.percent_ptr->first;
+				case kind::room:
+					return u.room_ptr->first;
+				default:	break;
+				}
+				return nullptr;
+			}
 		};
 	public:
 		typedef std::vector<element_t>::const_iterator const_iterator;
 
-		field_impl()
-			: attached(false)
+		field_impl(place * p)
+			:	attached(false),
+				place_ptr_(p)
 		{}
 	private:
+		//Listen to destroy of a window
+		//It will delete the element and recollocate when the window destroyed.
+		void _m_make_destroy(window wd)
+		{
+			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+			{
+				for(auto i = elements.begin(), end = elements.end(); i != end; ++i)
+				{
+					if(ei.window != i->window_handle())
+						continue;
+					elements.erase(i);
+					break;
+				}
+				place_ptr_->collocate();
+			});
+		}
+
 		field_t& operator<<(window wd) override
 		{
 			elements.emplace_back(wd);
+			_m_make_destroy(wd);
 			return *this;
 		}
 
@@ -473,15 +557,17 @@ namespace nana{	namespace gui
 			return *this;
 		}
 
-		field_t& operator<<(const fixed_t& f) override
+		field_t& operator<<(const fixed_t& fx) override
 		{
-			elements.emplace_back(f);
+			elements.emplace_back(fx);
+			_m_make_destroy(fx.first);
 			return *this;
 		}
 
-		field_t& operator<<(const percent_t& p) override
+		field_t& operator<<(const percent_t& pcnt) override
 		{
-			elements.emplace_back(p);
+			elements.emplace_back(pcnt);
+			_m_make_destroy(pcnt.first);
 			return *this;
 		}
 
@@ -493,16 +579,30 @@ namespace nana{	namespace gui
 			if(x.second.second == 0)
 				x.second.second = 1;
 			elements.emplace_back(x);
+			_m_make_destroy(r.first);
 			return *this;
 		}
 
 		field_t& fasten(window wd) override
 		{
 			fastened.push_back(wd);
+
+			//Listen to destroy of a window. The deleting a fastened window
+			//does not change the layout.
+			API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+			{
+				for(auto i = fastened.begin(), end = fastened.end(); i != end; ++i)
+				{
+					if(ei.window != *i)
+						continue;
+					fastened.erase(i);
+					break;
+				}
+			});
 			return *this;
 		}
 	public:
-	
+
 		//returns the number of fixed pixels and the number of adjustable items
 		std::pair<unsigned, std::size_t> fixed_and_adjustable() const
 		{
@@ -540,6 +640,8 @@ namespace nana{	namespace gui
 		bool attached;
 		std::vector<element_t> elements;
 		std::vector<window>	fastened;
+	private:
+		place * place_ptr_;
 	};//end class field_impl
 
 	class place::implement::division
@@ -579,7 +681,7 @@ namespace nana{	namespace gui
 			std::pair<unsigned, std::size_t> pair;
 			if(field && (kind_of_division == match_kind))
 				pair = field->fixed_and_adjustable();
-				
+
 			for(auto child : children)
 			{
 				if(false == child->is_fixed()) //it is adjustable
@@ -605,6 +707,8 @@ namespace nana{	namespace gui
 		field_impl * field;
 	};
 
+
+	/// Horizontal
 	class place::implement::div_arrange
 		: public division
 	{
@@ -615,47 +719,45 @@ namespace nana{	namespace gui
 
 		virtual void collocate()
 		{
-			auto pair = fixed_pixels(kind::arrange);
-			if(field)
-				pair.first += field->percent_pixels(area.width);
-				
+			auto pair = fixed_pixels(kind::arrange);				/// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields
+			if(field)												/// Have this div fields? (A pointer to fields in this div)
+				pair.first += field->percent_pixels(area.width);	/// Yes: Calcule summe of width ocupated by each percent-field in this div
+
 			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
 
 			double percent_pixels = 0;
-			for(auto child: children)
+			for(auto child: children)	/// For each child div: summe of width of each percent-div 
 			{
 				if(child->is_percent())
 					percent_pixels += area.width * child->weight.real();
 			}
 
-			pair.first += static_cast<unsigned>(percent_pixels);
+			pair.first += static_cast<unsigned>(percent_pixels);	/// Calcule width ocupate by all percent fields and div in this div.
 			double adjustable_pixels = (pair.second && pair.first < area.width ? (double(area.width - pair.first) / pair.second) : 0.0);
-				
+
 			double left = area.x;
-			for(auto child : children)
+			for(auto child : children)					/// First collocate child div's !!!
 			{
-				child->area.x = static_cast<int>(left);
+				child->area.x = static_cast<int>(left);	/// begening from the left, assing left x
 				child->area.y = area.y;
 				child->area.height = area.height;
 
-				double adj_px;
-				if(false == child->is_fixed()) //the child is adjustable
-				{
-					if(false == child->is_percent())
-					{
-						adj_px = child->fixed_pixels(kind::arrange).first;
-						if(adj_px <= adjustable_pixels)
-							adj_px = adjustable_pixels;
-					}
-					else
-						adj_px = static_cast<unsigned>(area.width * child->weight.real());
-				}
-				else
+				double adj_px;							/// and calcule width of this div.
+
+				if(child->is_fixed())					/// with is fixed for fixed div 
 					adj_px = child->weight.integer();
+				else if(child->is_percent())			/// and calculated for others: if the child div is percent - simple take it full
+					adj_px = static_cast<unsigned>(area.width * child->weight.real());
+				else
+				{
+					adj_px = child->fixed_pixels(kind::arrange).first;	/// if child div is floating (no fixed and no percent) 
+					if(adj_px <= adjustable_pixels)						/// take it width only if it fit into the free place of this div.
+						adj_px = adjustable_pixels;
+				}
 
 				left += adj_px;
 				child->area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
-				child->collocate();
+				child->collocate();	/// The child div have full position. Now we can collocate  inside it the child fields and child-div. 
 			}
 
 			if(field)
@@ -710,12 +812,12 @@ namespace nana{	namespace gui
 
 		virtual void collocate()
 		{
-			auto pair = fixed_pixels(kind::vertical_arrange);
-			if(field)
-				pair.first += field->percent_pixels(area.height);
+			auto pair = fixed_pixels(kind::vertical_arrange);		/// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields
+			if(field)												/// Have this div fields? (A pointer to fields in this div) 
+				pair.first += field->percent_pixels(area.height);	/// Yes: Calcule summe of height ocupated by each percent-field in this div
 
-			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.width * gap.real());
-				
+			unsigned gap_size = static_cast<unsigned>(gap.kind_of() == number_t::kind::integer ? gap.integer() : area.height * gap.real());
+
 			double percent_pixels = 0;
 			for(auto child: children)
 			{
@@ -726,7 +828,7 @@ namespace nana{	namespace gui
 			pair.first += static_cast<unsigned>(percent_pixels);
 			double adjustable_pixels = (pair.second && pair.first < area.height ? (double(area.height - pair.first) / pair.second) : 0.0);
 
-				
+
 			double top = area.y;
 			for(auto child : children)
 			{
@@ -904,7 +1006,7 @@ namespace nana{	namespace gui
 					{
 						if(table[l + lbp])
 							continue;
-							
+
 						i = _m_search(i, end);
 						if(i == end)
 						{
@@ -919,9 +1021,9 @@ namespace nana{	namespace gui
 						{
 							room = i->u.room_ptr->second;
 							if(room.first > dimension.first - l)
-								room.first = dimension.first - l;
+								room.first = dimension.first - l;//warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
 							if(room.second > dimension.second - c)
-								room.second = dimension.second - c;
+								room.second = dimension.second - c;//warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
 						}
 
 						window wd = nullptr;
@@ -983,7 +1085,7 @@ namespace nana{	namespace gui
 		static field_impl::const_iterator _m_search(field_impl::const_iterator i, field_impl::const_iterator end)
 		{
 			if(i == end) return end;
-				
+
 			while(i->kind_of_element == field_impl::element_t::kind::gap)
 			{
 				if(++i == end) return end;
@@ -1031,7 +1133,7 @@ namespace nana{	namespace gui
 			if(div)
 				return div;
 		}
-		return nullptr;	
+		return nullptr;
 	}
 
 	place::implement::division* place::implement::scan_div(tokenizer& tknizer)
@@ -1118,13 +1220,13 @@ namespace nana{	namespace gui
 		case token::grid:
 			{
 				div_grid * p = new div_grid(std::move(name));
-					
+
 				if(array.size())
 				{
 					if(array[0].kind_of() != number_t::kind::percent)
 						p->dimension.first = array[0].integer();
 				}
-					
+
 				if(array.size() > 1)
 				{
 					if(array[1].kind_of() != number_t::kind::percent)
@@ -1143,7 +1245,7 @@ namespace nana{	namespace gui
         default:
             throw std::runtime_error("nana.place: invalid division type.");
 		}
-			
+
 		div->weight = weight;
 		div->gap = gap;
 		div->field = field;		//attach the field to the division
@@ -1161,6 +1263,19 @@ namespace nana{	namespace gui
 		place::place(window wd)
 			: impl_(new implement)
 		{
+			bind(wd);
+		}
+
+		place::~place()
+		{
+			delete impl_;
+		}
+
+		void place::bind(window wd)
+		{
+			if(impl_->window_handle)
+				throw std::runtime_error("place.bind: it has already binded to a window.");
+
 			impl_->window_handle = wd;
 			impl_->event_size_handle = API::make_event<events::size>(wd, [this](const eventinfo&ei)
 				{
@@ -1168,13 +1283,8 @@ namespace nana{	namespace gui
 					{
 						impl_->root_division->area = API::window_size(ei.window);
 						impl_->root_division->collocate();
-					}					
+					}
 				});
-		}
-
-		place::~place()
-		{
-			delete impl_;
 		}
 
 		void place::div(const char* s)
@@ -1207,9 +1317,9 @@ namespace nana{	namespace gui
 
 			//get the field with specified name, if no such field with specified name
 			//then create one.
-			auto * p = impl_->fields[name];
+			auto & p = impl_->fields[name];
 			if(nullptr == p)
-				p = (impl_->fields[name] = new implement::field_impl);
+				p = new implement::field_impl(this);
 
 			if((false == p->attached) && impl_->root_division)
 			{
@@ -1234,6 +1344,16 @@ namespace nana{	namespace gui
 			{
 				impl_->root_division->area = API::window_size(impl_->window_handle);
 				impl_->root_division->collocate();
+
+				for(auto & field : impl_->fields)
+				{
+					bool is_show = field.second->attached;
+					if(is_show)
+						is_show = (nullptr != implement::search_div_name(impl_->root_division, field.first));
+
+					for(auto & el : field.second->elements)
+						API::show_window(el.window_handle(), is_show);
+				}
 			}
 		}
 	//end class place

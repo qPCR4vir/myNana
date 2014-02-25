@@ -48,7 +48,7 @@ namespace detail
 	}
 
 
-	unsigned char * fade_table(double fade_rate)
+	unsigned char * alloc_fade_table(double fade_rate)
 	{
 		unsigned char* tablebuf = new unsigned char[0x100 * 2];
 		unsigned char* d_table = tablebuf;
@@ -123,13 +123,13 @@ namespace detail
 		return bgcolor;
 	}
 
-	void blend(drawable_type dw, int x, int y, unsigned width, unsigned height, unsigned color, double fade_rate)
+	void blend(drawable_type dw, const nana::rectangle& area, unsigned color, double fade_rate)
 	{
 		if(fade_rate <= 0) return;
 		if(fade_rate > 1) fade_rate = 1;
 
 		nana::rectangle r;
-		if(false == gui::overlap(drawable_size(dw), nana::rectangle(x, y, width, height), r))
+		if(false == gui::overlap(drawable_size(dw), area, r))
 			return;
 
 		unsigned red = static_cast<unsigned>((color & 0xFF0000) * fade_rate);
@@ -181,32 +181,8 @@ namespace detail
 
 	nana::size text_extent_size(drawable_type dw, const nana::char_t * text, std::size_t len)
 	{
-		if(nullptr == dw || nullptr == text || 0 == len) return nana::size();
-		nana::size extents;
-#if defined(NANA_WINDOWS)
-		::SIZE size;
-		if(::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
-		{
-			extents.width = size.cx;
-			extents.height = size.cy;
-		}
-#elif defined(NANA_X11)
-	#if defined(NANA_UNICODE)
-		std::string utf8str = nana::charset(nana::string(text, len));
-		XGlyphInfo ext;
-		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
-		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
-								reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size(), &ext);
-		extents.width = ext.xOff;
-		extents.height = fs->ascent + fs->descent;
-	#else
-		XRectangle ink;
-		XRectangle logic;
-		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->handle), text, len, &ink, &logic);
-		extents.width = logic.width;
-		extents.height = logic.height;
-	#endif
-#endif
+		nana::size extents = raw_text_extent_size(dw, text, len);
+
 		const nana::char_t* const end = text + len;
 		int tabs = 0;
 		for(; text != end; ++text)

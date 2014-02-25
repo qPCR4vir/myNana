@@ -22,6 +22,7 @@ namespace nana{	namespace gui{
 					{
 						native_interface::caret_create(wd_->root, size_.width, size_.height);
 						real_visible_state_ = false;
+						visible_ = false;
 						this->position(point_.x, point_.y);
 					}
 					else
@@ -229,6 +230,7 @@ namespace nana{	namespace gui{
 			basic_window::basic_window(basic_window* owner, gui::category::root_tag**)
 				: other(category::root_tag::value)
 			{
+				drawer.attached(this);
 				_m_init_pos_and_size(0, rectangle());
 				//wait for constexpr
 				this->other.category = category::root_tag::value;
@@ -238,7 +240,10 @@ namespace nana{	namespace gui{
 			basic_window::~basic_window()
 			{
 				delete together.caret;
-				together.caret = 0;
+				together.caret = nullptr;
+
+				delete effect.bground;
+				effect.bground = nullptr;
 			}
 
 			//bind_native_window
@@ -299,29 +304,31 @@ namespace nana{	namespace gui{
 					index = static_cast<unsigned>(agrparent->children.size());
 					agrparent->children.push_back(this);
 				}
-				this->predef_cursor = cursor::arrow;
-				this->flags.capture = false;
-				this->flags.dbl_click = true;
-				this->flags.enabled = true;
-				this->flags.modal = false;
-				this->flags.glass = false;
-				this->flags.take_active = true;
-				this->flags.dropable = false;
-				this->flags.fullscreen = false;
-				this->flags.tab = nana::gui::detail::tab_type::none;
-				this->flags.action = mouse_action::normal;
-			
-				this->visible = false;
 
-				this->color.foreground = 0x0;
-				this->color.background = nana::gui::color::button_face;
-				this->color.active = 0x60C8FD;
+				predef_cursor = cursor::arrow;
+				flags.capture = false;
+				flags.dbl_click = true;
+				flags.enabled = true;
+				flags.modal = false;
+				flags.take_active = true;
+				flags.dropable = false;
+				flags.fullscreen = false;
+				flags.tab = nana::gui::detail::tab_type::none;
+				flags.action = mouse_action::normal;
+				flags.refreshing = false;
+				flags.destroying = false;
 
-				this->effect.edge_nimbus = effects::edge_nimbus::none;
+				visible = false;
 
-				this->together.caret = nullptr;
-				this->flags.refreshing = false;
-				this->flags.destroying = false;
+				color.foreground = 0x0;
+				color.background = nana::gui::color::button_face;
+				color.active = 0x60C8FD;
+
+				effect.edge_nimbus = effects::edge_nimbus::none;
+				effect.bground = nullptr;
+				effect.bground_fade_rate = 0;
+
+				together.caret = nullptr;
 
 				extra_width = extra_height = 0;
 

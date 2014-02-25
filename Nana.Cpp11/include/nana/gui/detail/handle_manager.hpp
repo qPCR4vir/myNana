@@ -14,16 +14,18 @@
 
 #ifndef NANA_GUI_DETAIL_HANDLE_MANAGER_HPP
 #define NANA_GUI_DETAIL_HANDLE_MANAGER_HPP
-#include <map>
-#include <iterator>
 
 #include <nana/traits.hpp>
 #include <nana/config.hpp>
-#if defined(NANA_MINGW)
+#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_mutex.hpp>
 #else
     #include <mutex>
 #endif
+
+#include <map>
+#include <iterator>
+#include <algorithm>
 
 namespace nana
 {
@@ -31,8 +33,9 @@ namespace gui
 {
 	namespace detail
 	{
-		template<typename Key, typename Value, int CacheSize>
+		template<typename Key, typename Value, std::size_t CacheSize>
 		class cache
+			: noncopyable
 		{
 		public:
 			typedef Key	key_type;
@@ -40,31 +43,31 @@ namespace gui
 			typedef std::pair<key_type, value_type> pair_type;
 			typedef std::size_t size_type;
 
-			static const size_type npos = -1;
-
 			cache()
-				:addr_(reinterpret_cast<pair_type*>(place_))
+				:addr_(reinterpret_cast<pair_type*>(::operator new(sizeof(pair_type) * CacheSize)))
 			{
-				for(int i = 0; i < CacheSize; ++i)
+				for(std::size_t i = 0; i < CacheSize; ++i)
 				{
 					bitmap_[i] = 0;
-					seq_[i] = npos;
+					seq_[i] = nana::npos;
 				}
 			}
 
 			~cache()
 			{
-				for(int i = 0; i < CacheSize; ++i)
+				for(std::size_t i = 0; i < CacheSize; ++i)
 				{
 					if(bitmap_[i])
 						addr_[i].~pair_type();
 				}
+
+				::operator delete(addr_);
 			}
 
 			bool insert(key_type k, value_type v)
 			{
 				size_type pos = _m_find_key(k);
-				if(pos != npos)
+				if(pos != nana::npos)
 				{
 					addr_[pos].second = v;
 				}
@@ -73,13 +76,13 @@ namespace gui
 					//No key exists
 					pos = _m_find_pos();
 
-					if(pos == npos)
+					if(pos == nana::npos)
 					{	//No room, and remove the last pair
 						pos = seq_[CacheSize - 1];
 						(addr_ + pos)->~pair_type();
 					}
 
-					if(seq_[0] != npos)
+					if(seq_[0] != nana::npos)
 					{//Need to move
 						for(int i = CacheSize - 1; i > 0; --i)
 							seq_[i] = seq_[i - 1];
@@ -93,46 +96,35 @@ namespace gui
 				return v;
 			}
 
-			void erase(key_type k)
-			{
-				size_type pos = _m_find_key(k);
-				if(pos != npos)
-				{
-					(addr_+pos)->~pair_type;
-					bitmap_[pos] = 0;
-				}
-			}
-
 			value_type * get(key_type k)
 			{
 				size_type pos = _m_find_key(k);
-				if(pos != npos)
+				if(pos != nana::npos)
 					return &(addr_[pos].second);
 				return 0;
 			}
 		private:
 			size_type _m_find_key(key_type k) const
 			{
-				for(int i = 0; i < CacheSize; ++i)
+				for(std::size_t i = 0; i < CacheSize; ++i)
 				{
 					if(bitmap_[i] && (addr_[i].first == k))
 						return i;
 				}
-				return npos;
+				return nana::npos;
 			}
 
 			size_type _m_find_pos() const
 			{
-				for(int i = 0; i < CacheSize; ++i)
+				for(std::size_t i = 0; i < CacheSize; ++i)
 				{
 					if(bitmap_[i] == 0)
 						return i;
 				}
-				return npos;
+				return nana::npos;
 			}
 		private:
 			char bitmap_[CacheSize];
-			char place_[CacheSize * sizeof(pair_type)];
 			size_type seq_[CacheSize];
 			pair_type * addr_;
 		};

@@ -24,21 +24,11 @@ namespace nana{ namespace gui{
 				virtual void bar(window, graph_reference graph, const bar_t& bi)
 				{
 					//draw border
-					nana::color_t dark = 0x83909F;
-					nana::color_t gray = 0x9DAEC2;
+					const nana::color_t dark = 0x83909F;
+					const nana::color_t gray = 0x9DAEC2;
 
-					int x1 = bi.r.x + 1, x2 = bi.r.x + bi.r.width - 2;
-					int y1 = bi.r.y, y2 = bi.r.y + bi.r.height - 1;
-
-					graph.line(x1, y1, x2, y1, dark);
-					graph.line(x1, y2, x2, y2, gray);
-					x1 = bi.r.x;
-					x2 = bi.r.x + bi.r.width - 1;
-					y1 = bi.r.y + 1;
-					y2 = bi.r.y + bi.r.height - 2;
-
-					graph.line(x1, y1, x1, y2, dark);
-					graph.line(x2, y1, x2, y2, gray);
+					graph.rectangle_line(bi.r, 
+							dark, dark, gray, gray);
 				}
 
 				virtual void adorn(window, graph_reference graph, const adorn_t& ad)
@@ -95,8 +85,7 @@ namespace nana{ namespace gui{
 					other_.widget = nullptr;
 					other_.graph = nullptr;
 
-					proto_.renderer = nana::gui::slider::renderer_cloneable<interior_renderer>().clone();
-					proto_.provider = nullptr;
+					proto_.renderer = pat::cloneable<renderer>(interior_renderer());
 
 					attr_.skdir = seekdir::bilateral;
 					attr_.dir = this->DirHorizontal;
@@ -105,15 +94,6 @@ namespace nana{ namespace gui{
 					attr_.slider_scale = 8;
 					attr_.border = 1;
 					attr_.is_draw_adorn = false;
-				}
-
-				~controller()
-				{
-					if(proto_.renderer)
-						proto_.renderer->self_delete();
-
-					if(proto_.provider)
-						proto_.provider->self_delete();
 				}
 
 				void seek(seekdir sd)
@@ -143,46 +123,27 @@ namespace nana{ namespace gui{
 					other_.graph = nullptr;
 				}
 
-				pat::cloneable_interface<renderer>& ext_renderer()
+				pat::cloneable<renderer>& ext_renderer()
 				{
-					return *proto_.renderer;
+					return proto_.renderer;
 				}
 
-				void ext_renderer(const pat::cloneable_interface<renderer>& rd)
+				void ext_renderer(const pat::cloneable<renderer>& rd)
 				{
-					if(proto_.renderer != &rd)
-					{
-						auto odi = proto_.renderer;
-						auto ndi = rd.clone();
-						if(ndi && (odi != ndi))
-						{
-							proto_.renderer = ndi;
-							if(odi)
-								odi->self_delete();
-						}
-					}
+					proto_.renderer = rd;
 				}
 
-				void ext_provider(const pat::cloneable_interface<provider>& pd)
+				void ext_provider(const pat::cloneable<provider>& pd)
 				{
-					if(proto_.provider != &pd)
-					{
-						auto opi = proto_.provider;
-						auto npi = pd.clone();
-						if(npi && (opi != npi))
-						{
-							proto_.provider = npi;
-							if(opi)
-								opi->self_delete();
-						}
-					}
+					proto_.provider = pd;
 				}
 
 				void draw()
 				{
 					if(other_.graph && !other_.graph->size().is_zero())
 					{
-						proto_.renderer->refer().background(other_.wd, *other_.graph, API::glass_window(other_.wd));
+						bool is_transparent = (bground_mode::basic == API::effects_bground_mode(other_.wd));
+						proto_.renderer->background(other_.wd, *other_.graph, is_transparent);
 						_m_draw_objects();
 					}
 				}
@@ -520,7 +481,7 @@ namespace nana{ namespace gui{
 					if(0 == bar.r.width || 0 == bar.r.height)
 						return;
 
-					proto_.renderer->refer().bar(other_.wd, *other_.graph, bar);
+					proto_.renderer->bar(other_.wd, *other_.graph, bar);
 
 					//adorn
 					renderer::adorn_t adorn;
@@ -531,7 +492,7 @@ namespace nana{ namespace gui{
 					adorn.block = (bar.horizontal ? bar.r.height : bar.r.width) - attr_.border * 2;
 					adorn.fixedpos = static_cast<int>((bar.horizontal ? bar.r.y : bar.r.x) + attr_.border);
 
-					proto_.renderer->refer().adorn(other_.wd, *other_.graph, adorn);
+					proto_.renderer->adorn(other_.wd, *other_.graph, adorn);
 
 					_m_draw_slider();
 
@@ -539,7 +500,7 @@ namespace nana{ namespace gui{
 					if(proto_.provider && attr_.is_draw_adorn)
 					{
 						unsigned vadorn = _m_value_by_pos(attr_.adorn_pos);
-						nana::string str = proto_.provider->refer().adorn_trace(attr_.vmax, vadorn);
+						nana::string str = proto_.provider->adorn_trace(attr_.vmax, vadorn);
 						if(str.size())
 						{
 							nana::rectangle r;
@@ -570,7 +531,7 @@ namespace nana{ namespace gui{
 									r.y = room + 2;
 								r.y += this->_m_slider_refpos();
 							}
-							proto_.renderer->refer().adorn_textbox(other_.wd, *other_.graph, str, r);
+							proto_.renderer->adorn_textbox(other_.wd, *other_.graph, str, r);
 						}
 					}
 				}
@@ -582,7 +543,7 @@ namespace nana{ namespace gui{
 					s.horizontal = (this->DirHorizontal == attr_.dir);
 					s.scale = attr_.slider_scale;
 					s.border = attr_.border;
-					proto_.renderer->refer().slider(other_.wd, *other_.graph, s);
+					proto_.renderer->slider(other_.wd, *other_.graph, s);
 				}
 			private:
 				struct other_tag
@@ -594,8 +555,8 @@ namespace nana{ namespace gui{
 				
 				struct prototype_tag
 				{
-					pat::cloneable_interface<slider::renderer> * renderer;
-					pat::cloneable_interface<slider::provider> * provider;
+					pat::cloneable<slider::renderer> renderer;
+					pat::cloneable<slider::provider> provider;
 				}proto_;
 
 				struct attr_tag
@@ -806,43 +767,44 @@ namespace nana{ namespace gui{
 				drawerbase::slider::controller* ctrl = this->get_drawer_trigger().ctrl();
 				unsigned val = ctrl->move_step(forward);
 				if(val != ctrl->vcur())
-				{
 					API::update_window(handle());
-				}
+				return val;
 			}
 			return 0;
 		}
 
 		unsigned slider::adorn() const
 		{
-			if(handle())
-				return get_drawer_trigger().ctrl()->adorn();
-			return 0;
+			if(empty())	return 0;
+			return get_drawer_trigger().ctrl()->adorn();
 		}
 
-		pat::cloneable_interface<slider::renderer>& slider::ext_renderer()
+		pat::cloneable<slider::renderer>& slider::ext_renderer()
 		{
 			return get_drawer_trigger().ctrl()->ext_renderer();
 		}
 
-		void slider::ext_renderer(const pat::cloneable_interface<slider::renderer>& di)
+		void slider::ext_renderer(const pat::cloneable<slider::renderer>& di)
 		{
 			get_drawer_trigger().ctrl()->ext_renderer(di);
 		}
 
-		void slider::ext_provider(const pat::cloneable_interface<slider::provider>& pi)
+		void slider::ext_provider(const pat::cloneable<slider::provider>& pi)
 		{
 			get_drawer_trigger().ctrl()->ext_provider(pi);
 		}
 
-		void slider::transparent(bool tr)
+		void slider::transparent(bool enabled)
 		{
-			API::glass_window(handle(), tr);
+			if(enabled)
+				API::effects_bground(*this, effects::bground_transparent(0), 0.0);
+			else
+				API::effects_bground_remove(*this);
 		}
 
 		bool slider::transparent() const
 		{
-			return API::glass_window(handle());
+			return (bground_mode::basic == API::effects_bground_mode(*this));
 		}
 	//end class slider
 }//end namespace gui

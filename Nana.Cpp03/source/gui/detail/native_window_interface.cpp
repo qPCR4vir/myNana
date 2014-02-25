@@ -30,16 +30,10 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			static HICON icon(const nana::paint::image& img)
 			{
-				image::image_impl_interface * impl = (img.ref_image_.empty() ? 0 : img.ref_image_.handle());
-				if(impl)
-				{
-					paint::detail::image_ico * ico = dynamic_cast<paint::detail::image_ico*>(impl);
-					if(ico)
-					{
-						if(false == ico->ref().empty())
-							return ico->ref().handle();
-					}
-				}
+				paint::detail::image_ico * ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
+				if(ico && (ico->ptr()))
+					return *(ico->ptr());
+
 				return 0;
 			}
 #endif
@@ -106,6 +100,39 @@ namespace nana{
 		threads::recursive_mutex mutex_;
 		map_t map_;
 	};
+
+	//This function is a proxy for ShowWindow/ShowWindowAsync
+	//It determines which API should be called.
+	void msw_show_window(HWND wd, int cmd)
+	{
+		bool async = true;
+		const DWORD tid = ::GetCurrentThreadId();
+		if(tid == ::GetWindowThreadProcessId(wd, 0))
+		{
+			HWND owner = ::GetWindow(wd, GW_OWNER);
+			if ((0 == owner) || (tid == ::GetWindowThreadProcessId(owner, 0)))
+			{
+				async = false;
+				HWND owned = ::GetWindow(wd, GW_HWNDPREV);
+				while (owned)
+				{
+					if (::GetWindow(owned, GW_OWNER) == wd)
+					{
+						if (tid != ::GetWindowThreadProcessId(owned, 0))
+						{
+							async = true;
+							break;
+						}
+					}
+					owned = ::GetWindow(owned, GW_HWNDPREV);
+				}
+			}
+		}
+		if (async)
+			::ShowWindowAsync(wd, cmd);
+		else
+			::ShowWindow(wd, cmd);
+	}
 #elif defined(NANA_X11)
 	namespace restrict
 	{
@@ -123,6 +150,30 @@ namespace nana{
 			Screen* s = ::XScreenOfDisplay(restrict::spec.open_display(), ::XDefaultScreen(restrict::spec.open_display()));
 			return nana::size(::XWidthOfScreen(s), ::XHeightOfScreen(s));
 #endif
+		}
+
+		rectangle native_interface::screen_area_from_point(const point& pos)
+		{
+#if defined(NANA_WINDOWS)
+			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
+			
+			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
+			if(mfp)
+			{
+				POINT native_pos = {pos.x, pos.y};
+				HMONITOR monitor = mfp(native_pos, 2 /*MONITOR_DEFAULTTONEAREST*/);
+
+				MONITORINFO mi;
+				mi.cbSize = sizeof mi;
+				if(::GetMonitorInfo(monitor, &mi))
+				{
+					return rectangle(mi.rcWork.left, mi.rcWork.top,
+									mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
+				}
+			}
+#elif defined(NANA_X11)
+#endif
+			return screen_size();
 		}
 
 		//platform-dependent
@@ -425,6 +476,23 @@ namespace nana{
 		}
 #endif
 
+		void native_interface::enable_window(native_window_type wd, bool is_enabled)
+		{
+#if defined(NANA_WINDOWS)
+			::EnableWindow(reinterpret_cast<HWND>(wd), is_enabled);
+#else
+			int mask = ExposureMask | StructureNotifyMask;
+			if(is_enabled)
+			{
+				mask |= (ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
+				mask |= (KeyPressMask | KeyReleaseMask);
+				mask |= (EnterWindowMask | LeaveWindowMask | FocusChangeMask);
+			}
+
+			::XSelectInput(restrict::spec.open_display(), reinterpret_cast<Window>(wd), mask);
+#endif
+		}
+
 		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& img)
 		{
 #if defined(NANA_WINDOWS)
@@ -453,28 +521,34 @@ namespace nana{
 			return false;
 		}
 
-		void native_interface::active_owner(native_window_type wd)
+		void native_interface::activate_owner(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
-			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-			if(owner)
+			activate_window(reinterpret_cast<native_window_type>(
+								::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER)
+							));
+#endif
+		}
+
+		void native_interface::activate_window(native_window_type wd)
+		{
+#if defined(NANA_WINDOWS)
+			HWND native_wd = reinterpret_cast<HWND>(wd);
+			if (::IsWindow(native_wd))
 			{
-				if(::GetWindowThreadProcessId(owner, 0) == ::GetCurrentThreadId())
+				if (::GetWindowThreadProcessId(native_wd, 0) == ::GetCurrentThreadId())
 				{
-					::EnableWindow(owner, true);
-					::SetActiveWindow(owner);
-					::SetForegroundWindow(owner);
+					::EnableWindow(native_wd, true);
+					::SetActiveWindow(native_wd);
 				}
 				else
-					::PostMessage(owner, nana::detail::messages::async_active_owner, 0, 0);
+					::PostMessage(native_wd, nana::detail::messages::async_activate, 0, 0);
 			}
-#elif defined(NANA_X11)
-
 #endif
 		}
 
 		//close_window
-		//@brief:Destroy a window
+		//Destroy a window
 		void native_interface::close_window(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
@@ -525,33 +599,7 @@ namespace nana{
 		{
 #if defined(NANA_WINDOWS)
 			int cmd = (show ? (active ? SW_SHOW : SW_SHOWNA) : SW_HIDE);
-			bool async = true;
-			const DWORD tid = ::GetCurrentThreadId();
-			if(tid == ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
-			{
-				HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-				if((0 == owner) || (tid == ::GetWindowThreadProcessId(owner, 0)))
-				{
-					async = false;
-					HWND owned = ::GetWindow(reinterpret_cast<HWND>(wd), GW_HWNDPREV);
-					while(owned)
-					{
-						if(::GetWindow(owned, GW_OWNER) == reinterpret_cast<HWND>(wd))
-						{
-							if(tid != ::GetWindowThreadProcessId(owned, 0))
-							{
-								async = true;
-								break;
-							}
-						}
-						owned = ::GetWindow(owned, GW_HWNDPREV);
-					}
-				}
-			}
-			if(async)
-				::ShowWindowAsync(reinterpret_cast<HWND>(wd), cmd);
-			else
-				::ShowWindow(reinterpret_cast<HWND>(wd), cmd);
+			msw_show_window(reinterpret_cast<HWND>(wd), cmd);
 #elif defined(NANA_X11)
 			if(wd)
 			{
@@ -575,36 +623,76 @@ namespace nana{
 		void native_interface::restore_window(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
-			::ShowWindowAsync(reinterpret_cast<HWND>(wd), SW_RESTORE);
+			msw_show_window(reinterpret_cast<HWND>(wd), SW_RESTORE);
 #elif defined(NANA_X11)
+			//Restore the window by removing NET_WM_STATE_MAXIMIZED_HORZ,
+			//_NET_WM_STATE_MAXIMIZED_VERT and _NET_WM_STATE_FULLSCREEN.
 			Display * disp = restrict::spec.open_display();
+			Window default_root = XDefaultRootWindow(disp);
+
 			const nana::detail::atombase_tag & atombase = restrict::spec.atombase();
 			XEvent evt;
 			evt.xclient.type = ClientMessage;
-			evt.xclient.display = restrict::spec.open_display();
+			evt.xclient.display = disp;
 			evt.xclient.message_type = atombase.net_wm_state;
 			evt.xclient.format = 32;
 			evt.xclient.window = reinterpret_cast<Window>(wd);
-			evt.xclient.data.l[0] = 0;
+			evt.xclient.data.l[0] = 0;	//_NET_WM_STATE_REMOVE
 			evt.xclient.data.l[1] = atombase.net_wm_state_maximized_horz;
 			evt.xclient.data.l[2] = atombase.net_wm_state_maximized_vert;
 			evt.xclient.data.l[3] = evt.xclient.data.l[4] = 0;
 
 			nana::detail::platform_scope_guard psg;
-			::XSendEvent(disp, XDefaultRootWindow(disp), False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
+			::XSendEvent(disp, default_root, False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
 			evt.xclient.data.l[1] = atombase.net_wm_state_fullscreen;
-			evt.xclient.data.l[2] = evt.xclient.data.l[3] = evt.xclient.data.l[4] = 0;
-			::XSendEvent(disp, XDefaultRootWindow(disp), False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
+			evt.xclient.data.l[2] = 0;
+			::XSendEvent(disp, default_root, False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
+
+			//Transfer the window from IconState to NormalState.
+			evt.xclient.message_type = atombase.wm_change_state;
+			evt.xclient.data.l[0] = NormalState;
+			evt.xclient.data.l[1] = 0;
+			::XSendEvent(disp, default_root, False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
+
 			::XMapWindow(disp, reinterpret_cast<Window>(wd));
+			restrict::spec.set_error_handler();
+			::XSetInputFocus(disp, reinterpret_cast<Window>(wd), RevertToPointerRoot, CurrentTime);
+#endif
+		}
+
+		void native_interface::zoom_window(native_window_type wd, bool ask_for_max)
+		{
+#if defined(NANA_WINDOWS)
+			msw_show_window(reinterpret_cast<HWND>(wd), ask_for_max ? SW_MAXIMIZE : SW_MINIMIZE);
+#elif defined(NANA_X11)
+			Display * disp = restrict::spec.open_display();
+			if (ask_for_max)
+			{
+				const nana::detail::atombase_tag & atombase = restrict::spec.atombase();
+				XEvent evt;
+				evt.xclient.type = ClientMessage;
+				evt.xclient.display = restrict::spec.open_display();
+				evt.xclient.message_type = atombase.net_wm_state;
+				evt.xclient.format = 32;
+				evt.xclient.window = reinterpret_cast<Window>(wd);
+				evt.xclient.data.l[0] = 1;	//_NET_WM_STATE_ADD
+				evt.xclient.data.l[1] = atombase.net_wm_state_maximized_horz;
+				evt.xclient.data.l[2] = atombase.net_wm_state_maximized_vert;
+				evt.xclient.data.l[3] = evt.xclient.data.l[4] = 0;
+
+				nana::detail::platform_scope_guard psg;
+				::XSendEvent(disp, XDefaultRootWindow(disp), False, SubstructureRedirectMask | SubstructureNotifyMask, &evt);
+				::XMapWindow(disp, reinterpret_cast<Window>(wd));
+			}
+			else
+				::XIconifyWindow(disp, reinterpret_cast<Window>(wd), XDefaultScreen(disp));
 #endif
 		}
 
 		void native_interface::refresh_window(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
-			RECT rect;
-			::GetClientRect(reinterpret_cast<HWND>(wd), &rect);
-			::InvalidateRect(reinterpret_cast<HWND>(wd), &rect, true);
+			::InvalidateRect(reinterpret_cast<HWND>(wd), 0, true);
 #elif defined(NANA_X11)
 #endif
 		}
@@ -775,7 +863,13 @@ namespace nana{
 					x += (owner_rect.left - pos.x);
 					y += (owner_rect.top - pos.y);
 				}
-				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, width, height, true);
+
+				RECT client, wd_area;
+				::GetClientRect(reinterpret_cast<HWND>(wd), &client);
+				::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
+				unsigned ext_w = (wd_area.right - wd_area.left) - client.right;
+				unsigned ext_h = (wd_area.bottom - wd_area.top) - client.bottom;
+				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, width + ext_w, height + ext_h, true);
 			}
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
@@ -817,6 +911,26 @@ namespace nana{
 
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, width, height);
 #endif
+		}
+
+		void native_interface::bring_to_top(native_window_type wd)
+		{
+#if defined(NANA_WINDOWS)
+			HWND native_wd = reinterpret_cast<HWND>(wd);
+
+			if (FALSE == ::IsWindow(native_wd))
+				return;
+
+			HWND fg_wd = ::GetForegroundWindow();
+			DWORD fg_tid = ::GetWindowThreadProcessId(fg_wd, 0);
+			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, TRUE);
+			::ShowWindow(native_wd, SW_SHOWNORMAL);
+			::SetWindowPos(native_wd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+			::SetWindowPos(native_wd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, FALSE);
+#else
+			set_window_z_order(wd, 0, z_order_action::top);
+#endif		
 		}
 
 		void native_interface::set_window_z_order(native_window_type wd, native_window_type wd_after, z_order_action::t action_if_no_wd_after)
@@ -873,6 +987,7 @@ namespace nana{
 #endif
 		}
 
+		//Set the window area size.
 		void native_interface::window_size(native_window_type wd, unsigned width, unsigned height)
 		{
 #if defined(NANA_WINDOWS)
@@ -897,6 +1012,7 @@ namespace nana{
 					r.left = pos.x;
 					r.top = pos.y;
 				}
+
 				::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(width), static_cast<int>(height), true);
 			}
 #elif defined(NANA_X11)
@@ -975,9 +1091,10 @@ namespace nana{
 			if(length > 0)
 			{
 				//One for NULL terminator which will written by GetWindowText.
-				nana::string str(length + 1, nana::char_t());
+				nana::string str;
+				str.resize(length + 1);
 
-				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), length + 1);
+				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), static_cast<int>(str.size()));
 
 				//Remove the null terminator that writtien by GetWindowText
 				str.resize(length);
@@ -1201,10 +1318,9 @@ namespace nana{
 		void native_interface::set_focus(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
-			HWND focus = ::GetFocus();
-			if(wd && focus != reinterpret_cast<HWND>(wd))
+			if(wd && (::GetFocus() != reinterpret_cast<HWND>(wd)))
 			{
-				if(::GetWindowThreadProcessId(focus, 0) != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
+				if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 					::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::async_set_focus, 0, 0);
 				else
 					::SetFocus(reinterpret_cast<HWND>(wd));

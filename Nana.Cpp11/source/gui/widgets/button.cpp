@@ -145,7 +145,7 @@ namespace drawerbase
 		trigger::trigger()
 			:widget_(nullptr), graph_(nullptr), bgimage_(nullptr)
 		{
-			attr_.omitted = attr_.focused = attr_.pressed = attr_.enable_pushed = false;
+			attr_.omitted = attr_.focused = attr_.pushed = attr_.enable_pushed = attr_.keep_pressed =  false;
 			attr_.focus_color = true;
 			attr_.icon = nullptr;
 			attr_.act_state = state::normal;
@@ -195,9 +195,9 @@ namespace drawerbase
 
 		bool trigger::pushed(bool pshd)
 		{
-			if(pshd != attr_.pressed)
+			if(pshd != attr_.pushed)
 			{
-				attr_.pressed = pshd;
+				attr_.pushed = pshd;
 				if(false == pshd)
 				{
 					window wd = API::find_window(API::cursor_position());
@@ -216,7 +216,7 @@ namespace drawerbase
 
 		bool trigger::pushed() const
 		{
-			return attr_.pressed;
+			return attr_.pushed;
 		}
 
 		void trigger::omitted(bool om)
@@ -241,14 +241,15 @@ namespace drawerbase
 
 		void trigger::mouse_enter(graph_reference graph, const eventinfo&)
 		{
-			attr_.act_state = (attr_.pressed ?  state::pressed : state::highlight);
+			attr_.act_state = (attr_.pushed || attr_.keep_pressed ?  state::pressed : state::highlight);
+
 			_m_draw(graph);
 			API::lazy_refresh();
 		}
 
 		void trigger::mouse_leave(graph_reference graph, const eventinfo&)
 		{
-			if(attr_.enable_pushed && attr_.pressed)
+			if(attr_.enable_pushed && attr_.pushed)
 				return;
 
 			attr_.act_state = (attr_.focused ? state::focused : state::normal);
@@ -259,15 +260,20 @@ namespace drawerbase
 		void trigger::mouse_down(graph_reference graph, const eventinfo&)
 		{
 			attr_.act_state = state::pressed;
+			attr_.keep_pressed = true;
+
 			_m_draw(graph);
+			API::capture_window(*widget_, true);
 			API::lazy_refresh();
 		}
 
 		void trigger::mouse_up(graph_reference graph, const eventinfo&)
 		{
-			if(attr_.enable_pushed && (false == attr_.pressed))
+			API::capture_window(*widget_, false);
+			attr_.keep_pressed = false;
+			if(attr_.enable_pushed && (false == attr_.pushed))
 			{
-				attr_.pressed = true;
+				attr_.pushed = true;
 			}
 			else
 			{
@@ -276,7 +282,7 @@ namespace drawerbase
 				else
 					attr_.act_state = (attr_.focused ? state::focused : state::normal);
 
-				attr_.pressed = false;
+				attr_.pushed = false;
 				_m_draw(graph);
 				API::lazy_refresh();
 			}
@@ -301,10 +307,10 @@ namespace drawerbase
 			bool ch_tabstop_next;
 			switch(ei.keyboard.key)
 			{
-			case keyboard::left: case keyboard::up:
+			case keyboard::os_arrow_left: case keyboard::os_arrow_up:
 				ch_tabstop_next = false;
 				break;
-			case keyboard::right: case keyboard::down:
+			case keyboard::os_arrow_right: case keyboard::os_arrow_down:
 				ch_tabstop_next = true;
 				break;
 			default:
@@ -463,10 +469,9 @@ namespace drawerbase
 			nana::rectangle r(graph.size());
 			int right = r.width - 1;
 			int bottom = r.height - 1;
-			graph.line(1, 0, right - 1, 0, 0x7F7F7F);
-			graph.line(1, bottom, right - 1, bottom, 0x707070);
-			graph.line(0, 1, 0, bottom - 1, 0x7F7F7F);
-			graph.line(right, 1, right, bottom - 1, 0x707070);
+
+			graph.rectangle_line(r,
+					0x7F7F7F, 0x7F7F7F, 0x707070, 0x707070);
 
 			graph.set_pixel(1, 1, 0x919191);
 			graph.set_pixel(right - 1, 1, 0x919191);
@@ -521,19 +526,32 @@ namespace drawerbase
 				create(wd, rectangle(), visible);
 			}
 
+			button::button(window wd, const nana::string& text, bool visible)
+			{
+				create(wd, rectangle(), visible);
+				caption(text);
+			}
+
+			button::button(window wd, const nana::char_t* text, bool visible)
+			{
+				create(wd, rectangle(), visible);
+				caption(text);
+			}
+
 			button::button(window wd, const rectangle& r, bool visible)
 			{
 				create(wd, r, visible);
 			}
 
-			void button::icon(const nana::paint::image& img)
+			button& button::icon(const nana::paint::image& img)
 			{
 				internal_scope_guard isg;
 				get_drawer_trigger().icon(img);
 				API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::image(const nana::char_t * filename)
+			button& button::image(const nana::char_t * filename)
 			{
 				nana::paint::image img;
 				if(img.open(filename))
@@ -542,24 +560,27 @@ namespace drawerbase
 					get_drawer_trigger().image(img);
 					API::refresh_window(handle());
 				}
+				return *this;
 			}
 
-			void button::image(const nana::paint::image& img)
+			button& button::image(const nana::paint::image& img)
 			{
 				internal_scope_guard isg;
 				get_drawer_trigger().image(img);
 				API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::image_enable(state sta, bool eb)
+			button& button::image_enable(state sta, bool eb)
 			{
 				internal_scope_guard isg;
 				auto p = get_drawer_trigger().ref_bgimage();
 				if(p && p->enable(sta, eb))
 					API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::image_valid_area(nana::arrange arg, const nana::rectangle& r)
+			button& button::image_valid_area(nana::arrange arg, const nana::rectangle& r)
 			{
 				internal_scope_guard isg;
 				auto p = get_drawer_trigger().ref_bgimage();
@@ -569,17 +590,19 @@ namespace drawerbase
 					p->update_blocks();
 					API::refresh_window(handle());
 				}
+				return *this;
 			}
 
-			void button::image_join(state target, state from)
+			button& button::image_join(state target, state from)
 			{
 				internal_scope_guard isg;
 				auto p = get_drawer_trigger().ref_bgimage();
 				if(p && p->join(target, from))
 					API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::image_stretch(nana::arrange arg, int beg, int end)
+			button& button::image_stretch(nana::arrange arg, int beg, int end)
 			{
 				internal_scope_guard isg;
 				auto p = get_drawer_trigger().ref_bgimage();
@@ -588,13 +611,15 @@ namespace drawerbase
 					p->set_stretch(arg, beg, end);
 					API::refresh_window(handle());
 				}
+				return *this;
 			}
 
-			void button::enable_pushed(bool eb)
+			button& button::enable_pushed(bool eb)
 			{
 				internal_scope_guard isg;
 				if(get_drawer_trigger().enable_pushed(eb))
 					API::refresh_window(handle());
+				return *this;
 			}
 
 			bool button::pushed() const
@@ -602,30 +627,36 @@ namespace drawerbase
 				return get_drawer_trigger().pushed();
 			}
 
-			void button::pushed(bool psd)
+			button& button::pushed(bool psd)
 			{
 				internal_scope_guard isg;
 				if(get_drawer_trigger().pushed(psd))
 					API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::omitted(bool om)
+			button& button::omitted(bool om)
 			{
 				internal_scope_guard isg;
 				get_drawer_trigger().omitted(om);
 				API::refresh_window(handle());
+				return *this;
 			}
 
-			void button::enable_focus_color(bool eb)
+			button& button::enable_focus_color(bool eb)
 			{
 				internal_scope_guard isg;
 				if(get_drawer_trigger().focus_color(eb))
 					API::refresh_window(handle());
+				return *this;
 			}
 
 			void button::_m_shortkey()
 			{
 				eventinfo ei;
+				ei.mouse.x= 0, ei.mouse.y = 0;
+				ei.mouse.left_button = true;
+				ei.mouse.ctrl = ei.mouse.shift = false;
 				API::raise_event<events::click>(handle(), ei);
 			}
 

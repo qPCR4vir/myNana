@@ -36,25 +36,31 @@ namespace detail
 		};
 
 		static nana::size	screen_size();
+		static rectangle	screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);
 
 #if defined(NANA_X11)
-        static void set_modal(native_window_type);
+		static void set_modal(native_window_type);
 #endif
+		static void enable_window(native_window_type, bool is_enabled);
 		static bool window_icon(native_window_type, const paint::image&);
-		static void	active_owner(native_window_type);
-		static void	close_window(native_window_type);
-		static void	show_window(native_window_type, bool show, bool active);
+		static void activate_owner(native_window_type);
+		static void activate_window(native_window_type);
+		static void close_window(native_window_type);
+		static void show_window(native_window_type, bool show, bool active);
 		static void restore_window(native_window_type);
+		static void zoom_window(native_window_type, bool ask_for_max);
 		static void	refresh_window(native_window_type);
 		static bool is_window(native_window_type);
 		static bool	is_window_visible(native_window_type);
 		static bool is_window_zoomed(native_window_type, bool ask_for_max);
 
-		static nana::point	window_position(native_window_type wnd);
+		static nana::point	window_position(native_window_type);
 		static void	move_window(native_window_type, int x, int y);
 		static void	move_window(native_window_type, int x, int y, unsigned width, unsigned height);
+
+		static void bring_to_top(native_window_type);
 		static void	set_window_z_order(native_window_type, native_window_type wd_after, z_order_action::t action_if_no_wd_after);
 
 		static void	window_size(native_window_type, unsigned width, unsigned height);

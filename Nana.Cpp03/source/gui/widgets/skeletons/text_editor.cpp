@@ -43,16 +43,6 @@ namespace nana{	namespace gui{	namespace widgets
 			_m_scrollbar();
 		}
 
-		void text_editor::store(const char* tfs) const
-		{
-			textbase_.store(tfs);
-		}
-
-		void text_editor::store(const char* tfs, nana::unicode::t encoding) const
-		{
-			textbase_.store(tfs, encoding);
-		}
-
 		bool text_editor::text_area(const nana::rectangle& r)
 		{
 			if(text_area_.area == r)
@@ -134,7 +124,10 @@ namespace nana{	namespace gui{	namespace widgets
 		unsigned text_editor::screen_lines() const
 		{
 			if(graph_ && (text_area_.area.height > text_area_.hscroll))
-				return (text_area_.area.height - text_area_.hscroll) / line_height();
+			{
+				unsigned lines = (text_area_.area.height - text_area_.hscroll) / line_height();
+				return (lines ? lines : 1);
+			}
 			return 0;
 		}
 
@@ -230,6 +223,16 @@ namespace nana{	namespace gui{	namespace widgets
 			return do_draw;
 		}
 
+		skeletons::textbase<nana::char_t>& text_editor::textbase()
+		{
+			return textbase_;
+		}
+
+		const skeletons::textbase<nana::char_t>& text_editor::textbase() const
+		{
+			return textbase_;
+		}
+
 		std::size_t text_editor::text_lines() const
 		{
 			return textbase_.lines();
@@ -248,7 +251,7 @@ namespace nana{	namespace gui{	namespace widgets
 		void text_editor::setline(std::size_t n, const nana::string& text)
 		{
 			bool mkdraw = false;
-			textbase_.cover(n, text.c_str());
+			textbase_.replace(n, text.c_str());
 
 			if((points_.caret.y == n) && (text.size() < points_.caret.x))
 			{
@@ -312,10 +315,8 @@ namespace nana{	namespace gui{	namespace widgets
 				else if(API::caret_size(window_).height != line_pixels)
 					reset_caret_height();
 
-				if(visible == false && API::caret_visible(window_))
-					API::caret_visible(window_, false);
-				else if(visible && (API::caret_visible(window_) == false))
-					API::caret_visible(window_, true);
+				if(visible != API::caret_visible(window_))
+					API::caret_visible(window_, visible);
 
 				if(visible)
 					API::caret_pos(window_, pos_x, pos_y);
@@ -663,11 +664,11 @@ namespace nana{	namespace gui{	namespace widgets
 		{
 			switch(key)
 			{
-			case keyboard::left:	move_left();	break;
-			case keyboard::right:	move_right();	break;
-			case keyboard::up:		move_up();		break;
-			case keyboard::down:	move_down();	break;
-			case keyboard::del:		del();	break;
+			case keyboard::os_arrow_left:	move_left();	break;
+			case keyboard::os_arrow_right:	move_right();	break;
+			case keyboard::os_arrow_up:		move_up();		break;
+			case keyboard::os_arrow_down:	move_down();	break;
+			case keyboard::os_del:		del();	break;
 			default:
 				return false;
 			}
@@ -981,7 +982,7 @@ namespace nana{	namespace gui{	namespace widgets
 					if(orig_str.size() == orig_x)
 						textbase_.insert(caret.y, caret.x, text.substr(beg, end - beg).c_str());
 					else
-						textbase_.cover(caret.y, (orig_str.substr(0, orig_x) + text.substr(beg, end - beg)).c_str());
+						textbase_.replace(caret.y, (orig_str.substr(0, orig_x) + text.substr(beg, end - beg)).c_str());
 
 					std::size_t n = 2;
 					++caret.y;

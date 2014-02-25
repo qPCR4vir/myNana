@@ -13,11 +13,13 @@
 #include <nana/gui/animation.hpp>
 #include <nana/gui/drawing.hpp>
 #include <nana/system/timepiece.hpp>
+#include <nana/system/platform.hpp>
 
 #include <vector>
 #include <list>
+#include <algorithm>
 
-#ifdef NANA_MINGW
+#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_thread.hpp>
     #include <nana/std_mutex.hpp>
     #include <nana/std_condition_variable.hpp>
@@ -624,6 +626,13 @@ namespace nana{	namespace gui
 				output.diehard = dw.draw_diehard([this, pos](paint::graphics& tar)
 				{
 					impl_->render_this_specifically(tar, pos);
+				});
+
+				API::make_event<events::destroy>(wd, [this](const eventinfo& ei)
+				{
+					std::lock_guard<decltype(impl_->thr_variable->mutex)> lock(impl_->thr_variable->mutex);
+					impl_->outputs.erase(ei.window);
+	
 				});
 			}
 			output.points.push_back(pos);

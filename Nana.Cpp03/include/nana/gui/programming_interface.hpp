@@ -23,6 +23,10 @@ namespace API
 	void effects_edge_nimbus(window, effects::edge_nimbus::t);
 	effects::edge_nimbus::t effects_edge_nimbus(window);
 
+	void effects_bground(window, const effects::bground_factory_interface&, double fade_rate);
+	bground_mode::t effects_bground_mode(window);
+	void effects_bground_remove(window);
+
 	//namespace dev
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
@@ -76,6 +80,7 @@ namespace API
 	void unregister_shortkey(window);
 
 	nana::size	screen_size();
+	rectangle screen_area_from_point(const point&);
 	nana::point	cursor_position();
 	rectangle make_center(unsigned width, unsigned height);
 	rectangle make_center(window, unsigned width, unsigned height);
@@ -88,12 +93,13 @@ namespace API
 
 	void fullscreen(window, bool);
 	bool enabled_double_click(window, bool);
-	bool insert_frame(window frame, nana::gui::native_window_type native_window);
+	bool insert_frame(window frame, native_window_type);
 	native_window_type frame_container(window frame);
 	native_window_type frame_element(window frame, unsigned index);
 	void close_window(window);
 	void show_window(window, bool show);
 	void restore_window(window);
+	void zoom_window(window, bool ask_for_max);
 	bool visible(window);
 	window get_parent_window(window);
 	window get_owner_window(window);
@@ -112,14 +118,12 @@ namespace API
 	}
 
 	template<typename Event>
-	void raise_event(window wd, const nana::gui::eventinfo& ei)
+	void raise_event(window wd, eventinfo& ei)
 	{
 		using namespace gui::detail;
 
 		if(nana::traits::is_derived<Event, nana::gui::detail::event_type_tag>::value)
-		{
 			bedrock::raise_event(Event::identifier, reinterpret_cast<bedrock::core_window_t*>(wd), ei, true);
-		}	
 	}
 
 	template<typename Event, typename Function>
@@ -138,9 +142,16 @@ namespace API
 
 	void umake_event(window);
 	void umake_event(event_handle);
+
 	nana::point window_position(window);
 	void move_window(window, int x, int y);
 	void move_window(window, int x, int y, unsigned width, unsigned height);
+	inline void move_window(window wd, const rectangle& r)
+	{
+		move_window(wd, r.x, r.y, r.width, r.height);
+	}
+
+	void bring_to_top(window);
 	bool set_window_z_order(window wd, window wd_after, z_order_action::t action_if_no_wd_after);
 
 	nana::size window_size(window);
@@ -149,14 +160,16 @@ namespace API
 	bool track_window_size(window, const nana::size&, bool true_for_max);
 	void window_enabled(window, bool);
 	bool window_enabled(window);
-	//lazy_refresh:
-	//@brief: A widget drawer draws the widget surface in answering an event. this function will tell the drawer to copy the graphics into window after event answering.
+
+	/**	@brief	A widget drawer draws the widget surface in answering an event. this function will tell the drawer to copy the graphics into window after event answering.
+	 */
 	void lazy_refresh();
 
-	//refresh_window
-	//@brief:	calls refresh() of a widget's drawer. if currently state is lazy_refresh, Nana.GUI may paste the drawing on the window after an event processing.
-	//			param@window: specify a window to be refreshed.
+	/** @brief	calls refresh() of a widget's drawer. if currently state is lazy_refresh, Nana.GUI may paste the drawing on the window after an event processing.
+	 *	@param	window	specify a window to be refreshed.
+	 */
 	void refresh_window(window);
+	void refresh_window_tree(window);
 	void update_window(window);
 
 	void window_caption(window, const nana::string& title);
@@ -169,9 +182,8 @@ namespace API
 	bool tray_delete(native_window_type);
 	void tray_tip(native_window_type, const char_t* text);
 	void tray_icon(native_window_type, const char_t* icon);
-	bool tray_make_event(native_window_type, unsigned identifier, const functor<void(const eventinfo&)>&);
-	void tray_umake_event(native_window_type);
 
+	void activate_window(window);
 	bool is_focus_window(window);
 	window focus_window();
 	void focus_window(window);
@@ -217,7 +229,7 @@ namespace API
 	bool calc_screen_point(window, point&);
 	bool calc_window_point(window, point&);
 
-	nana::gui::window find_window(const nana::point& mspos);
+	window find_window(const nana::point& mspos);
 
 	void register_menu_window(window, bool has_keyboard);
 	bool attach_menubar(window menubar);
@@ -227,6 +239,7 @@ namespace API
 	bool is_window_zoomed(window, bool ask_for_max);
 
 	nana::gui::mouse_action::t mouse_action(window);
+	nana::gui::element_state::t element_state(window);
 }//end namespace API
 }//end namespace gui
 }//end namespace nana

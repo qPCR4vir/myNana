@@ -66,7 +66,8 @@ namespace nana{namespace gui{
 				{
 					bool omitted;
 					bool focused;
-					bool pressed;
+					bool pushed;
+					bool keep_pressed;
 					state::t act_state;
 					bool enable_pushed;
 					bool focus_color;
@@ -90,20 +91,22 @@ namespace nana{namespace gui{
 
 			button();
 			button(window, bool visible);
+			button(window, const nana::string& caption, bool visible = true);
+			button(window, const nana::char_t* caption, bool visible = true);
 			button(window, const rectangle& = rectangle(), bool visible = true);
 
-			void icon(const nana::paint::image&);
-			void image(const char_t * filename);
-			void image(const nana::paint::image&);
-			void image_enable(state::t, bool);
-			void image_join(state::t target, state::t from);
-			void image_stretch(nana::arrange, int beg, int end);
-			void image_valid_area(nana::arrange, const nana::rectangle&);
-			void enable_pushed(bool);
+			button& icon(const nana::paint::image&);
+			button& image(const char_t * filename);
+			button& image(const nana::paint::image&);
+			button& image_enable(state::t, bool);
+			button& image_join(state::t target, state::t from);
+			button& image_stretch(nana::arrange, int beg, int end);
+			button& image_valid_area(nana::arrange, const nana::rectangle&);
+			button& enable_pushed(bool);
 			bool pushed() const;
-			void pushed(bool);
-			void omitted(bool);
-			void enable_focus_color(bool);
+			button& pushed(bool);
+			button& omitted(bool);
+			button& enable_focus_color(bool);
 		private:
 			void _m_shortkey();
 			void _m_complete_creation();

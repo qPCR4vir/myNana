@@ -34,7 +34,7 @@ namespace nana{ namespace gui{
 
 				struct where
 				{
-					enum t{none, left_button, right_utton, topbar, textarea};
+					enum t{none, left_button, right_button, topbar, textarea};
 				};
 
 				struct page
@@ -122,6 +122,8 @@ namespace nana{ namespace gui{
 	public:
 		date_chooser();
 		date_chooser(window, bool visible);
+		date_chooser(window, const nana::string& text, bool visible = true);
+		date_chooser(window, const nana::char_t* text, bool visible = true);
 		date_chooser(window, const rectangle& = rectangle(), bool visible = true);
 
 		bool chose() const;

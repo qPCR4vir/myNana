@@ -40,6 +40,8 @@ namespace nana
 			bool empty() const;
 			void make(const nana::char_t* name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
 			void make_raw(const nana::char_t*, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
+
+			void set_default() const;
 			nana::string name() const;
 			unsigned size() const;
 			bool bold() const;
@@ -100,13 +102,17 @@ namespace nana
 			void rectangle(int x, int y, unsigned width, unsigned height, color_t, bool solid);
 			void rectangle(color_t, bool solid);
 			void rectangle(const nana::rectangle&, color_t, bool solid);
+			void rectangle_line(const nana::rectangle&, color_t left, color_t top, color_t right, color_t bottom);
 			void round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
 			void round_rectangle(const nana::rectangle&, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
 			void shadow_rectangle(const nana::rectangle&, color_t beg_color, color_t end_color, bool vertical);
 			void shadow_rectangle(int x, int y, unsigned width, unsigned height, color_t beg_color, color_t end_color, bool vertical);
 
-			void line(int x1, int y1, int x2, int y2, color_t color);
-			void line(const point& beg, const point& end, color_t color);
+			void line(int x1, int y1, int x2, int y2, color_t);
+			void line(const point& beg, const point& end, color_t);
+			void lines(const point* points, std::size_t n_of_points, color_t);
+			void line_begin(int x, int y);
+			void line_to(int x, int y, color_t);
 			
 			void bitblt(int x, int y, const graphics& source);
 			void bitblt(const nana::rectangle& r_dst, native_window_type src);
@@ -114,14 +120,16 @@ namespace nana
 			void bitblt(const nana::rectangle& r_dst, const graphics& src);
 			void bitblt(const nana::rectangle& r_dst, const graphics& src, const nana::point& p_src);
 
-			void blend(graphics& dst, int x, int y, double fade_rate) const;
-			void blend(const nana::point& s_pos, graphics& dst, const nana::rectangle& r, double fade_rate) const;
-			void blend(int x, int y, unsigned width, unsigned height, nana::color_t, double fade_rate);
+			void blend(const nana::rectangle& s_r, graphics& dst, const nana::point& d_pos, double fade_rate) const;
+			void blend(const nana::rectangle& r, nana::color_t, double fade_rate);
+
+			void blur(const nana::rectangle& r, std::size_t radius);
 
 			void paste(const graphics& dst, int x, int y) const;
 			void paste(native_window_type dst, const nana::rectangle&, int sx, int sy) const;
 			void paste(native_window_type dst, int dx, int dy, unsigned width, unsigned height, int sx, int sy) const;
 			void paste(drawable_type dst, int x, int y) const;
+			void paste(const nana::rectangle& r_src, graphics& dst, int x, int y) const;
 			void rgb_to_wb();
 
 			void stretch(const nana::rectangle& src_r, graphics& dst, const nana::rectangle& r) const;
@@ -139,6 +147,7 @@ namespace nana
 			static color_t mix(color_t colorX, color_t colorY, double persent);
 		private:
 			std::shared_ptr<nana::detail::drawable_impl_type> dwptr_;
+			font			font_shadow_;
             drawable_type	handle_;
 			nana::size	size_;
 			nana::paint::pixel_buffer pxbuf_;

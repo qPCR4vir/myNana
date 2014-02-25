@@ -124,16 +124,30 @@ namespace nana{ namespace gui{
 				typedef nana::gui::widget& widget_reference;
 				typedef nana::paint::graphics& graph_reference;
 
-				static const unsigned npos = static_cast<unsigned>(-1);
-
 				drawer_impl()
-					:	widget_(0), graph_(0), image_pixels_(16), module_(0)
+					:	widget_(0), graph_(0), image_pixels_(16),
+						ignore_first_mouseup_(true), module_(0)
 				{}
 
 				void clear_state()
 				{
 					state_.offset_y = 0;
 					state_.index = npos;
+				}
+
+				void ignore_first_mouse_up(bool value)
+				{
+					ignore_first_mouseup_ = value;
+				}
+
+				bool ignore_emitting_mouseup()
+				{
+					if(ignore_first_mouseup_)
+					{
+						ignore_first_mouseup_ = false;
+						return true;
+					}
+					return false;
 				}
 
 				void renderer(item_renderer* ir)
@@ -171,12 +185,12 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void move_items(bool upwards, bool recycle)
+				void move_items(bool upwards, bool circle)
 				{
 					if(module_ && module_->items.size())
 					{
-						unsigned init_index = state_.index;
-						if(state_.index != module_->npos)
+						std::size_t init_index = state_.index;
+						if(state_.index != npos)
 						{
 							unsigned last_offset_y = 0;
 							if(module_->items.size() > module_->max_items)
@@ -186,7 +200,7 @@ namespace nana{ namespace gui{
 							{
 								if(state_.index)
 									--(state_.index);
-								else if(recycle)
+								else if(circle)
 								{
 									state_.index = static_cast<unsigned>(module_->items.size() - 1);
 									state_.offset_y = last_offset_y;
@@ -199,7 +213,7 @@ namespace nana{ namespace gui{
 							{
 								if(state_.index < module_->items.size() - 1)
 									++(state_.index);
-								else if(recycle)
+								else if(circle)
 								{
 									state_.index = 0;
 									state_.offset_y = 0;
@@ -259,15 +273,19 @@ namespace nana{ namespace gui{
 				void set_module(const module_def& md, unsigned pixels)
 				{
 					module_ = &md;
+					md.have_selected = false;
 					if(md.index >= md.items.size())
-						md.index = md.npos;
+						md.index = npos;
 					image_pixels_ = pixels;
 				}
 
 				void set_result()
 				{
 					if(module_)
+					{
 						module_->index = state_.index;
+						module_->have_selected = true;
+					}
 				}
 
 				bool right_area(graph_reference graph, int x, int y) const
@@ -301,7 +319,7 @@ namespace nana{ namespace gui{
 						if(graph_->width() > outter_w && graph_->height() > 4 )
 						{
 							//Draw items
-							unsigned items = static_cast<unsigned>(pages ? module_->max_items : module_->items.size());							
+							std::size_t items = pages ? module_->max_items : module_->items.size();							
 							items += state_.offset_y;
 
 							const unsigned item_pixels = state_.renderer->item_pixels(*graph_);
@@ -309,7 +327,7 @@ namespace nana{ namespace gui{
 							nana::rectangle item_r(2, 2, graph_->width() - outter_w, item_pixels);
 
 							state_.renderer->image(_m_image_enabled(), image_pixels_);
-							for(unsigned i = state_.offset_y; i < items; ++i)
+							for(std::size_t i = state_.offset_y; i < items; ++i)
 							{
 								item_renderer::state_t state = item_renderer::StateNone;
 								if(i == state_.index) state = item_renderer::StateHighlighted;
@@ -375,6 +393,8 @@ namespace nana{ namespace gui{
 							API::update_window(*widget_);
 						}
 						break;
+					default:
+						break;
 					}
 				}
 			private:
@@ -382,10 +402,12 @@ namespace nana{ namespace gui{
 				nana::paint::graphics * graph_;
 				unsigned image_pixels_;		//Define the width pixels of the image area
 
+				bool ignore_first_mouseup_;
+
 				struct state_type
 				{
-					unsigned offset_y;
-					unsigned index;			//The index of the selected item.
+					std::size_t offset_y;
+					std::size_t index;			//The index of the selected item.
 
 					item_renderer * const orig_renderer;
 					item_renderer * renderer;
@@ -461,24 +483,26 @@ namespace nana{ namespace gui{
 				void trigger::mouse_up(trigger::graph_reference graph, const eventinfo& ei)
 				{
 					if(drawer_->right_area(graph, ei.mouse.x, ei.mouse.y))
+					{
 						drawer_->set_result();
-					
-					drawer_->widget_ptr()->close();					
+						drawer_->widget_ptr()->close();
+					}
+					else if(false == drawer_->ignore_emitting_mouseup())
+						drawer_->widget_ptr()->close();
 				}
 			//end class trigger
 		}
 	}//end namespace drawerbase
 
 	//class float_listbox
-		float_listbox::float_listbox(){}
-
-		float_listbox::float_listbox(window wd, const rectangle & r)
+		float_listbox::float_listbox(window wd, const rectangle & r, bool is_ignore_first_mouse_up)
 			:base_type(wd, false, r, appear::bald<appear::floating, appear::no_activate>())
 		{
 			API::capture_window(handle(), true);
 			API::capture_ignore_children(false);
 			API::take_active(handle(), false, parent());
 			get_drawer_trigger().get_drawer_impl().clear_state();
+			get_drawer_trigger().get_drawer_impl().ignore_first_mouse_up(is_ignore_first_mouse_up);
 		}
 
 		void float_listbox::set_module(const float_listbox::module_type& md, unsigned pixels)
@@ -494,9 +518,9 @@ namespace nana{ namespace gui{
 			get_drawer_trigger().get_drawer_impl().scroll_items(upwards);
 		}
 
-		void float_listbox::move_items(bool upwards, bool recycle)
+		void float_listbox::move_items(bool upwards, bool circle)
 		{
-			get_drawer_trigger().get_drawer_impl().move_items(upwards, recycle);
+			get_drawer_trigger().get_drawer_impl().move_items(upwards, circle);
 		}
 
 		void float_listbox::renderer(item_renderer* ir)

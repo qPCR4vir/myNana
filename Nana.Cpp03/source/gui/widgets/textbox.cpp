@@ -6,7 +6,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/textbox.hpp
+ *	@file: nana/gui/widgets/textbox.cpp
  */
 
 #include <nana/gui/widgets/textbox.hpp>
@@ -52,7 +52,9 @@ namespace nana{ namespace gui{ namespace drawerbase {
 		void drawer::attached(graph_reference graph)
 		{
 			window wd = widget_->handle();
+
 			editor_ = new text_editor(wd, graph);
+			editor_->textbase().bind_ext_evtbase(extra_evtbase);
 			editor_->border_renderer(nana::make_fun(*this, &drawer::_m_draw_border));
 
 			_m_text_area(graph.width(), graph.height());
@@ -96,25 +98,25 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			API::lazy_refresh();
 		}
 
-		void drawer::mouse_down(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::mouse_down(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->mouse_down(ei.mouse.left_button, ei.mouse.x, ei.mouse.y))
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_move(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::mouse_move(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->mouse_move(ei.mouse.left_button, ei.mouse.x, ei.mouse.y))
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_up(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::mouse_up(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->mouse_up(ei.mouse.left_button, ei.mouse.x, ei.mouse.y))
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_wheel(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::mouse_wheel(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->scroll(ei.wheel.upwards, true))
 			{
@@ -123,19 +125,19 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			}
 		}
 
-		void drawer::mouse_enter(graph_reference graph, const nana::gui::eventinfo&)
+		void drawer::mouse_enter(graph_reference graph, const eventinfo&)
 		{
 			if(editor_->mouse_enter(true))
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_leave(graph_reference graph, const nana::gui::eventinfo&)
+		void drawer::mouse_leave(graph_reference graph, const eventinfo&)
 		{
 			if(editor_->mouse_enter(false))
 				API::lazy_refresh();
 		}
 
-		void drawer::key_down(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::key_down(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->move(ei.keyboard.key))
 			{
@@ -144,7 +146,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			}
 		}
 
-		void drawer::key_char(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::key_char(graph_reference graph, const eventinfo& ei)
 		{
 			if(editor_->attr().editable)
 			{
@@ -154,12 +156,16 @@ namespace nana{ namespace gui{ namespace drawerbase {
 					editor_->backspace();	break;
 				case '\n': case '\r':
 					editor_->enter();	break;
-				case keyboard::cancel:
+				case keyboard::copy:
 					editor_->copy();	break;
-				case keyboard::sync:
+				case keyboard::paste:
 					editor_->paste();	break;
 				case keyboard::tab:
 					editor_->put(keyboard::tab); break;
+				case keyboard::cut:
+					editor_->copy();
+					editor_->del();
+					break;
 				default:
 					if(ei.keyboard.key >= 0xFF || (32 <= ei.keyboard.key && ei.keyboard.key <= 126))
 						editor_->put(ei.keyboard.key);
@@ -172,11 +178,11 @@ namespace nana{ namespace gui{ namespace drawerbase {
 				editor_->reset_caret();
 				API::lazy_refresh();
 			}
-			else if(ei.keyboard.key == keyboard::cancel)
+			else if(ei.keyboard.key == keyboard::copy)
 				editor_->copy();
 		}
 
-		void drawer::resize(graph_reference graph, const nana::gui::eventinfo& ei)
+		void drawer::resize(graph_reference graph, const eventinfo& ei)
 		{
 			_m_text_area(ei.size.width, ei.size.height);
 			refresh(graph);
@@ -222,9 +228,26 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			create(wd, rectangle(), visible);
 		}
 
+		textbox::textbox(window wd, const nana::string& text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
+		textbox::textbox(window wd, const nana::char_t* text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);		
+		}
+
 		textbox::textbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
+		}
+
+		textbox::ext_event_type& textbox::ext_event() const
+		{
+			return get_drawer_trigger().extra_evtbase;
 		}
 
 		void textbox::load(const nana::char_t* file)
@@ -240,7 +263,7 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			internal_scope_guard isg;
 			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->store(static_cast<std::string>(nana::charset(file)).c_str());
+				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str());
 		}
 
 		void textbox::store(const nana::char_t* file, nana::unicode::t encoding) const
@@ -248,7 +271,31 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			internal_scope_guard isg;
 			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
+				editor->textbase().store(static_cast<std::string>(nana::charset(file)).c_str(), encoding);
+		}
+
+		std::string textbox::filename() const
+		{
+			internal_scope_guard isg;
+			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			if(editor)
+				return editor->textbase().filename();
+
+			return std::string();
+		}
+
+		bool textbox::edited() const
+		{
+			internal_scope_guard isg;
+			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			return (editor ? editor->textbase().edited() : false);
+		}
+
+		bool textbox::saved() const
+		{
+			internal_scope_guard isg;
+			const drawerbase::textbox::drawer::text_editor* editor = get_drawer_trigger().editor();
+			return (editor ? editor->textbase().saved() : false);
 		}
 
 		bool textbox::getline(std::size_t n, nana::string& text) const

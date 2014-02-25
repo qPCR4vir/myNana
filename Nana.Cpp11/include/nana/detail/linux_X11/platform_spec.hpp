@@ -26,6 +26,8 @@
 #include <nana/gui/basis.hpp>
 #include <nana/paint/image.hpp>
 #include <nana/paint/graphics.hpp>
+#include <nana/gui/detail/eventinfo.hpp>
+
 #include <vector>
 #include <map>
 #include "msg_packet.hpp"
@@ -76,11 +78,6 @@ namespace detail
 #else
 		XFontSet handle;
 #endif
-
-		struct deleter
-		{
-			void operator()(const font_tag*) const;
-		};
 	};
 
 	struct drawable_impl_type
@@ -95,6 +92,8 @@ namespace detail
 		Pixmap	pixmap;
 		GC	context;
 		font_ptr_t font;
+
+		nana::point	line_begin_pos;
 
 		struct string_spec
 		{
@@ -123,6 +122,7 @@ namespace detail
 	{
 		Atom wm_protocols;
 		//window manager support
+		Atom wm_change_state;
 		Atom wm_delete_window;
 		//ext
 		Atom net_wm_state;
@@ -136,7 +136,7 @@ namespace detail
 		Atom net_wm_window_type_utility;
 		Atom net_wm_window_type_dialog;
 		Atom motif_wm_hints;
-		
+
 		Atom clipboard;
 		Atom text;
 		Atom text_uri_list;
@@ -180,12 +180,15 @@ namespace detail
 		typedef drawable_impl_type::font_ptr_t font_ptr_t;
 		typedef void (*timer_proc_type)(unsigned tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
+		typedef ::nana::gui::event_code event_code;
+		typedef ::nana::gui::native_window_type native_window_type;
 
 
 		platform_spec();
 		~platform_spec();
 
 		const font_ptr_t& default_native_font() const;
+		void default_native_font(const font_ptr_t&);
 		unsigned font_size_to_height(unsigned) const;
 		unsigned font_height_to_size(unsigned) const;
 		font_ptr_t make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strick_out);
@@ -201,28 +204,28 @@ namespace detail
 		Visual* screen_visual();
 
 		Colormap& colormap();
-		
+
 		static self_type& instance();
 		const atombase_tag & atombase() const;
 
-		void make_owner(nana::gui::native_window_type owner, nana::gui::native_window_type wd);
-		nana::gui::native_window_type get_owner(nana::gui::native_window_type) const;
-		void remove(nana::gui::native_window_type);
+		void make_owner(native_window_type owner, native_window_type wd);
+		native_window_type get_owner(native_window_type) const;
+		void remove(native_window_type);
 
 		void write_keystate(const XKeyEvent&);
 		void read_keystate(XKeyEvent&);
 
-		XIC	caret_input_context(nana::gui::native_window_type) const;
-		void caret_open(nana::gui::native_window_type, unsigned width, unsigned height);
-		void caret_close(nana::gui::native_window_type);
-		void caret_pos(nana::gui::native_window_type, int x, int y);
-		void caret_visible(nana::gui::native_window_type, bool);
+		XIC	caret_input_context(native_window_type) const;
+		void caret_open(native_window_type, unsigned width, unsigned height);
+		void caret_close(native_window_type);
+		void caret_pos(native_window_type, int x, int y);
+		void caret_visible(native_window_type, bool);
 		void caret_flash(caret_tag&);
-		bool caret_update(nana::gui::native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);
+		bool caret_update(native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);
 		static bool caret_reinstate(caret_tag&);
 		void set_error_handler();
 		int rev_error_handler();
-		void event_register_filter(nana::gui::native_window_type, unsigned eventid);
+		void event_register_filter(native_window_type, event_code);
 		//grab
 		//register a grab window while capturing it if it is unviewable.
 		//when native_interface::show a window that is registered as a grab
@@ -233,18 +236,18 @@ namespace detail
 		void timer_proc(unsigned tid);
 
 		//Message dispatcher
-		void msg_insert(nana::gui::native_window_type);
+		void msg_insert(native_window_type);
 		void msg_set(timer_proc_type, event_proc_type);
-		void msg_dispatch(nana::gui::native_window_type modal);
+		void msg_dispatch(native_window_type modal);
 
 		//X Selections
-		void* request_selection(nana::gui::native_window_type requester, Atom type, size_t & bufsize);
-		void write_selection(nana::gui::native_window_type owner, Atom type, const void* buf, size_t bufsize);
+		void* request_selection(native_window_type requester, Atom type, size_t & bufsize);
+		void write_selection(native_window_type owner, Atom type, const void* buf, size_t bufsize);
 
 		//Icon storage
 		//@biref: The image object should be kept for a long time till the window is closed,
 		//			the image object is release in remove() method.
-		const nana::paint::graphics& keep_window_icon(nana::gui::native_window_type, const nana::paint::image&);
+		const nana::paint::graphics& keep_window_icon(native_window_type, const nana::paint::image&);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
 		void _m_caret_routine();
@@ -261,11 +264,11 @@ namespace detail
 		{
 			volatile bool exit_thread;
 			std::unique_ptr<std::thread> thr;
-			std::map<nana::gui::native_window_type, caret_tag*> carets;
+			std::map<native_window_type, caret_tag*> carets;
 		}caret_holder_;
 
-		std::map<nana::gui::native_window_type, window_context_t> wincontext_;
-		std::map<nana::gui::native_window_type, nana::paint::graphics> iconbase_;
+		std::map<native_window_type, window_context_t> wincontext_;
+		std::map<native_window_type, nana::paint::graphics> iconbase_;
 
 		struct timer_runner_tag
 		{

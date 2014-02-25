@@ -270,11 +270,21 @@ namespace detail
 	{
 		if(color != fgcolor_)
 		{
-			Display * disp = nana::detail::platform_spec::instance().open_display();
+			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard psg;
+
 			fgcolor_ = color;
-			::XSetForeground(disp, context, color);
-			::XSetBackground(disp, context, color);
+			switch(spec.screen_depth())
+			{
+			case 16:
+				color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
+					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
+					(color & 0xFF) * 31 / 255;
+				break;
+			}
+
+			::XSetForeground(spec.open_display(), context, color);
+			::XSetBackground(spec.open_display(), context, color);
 #if defined(NANA_UNICODE)
 			xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
@@ -284,22 +294,24 @@ namespace detail
 		}
 	}
 
-	//struct font_tag::deleter
-	void font_tag::deleter::operator()(const font_tag* tag) const
+	class font_deleter
 	{
-		if(tag && tag->handle)
+	public:
+		void operator()(const font_tag* fp) const
 		{
-			platform_scope_guard psg;
+			if(fp && fp->handle)
+			{
+				platform_scope_guard psg;
 #if defined(NANA_UNICODE)
-			::XftFontClose(nana::detail::platform_spec::instance().open_display(), tag->handle);
+				::XftFontClose(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #else
-			::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), tag->handle);
+				::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #endif
+			}
+			delete fp;
 		}
-		delete tag;
-	}
-	//end struct font_tag::deleter
-	//
+	}; //end class font_deleter
+	
 	platform_scope_guard::platform_scope_guard()
 	{
 		platform_spec::instance().lock_xlib();
@@ -361,6 +373,7 @@ namespace detail
 		xdnd_.good_type = None;
 
 		atombase_.wm_protocols = ::XInternAtom(display_, "WM_PROTOCOLS", False);
+		atombase_.wm_change_state = ::XInternAtom(display_, "WM_CHANGE_STATE", False);
 		atombase_.wm_delete_window = ::XInternAtom(display_, "WM_DELETE_WINDOW", False);
 		atombase_.net_wm_state = ::XInternAtom(display_, "_NET_WM_STATE", False);
 		atombase_.net_wm_state_skip_taskbar = ::XInternAtom(display_, "_NET_WM_STATE_SKIP_TASKBAR", False);
@@ -391,20 +404,25 @@ namespace detail
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
 		//Create default font object.
-		def_font_ref_ = make_native_font(0, font_size_to_height(10), 400, false, false, false);
+		def_font_ptr_ = make_native_font(0, font_size_to_height(10), 400, false, false, false);
 		msg_dispatcher_ = new msg_dispatcher(display_);
 	}
 
 	platform_spec::~platform_spec()
 	{
 		delete msg_dispatcher_;
-		def_font_ref_.release();
+		def_font_ptr_.reset();
 		close_display();
 	}
 
-	const platform_spec::font_refer_t& platform_spec::default_native_font() const
+	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
 	{
-		return this->def_font_ref_;
+		return def_font_ptr_;
+	}
+	
+	void platform_spec::default_native_font(const font_ptr_t& fp)
+	{
+		def_font_ptr_ = fp;	
 	}
 
 	unsigned platform_spec::font_size_to_height(unsigned size) const
@@ -417,9 +435,8 @@ namespace detail
 		return height;
 	}
 
-	platform_spec::font_refer_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+	platform_spec::font_ptr_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 	{
-		font_refer_t ref;
 #if defined(NANA_UNICODE)
 		if(0 == name || *name == 0)
 			name = STR("*");
@@ -458,9 +475,9 @@ namespace detail
 			impl->underline = underline;
 			impl->strikeout = strike_out;
 			impl->handle = handle;
-			ref = impl;
+			return font_ptr_t(impl, font_deleter());
 		}
-		return ref;
+		return font_ptr_t();
 	}
 
 	Display* platform_spec::open_display()
@@ -889,16 +906,18 @@ namespace detail
 		}
 	}
 
-	void platform_spec::event_register_filter(native_window_type wd, unsigned eventid)
+	void platform_spec::event_register_filter(native_window_type wd, event_code::t evtid)
 	{
-		switch(eventid)
+		switch(evtid)
 		{
-		case nana::gui::detail::event_tag::mouse_drop:
+		case event_code::mouse_drop:
 			{
 				int dndver = 4;
 				::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
 									PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
 			}
+			break;
+		default:
 			break;
 		}
 	}
@@ -1236,8 +1255,8 @@ namespace detail
 					{
 						accepted = true;
 						self.xdnd_.timestamp = evt.xclient.data.l[3];
-						self.xdnd_.pos.x -= wd->root_x;
-						self.xdnd_.pos.y -= wd->root_y;
+						self.xdnd_.pos.x -= wd->pos_root.x;
+						self.xdnd_.pos.y -= wd->pos_root.y;
 					}
 				}
 

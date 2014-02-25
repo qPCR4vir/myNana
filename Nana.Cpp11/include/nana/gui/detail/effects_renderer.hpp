@@ -3,7 +3,8 @@
 #include <nana/gui/effects.hpp>
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/pixel_buffer.hpp>
-#include "window_layout.hpp"
+
+#include <nana/gui/layout_utility.hpp>
 
 namespace nana{	namespace gui{
 	namespace detail
@@ -14,7 +15,7 @@ namespace nana{	namespace gui{
 			edge_nimbus_renderer(){}
 		public:
 			typedef CoreWindow core_window_t;
-			typedef window_layout<core_window_t> window_layer;
+			typedef window_layout window_layer;
 			typedef nana::paint::graphics & graph_reference;
 
 			static edge_nimbus_renderer& instance()
@@ -140,6 +141,8 @@ namespace nana{	namespace gui{
 								graph->paste(wd->root, wdr.r, wdr.r.x, wdr.r.y);
 						}
 					}
+					else
+						wd->root_graph->paste(wd->root, visual, visual.x, visual.y);
 				}
 			}
 		};

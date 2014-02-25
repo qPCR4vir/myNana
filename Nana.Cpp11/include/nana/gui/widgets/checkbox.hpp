@@ -12,22 +12,20 @@
 #ifndef NANA_GUI_WIDGET_CHECKBOX_HPP
 #define NANA_GUI_WIDGET_CHECKBOX_HPP
 #include "widget.hpp"
-#include <nana/paint/gadget.hpp>
 #include <vector>
+#include <memory>
 
-namespace nana
+namespace nana { namespace gui
 {
-namespace gui
+namespace drawerbase
 {
-	namespace xcheckbox
+	namespace checkbox
 	{
-
 		class drawer
 			: public drawer_trigger
 		{
+			struct implement;
 		public:
-			typedef paint::gadget::check_renderer check_renderer_t;
-
 			drawer();
 			void bind_window(widget_reference);
 			void attached(graph_reference);
@@ -38,15 +36,7 @@ namespace gui
 			void mouse_down(graph_reference, const eventinfo&);
 			void mouse_up(graph_reference, const eventinfo&);
 		public:
-			paint::gadget::check_renderer& check_renderer();
-
-			void react(bool);
-			void checked(bool);
-			bool checked() const;
-			void radio(bool);
-			void style(check_renderer_t::checker_t);
-			check_renderer_t::checker_t style() const;
-			
+			implement * impl() const;
 		private:
 			void _m_draw(graph_reference);
 			void _m_draw_background(graph_reference);
@@ -56,38 +46,35 @@ namespace gui
 			static const int interval = 4;
 			widget* widget_;
 			unsigned state_;
-
-			struct checker_tag
-			{
-				bool react;
-				bool checked;
-				bool radio;
-				paint::gadget::check_renderer::checker_t type;
-				paint::gadget::check_renderer renderer;
-			}checker_;
+			std::shared_ptr<implement> imptr_;
+			implement * impl_;
 		};
-	}//end namespace xcheckbox
+	}//end namespace checkbox
+}//end namespace drawerbase
 
-	class checkbox
-		: public widget_object<category::widget_tag, xcheckbox::drawer>
+	
+    class checkbox
+		: public widget_object<category::widget_tag, drawerbase::checkbox::drawer>
 	{
 	public:
-		enum checker_t{clasp, blocker};
-
 		checkbox();
 		checkbox(window, bool visible);
+		checkbox(window, const nana::string& text, bool visible = true);
+		checkbox(window, const nana::char_t* text, bool visible = true);
 		checkbox(window, const rectangle& = rectangle(), bool visible = true);
 
-		void react(bool want);
+		void element_set(const char* name);
+		void react(bool want);		///< Enables the reverse check while clicking on the checkbox.
 		bool checked() const;
 		void check(bool chk);
+
+		/// \brief With the radio mode, users make a choice among a set of mutually exclusive, 
+		/// related options. Users can choose one and only one option. 
+		/// There is a helper class manages checkboxs for radio mode, 
+		/// \see radio_group.
 		void radio(bool);
-		void style(checker_t chk);
-		checker_t style() const;
 		void transparent(bool value);
 		bool transparent() const;
-		void open_check_image(const nana::paint::image&);
-		void set_check_image(mouse_action, checker_t, bool checked, const nana::rectangle& r);
 	};//end class checkbox
 
 	class radio_group

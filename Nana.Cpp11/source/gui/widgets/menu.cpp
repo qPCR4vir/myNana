@@ -2,6 +2,7 @@
 #include <nana/gui/widgets/menu.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/paint/gadget.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>
 
@@ -54,6 +55,14 @@ namespace nana{ namespace gui{
 			class internal_renderer
 				: public renderer_interface
 			{
+			public:
+				internal_renderer()
+					: crook_("menu_crook")
+				{
+					crook_.check(facade<element::crook>::state::checked);
+				}
+			private:
+				//Impelement renderer_interface
 				void background(graph_reference graph, window)
 				{
 					nana::size sz = graph.size();
@@ -86,7 +95,11 @@ namespace nana{ namespace gui{
 					{
 						graph.rectangle(r, 0xCDD3E6, false);
 						graph.rectangle(nana::rectangle(r).pare_off(1), 0xE6EFF4, true);
-						nana::paint::gadget::checker(graph, r.x, r.y, r.height, (at.check_style == gui::menu::check_option ? nana::paint::gadget::checkers::radio : nana::paint::gadget::checkers::clasp), 0x0);
+
+						nana::rectangle crook_r = r;
+						crook_r.width = 16;
+						crook_.radio(at.check_style == gui::menu::check_option);
+						crook_.draw(graph, 0xE6EFF4, 0x0, crook_r, element_state::normal);  
 					}
 				}
 
@@ -105,6 +118,9 @@ namespace nana{ namespace gui{
 				{
 					nana::paint::gadget::arrow_16_pixels(graph, pos.x, pos.y + static_cast<int>(pixels - 16) / 2, 0x0, 0, nana::paint::gadget::directions::to_east);
 				}
+
+			private:
+				facade<element::crook> crook_;
 			};
 
 			//class renderer_interface
@@ -126,13 +142,12 @@ namespace nana{ namespace gui{
 				{
 					root_.max_pixels = API::screen_size().width * 2 / 3;
 					root_.item_pixels = 24;
-					this->renderer_ = pat::cloneable<internal_renderer, renderer_interface>().clone();
+					renderer_ = pat::cloneable<renderer_interface>(internal_renderer());
 				}
 
 				~menu_builder()
 				{
 					this->destroy();
-					this->renderer_->self_delete();
 				}
 
 				void check_style(std::size_t index, int style)
@@ -233,25 +248,24 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				pat::cloneable_interface<renderer_interface> * renderer() const
+				pat::cloneable<renderer_interface>& renderer()
 				{
 					return renderer_;
 				}
 
-				void renderer(pat::cloneable_interface<renderer_interface>* rdptr)
+				void renderer(const pat::cloneable<renderer_interface>& rd)
 				{
-					renderer_ = rdptr;
+					renderer_ = rd;
 				}
 			private:
 				menu_type root_;
-				pat::cloneable_interface<renderer_interface> * renderer_;
+				pat::cloneable<renderer_interface> renderer_;
 			};//end class menu_builder
 
 			class menu_drawer
 				: public drawer_trigger
 			{
 			public:
-				unsigned static const npos = static_cast<unsigned>(-1);
 				typedef menu_item_type::item_proxy item_proxy;
 
 				renderer_interface * renderer;
@@ -279,6 +293,9 @@ namespace nana{ namespace gui{
 					make_drawer_event<events::mouse_move>(wd);
 					make_drawer_event<events::mouse_down>(wd);
 					make_drawer_event<events::mouse_leave>(wd);
+
+					//Get the current cursor pos to determinate the monitor
+					detail_.monitor_pos = API::cursor_position();
 				}
 
 				void detached()
@@ -311,7 +328,7 @@ namespace nana{ namespace gui{
 					draw();
 				}
 
-				unsigned long active() const
+				std::size_t active() const
 				{
 					return state_.active;
 				}
@@ -321,7 +338,7 @@ namespace nana{ namespace gui{
 					state_.nullify_mouse = true;
 					if(menu_->items.size())
 					{
-						unsigned long index = state_.active;
+						std::size_t index = state_.active;
 
 						bool end = false;
 						while(true)
@@ -351,7 +368,7 @@ namespace nana{ namespace gui{
 									if(end == false)
 									{
 										end = true;
-										index = static_cast<unsigned long>(menu_->items.size() - 1);
+										index = menu_->items.size() - 1;
 									}
 									else
 										break;
@@ -379,7 +396,7 @@ namespace nana{ namespace gui{
 				{
 					if(state_.nullify_mouse == false)
 					{
-						unsigned long index = _m_get_index_by_pos(x, y);
+						std::size_t index = _m_get_index_by_pos(x, y);
 						if(index != state_.active)
 						{
 							if((index == npos) && menu_->items.at(state_.active).sub_menu && state_.sub_window)
@@ -408,14 +425,14 @@ namespace nana{ namespace gui{
 					state_.sub_window = subw;
 				}
 
-				menu_type* retrive_sub_menu(nana::point& pos, unsigned long interval) const
+				menu_type* retrive_sub_menu(nana::point& pos, std::size_t interval) const
 				{
 					if(state_.active != npos && (nana::system::timestamp() - state_.active_timestamp >= interval))
 					{
 						pos.x = graph_->width() - 2;
 						pos.y = 2;
 
-						unsigned long index = 0;
+						std::size_t index = 0;
 						for(auto & m : menu_->items)
 						{
 							if(false == m.flags.splitter)
@@ -438,7 +455,7 @@ namespace nana{ namespace gui{
 				//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
 				int send_shortkey(nana::char_t key)
 				{
-					unsigned long index = 0;
+					std::size_t index = 0;
 					for(auto & m : menu_->items)
 					{
 						if(m.hotkey == key)
@@ -483,7 +500,7 @@ namespace nana{ namespace gui{
 
 					int text_top_off = (item_h_px - graph_->text_extent_size(STR("jh({[")).height) / 2;
 
-					unsigned long index = 0;
+					std::size_t index = 0;
 					for(auto & m : menu_->items)
 					{
 						if(false == m.flags.splitter)
@@ -529,7 +546,7 @@ namespace nana{ namespace gui{
 						++index;
 					}
 				}
-
+			private:
 				static renderer_interface::attr _m_make_renderer_attr(bool active, const menu_item_type & m)
 				{
 					renderer_interface::attr attr;
@@ -540,7 +557,7 @@ namespace nana{ namespace gui{
 					return attr;
 				}
 
-				unsigned long _m_get_index_by_pos(int x, int y) const
+				std::size_t _m_get_index_by_pos(int x, int y) const
 				{
 					if(	(x < static_cast<int>(detail_.border.x)) ||
 						(x > static_cast<int>(graph_->width() - detail_.border.x)) ||
@@ -549,7 +566,7 @@ namespace nana{ namespace gui{
 						return npos;
 
 					int pos = detail_.border.y;
-					unsigned long index = 0;
+					std::size_t index = 0;
 					for(auto & m : menu_->items)
 					{
 						unsigned h = (m.flags.splitter ? 1 : _m_item_height());
@@ -606,19 +623,21 @@ namespace nana{ namespace gui{
 
 					widget_->size(size.width, size.height);
 
-					//get the screen coordinates of the widget pos.
 					nana::point pos;
 					API::calc_screen_point(*widget_, pos);
-					nana::size ss = API::screen_size();
 
-					if(pos.x + size.width > ss.width)
-						pos.x = static_cast<int>(ss.width - size.width);
-					if(pos.x < 0) pos.x = 0;
+					//get the screen coordinates of the widget pos.
+					auto scr_area = API::screen_area_from_point(detail_.monitor_pos);
 
-					if(pos.y + size.height > ss.height)
-						pos.y = static_cast<int>(ss.height - size.height);
-					if(pos.y < 0) pos.y = 0;
-					window owner = API::get_owner_window(*widget_);
+					if(pos.x + size.width > scr_area.x + scr_area.width)
+						pos.x = static_cast<int>(scr_area.x + scr_area.width - size.width);
+					if(pos.x < scr_area.x) pos.x = scr_area.x;
+
+					if(pos.y + size.height > scr_area.y + scr_area.height)
+						pos.y = static_cast<int>(scr_area.y + scr_area.height - size.height);
+					if(pos.y < scr_area.y) pos.y = scr_area.y;
+
+					auto owner = API::get_owner_window(*widget_);
 					API::calc_window_point(owner, pos);
 					widget_->move(pos.x, pos.y);
 				}
@@ -629,14 +648,15 @@ namespace nana{ namespace gui{
 
 				struct state
 				{
-					unsigned long active;
-					unsigned long active_timestamp;
-					unsigned long sub_window: 1;
-					unsigned long nullify_mouse: 1;
+					std::size_t		active;
+					unsigned long	active_timestamp;
+					unsigned long	sub_window: 1;
+					unsigned long	nullify_mouse: 1;
 				}state_;
 
 				struct widget_detail
 				{
+					nana::point	monitor_pos;	//It is used for determinating the monitor.
 					nana::upoint border;
 				}detail_;
 			};//end class menu_drawer
@@ -647,11 +667,12 @@ namespace nana{ namespace gui{
 				typedef menu_drawer drawer_type;
 				typedef widget_object<category::root_tag, menu_drawer> base_type;
 			public:
-				static const unsigned long npos = drawer_type::npos;
 				typedef menu_builder::item_type item_type;
 
 				menu_window(window wd, const point& pos, renderer_interface * rdptr)
-					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>())
+					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
+						want_focus_(nullptr == wd),
+						event_focus_(nullptr)
 				{
 					get_drawer_trigger().renderer = rdptr;
 					state_.owner_menubar = state_.self_submenu = false;
@@ -666,7 +687,17 @@ namespace nana{ namespace gui{
 				void popup(menu_type& menu, bool owner_menubar)
 				{
 					get_drawer_trigger().data(menu);
-					API::take_active(this->handle(), false, nullptr);
+
+					if (!want_focus_)
+					{
+						API::activate_window(this->parent());
+						API::take_active(this->handle(), false, nullptr);
+					}
+					else
+					{
+						activate();
+						focus();
+					}
 
 					if(submenu_.parent == nullptr)
 					{
@@ -680,6 +711,9 @@ namespace nana{ namespace gui{
 					make_event<events::destroy>(*this, &menu_window::_m_destroy);
 					make_event<events::key_down>(*this, &menu_window::_m_key_down);
 					make_event<events::mouse_up>(*this, &menu_window::_m_strike);
+
+					if (want_focus_)
+						event_focus_ = make_event<events::focus>(*this, &menu_window::_m_focus_changed);
 
 					show();
 				}
@@ -718,12 +752,12 @@ namespace nana{ namespace gui{
 
 					state_.auto_popup_submenu = false;
 
-					menu_window * parent = object->submenu_.parent;
-
-					if(parent)
+					if (object->submenu_.parent)
 					{
-						parent->submenu_.child = nullptr;
-						parent->submenu_.object = nullptr;
+						auto & sub = object->submenu_.parent->submenu_;
+						sub.child = nullptr;
+						sub.object = nullptr;
+
 						object->close();
 						return true;
 					}
@@ -769,6 +803,10 @@ namespace nana{ namespace gui{
 					while(root->submenu_.parent)
 						root = root->submenu_.parent;
 
+					//Avoid generating a focus event when the menu is destroying and a focus event.
+					if (event_focus_)
+						umake_event(event_focus_);
+
 					if(root != this)
 					{
 						//Disconnect the menu chain at this menu, and delete the menus before this.
@@ -792,10 +830,10 @@ namespace nana{ namespace gui{
 					while(object->submenu_.child)
 						object = object->submenu_.child;
 
-					unsigned long active = object->get_drawer_trigger().active();
+					auto active = object->get_drawer_trigger().active();
 					if(active != npos)
 					{
-						menu_type * menu = object->get_drawer_trigger().data();
+						auto * menu = object->get_drawer_trigger().data();
 						if(menu)
 						{
 							menu_item_type & item = menu->items.at(active);
@@ -814,7 +852,7 @@ namespace nana{ namespace gui{
 									if(active > 0)
 									{
 										//clear the checked state in front of active if it is check_option.
-										unsigned i = active;
+										auto i = active;
 										do
 										{
 											--i;
@@ -826,7 +864,7 @@ namespace nana{ namespace gui{
 										}while(i);
 									}
 
-									for(unsigned i = active + 1; i < menu->items.size(); ++i)
+									for(auto i = active + 1; i < menu->items.size(); ++i)
 									{
 										menu_item_type & im = menu->items.at(i);
 										if(im.flags.splitter) break;
@@ -853,20 +891,37 @@ namespace nana{ namespace gui{
 					}
 				}
 
+				//when the focus of the menu window is losing, close the menu.
+				//But here is not every menu window may have focus event installed,
+				//It is only installed when the owner of window is the desktop window.
+				void _m_focus_changed(const eventinfo& ei)
+				{
+					if (false == ei.focus.getting)
+					{
+						for (auto child = submenu_.child; child; child = child->submenu_.child)
+						{
+							if (API::root(child->handle()) == ei.focus.receiver)
+								return;
+						}
+
+						_m_close_all();
+					}
+				}
+
 				void _m_key_down(const eventinfo& ei)
 				{
 					switch(ei.keyboard.key)
 					{
-					case keyboard::up:
+					case keyboard::os_arrow_up:
 						this->goto_next(false);
 						break;
-					case keyboard::down:
+					case keyboard::os_arrow_down:
 						this->goto_next(true);
 						break;
-					case keyboard::left:
+					case keyboard::os_arrow_left:
 						this->exit_submenu();
 						break;
-					case keyboard::right:
+					case keyboard::os_arrow_right:
 						this->goto_submenu();
 						break;
 					case keyboard::enter:
@@ -960,6 +1015,9 @@ namespace nana{ namespace gui{
 					}
 				}
 			private:
+				const bool want_focus_;
+				event_handle event_focus_;
+
 				timer timer_;
 				struct state_type
 				{
@@ -1083,17 +1141,9 @@ namespace nana{ namespace gui{
 			return nullptr;
 		}
 
-		void menu::popup(window wd, int x, int y, bool owner_menubar)
+		void menu::popup(window wd, int x, int y)
 		{
-			if(impl_->mbuilder.data().items.size())
-			{
-				close();
-
-				typedef drawerbase::menu::menu_window menu_window;
-				impl_->uiobj = &(form_loader<menu_window>()(wd, point(x, y), &(impl_->mbuilder.renderer()->refer())));
-				impl_->uiobj->make_event<events::destroy>(*this, &menu::_m_destroy_menu_window);
-				impl_->uiobj->popup(impl_->mbuilder.data(), owner_menubar);
-			}
+			_m_popup(wd, x, y, false);
 		}
 
 		void menu::close()
@@ -1183,15 +1233,14 @@ namespace nana{ namespace gui{
 			return impl_->mbuilder.data().item_pixels;
 		}
 
-		pat::cloneable_interface<menu::renderer_interface> * menu::renderer() const
+		const pat::cloneable<menu::renderer_interface>& menu::renderer() const
 		{
 			return impl_->mbuilder.renderer();
 		}
 
-		void menu::renderer(const pat::cloneable_interface<renderer_interface>* rdptr)
+		void menu::renderer(const pat::cloneable<renderer_interface>& rd)
 		{
-			if(rdptr)
-				impl_->mbuilder.renderer(rdptr->clone());
+			impl_->mbuilder.renderer(rd);
 		}
 
 		void menu::_m_destroy_menu_window()
@@ -1199,6 +1248,20 @@ namespace nana{ namespace gui{
 			impl_->uiobj = nullptr;
 			if(impl_->destroy_answer)
 				impl_->destroy_answer();
+		}
+
+		void menu::_m_popup(window wd, int x, int y, bool called_by_menubar)
+		{
+			if (impl_->mbuilder.data().items.size())
+			{
+				close();
+
+				typedef drawerbase::menu::menu_window menu_window;
+
+				impl_->uiobj = &(form_loader<menu_window>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
+				impl_->uiobj->make_event<events::destroy>(*this, &menu::_m_destroy_menu_window);
+				impl_->uiobj->popup(impl_->mbuilder.data(), called_by_menubar);
+			}
 		}
 	//end class menu
 
@@ -1256,7 +1319,7 @@ namespace nana{ namespace gui{
 				popup = true;
 			}
 			if(popup)
-				mobj_.popup(owner_, pos_.x, pos_.y, false);
+				mobj_.popup(owner_, pos_.x, pos_.y);
 		}
 	//end class
 	}//end namespace detail

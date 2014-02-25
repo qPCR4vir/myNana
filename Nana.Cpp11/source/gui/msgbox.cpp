@@ -1,3 +1,14 @@
+/*
+ *	A Message Box Class
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0. 
+ *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/gui/msgbox.hpp
+ */
 #include <nana/gui/msgbox.hpp>
 #include <nana/gui/programming_interface.hpp>
 #if defined(NANA_WINDOWS)
@@ -16,7 +27,7 @@ namespace nana
 	namespace gui
 	{
 
-#if defined(NANA_LINUX)
+#if defined(NANA_X11)
 		class msgbox_window
 			: public form
 		{
@@ -32,7 +43,7 @@ namespace nana
 				unsigned height_pixel = 110;
 
 				gird_.bind(*this);
-				gird_.push(0, 0);	//The area is used to place content
+				gird_.push(0, 0);	//The area is used for placing content
 				gird * button_gird = gird_.push(10, 25);
 
 				button_gird->add(0, 0);
@@ -85,13 +96,7 @@ namespace nana
 					text_.background(0xFFFFFF);
 					text_.caption(text);
 
-					nana::size ts = text_.measure();
-					if(ts.width > text_pixels)
-					{
-						ts.width = text_pixels;
-						text_.size(text_pixels, 1);
-						ts.height = text_.extent_size();
-					}
+					nana::size ts = text_.measure(text_pixels);
 
 					if(ts.height <= 32)
 						text_.move(12 + ico_pixels, 25 + (32 - ts.height) / 2);
@@ -376,15 +381,17 @@ namespace nana
 			return *this;
 		}
 
+		msgbox & msgbox::operator<<(const nana::charset& cs)
+		{
+			std::string str = cs;
+			sstream_ << str;
+			return *this;
+		}
+
 		msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
 		{
 			sstream_<<manipulator;
 			return *this;
-		}
-
-		msgbox::pick_t msgbox::operator()() const
-		{
-			return show();
 		}
 
 		msgbox::pick_t msgbox::show() const

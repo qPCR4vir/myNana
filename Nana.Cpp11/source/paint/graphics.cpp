@@ -1,5 +1,6 @@
 /*
  *	Paint Graphics Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -110,6 +111,14 @@ namespace paint
 				if(t)
 					impl_->font_ptr = t;
 			}
+		}
+
+		void font::set_default() const
+		{
+			if(empty())
+				return;
+
+			nana::detail::platform_spec::instance().default_native_font(impl_->font_ptr);
 		}
 
 		nana::string font::name() const
@@ -251,8 +260,6 @@ namespace paint
 		{
 			if(handle_ == nullptr || size_ != nana::size(width, height))
 			{
-				auto & spec = nana::detail::platform_spec::instance();
-
 				//The object will be delete while dwptr_ is performing a release.
 				drawable_type dw = new nana::detail::drawable_impl_type;
 				//Reuse the old font
@@ -263,13 +270,23 @@ namespace paint
 					dw->string.tab_length = reuse->string.tab_length;
 				}
 				else
-					dw->font = spec.default_native_font();
+					dw->font = font_shadow_.impl_->font_ptr;
 
 #if defined(NANA_WINDOWS)
 				HDC hdc = ::GetDC(0);
 				HDC cdc = ::CreateCompatibleDC(hdc);
 
-				HBITMAP bmp = ::CreateCompatibleBitmap(hdc, width, height);
+				BITMAPINFO bmi;
+				bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+				bmi.bmiHeader.biWidth = width;
+				bmi.bmiHeader.biHeight = -static_cast<int>(height);
+				bmi.bmiHeader.biPlanes = 1;
+				bmi.bmiHeader.biBitCount = 32;         // four 8-bit components
+				bmi.bmiHeader.biCompression = BI_RGB;
+				bmi.bmiHeader.biSizeImage = (width * height) << 2;
+
+				HBITMAP bmp = ::CreateDIBSection(cdc, &bmi, DIB_RGB_COLORS, reinterpret_cast<void**>(&(dw->pixbuf_ptr)), 0, 0);
+
 				if(bmp)
 				{
 					::DeleteObject((HBITMAP)::SelectObject(cdc, bmp));
@@ -290,6 +307,7 @@ namespace paint
 
 				::ReleaseDC(0, hdc);
 #elif defined(NANA_X11)
+				auto & spec = nana::detail::platform_spec::instance();
 				Display* disp = spec.open_display();
 				int screen = DefaultScreen(disp);
 				Window root = ::XRootWindow(disp, screen);
@@ -302,6 +320,9 @@ namespace paint
 				if(dw)
 				{
 					dw->fgcolor(0);
+#if defined(NANA_WINDOWS)
+					dw->bytes_per_line = width * sizeof(pixel_rgb_t);
+#endif
 					dwptr_ = std::shared_ptr<nana::detail::drawable_impl_type>(dw, detail::drawable_deleter());
 					handle_ = dw;
 					size_.width = width;
@@ -324,6 +345,9 @@ namespace paint
 
 		void graphics::typeface(const font& f)
 		{
+			//Keep the font as a shadow, even if the graphics is empty. Setting the font is futile when the size
+			//of a widget is zero.
+			font_shadow_ = f;
 			if(handle_ && (false == f.empty()))
 			{
 				handle_->font = f.impl_->font_ptr;
@@ -338,7 +362,9 @@ namespace paint
 
 		font graphics::typeface() const
 		{
-			return (handle_ ? font(handle_) : font());
+			//The font may be set when the graphics is still empty.
+			//it should return the shadow font when the graphics is empty.
+			return (handle_ ? font(handle_) : font_shadow_);
 		}
 
 		nana::size	graphics::text_extent_size(const nana::char_t* text)	const
@@ -364,7 +390,7 @@ namespace paint
 		nana::size graphics::glyph_extent_size(const nana::char_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			if(len < end) end = len;
-			if(0 == handle_ || 0 == str || 0 == len || begin >= end) return nana::size();
+			if(nullptr == handle_ || nullptr == str || 0 == len || begin >= end) return nana::size();
 
 			nana::size sz;
 #if defined(NANA_WINDOWS)
@@ -394,7 +420,7 @@ namespace paint
 
 		bool graphics::glyph_pixels(const nana::char_t * str, std::size_t len, unsigned* pxbuf) const
 		{
-			if(handle_ == 0 || handle_->context == 0 || str == 0 || pxbuf == 0) return false;
+			if(nullptr == handle_ || nullptr == handle_->context || nullptr == str || nullptr == pxbuf) return false;
 			if(len == 0) return true;
 
 			unsigned tab_pixels = handle_->string.tab_length * handle_->string.whitespace_pixels;
@@ -412,7 +438,7 @@ namespace paint
 			delete [] dx;
 #elif defined(NANA_X11)
 			Display * disp = nana::detail::platform_spec::instance().open_display();
-			XftFont * xft = handle_->font.get()->handle;
+			XftFont * xft = handle_->font->handle;
 
 			XGlyphInfo extents;
 			for(std::size_t i = 0; i < len; ++i)
@@ -608,6 +634,17 @@ namespace paint
 			rectangle(r.x, r.y, r.width, r.height, color, solid);
 		}
 
+		void graphics::rectangle_line(const nana::rectangle& r, color_t color_left, color_t color_top, color_t color_right, color_t color_bottom)
+		{
+			int right = r.x + r.width - 1;
+			int bottom = r.y + r.height -1;
+			line_begin(r.x, r.y);
+			line_to(right, r.y, color_top);
+			line_to(right, bottom, color_right);
+			line_to(r.x, bottom, color_bottom);
+			line_to(r.x, r.y, color_left);
+		}
+
 		void graphics::round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t color, bool solid, color_t color_if_solid)
 		{
 			if(handle_)
@@ -720,18 +757,14 @@ namespace paint
 		{
 			if(!handle_)	return;
 #if defined(NANA_WINDOWS)
-			if(x1 == x2 && y1 == y2)
-			{
-				::SetPixel(handle_->context, x1, y1, NANA_RGB(color));
-			}
-			else
+			if(x1 != x2 || y1 != y2)
 			{
 				handle_->pen.set(handle_->context, PS_SOLID, 1, color);
 
 				::MoveToEx(handle_->context, x1, y1, 0);
 				::LineTo(handle_->context, x2, y2);
-				::SetPixel(handle_->context, x2, y2, NANA_RGB(color));
 			}
+			::SetPixel(handle_->context, x2, y2, NANA_RGB(color));
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();
 			handle_->fgcolor(color);
@@ -743,6 +776,68 @@ namespace paint
 		void graphics::line(const point& beg, const point& end, color_t color)
 		{
 			line(beg.x, beg.y, end.x, end.y, color);
+		}
+
+		void graphics::lines(const point* points, std::size_t n_of_points, color_t color)
+		{
+			if(!handle_ || nullptr == points || 0 == n_of_points)	return;
+#if defined(NANA_WINDOWS)
+
+			handle_->pen.set(handle_->context, PS_SOLID, 1, color);
+
+			::MoveToEx(handle_->context, points->x, points->y, nullptr);
+			const point * end = points + n_of_points;
+			for(const point * i = points + 1; i != end; ++i)
+				::LineTo(handle_->context, i->x, i->y);
+
+			if(*points != *(end - 1))
+				::SetPixel(handle_->context, (end-1)->x, (end-1)->y, NANA_RGB(color));
+#elif defined(NANA_X11)
+			Display* disp = nana::detail::platform_spec::instance().open_display();
+			handle_->fgcolor(color);
+
+			XPoint * const x11points = new XPoint[n_of_points];
+			XPoint * end = x11points + n_of_points;
+			for(XPoint * i = x11points; i != end; ++i)
+			{
+				i->x = points->x;
+				i->y = points->y;
+				++points;
+			}
+			::XDrawLines(disp, handle_->pixmap, handle_->context, x11points, static_cast<int>(n_of_points), CoordModePrevious);
+			delete [] x11points;
+#endif
+			if(changed_ == false) changed_ = true;
+		}
+
+		void graphics::line_begin(int x, int y)
+		{
+			if(!handle_)	return;
+#if defined(NANA_WINDOWS)
+			::MoveToEx(handle_->context, x, y, 0);
+
+#elif defined(NANA_X11)
+			handle_->line_begin_pos.x = x;
+			handle_->line_begin_pos.y = y;
+#endif
+		}
+
+		void graphics::line_to(int x, int y, color_t color)
+		{
+			if(!handle_)	return;
+#if defined(NANA_WINDOWS)
+			handle_->pen.set(handle_->context, PS_SOLID, 1, color);
+			::LineTo(handle_->context, x, y);
+#elif defined(NANA_X11)
+			Display* disp = nana::detail::platform_spec::instance().open_display();
+			handle_->fgcolor(color);
+			::XDrawLine(disp, handle_->pixmap, handle_->context,
+						handle_->line_begin_pos.x, handle_->line_begin_pos.y,
+						x, y);
+			handle_->line_begin_pos.x = x;
+			handle_->line_begin_pos.y = y;
+#endif
+			if(changed_ == false) changed_ = true;
 		}
 
 		void graphics::bitblt(int x, int y, const graphics& src)
@@ -817,39 +912,35 @@ namespace paint
 			}
 		}
 
-		void graphics::blend(graphics& dst, int x, int y, double fade_rate) const
+		void graphics::blend(const nana::rectangle& s_r, graphics& dst, const nana::point& d_pos, double fade_rate) const
 		{
 			if(dst.handle_ && handle_ && (dst.handle_ != handle_))
 			{
-				pixel_buffer pixbuf(handle_, 0, size_.height);
-				pixbuf.blend(nana::point(), dst.handle_, nana::rectangle(x, y, size_.width, size_.height), fade_rate);
+				pixel_buffer s_pixbuf;
+				s_pixbuf.attach(handle_, size());
+
+				s_pixbuf.blend(s_r, dst.handle_, d_pos, fade_rate);
 
 				if(dst.changed_ == false) dst.changed_ = true;
 			}
 		}
 
-		void graphics::blend(const nana::point& s_pos, graphics& dst, const nana::rectangle& r, double fade_rate) const
-		{
-			if(dst.handle_ && handle_ && (dst.handle_ != handle_))
-			{
-				nana::rectangle s_r(s_pos.x, s_pos.y, r.width, r.height);
-				nana::rectangle s_good_r, d_good_r;
-				if(gui::overlap(s_r, size_, r, dst.size_, s_good_r, d_good_r) == false)
-					return;
-
-				pixel_buffer pixbuf(handle_, s_good_r.y, s_good_r.height);
-				pixbuf.blend(nana::point(s_good_r.x, 0), dst.handle_, d_good_r, fade_rate);
-
-				if(dst.changed_ == false) dst.changed_ = true;
-			}
-		}
-
-		void graphics::blend(int x, int y, unsigned width, unsigned height, nana::color_t color, double fade_rate)
+		void graphics::blend(const nana::rectangle& r, nana::color_t color, double fade_rate)
 		{
 			if(handle_)
 			{
-				nana::paint::detail::blend(handle_, x, y, width, height, color, fade_rate);
+				nana::paint::detail::blend(handle_, r, color, fade_rate);
 				if(changed_ == false) changed_ = true;
+			}
+		}
+
+		void graphics::blur(const nana::rectangle& r, std::size_t radius)
+		{
+			if(handle_)
+			{
+				pixel_buffer pixbuf(handle_, 0, 0);
+				pixbuf.blur(r, radius);
+				pixbuf.paste(handle_, 0, 0);
 			}
 		}
 
@@ -872,7 +963,7 @@ namespace paint
 
 				pixel_buffer pixbuf(handle_, 0, 0);
 
-				nana::pixel_rgb_t * pixels = pixbuf.raw_ptr();
+				nana::pixel_rgb_t * pixels = pixbuf.raw_ptr(0);
 
 				const nana::size sz = paint::detail::drawable_size(handle_);
 				const int rest = sz.width % 4;
@@ -921,7 +1012,7 @@ namespace paint
 				::BitBlt(dst.handle_->context, x, y, size_.width, size_.height, handle_->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display* display = nana::detail::platform_spec::instance().open_display();
-				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
+				::XCopyArea(display,
 						handle_->pixmap, dst.handle_->pixmap, handle_->context,
 						0, 0, size_.width, size_.height, x, y);
 
@@ -969,6 +1060,24 @@ namespace paint
 				::XCopyArea(display,
 						handle_->pixmap, dst->pixmap, handle_->context,
 						0, 0, size_.width, size_.height, x, y);
+				::XFlush(display);
+#endif
+			}
+		}
+
+
+		void graphics::paste(const nana::rectangle& r_src, graphics& dst, int x, int y) const
+		{
+			if(handle_ && dst.handle_ && handle_ != dst.handle_)
+			{
+#if defined(NANA_WINDOWS)
+				::BitBlt(dst.handle_->context, x, y, r_src.width, r_src.height, handle_->context, r_src.x, r_src.y, SRCCOPY);
+#elif defined(NANA_X11)
+				Display* display = nana::detail::platform_spec::instance().open_display();
+				::XCopyArea(display,
+						handle_->pixmap, dst.handle_->pixmap, handle_->context,
+						r_src.x, r_src.y, r_src.width, r_src.height, x, y);
+
 				::XFlush(display);
 #endif
 			}

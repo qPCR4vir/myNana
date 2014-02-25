@@ -1,5 +1,6 @@
 /*
  *	A Label Control Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
@@ -58,14 +59,15 @@ namespace nana{ namespace gui{
 		typedef drawerbase::label::command command;
 		label();
 		label(window, bool visible);
+		label(window, const nana::string& text, bool visible = true);
+		label(window, const nana::char_t* text, bool visible = true);
 		label(window, const rectangle& = rectangle(), bool visible = true);
-		void transparent(bool);
+		label& transparent(bool);
 		bool transparent() const;
-		void format(bool);
-		void add_format_listener(const nana::functor<void(command::t, const nana::string&)> &);
-		nana::size measure() const;
-		unsigned extent_size() const;
-		void text_align(align::t);
+		label& format(bool);
+		label& add_format_listener(const nana::functor<void(command::t, const nana::string&)> &);
+		nana::size measure(unsigned limited) const;
+		label& text_align(align::t, align_v::t = align_v::top);
 	private:
 		void _m_caption(const nana::string&);
 	};

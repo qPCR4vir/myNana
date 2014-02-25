@@ -33,6 +33,7 @@ namespace gui
 		void drawer_trigger::typeface_changed(graph_reference){}
 		void drawer_trigger::refresh(graph_reference){}
 
+		void drawer_trigger::resizing(graph_reference, const eventinfo&){}
 		void drawer_trigger::resize(graph_reference graph, const eventinfo&)
 		{
 			refresh(graph);
@@ -79,7 +80,7 @@ namespace gui
 
 		//class drawer
 		drawer::drawer()
-			:	realizer_(0), refreshing_(false)
+			:	core_window_(0), realizer_(0), refreshing_(false)
 		{
 		}
 
@@ -92,6 +93,11 @@ namespace gui
 			}
 		}
 
+		void drawer::attached(basic_window* cw)
+		{
+			core_window_ = cw;
+		}
+
 		void drawer::typeface_changed()
 		{
 			if(realizer_)
@@ -102,8 +108,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->click(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -111,8 +119,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->dbl_click(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -120,8 +130,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_enter(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -129,8 +141,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_move(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -138,8 +152,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_leave(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -147,8 +163,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_down(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -156,8 +174,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_up(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -165,8 +185,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_wheel(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -174,8 +196,21 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->mouse_drop(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
+			}
+		}
+
+		void drawer::resizing(const eventinfo& ei)
+		{
+			if(realizer_)
+			{
+				_m_bground_pre();
+				realizer_->resizing(graphics, ei);
+				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -183,8 +218,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->resize(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -192,8 +229,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->move(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -201,8 +240,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->focus(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -210,8 +251,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->key_down(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -219,8 +262,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->key_char(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -228,8 +273,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->key_up(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -237,8 +284,10 @@ namespace gui
 		{
 			if(realizer_)
 			{
+				_m_bground_pre();
 				realizer_->shortkey(graphics, ei);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 			}
 		}
 
@@ -286,8 +335,10 @@ namespace gui
 			if(realizer_ && (refreshing_ == false))
 			{
 				refreshing_ = true;
+				_m_bground_pre();
 				realizer_->refresh(graphics);
 				_m_draw_dynamic_drawing_object();
+				_m_bground_end();
 				graphics.flush();
 				refreshing_ = false;
 			}
@@ -334,7 +385,7 @@ namespace gui
 
 		void* drawer::draw(const nana::functor<void(paint::graphics&)> & f, bool diehard)
 		{
-			if(! f.empty())
+			if(false == f.empty())
 			{
 				dynamic_drawing::user_draw_function * p = new dynamic_drawing::user_draw_function(f, diehard);
 				dynamic_drawing_objects_.push_back(p);
@@ -376,72 +427,86 @@ namespace gui
 			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::shadow_rectangle(x, y, width, height, beg, end, vertical));
 		}
 
-		void drawer::bitblt(int x, int y, unsigned width, unsigned height, const nana::paint::graphics& graph, int srcx, int srcy)
+		void drawer::bitblt(int x, int y, unsigned width, unsigned height, const paint::graphics& graph, int srcx, int srcy)
 		{
-			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::bitblt(x, y, width, height, graph, srcx, srcy));
+			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::bitblt<paint::graphics>(x, y, width, height, graph, srcx, srcy));
 		}
 
-		void drawer::bitblt(int x, int y, unsigned width, unsigned height, const nana::paint::image& img, int srcx, int srcy)
+		void drawer::bitblt(int x, int y, unsigned width, unsigned height, const paint::image& img, int srcx, int srcy)
 		{
-			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::bitblt_image(x, y, width, height, img, srcx, srcy));
+			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::bitblt<paint::image>(x, y, width, height, img, srcx, srcy));
 		}
 
-		void drawer::stretch(const nana::rectangle & r_dst, const nana::paint::graphics& graph, const nana::rectangle& r_src)
+		void drawer::stretch(const nana::rectangle & r_dst, const paint::graphics& graph, const nana::rectangle& r_src)
 		{
-			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::stretch(r_dst, graph, r_src));
+			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::stretch<paint::graphics>(r_dst, graph, r_src));
 		}
 
-		void drawer::stretch(const nana::rectangle & r_dst, const nana::paint::image& img, const nana::rectangle& r_src)
+		void drawer::stretch(const nana::rectangle & r_dst, const paint::image& img, const nana::rectangle& r_src)
 		{
-			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::stretch(r_dst, img, r_src));
+			dynamic_drawing_objects_.push_back(new detail::dynamic_drawing::stretch<paint::image>(r_dst, img, r_src));
 		}
 
-		event_handle drawer::make_event(int evtid, window wd)
+		event_handle drawer::make_event(event_code::t evtid, window wd)
 		{
 			bedrock_type & bedrock = bedrock_type::instance();
 			void (drawer::*answer)(const eventinfo&) = 0;
 			switch(evtid)
 			{
-			case event_tag::click:
+			case event_code::click:
 				answer = &drawer::click;	break;
-			case event_tag::dbl_click:
+			case event_code::dbl_click:
 				answer = &drawer::dbl_click;	break;
-			case event_tag::mouse_enter:
+			case event_code::mouse_enter:
 				answer = &drawer::mouse_enter;	break;
-			case event_tag::mouse_leave:
+			case event_code::mouse_leave:
 				answer = &drawer::mouse_leave;	break;
-			case event_tag::mouse_down:
+			case event_code::mouse_down:
 				answer = &drawer::mouse_down;	break;
-			case event_tag::mouse_up:
+			case event_code::mouse_up:
 				answer = &drawer::mouse_up;	break;
-			case event_tag::mouse_move:
+			case event_code::mouse_move:
 				answer = &drawer::mouse_move;	break;
-			case event_tag::mouse_wheel:
+			case event_code::mouse_wheel:
 				answer = &drawer::mouse_wheel;	break;
-			case event_tag::mouse_drop:
+			case event_code::mouse_drop:
 				answer = &drawer::mouse_drop;	break;
-			case event_tag::size:
+			case event_code::sizing:
+				answer = &drawer::resizing;	break;
+			case event_code::size:
 				answer = &drawer::resize;	break;
-			case event_tag::move:
+			case event_code::move:
 				answer = &drawer::move;		break;
-			case event_tag::focus:
+			case event_code::focus:
 				answer = &drawer::focus;	break;
-			case event_tag::key_down:
+			case event_code::key_down:
 				answer = &drawer::key_down;	break;
-			case event_tag::key_char:
+			case event_code::key_char:
 				answer = &drawer::key_char;	break;
-			case event_tag::key_up:
+			case event_code::key_up:
 				answer = &drawer::key_up;	break;
-			case event_tag::shortkey:
+			case event_code::shortkey:
 				answer = &drawer::shortkey;	break;
+			default:
+				break;
 			}
 
 			if(answer && (0 == bedrock.evt_manager.the_number_of_handles(wd, evtid, true)))
-			{
 				return bedrock.evt_manager.make_for_drawer(evtid, wd, bedrock.category(reinterpret_cast<bedrock::core_window_t*>(wd)), drawer_binder(*this, answer));
-			}
 
 			return 0;
+		}
+
+		void drawer::_m_bground_pre()
+		{
+			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate < 0.01)
+				core_window_->other.glass_buffer.paste(graphics, 0, 0);
+		}
+
+		void drawer::_m_bground_end()
+		{
+			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate >= 0.01)
+				core_window_->other.glass_buffer.blend(core_window_->other.glass_buffer.size(), graphics, nana::point(), core_window_->effect.bground_fade_rate);
 		}
 
 		void drawer::_m_draw_dynamic_drawing_object()

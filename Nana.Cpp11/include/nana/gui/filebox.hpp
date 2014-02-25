@@ -9,16 +9,45 @@ namespace nana{	namespace gui
 	{
 		struct implement;
 	public:
-		filebox(window owner, bool for_open);
+		filebox(window owner, bool is_open_mode);
 		~filebox();
 
-		void title(const nana::string& s);
-		void init_path(const nana::string& s);
-		void add_filter(const nana::string& description, const nana::string& filetype);
+		/**	@brief	specify a title for the dialog
+		 *	@param	string	a text for title
+		 */
+		nana::string title( nana::string );
 
+		/**	@brief	specify a suggestion directory
+		 *	@param	string	a path of initial directory
+		 *	@note	the behavior of init_path is different between Win7 and Win2K/XP/Vista, but its behavior under Linux is conformed with Win7.
+		 */
+		filebox& init_path(const nana::string&);
+		filebox& init_file(const nana::string&);
+		filebox& add_filter(const nana::string& description, const nana::string& filetype);
+
+        using filtres = std::vector<std::pair<nana::string, nana::string>>;
+        filebox& add_filter(const filtres &ftres)
+        {
+            for (auto &f : ftres)
+                add_filter(f.first, f.second);
+            return *this;
+        };
+
+
+		nana::string path() const;
 		nana::string file() const;
-		bool operator()() const;
+
+		/**	@brief	Display the filebox dialog
+		 */
 		bool show() const;
+		
+		/** @brief	Display the filebox dialog
+		 *	@note	A function object method alternative to show()
+		 */
+		bool operator()() const
+		{
+			return show();
+		}
 	private:
 		implement * impl_;
 	};

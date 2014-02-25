@@ -288,5 +288,17 @@
     <ClCompile Include="..\..\source\gui\animation.cpp">
       <Filter>Source Files\nana\gui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\basic_window.cpp">
+      <Filter>Source Files\nana\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\effects.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\memory.cpp">
+      <Filter>Source Files\nana</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\element.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

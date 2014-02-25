@@ -128,15 +128,9 @@ namespace nana{	namespace gui{
 				void border(graph_reference graph)
 				{
 					graph.rectangle(0xF0F0F0, false);
-
-					const int left = 1, top = 1;
-					int right = static_cast<int>(graph.width()) - 2, bottom = static_cast<int>(graph.height()) - 2;
-					graph.line(left, top, right, top, 0x484E55);
-					graph.line(left, bottom, right, bottom, 0x9DABB9);
-					graph.line(left, top, left, bottom, 0x9DABB9);
-					graph.line(right, top, right, bottom - 1, 0x484E55);
+					graph.rectangle_line(nana::rectangle(graph.size()).pare_off(1),
+										0x9DABB9, 0x484E55, 0x484E55, 0x9DABB9);
 				}
-
 			private:
 				void _m_item_bground(graph_reference graph, int x, int y, unsigned width, unsigned height, mouse_action state)
 				{
@@ -356,15 +350,9 @@ namespace nana{	namespace gui{
 				scheme()
 					: graph_(nullptr)
 				{
-					proto_.ui_renderer = pat::cloneable<interior_renderer, renderer>().clone();
+					proto_.ui_renderer = pat::cloneable<renderer>(interior_renderer());
 					style_.mode = mode::normal;
 					style_.listbox = nullptr;
-				}
-
-				~scheme()
-				{
-					if(proto_.ui_renderer)
-						proto_.ui_renderer->self_delete();
 				}
 
 				void attach(nana::paint::graphics* graph)
@@ -400,12 +388,11 @@ namespace nana{	namespace gui{
 					nana::rectangle r = _m_make_rectangle(); //_m_make_rectangle must be called after _m_calc_scale()
 					_m_calc_pixels(r);
 
-					renderer & rd = proto_.ui_renderer->refer();
-					rd.background(*graph_, window_, r, ui_el_);
+					proto_.ui_renderer->background(*graph_, window_, r, ui_el_);
 					if(head_)
-						rd.root_arrow(*graph_, _m_make_root_rectangle(), style_.state);
+						proto_.ui_renderer->root_arrow(*graph_, _m_make_root_rectangle(), style_.state);
 					_m_draw_items(r);
-					rd.border(*graph_);
+					proto_.ui_renderer->border(*graph_);
 				}
 
 				bool locate(int x, int y) const
@@ -473,7 +460,7 @@ namespace nana{	namespace gui{
 
 				bool erase_locate()
 				{
-					ui_el_.index = ui_el_.npos;
+					ui_el_.index = npos;
 					if(ui_el_.what != ui_el_.none)
 					{
 						ui_el_.what = ui_el_.none;
@@ -570,7 +557,7 @@ namespace nana{	namespace gui{
 					}
 					r.y += r.height;
 					r.width = r.height = 100;
-					style_.listbox = &(form_loader<gui::float_listbox>()(window_, r));
+					style_.listbox = &(form_loader<gui::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
 					style_.listbox->show();
 					style_.listbox->make_event<events::destroy>(*this, &scheme::_m_list_closed);
@@ -582,7 +569,7 @@ namespace nana{	namespace gui{
 					style_.state = mouse_action::normal;
 
 					bool is_draw = false;
-					if(style_.module.index != style_.module.npos)
+					if((style_.module.index != npos) && style_.module.have_selected)
 					{
 						switch(style_.list_trigger)
 						{
@@ -737,7 +724,6 @@ namespace nana{	namespace gui{
 
 				void _m_draw_items(const nana::rectangle& r)
 				{
-					renderer & rd = proto_.ui_renderer->refer();
 					nana::rectangle item_r = r;
 					item_r.height = item_height_;
 					std::size_t index = head_;
@@ -753,7 +739,7 @@ namespace nana{	namespace gui{
 							item_r.y += item_height_;
 						}
 						item_r.width = i->value.second.pixels;
-						rd.item(*graph_, item_r, index++, i->value.first, i->value.second.scale.height, i->child != 0, style_.state);
+						proto_.ui_renderer->item(*graph_, item_r, index++, i->value.first, i->value.second.scale.height, i->child != 0, style_.state);
 						item_r.x += item_r.width;
 					}
 				}
@@ -780,7 +766,7 @@ namespace nana{	namespace gui{
 
 				struct proto_tag
 				{
-					pat::cloneable_interface<renderer> * ui_renderer;
+					pat::cloneable<renderer> ui_renderer;
 				}proto_;
 
 				mutable ext_event_raw_tag	ext_event_;

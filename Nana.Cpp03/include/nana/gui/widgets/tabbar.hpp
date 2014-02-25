@@ -77,8 +77,6 @@ namespace nana{ namespace gui{
 				typedef DrawerTrigger drawer_trigger;
 				typedef typename tabbar::value_type value_type;
 
-				const static std::size_t npos = static_cast<size_t>(-1);
-
 				mutable extra_events<tabbar> ext_event;
 
 				event_adapter(tabbar& tb, drawer_trigger & dtr)
@@ -122,8 +120,8 @@ namespace nana{ namespace gui{
 				std::size_t active() const;
 				nana::any& at(std::size_t i) const;
 				nana::any& at_no_bound_check(std::size_t i) const;
-				pat::cloneable_interface<item_renderer> & ext_renderer() const;
-				void ext_renderer(const pat::cloneable_interface<item_renderer>&);
+				const pat::cloneable<item_renderer> & ext_renderer() const;
+				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void event_adapter(internal_event_trigger*);
 				void push_back(const nana::string&, const nana::any&);
 				layouter& layouter_object();
@@ -164,29 +162,6 @@ namespace nana{ namespace gui{
 		struct button_list{};
 		struct button_close{};
 
-		template<typename ItemRenderer>
-		class renderer_cloneable
-			: public nana::pat::cloneable<ItemRenderer, item_renderer>
-		{
-		public:
-			renderer_cloneable(){}
-			renderer_cloneable(const ItemRenderer& ir)
-				: pat::cloneable<ItemRenderer, item_renderer>(ir)
-			{}
-
-			template<typename U>
-			renderer_cloneable(U& u)
-				: pat::cloneable<ItemRenderer, item_renderer>(u)
-			{}
-
-			template<typename U>
-			renderer_cloneable(const U& u)
-				: pat::cloneable<ItemRenderer, item_renderer>(u)
-			{}
-		};
-
-		static const std::size_t npos = static_cast<size_t>(-1);
-
 		template<typename ButtonAdd = nana::null_type, typename ButtonScroll = nana::null_type, typename ButtonList = nana::null_type, typename ButtonClose = nana::null_type>
 		struct button_container
 		{
@@ -202,6 +177,20 @@ namespace nana{ namespace gui{
 		{
 			_m_init();
 			this->create(wd, rectangle(), visible);
+		}
+
+		tabbar(window wd, const nana::string& text, bool visible)
+		{
+			_m_init();
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
+		tabbar(window wd, const nana::char_t* text, bool visible)
+		{
+			_m_init();
+			create(wd, rectangle(), visible);
+			caption(text);		
 		}
 
 		tabbar(window wd, const rectangle& r = rectangle(), bool visible = true)
@@ -244,12 +233,12 @@ namespace nana{ namespace gui{
 				API::refresh_window(this->handle());
 		}
 
-		pat::cloneable_interface<item_renderer>& ext_renderer() const
+		pat::cloneable<item_renderer>& ext_renderer() const
 		{
 			return get_drawer_trigger().ext_renderer();
 		}
 
-		void ext_renderer(const pat::cloneable_interface<item_renderer>& ir)
+		void ext_renderer(const pat::cloneable<item_renderer>& ir)
 		{
 			get_drawer_trigger().ext_renderer(ir);
 		}
@@ -266,9 +255,8 @@ namespace nana{ namespace gui{
 
 		void push_back(const nana::string& text)
 		{
-			drawer_trigger_t & t = get_drawer_trigger();
-			t.push_back(text, value_type());
-			nana::gui::API::update_window(*this);
+			get_drawer_trigger().push_back(text, value_type());
+			API::update_window(*this);
 		}
 
 		void relate(std::size_t pos, nana::gui::window wd)

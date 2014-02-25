@@ -12,19 +12,32 @@
 #include <nana/gui/widgets/checkbox.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/paint/text_renderer.hpp>
+#include <nana/gui/element.hpp>
 
-namespace nana
+namespace nana{	namespace gui{ namespace drawerbase
 {
-namespace gui
+namespace checkbox
 {
-namespace xcheckbox
-{
+	typedef element::crook_interface::state crook_state;
+
+	struct drawer::implement
+	{
+		bool react;
+		bool radio;
+		facade<element::crook> crook;
+	};
 		//class drawer
-			drawer::drawer():widget_(0)
+			drawer::drawer()
+				:	widget_(0),
+					impl_(new implement)
 			{
-				checker_.react = true;
-				checker_.checked = checker_.radio = false;
-				checker_.type = paint::gadget::check_renderer::clasp;
+				impl_->react = true;
+				impl_->radio = false;
+			}
+
+			drawer::~drawer()
+			{
+				delete impl_;
 			}
 
 			void drawer::bind_window(widget_reference w)
@@ -60,8 +73,8 @@ namespace xcheckbox
 
 			void drawer::mouse_up(graph_reference graph, const eventinfo&)
 			{
-				if(checker_.react)
-					checker_.checked = ! checker_.checked;
+				if(impl_->react)
+					impl_->crook.reverse();
 
 				_m_draw(graph);
 			}
@@ -76,52 +89,9 @@ namespace xcheckbox
 				_m_draw(graph);
 			}
 
-			paint::gadget::check_renderer& drawer::check_renderer()
+			drawer::implement * drawer::impl() const
 			{
-				return checker_.renderer;
-			}
-
-			void drawer::react(bool is_react)
-			{
-				checker_.react = is_react;
-			}
-
-			void drawer::checked(bool chk)
-			{
-				checker_.checked = chk;
-				API::refresh_window(*widget_);
-			}
-
-			bool drawer::checked() const
-			{
-				return checker_.checked;
-			}
-
-			void drawer::radio(bool is_radio)
-			{
-				checker_.radio = is_radio;
-			}
-
-			void drawer::style(drawer::check_renderer_t::checker_t chk)
-			{
-				if(false == checker_.radio)
-				{
-					switch(chk)
-					{
-					case checkbox::clasp:
-						checker_.type = paint::gadget::check_renderer::clasp;
-						break;
-					case checkbox::blocker:
-						checker_.type = paint::gadget::check_renderer::blocker;
-						break;
-					default:	break;
-					}
-				}
-			}
-
-			drawer::check_renderer_t::checker_t drawer::style() const
-			{
-				return checker_.type;
+				return impl_;
 			}
 
 			void drawer::_m_draw(drawer::graph_reference graph)
@@ -134,13 +104,13 @@ namespace xcheckbox
 
 			void drawer::_m_draw_background(graph_reference graph)
 			{
-				if(false == API::glass_window(*widget_))
+				if(bground_mode::basic != API::effects_bground_mode(*widget_))
 					graph.rectangle(API::background(*widget_), true);
 			}
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
 			{
-				checker_.renderer.render(graph, 0, (first_line_height > 16 ? (first_line_height - 16) / 2 : 0), 16, 16, API::mouse_action(*widget_), (checker_.radio ? paint::gadget::check_renderer::radio : checker_.type), checker_.checked);
+				impl_->crook.draw(graph, widget_->background(), widget_->foreground(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
 			}
 
 			void drawer::_m_draw_title(graph_reference graph)
@@ -153,7 +123,7 @@ namespace xcheckbox
 					unsigned pixels = graph.width() - (16 + interval);
 
 					nana::paint::text_renderer tr(graph);
-					if(nana::gui::API::window_enabled(widget_->handle()) == false)
+					if(API::window_enabled(widget_->handle()) == false)
 					{
 						tr.render(17 + interval, 2, 0xFFFFFF, title.c_str(), title.length(), pixels);
 						fgcolor = 0x808080;
@@ -163,10 +133,10 @@ namespace xcheckbox
 				}
 			}
 		//end class drawer
-}//end namespace xcheckbox
+}//end namespace checkbox
+}//end namespace drawerbase
 
 	//class checkbox
-
 		checkbox::checkbox(){}
 
 		checkbox::checkbox(window wd, bool visible)
@@ -174,69 +144,61 @@ namespace xcheckbox
 			create(wd, rectangle(), visible);
 		}
 
+		checkbox::checkbox(window wd, const nana::string& text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
+		checkbox::checkbox(window wd, const nana::char_t* text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+
 		checkbox::checkbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
 		}
 
+		void checkbox::element_set(const char* name)
+		{
+			get_drawer_trigger().impl()->crook.switch_to(name);
+		}
+
 		void checkbox::react(bool want)
 		{
-			get_drawer_trigger().react(want);
+			get_drawer_trigger().impl()->react = want;
 		}
 
 		bool checkbox::checked() const
 		{
-			return get_drawer_trigger().checked();
+			return (get_drawer_trigger().impl()->crook.checked() != drawerbase::checkbox::crook_state::unchecked);
 		}
 
 		void checkbox::check(bool chk)
 		{
-			get_drawer_trigger().checked(chk);
+			typedef drawerbase::checkbox::crook_state crook_state;
+			get_drawer_trigger().impl()->crook.check(chk ? crook_state::checked : crook_state::unchecked);
+			API::refresh_window(handle());
 		}
 
 		void checkbox::radio(bool is_radio)
 		{
-			get_drawer_trigger().radio(is_radio);
+			get_drawer_trigger().impl()->crook.radio(is_radio);
 		}
 
-		void checkbox::style(checkbox::checker_t chk)
+		void checkbox::transparent(bool enabled)
 		{
-			get_drawer_trigger().style(static_cast<drawer_trigger_t::check_renderer_t::checker_t>(chk));
-			API::refresh_window(*this);
-		}
-
-		checkbox::checker_t checkbox::style() const
-		{
-			return static_cast<checker_t>(get_drawer_trigger().style());
-		}
-
-		void checkbox::transparent(bool value)
-		{
-			if(API::glass_window(*this, value) != value)
-				API::refresh_window(*this);
+			if(enabled)
+				API::effects_bground(*this, effects::bground_transparent(0), 0.0);
+			else
+				API::effects_bground_remove(*this);
 		}
 
 		bool checkbox::transparent() const
 		{
-			return API::glass_window(this->handle());
-		}
-
-		void checkbox::open_check_image(const nana::paint::image& img)
-		{
-			this->get_drawer_trigger().check_renderer().open_background_image(img);
-		}
-
-		void checkbox::set_check_image(mouse_action::t act, checkbox::checker_t chk, bool checked, const nana::rectangle& r)
-		{
-			drawer_trigger_t::check_renderer_t::checker_t ichk = nana::paint::gadget::check_renderer::clasp;
-			switch(chk)
-			{
-			case checkbox::blocker:
-				ichk = nana::paint::gadget::check_renderer::blocker;
-				break;
-            default:    break;
-			}
-			this->get_drawer_trigger().check_renderer().set_image_state(act, ichk, checked, r);
+			return (bground_mode::basic == API::effects_bground_mode(*this));
 		}
 	//end class checkbox
 
@@ -254,11 +216,12 @@ namespace xcheckbox
 		{
 			uiobj.radio(true);
 			uiobj.check(false);
+			uiobj.react(false);
 
 			element_tag el;
 
 			el.uiobj = &uiobj;
-			el.eh_checked = uiobj.make_event<events::mouse_up>(*this, &radio_group::_m_checked);
+			el.eh_checked = uiobj.make_event<events::click>(*this, &radio_group::_m_checked);
 			el.eh_destroy = uiobj.make_event<events::destroy>(*this, &radio_group::_m_destroy);
 
 			ui_container_.push_back(el);

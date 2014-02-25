@@ -4,6 +4,7 @@
 #include <nana/gui/widgets/button.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/tooltip.hpp>
+#include <nana/paint/gadget.hpp>
 #include <vector>
 
 namespace nana{ namespace gui{ namespace drawerbase{ namespace login
@@ -204,7 +205,6 @@ namespace nana{ namespace gui{ namespace drawerbase{ namespace login
 	class trigger::drawer
 	{
 	public:
-		static const std::size_t npos = static_cast<size_t>(-1);
 		struct component
 		{
 			enum type{none, item, up, down};
@@ -320,7 +320,7 @@ namespace nana{ namespace gui{ namespace drawerbase{ namespace login
 
 		void draw()
 		{
-			if(false == API::glass_window(other_.wd->handle()))
+			if(bground_mode::basic != API::effects_bground_mode(other_.wd->handle()))
 				other_.graph->rectangle(other_.wd->background(), true);
 
 			nana::size gsize = other_.graph->size();
@@ -947,15 +947,17 @@ namespace nana{ namespace gui{ namespace drawerbase{ namespace login
 		return get_drawer_trigger().get_drawer()->selection();
 	}
 
-	bool login::transparent() const
+	void login::transparent(bool enabled)
 	{
-		return API::glass_window(this->handle());
+		if(enabled)
+			API::effects_bground(*this, effects::bground_transparent(0), 0.0);
+		else
+			API::effects_bground_remove(*this);
 	}
 
-	void login::transparent(bool t)
+	bool login::transparent() const
 	{
-		if(API::glass_window(this->handle(), t))
-			API::refresh_window(this->handle());
+		return (bground_mode::basic == API::effects_bground_mode(*this));
 	}
 
 	void login::insert(const nana::string& user, const nana::string& password)

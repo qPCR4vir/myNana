@@ -24,17 +24,14 @@
 	namespace nana
 	{
 		typedef char		char_t;
-		typedef std::string string;
+		typedef std::string string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
 	}
 	#define STR(string) string
 #else
-	#ifndef UNICODE
-		#define UNICODE
-	#endif
 	namespace nana
 	{
 		typedef wchar_t			char_t;
-		typedef std::wstring	string;
+		typedef std::wstring	string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
 	}
 	#define STR(string) L##string
 #endif
@@ -42,6 +39,7 @@
 namespace nana
 {
 	std::size_t strlen(const char_t* str);
+	double strtod(const char_t* str, char_t** endptr);
 	char_t* strcpy(char_t* dest, const char_t* source);
 }
 
@@ -54,15 +52,6 @@ namespace nana
 namespace nana
 {
 	bool is_incomplete(const nana::string& str, unsigned pos);
-
-	struct state
-	{
-#if defined(NANA_UNICODE)
-		static const bool unicode = true;
-#else
-		static const bool unicode = false;
-#endif
-	};
 
 	inline unsigned make_rgb(unsigned char red, unsigned char green, unsigned char blue)
 	{

@@ -85,7 +85,7 @@ namespace detail
 				remove(root_.child);
 			}
 
-			bool check(const node_type* node) const
+			bool verify(const node_type* node) const
 			{
 				if(node)
 				{
@@ -107,9 +107,7 @@ namespace detail
 
 			node_type* get_owner(const node_type* node) const
 			{
-				if(check(node))
-					return (node->owner == &root_ ? 0 : node->owner);
-				return 0;
+				return (verify(node) && (node->owner != &root_) ? node->owner : nullptr);
 			}
 
 			node_type * node(node_type* node, const nana::string& key)
@@ -130,7 +128,7 @@ namespace detail
 				if(nullptr == node)
 					return insert(key, elem);
 				
-				if(check(node))
+				if(verify(node))
 				{
 					node_type **new_node_ptr;
 					if(node->child)
@@ -173,13 +171,13 @@ namespace detail
 
 			void remove(node_type* node)
 			{
-				if(check(node))
+				if(verify(node))
 					delete node;
 			}
 
-			node_type* find(const nana::string& path)
+			node_type* find(const nana::string& path) const
 			{
-				return _m_locate<false>(path);
+				return _m_locate(path);
 			}
 
 			node_type* ref(const nana::string& path)
@@ -360,7 +358,7 @@ namespace detail
 			}
 
 			template<typename PredAllowChild>
-			node_type* advance_if(node_type* node, unsigned off, PredAllowChild pac)
+			node_type* advance_if(node_type* node, std::size_t off, PredAllowChild pac)
 			{
 				if(nullptr == node)	node = root_.child;
 

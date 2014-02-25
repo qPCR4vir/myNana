@@ -28,6 +28,25 @@ namespace gui
 		struct event_handle_impl{};
 	}
 
+	enum class checkstate
+	{
+		unchecked, checked, partial
+	};
+
+	enum class window_border
+	{
+		none,
+		left, right, top, bottom,
+		top_left, top_right, bottom_left, bottom_right
+	};
+
+	enum class bground_mode
+	{
+		none,
+		basic,
+		blend
+	};
+
 	namespace category
 	{
 		enum class flags
@@ -53,17 +72,20 @@ namespace gui
 	struct keyboard
 	{
 		enum t{
-		select_all	= 0x1,
-		cancel		= 0x3,
-		backspace	= 0x8,	tab		= 0x9,
-		enter		= 0xD,	// 13
-		alt			= 18,
-		sync		= 0x16,	// 22
-		ctr_x       = 0x18, // 24  cut. cancel?  http://en.wikipedia.org/wiki/Control-X
-		esc			= 0x1B, // 27
-		pageup		= 33,	pagedown,
-		left		= 37,	up, right, down,
-		insert		= 45,	del
+			//Control Code for ASCII
+			select_all	= 0x1,
+			copy		= 0x3,		//Ctrl+C
+			backspace	= 0x8,	tab		= 0x9,
+			enter_n		= 0xA,	enter	= 0xD,	enter_r = 0xD,
+			alt			= 0x12,
+			paste		= 0x16,		//Ctrl+V
+			cut			= 0x18,		//Ctrl+X
+			escape		= 0x1B,
+
+			//System Code for OS
+			os_pageup		= 0x21,	os_pagedown,
+			os_arrow_left	= 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
+			os_insert		= 0x2D, os_del
 		};
 	};
 
@@ -83,10 +105,10 @@ namespace gui
 
 	enum class cursor
 	{
-		hand	= 60,
-		arrow	= 68,
-		wait	= 150,
-		iterm	= 152, //A text caret
+		hand	= 60,     ///< displays a hand to indicate a text or an element is clickable
+		arrow	= 68,     ///< the default shape
+		wait	= 150,    ///< indicates the system is currently busy
+		iterm	= 152,    ///< A text caret. Displays a caret to indicate the UI is input able
 		size_we	= 108,
 		size_ns	= 116,
 		size_top_left = 134,
@@ -97,12 +119,19 @@ namespace gui
 
 	enum class mouse
 	{
-		any_button, left_button, middle_button, right_button
+		any_button, 
+		left_button, 
+		middle_button, 
+		right_button
 	};
 
 	enum class z_order_action
 	{
-		none, bottom, top, topmost, foreground
+		none, 
+		bottom,       ///< brings a window at the bottom of z-order.
+		top,          ///< brings a widget at the top of the z-order.
+		topmost,      ///< brings a window at the top of the z-order and stays here.
+		foreground    ///< brings a window to the foreground.
 	};
 
 	//Window appearance structure

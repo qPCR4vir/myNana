@@ -39,6 +39,7 @@ namespace gui
 		virtual void typeface_changed(graph_reference);
 		virtual void refresh(graph_reference);
 
+		virtual void resizing(graph_reference, const eventinfo&);
 		virtual void resize(graph_reference, const eventinfo&);
 		virtual void move(graph_reference, const eventinfo&);
 		virtual void click(graph_reference, const eventinfo&);
@@ -60,6 +61,8 @@ namespace gui
 
 	namespace detail
 	{
+		struct basic_window;
+
 		namespace dynamic_drawing
 		{
 			//declaration
@@ -77,6 +80,8 @@ namespace gui
 			drawer();
 			~drawer();
 
+			void attached(basic_window*);
+
 			void typeface_changed();
 			void click(const eventinfo&);
 			void dbl_click(const eventinfo&);
@@ -87,6 +92,7 @@ namespace gui
 			void mouse_up(const eventinfo&);
 			void mouse_wheel(const eventinfo&);
 			void mouse_drop(const eventinfo&);
+			void resizing(const eventinfo&);
 			void resize(const eventinfo&);
 			void move(const eventinfo&);
 			void focus(const eventinfo&);
@@ -111,14 +117,17 @@ namespace gui
 			void bitblt(int x, int y, unsigned width, unsigned height, const nana::paint::image& img, int srcx, int srcy);
 			void stretch(const nana::rectangle& r_dst, const nana::paint::graphics& graph, const nana::rectangle& r_src);
 			void stretch(const nana::rectangle& r_dst, const nana::paint::image& img, const nana::rectangle& r_src);
-			event_handle make_event(int evtid, window wd);
+			event_handle make_event(event_code::t, window wd);
 		private:
+			void _m_bground_pre();
+			void _m_bground_end();
 			void _m_draw_dynamic_drawing_object();
 		public:
 			nana::paint::graphics graphics;
 		private:
-			std::vector<nana::gui::detail::dynamic_drawing::object*>	dynamic_drawing_objects_;
-			drawer_trigger* realizer_;
+			basic_window*	core_window_;
+			drawer_trigger*	realizer_;
+			std::vector<dynamic_drawing::object*>	dynamic_drawing_objects_;
 			bool refreshing_;
 		};
 	}//end namespace detail
