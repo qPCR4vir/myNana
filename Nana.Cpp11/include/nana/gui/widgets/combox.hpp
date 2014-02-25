@@ -79,16 +79,20 @@ namespace nana{ namespace gui
 		bool editable() const;
 		combox& push_back(const nana::string&);
 		std::size_t the_number_of_options() const;
-		std::size_t option() const;
-		void option(std::size_t);
+		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
+		void option(std::size_t);   ///< Select the text specified by index
 		nana::string text(std::size_t) const;
 
 		ext_event_type& ext_event() const;
+
+		/// \brief Set user-defined item renderer object. 
+		/// It is an address therefore the user should not destroy the renderer object 
+		/// after it is set to the combox. Passing null_ptr cancels the user-defined renderer object.
 		void renderer(item_renderer*);
 
 		void image(std::size_t, const nana::paint::image&);
 		nana::paint::image image(std::size_t) const;
-		void image_pixels(unsigned);
+		void image_pixels(unsigned);  ///<Sets the width of image area. Default is 16 pixels.
 	private:
 		//Override _m_caption for caption()
 		nana::string _m_caption() const;

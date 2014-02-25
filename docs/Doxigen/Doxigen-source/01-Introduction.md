@@ -1,4 +1,4 @@
-# Nana C++ library.                {#index}  
+# Nana C++ library.                
 
 [TOC]
 

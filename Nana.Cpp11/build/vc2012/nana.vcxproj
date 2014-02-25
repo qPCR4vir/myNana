@@ -687,11 +687,14 @@
     <Text Include="..\..\..\Readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\00-Main.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.button.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.categorize.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.combox.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.listbox.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.menu.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen_label.h" />
     <ClInclude Include="..\..\temp\EditableForm.hpp" />
     <ClInclude Include="..\..\temp\NoValue.h" />
     <ClInclude Include="..\..\temp\Numer.hpp" />

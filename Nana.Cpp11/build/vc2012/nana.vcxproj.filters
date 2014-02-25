@@ -348,6 +348,15 @@
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h">
       <Filter>Doxygen-docs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\00-Main.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.combox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen_label.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md">

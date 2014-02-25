@@ -15,6 +15,7 @@
 
 namespace nana
 {
+	/// A date operation class. \see nana::gui::date_chooser
 	class date
 	{
 	public:
@@ -57,9 +58,9 @@ namespace nana
 	public:
 		struct value
 		{
-			unsigned hour;		//[0-23]
-			unsigned minute;	//[0-59]
-			unsigned second;	//[0-61], the range of [60, 61] is used for leap seconds
+			unsigned hour;		///<[0-23]
+			unsigned minute;	///<[0-59]
+			unsigned second;	///<[0-61], the range of [60, 61] is used for leap seconds
 		};
 
 		time();

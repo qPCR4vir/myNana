@@ -22,4 +22,9 @@ same with the order of definition of elements of enum in type button::state.
 ![](btn_over.jpg)
 2. An image state can be disabled by calling image_enable() method. If a state is disabled, the button would averagely 
 split the area of image into parts for each enabled state.
+
+\example example.button.cpp
+![](btn_over.jpg)
+
+
 */
