@@ -684,7 +684,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\ReadME - solution config.md" />
-    <Text Include="..\..\..\Readme.txt" />
+    <Text Include="..\..\..\temp_rest.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\00-Main.h" />

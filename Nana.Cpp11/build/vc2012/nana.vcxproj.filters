@@ -311,8 +311,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\Readme.txt" />
     <Text Include="..\..\..\ReadME - solution config.md" />
+    <Text Include="..\..\..\temp_rest.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\temp\EditableForm.hpp">
