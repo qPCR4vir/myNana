@@ -17,7 +17,8 @@
 
 namespace nana{ namespace gui
 {
-	class combox;
+	/// A list box combined with a textbox - the list box should drop down when the user selects the arrow next to the control
+    class combox;
 	namespace drawerbase
 	{
 		namespace combox

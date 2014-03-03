@@ -134,7 +134,7 @@ namespace gui
 		foreground    ///< brings a window to the foreground.
 	};
 
-	//Window appearance structure
+	/// Window appearance structure defined to specify the appearance of a form
 	struct appearance
 	{
 		bool taskbar;
@@ -148,7 +148,7 @@ namespace gui
 		bool decoration;
 
 		appearance();
-		appearance(bool has_decaration, bool taskbar, bool floating, bool no_activate, bool min, bool max, bool sizable);
+		appearance(bool has_decoration, bool taskbar, bool floating, bool no_activate, bool min, bool max, bool sizable);
 	};
 
 	struct appear

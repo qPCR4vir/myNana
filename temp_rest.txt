@@ -148,3 +148,15 @@ ThDySec_$(Configuration)_$(Platform).lib;ThDy_programs_$(Configuration)_$(Platfo
 
 Output File
 $(OutDir)$(TargetName)$(TargetExt)
+
+
+
+
+
+\link   \endlink,  
+\link   \endlink,  
+\link   \endlink,  
+\link   \endlink,  
+\link   \endlink,  
+\link   \endlink,  
+

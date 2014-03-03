@@ -694,7 +694,12 @@
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.listbox.h" />
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.menu.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen_label.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.place.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.slider.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.tabbar.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.textbox.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.treebox.h" />
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.label.h" />
     <ClInclude Include="..\..\temp\EditableForm.hpp" />
     <ClInclude Include="..\..\temp\NoValue.h" />
     <ClInclude Include="..\..\temp\Numer.hpp" />

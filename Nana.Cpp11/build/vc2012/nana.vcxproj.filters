@@ -354,7 +354,22 @@
     <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.combox.h">
       <Filter>Doxygen-docs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen_label.h">
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.slider.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.tabbar.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.textbox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.treebox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.place.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.label.h">
       <Filter>Doxygen-docs</Filter>
     </ClInclude>
   </ItemGroup>

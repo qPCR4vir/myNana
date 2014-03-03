@@ -76,7 +76,7 @@ namespace drawerbase
 		void transparent(bool value);
 		bool transparent() const;
 	};//end class checkbox
-
+    /// for managing checkboxs in radio mode
 	class radio_group
 	{
 		struct element_tag
@@ -88,7 +88,7 @@ namespace drawerbase
 	public:
 		~radio_group();
 		void add(checkbox&);
-		std::size_t checked() const;
+		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.
 	private:
 		void _m_checked(const eventinfo&);
 		void _m_destroy(const eventinfo&);
