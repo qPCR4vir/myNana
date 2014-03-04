@@ -21,7 +21,8 @@
 namespace nana
 {
 namespace gui
-{
+{    
+       /// Can repeatedly call a piece of code.
 	class timer
 	{
 	public:
@@ -29,7 +30,7 @@ namespace gui
 
 		~timer();
 
-		bool empty() const;
+		bool empty() const;   ///< Returns true if the timer is invalid.
 		void enable(bool);
 
 		template<typename Function>
@@ -39,7 +40,7 @@ namespace gui
 			this->_m_set_timer();
 		}
 
-		void interval(unsigned value);
+		void interval(unsigned value);   ///< Set the duration between calls (millisec ??)
 		unsigned interval() const;
 	private:
 		//_m_set_timer

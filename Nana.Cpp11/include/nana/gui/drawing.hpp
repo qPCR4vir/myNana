@@ -16,7 +16,9 @@ namespace nana
 {
 namespace gui
 {
-	/// Draw pictures on a widget by specifying a drawing method that will be employed everytime the widget refreshes. 
+	/// \brief Draw pictures on a widget by specifying a drawing method that will be employed everytime the widget refreshes. 
+    /// By the end of drawing, the picture may not be displayed immediately. 
+    /// If a picture need to be displayed immediately call nana::gui::API::refresh_window() .
 	class drawing
 		:private nana::noncopyable
 	{
@@ -31,19 +33,19 @@ namespace gui
 		bool empty() const;             ///< Returns true if the drawing object is invalid. 
 		void update() const;
 
-                /// Draws a string of text at (x, y) with specified color.
+                        /// Draws a string of text at (x, y) with specified color.
 		void string(int x, int y, unsigned color, const nana::char_t* text);
 
-                /// Copy a buffer from graph begin(srcx, srcy) to the position(x, y).
+                        /// Copy a buffer from graph begin(srcx, srcy) to the position(x, y).
 		void bitblt(int x, int y, unsigned width, unsigned height, const nana::paint::graphics& source, int srcx, int srcy);
 		void bitblt(int x, int y, unsigned width, unsigned height, const nana::paint::image&    source, int srcx, int srcy);
 
         void draw(const draw_fn_t&);         ///< Draws things that are defined by draw_fn_t.
 		void draw(draw_fn_t&&);              ///< Draws things that are defined by draw_fn_t.
 
-                /// Draws things that are defined by draw_fn_t but will not be deleted when clear() is called.
+                        /// Draws things that are defined by draw_fn_t but will not be deleted when clear() is called.
 		diehard_t draw_diehard(const draw_fn_t&);
-                /// Draws things that are defined by draw_fn_t but will not be deleted when clear() is called.
+                        /// Draws things that are defined by draw_fn_t but will not be deleted when clear() is called.
 		diehard_t draw_diehard(draw_fn_t&&);
 		void erase(diehard_t);              ///< Erases a diehard drawing method.
 

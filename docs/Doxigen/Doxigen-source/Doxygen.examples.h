@@ -162,4 +162,20 @@ function or a functor with a  `const nana::gui::eventinfo&` parameter or not.
 This example sets `btn` and `adherent` to be triggers, and dragger will move the form and adherent when 
 the user is dragging the trigger widgets.
 */
+/**\example draw.cpp
+
+Draw a 10 X 10 red rectangle at the point(5, 5).
+
+*/
+/**\example background-effects.cpp
+
+![](effect_mode.png)
+![](effects_bground_show.png)
+
+\todo docs: add txt from [http://stdex.sourceforge.net/help/gui/background_effects.htm]
+*/
+/**\example animate-bmp.cpp
+*/
+/**\example filebox-txt.cpp
+*/
 	
