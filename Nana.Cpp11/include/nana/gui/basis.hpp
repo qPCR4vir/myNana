@@ -150,7 +150,7 @@ namespace gui
 		appearance();
 		appearance(bool has_decoration, bool taskbar, bool floating, bool no_activate, bool min, bool max, bool sizable);
 	};
-
+    /// Provided to generate an appearance object with better readability and understandability   
 	struct appear
 	{
 		struct minimize{};
@@ -159,8 +159,8 @@ namespace gui
 		struct taskbar{};
 		struct floating{};
 		struct no_activate{};
-
-		template<typename Minimize = null_type,
+        /// Create an appearance of a window with "decoration"
+		template<   typename Minimize = null_type,
 					typename Maximize = null_type,
 					typename Sizable = null_type,
 					typename Floating = null_type,
@@ -180,8 +180,13 @@ namespace gui
 									);
 			}
 		};
-
-		template<typename Taskbar = null_type, typename Floating = null_type, typename NoActive = null_type, typename Minimize = null_type, typename Maximize = null_type, typename Sizable = null_type>
+        /// Create an appearance of a window without "decoration"
+		template < typename Taskbar  = null_type, 
+                   typename Floating = null_type, 
+                   typename NoActive = null_type, 
+                   typename Minimize = null_type, 
+                   typename Maximize = null_type, 
+                   typename Sizable  = null_type>
 		struct bald
 		{
 			typedef metacomp::fixed_type_set<Taskbar, Floating, NoActive, Minimize, Maximize, Sizable> set_type;
@@ -198,8 +203,12 @@ namespace gui
 									);
 			}
 		};
-
-		template<bool HasDecoration = true, typename Sizable = null_type, typename Taskbar = null_type, typename Floating = null_type, typename NoActive = null_type>
+        /// Create a window with decoration depending on the first non-type template parameter
+		template < bool HasDecoration = true, 
+                   typename Sizable = null_type, 
+                   typename Taskbar = null_type, 
+                   typename Floating = null_type, 
+                   typename NoActive = null_type>
 		struct optional
 		{
 			typedef metacomp::fixed_type_set<Taskbar, Floating, NoActive> set_type;

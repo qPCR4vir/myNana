@@ -158,4 +158,8 @@ function or a functor with a  `const nana::gui::eventinfo&` parameter or not.
 */
 /**\example example_menu.cpp
 */
+/**\example window-dragger.cpp
+This example sets `btn` and `adherent` to be triggers, and dragger will move the form and adherent when 
+the user is dragging the trigger widgets.
+*/
 	

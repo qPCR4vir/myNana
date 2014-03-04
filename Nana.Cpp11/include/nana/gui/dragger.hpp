@@ -4,7 +4,11 @@
 
 namespace nana{ namespace gui
 {
-	class dragger
+	/// \brief Helper class that allows the user to drag windows. 
+    ///
+    /// If a user presses the mouse on the specified window and moves the mouse, the specified window is dragged.
+    /// The drag target window and trigger window can be set more than once. 
+    class dragger
 		: nana::noncopyable
 	{
 		class dragger_impl_t;
