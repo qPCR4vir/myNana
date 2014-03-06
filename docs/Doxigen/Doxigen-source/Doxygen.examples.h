@@ -178,4 +178,33 @@ Draw a 10 X 10 red rectangle at the point(5, 5).
 */
 /**\example filebox-txt.cpp
 */
+/**\example stretch_image.cpp
+# Nana provides the image processors:
++ Stretch algorithms:
+    - __bilinear interoplation__ 	    It produces a reasonably realistic image.
+    - __proximal interoplation__ 	    It(also known as nearest-neighbor interoplation) is fast, but produces a not realistic image.
+
++ Alpha Blend algorith:
+    - __alpha_blend__    	            Blends two images with alpha channel that is given by source image.
+
++ Blend algorithm:
+    - __blend__  	                    Blends two images.
+
++ Blur algorithm:
+    - __blur__ 	                    Blurs an image.
+
++ Line algorithm:
+    - bresenham_line 	                Draws a line.
+
+Examples
+
+This is an example which creates a form to display an image, and when the size of form is changed, it makes the image fit the form.
+In addtion, the example also shows the way to switch the stretch image processing algorithm.
+
+Result of application:
+![bilinear interoplation - Stretch the image through bilinear interoplation](fit_window_bilinear_interoplation.png)
+
+![proximal interoplation - Stretch the image through proximal interoplation](fit_window_proximal_interoplation.png)
+
+*/
 	
