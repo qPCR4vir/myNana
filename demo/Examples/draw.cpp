@@ -8,7 +8,8 @@ int main()
     drawing dw(fm);
     dw.draw([](nana::paint::graphics& graph)
     {
-        graph.rectangle(nana::rectangle(5, 5, 10, 10), 0xFF0000, true);
+        graph.rectangle(nana::rectangle(5, 5, 50, 50), 0xFF0000, true);
+        graph.line(5, 5, 55, 55, 0xFFFFFF);
     });
 
     dw.update();

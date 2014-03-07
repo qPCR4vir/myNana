@@ -8,6 +8,9 @@ namespace nana{ namespace gui
     ///
     /// If a user presses the mouse on the specified window and moves the mouse, the specified window is dragged.
     /// The drag target window and trigger window can be set more than once. 
+    /// See [Is it possible to make event inside event handler?](https://nanapro.codeplex.com/discussions/444121)
+    /// and [How to make widget movable by mouse the best way](https://nanapro.codeplex.com/discussions/444058)
+
     class dragger
 		: nana::noncopyable
 	{

@@ -84,11 +84,12 @@ namespace threads
 		impl * impl_;
 	};//end class pool
 
-
+            /// Manages a group threads for a large number of tasks processing.
 	template<typename Function>
 	class pool_pusher
 	{
 	public:
+           /// same as Function if Function is not a function prototype, otherwise value_type is a pointer type of function
 		typedef typename nana::metacomp::static_if<std::is_function<Function>::value, Function*, Function>::value_type value_type;
 
 		pool_pusher(pool& pobj, value_type fn)

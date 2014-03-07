@@ -559,6 +559,7 @@ the form visible. So, we can specify the second template parameter by giving tru
 
 	btn.make_event<events::click>(form_loader<form, true>()); 
 
+See also [this discussion](https://nanapro.codeplex.com/discussions/443128).
 \subsection mmodal Modal Form  
 Modal form is a modality of forms. It would handle all interactions with the user 
 while the form is active. This is what makes the form modal, the user can not interact 

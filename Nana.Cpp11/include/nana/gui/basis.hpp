@@ -65,7 +65,8 @@ namespace gui
 	}// end namespace category
 
 	typedef detail::native_window_handle_impl * native_window_type;
-	typedef detail::window_handle_impl*	window;
+
+	typedef detail::window_handle_impl*	window; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
 	typedef detail::event_handle_impl*	event_handle;
 
 

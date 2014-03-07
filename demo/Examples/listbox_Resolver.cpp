@@ -55,7 +55,7 @@ int main()
 	pr.age = 10;
 	lb.at(0).append (pr); //person to item. resolver::decode() is required
 
-	lb.at(0, 0).resolve_to( pr); //item to person. resolver::encode() is required
+	lb.at(0).at(0).resolve_to( pr); //item to person. resolver::encode() is required
 
 	fm.show();
 	exec();

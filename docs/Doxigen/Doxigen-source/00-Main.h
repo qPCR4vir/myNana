@@ -59,6 +59,7 @@ This is a reference documentation automaticaly generated from the source code of
 \link nana::gui::radio_group radio_group\endlink,  
 \link nana::rectangle rectangle\endlink,  
 \link nana::gui::timer timer\endlink,  
+\link nana::threads threads\endlink,  
 \link nana::gui::tooltip tooltip\endlink
 
 

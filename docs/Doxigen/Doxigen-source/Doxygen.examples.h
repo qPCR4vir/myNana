@@ -218,4 +218,14 @@ Result of application:
 The signal()/wait_for_signal() provide a method to wait for tasks to finish.
 
 */
+/**\example drag-button.cpp
+See [How to make widget movable by mouse the best way](https://nanapro.codeplex.com/discussions/444058)
+
+and [How to get nana::paint::image from nana::paint::graphics](https://nanapro.codeplex.com/discussions/444621)
+
+and [Is it possible to make event inside event handler?](https://nanapro.codeplex.com/discussions/444121)
+
+and [nana::gui::drawing and nana::gui::API::update_window ](https://nanapro.codeplex.com/discussions/445024)
+
+*/
 	
