@@ -207,4 +207,15 @@ Result of application:
 ![proximal interoplation - Stretch the image through proximal interoplation](fit_window_proximal_interoplation.png)
 
 */
+/**\example audio_player_simple.cpp
+*/
+/**\example audio_player.cpp
+ Play an audio file asynchronously. Play the audio when a button is clicked, and it does not block the UI thread.
+
+*/
+/**\example thread-pool.cpp
+
+The signal()/wait_for_signal() provide a method to wait for tasks to finish.
+
+*/
 	
