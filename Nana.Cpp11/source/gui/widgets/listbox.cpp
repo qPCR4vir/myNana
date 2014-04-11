@@ -2553,11 +2553,6 @@ namespace nana{ namespace gui{
 					draw();
 					API::lazy_refresh();
 				}
-
-				void trigger::key_char(graph_reference graph, const eventinfo& ei)
-				{
-
-				}
 			//end class trigger
 
 			//class item_proxy
