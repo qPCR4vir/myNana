@@ -460,7 +460,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 				delete p;
 			});
 
-			return cat_proxy(get_drawer_trigger().essence(), _m_at_key(p));
+			return cat_proxy(&get_drawer_trigger().essence(), _m_at_key(p));
 		}
 
 		template<typename CatKey>
