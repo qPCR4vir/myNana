@@ -212,6 +212,7 @@ namespace nana{ namespace gui{
 				item_proxy & text(size_type col, const nana::string&);
 				item_proxy & text(size_type col, nana::string&&);
 				nana::string text(size_type col) const;
+				void icon(const nana::paint::image&);
 
 				template<typename T>
 				item_proxy & resolve_from(const T& t)
@@ -510,8 +511,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void show_header(bool);
 		bool visible_header() const;
 		void move_select(bool upwards);                     ///<Selects an item besides the current selected item.
-		void icon(const index_pair&, const nana::paint::image&);
-		nana::paint::image icon(const index_pair&) const;
+
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
