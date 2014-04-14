@@ -82,6 +82,7 @@ namespace nana{ namespace gui
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
 		void option(std::size_t);   ///< Select the text specified by index
 		nana::string text(std::size_t) const;
+		void erase(std::size_t pos);
 
 		ext_event_type& ext_event() const;
 
