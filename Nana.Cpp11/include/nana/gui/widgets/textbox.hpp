@@ -143,6 +143,11 @@ namespace nana{ namespace gui{
 		void copy() const;  ///< Copies the selected text into shared memory, such as clipboard under Windows.
 		void paste();       ///< Pastes the text from shared memory.
 		void del();
+
+		int to_int() const;
+		double to_double() const;
+		textbox& from(int);
+		textbox& from(double);
 	protected:
 		 
 		nana::string _m_caption() const override;
