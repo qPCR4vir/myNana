@@ -40,6 +40,9 @@ namespace gui
 			this->_m_set_timer();
 		}
 
+		/// Clear all installed event handler.
+		void umake_events();
+
 		void interval(unsigned value);   ///< Set the duration between calls (millisec ??)
 		unsigned interval() const;
 	private:
