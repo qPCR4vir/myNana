@@ -1194,7 +1194,7 @@ namespace nana{ namespace gui{
 					if(list_.size() <= from.cat) return false;
 
 					//this is a category, so...
-					if(from.is_category())   //  again ???
+					if(from.is_category())
 					{
 						//because the first is a category, and offs must not be 0, the category would not be candidated.
 						//the algorithm above to calc the offset item is always starting with an item.
@@ -2272,7 +2272,6 @@ namespace nana{ namespace gui{
 					make_drawer_event<events::size>(wd);
 					make_drawer_event<events::mouse_wheel>(wd);
 					make_drawer_event<events::key_down>(wd);
-				//	make_drawer_event<events::key_char>(wd);  // I want " " to check/uncheck selected items, and Ctrl-A to select all
 				}
 
 				void trigger::detached()
@@ -2526,8 +2525,6 @@ namespace nana{ namespace gui{
 					API::lazy_refresh();
 				}
 
-				// void trigger::key_char(graph_reference graph, const eventinfo& ei)
-				// {}
 				void trigger::key_down(graph_reference graph, const eventinfo& ei)
 				{
 					bool up = false;

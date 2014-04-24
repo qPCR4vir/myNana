@@ -1483,6 +1483,7 @@ namespace gui
 					                            /// The ROOT node is not operational and leave the user-node independent
 					if(cs != checkstate::unchecked )
 						cs = checkstate::checked;
+
 					//Return if thay are same.
                                         if (node->value.second.checked == cs)   return;
 
