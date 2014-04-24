@@ -2577,7 +2577,7 @@ namespace nana{ namespace gui{
 
 				bool item_proxy::empty() const
 				{
-					return (nullptr == ess_);
+					return ! ess_ ;
 				}
 
 				item_proxy & item_proxy::check(bool ck)
