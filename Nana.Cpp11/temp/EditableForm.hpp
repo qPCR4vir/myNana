@@ -266,7 +266,10 @@ class FilePickBox : public  CompoWidget
 		fb_p.add_filter(description, filetype);
         return *this;
 	}
-	virtual FilePickBox& add_filter(const nana::gui::filebox::filtres &filtres)
+            
+    using filtres = std::vector<std::pair<nana::string, nana::string>>;
+
+	virtual FilePickBox& add_filter(const filtres &filtres)
         {
             fb_p.add_filter(filtres );
             //for (auto &f : filtres)
@@ -344,7 +347,7 @@ public:
 		fb_s.add_filter(description, filetype);
         return *this;
 	}
-	OpenSaveBox& add_filter(const nana::gui::filebox::filtres &filtres) override
+	OpenSaveBox& add_filter(const filtres &filtres) override
 	{ 
 		FilePickBox::add_filter(filtres);
 		fb_o.add_filter(filtres);

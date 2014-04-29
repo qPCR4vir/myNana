@@ -321,6 +321,19 @@ namespace nana{ namespace gui{ namespace drawerbase {
 			return *this;
 		}
 
+        textbox& textbox::reset(const nana::string& newtext )
+		{
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+			{
+				editor->text(newtext);
+                //editor->set_unchanged(); 
+				API::update_window(this->handle());
+			}
+			return *this;
+
+		}
+
 		textbox& textbox::border(bool has_border)
 		{
 			if(get_drawer_trigger().border(has_border))
