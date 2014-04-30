@@ -687,29 +687,11 @@
     <Text Include="..\..\..\temp_rest.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\00-Main.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.button.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.categorize.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.combox.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.examples.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.listbox.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.menu.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.place.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.slider.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.tabbar.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.textbox.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.treebox.h" />
-    <ClInclude Include="..\..\..\docs\Doxigen\Doxigen-source\Doxygen.label.h" />
     <ClInclude Include="..\..\temp\EditableForm.hpp" />
     <ClInclude Include="..\..\temp\NoValue.h" />
     <ClInclude Include="..\..\temp\Numer.hpp" />
     <ClInclude Include="..\..\temp\Units.hpp" />
     <ClInclude Include="..\..\temp\vplace.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\02-Getting Started.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\01-Introduction.md" />
-    <None Include="..\..\..\docs\Doxigen\Doxigen-source\03-Advanced.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

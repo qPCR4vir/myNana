@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Doxygen-docs">
+      <UniqueIdentifier>{e836521b-2b94-4b89-ba9f-d75e8a264e7e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\00-Main.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.button.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.categorize.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.combox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.examples.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.label.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.listbox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.menu.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.place.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.slider.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.tabbar.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.textbox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen.treebox.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\Doxygen_label.h">
+      <Filter>Doxygen-docs</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\01-Introduction.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\02-Getting Started.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+    <None Include="..\..\..\..\docs\qPCR4vir.doxygen\Doxigen-source\03-Advanced.md">
+      <Filter>Doxygen-docs</Filter>
+    </None>
+  </ItemGroup>
+</Project>
