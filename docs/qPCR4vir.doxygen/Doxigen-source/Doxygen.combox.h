@@ -1,29 +1,9 @@
 /**\class nana::gui::combox
-This widget is a combo box which consists of a list box combined with a textbox. The list box should drop down when the user selects the drop-down arrow next to the control.
-
-	#include <nana/gui/wvl.hpp>
-	#include <nana/gui/widgets/combox.hpp>
-	int main()
-	{
-		using namespace nana::gui;	   //No Minimize button, no maximize button and sizable frame.
-		form fm(API::make_center(240, 100), appear::decorate<>());
-		fm.caption(STR("Nana C++ Library - Example"));
-		combox child(form, 20, 3, 150, 30);
-		child.push_back(STR("Item 1"));
-		child.push_back(STR("Item 2"));
-		child.push_back(STR("Item 3"));
-		child.push_back(STR("Item 4"));
-		child.push_back(STR("Item 5"));
-				; // This function will be called after changing the combox text by selecting 
-				; // a text from the drop-down list.
-		child.ext_event().selected = []{ std::cout<<"selected a new text"<<std::endl; };
-		fm.show();
-		exec();
-	}
+\brief This widget is a combo box which consists of a list box combined with a textbox. The list box should drop down when the user selects the drop-down arrow next to the control.
 
 ![](combox.png)
 
-## n Notes
+## Notes
 1. The class ext_event coming with the combox, is:
 
 		struct ext_event_type
@@ -38,4 +18,9 @@ This widget is a combo box which consists of a list box combined with a textbox.
 	providing event.
 
 2. Refer to nana::gui::listbox for details of item_renderer.
+
+
+\example example_combox.cpp
+![](combox.png)
+
 */
