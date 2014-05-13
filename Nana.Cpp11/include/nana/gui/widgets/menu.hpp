@@ -121,7 +121,7 @@ namespace nana{ namespace gui{
 		menu();										///< The default constructor. NO OTHER CONSTRUCTOR.
 		~menu();
 
-			/// Appends an item to the menu.
+			/// Appends an item to the menu. \todo return an item_proxy ??
 		void append(const nana::string& text, const event_fn_t& callback= event_fn_t());
 		void append_splitter();
 		void clear();								///< Erases all of the items.
