@@ -25,15 +25,17 @@ namespace nana{ namespace gui{
 
 			struct menu_item_type
 			{
-				//class item_proxy
-				//@brief: this class is used as parameter of menu event function.
+				/// this class is used as parameter of menu event function \todo convert it into a full item_proxy like in listbox or treebox?
 				class item_proxy
-					: noncopyable
+					//: noncopyable. Why? It is necessary? Or just not asignable only? (It compile now)
 				{
 				public:
 					item_proxy(std::size_t n, menu_item_type &);
-					void enabled(bool v);
-					bool enabled() const;
+					item_proxy& enabled(bool e);
+					bool        enabled() const;
+                    item_proxy& check_style(std::size_t index, int style);
+					item_proxy& checked(bool c);
+                    bool        checked( ) const;
 					std::size_t index() const;
 				private:
 					std::size_t index_;
@@ -122,8 +124,8 @@ namespace nana{ namespace gui{
 		~menu();
 
 			/// Appends an item to the menu. \todo return an item_proxy ??
-		void append(const nana::string& text, const event_fn_t& callback= event_fn_t());
-		void append_splitter();
+		item_proxy  append(const nana::string& text, const event_fn_t& callback= event_fn_t());
+		void        append_splitter();
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();

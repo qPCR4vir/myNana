@@ -303,6 +303,9 @@
     <ClCompile Include="..\..\temp\vplace.cpp">
       <Filter>Source Files\temp</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\element_store.cpp">
+      <Filter>Source Files\gui\detail</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\ReadME - solution config.md" />
@@ -329,9 +332,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\gui\filebox.cpp">
       <Filter>Source Files\gui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\gui\detail\element_store.cpp">
-      <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

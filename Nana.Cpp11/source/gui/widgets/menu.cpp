@@ -16,16 +16,38 @@ namespace nana{ namespace gui{
 				//@brief: this class is used as parameter of menu event function.
 					menu_item_type::item_proxy::item_proxy(std::size_t index, menu_item_type &item)
 						:index_(index), item_(item)
-					{}
+					{
+                    }
 
-					void menu_item_type::item_proxy::enabled(bool v)
+					menu_item_type::item_proxy&  menu_item_type::item_proxy::enabled(bool v)
 					{
 						item_.flags.enabled = v;
+                        return *this;
 					}
 
 					bool menu_item_type::item_proxy::enabled() const
 					{
 						return item_.flags.enabled;
+					}
+
+                    menu_item_type::item_proxy&  menu_item_type::item_proxy::check_style(std::size_t index, int style)
+				    {
+					    if(gui::menu::check_none <= style && style <= gui::menu::check_highlight)
+					    {
+						    item_.style = style;
+					    }
+                        return *this;
+				    }
+
+					menu_item_type::item_proxy&  menu_item_type::item_proxy::checked(bool v)
+					{
+						item_.flags.checked = v;
+                        return *this;
+					}
+
+					bool menu_item_type::item_proxy::checked() const
+					{
+						return item_.flags.checked;
 					}
 
 					std::size_t menu_item_type::item_proxy::index() const
@@ -1061,9 +1083,10 @@ namespace nana{ namespace gui{
 			delete impl_;
 		}
 
-		void menu::append(const nana::string& text, const menu::event_fn_t& f)
+		menu::item_proxy  menu::append(const nana::string& text, const menu::event_fn_t& f)
 		{
 			impl_->mbuilder.data().items.emplace_back(text, f);
+            return menu::item_proxy(size()-1,impl_->mbuilder.data().items.back());
 		}
 
 		void menu::append_splitter()
