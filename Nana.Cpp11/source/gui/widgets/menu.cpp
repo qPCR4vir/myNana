@@ -11,6 +11,12 @@ namespace nana{ namespace gui{
 	{
 		namespace menu
 		{
+			//A helper function to check the style parameter
+			inline bool good_checks(checks s)
+			{
+				return (checks::none <= s && s <= checks::highlight);
+			}
+
 			//struct menu_item_type
 				//class item_proxy
 				//@brief: this class is used as parameter of menu event function.
@@ -19,10 +25,10 @@ namespace nana{ namespace gui{
 					{
                     }
 
-					menu_item_type::item_proxy&  menu_item_type::item_proxy::enabled(bool v)
+					menu_item_type::item_proxy& menu_item_type::item_proxy::enabled(bool v)
 					{
 						item_.flags.enabled = v;
-                        return *this;
+						return *this;
 					}
 
 					bool menu_item_type::item_proxy::enabled() const
@@ -30,19 +36,17 @@ namespace nana{ namespace gui{
 						return item_.flags.enabled;
 					}
 
-                    menu_item_type::item_proxy&  menu_item_type::item_proxy::check_style(std::size_t index, int style)
-				    {
-					    if(gui::menu::check_none <= style && style <= gui::menu::check_highlight)
-					    {
-						    item_.style = style;
-					    }
-                        return *this;
-				    }
-
-					menu_item_type::item_proxy&  menu_item_type::item_proxy::checked(bool v)
+					menu_item_type::item_proxy&	menu_item_type::item_proxy::check_style(checks style)
 					{
-						item_.flags.checked = v;
-                        return *this;
+						if (good_checks(style))
+							item_.style = style;
+						return *this;
+					}
+
+					menu_item_type::item_proxy&	menu_item_type::item_proxy::checked(bool ck)
+					{
+						item_.flags.checked = ck;
+						return *this;
 					}
 
 					bool menu_item_type::item_proxy::checked() const
@@ -58,7 +62,7 @@ namespace nana{ namespace gui{
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type::menu_item_type()
-					:sub_menu(nullptr), style(gui::menu::check_none), hotkey(0)
+					:sub_menu(nullptr), style(checks::none), hotkey(0)
 				{
 					flags.enabled = true;
 					flags.splitter = true;
@@ -66,7 +70,7 @@ namespace nana{ namespace gui{
 				}
 
 				menu_item_type::menu_item_type(const nana::string& text, const event_fn_t& f)
-					:sub_menu(nullptr), text(text), functor(f), style(gui::menu::check_none), hotkey(0)
+					:sub_menu(nullptr), text(text), functor(f), style(checks::none), hotkey(0)
 				{
 					flags.enabled = true;
 					flags.splitter = false;
@@ -113,14 +117,14 @@ namespace nana{ namespace gui{
 							graph.shadow_rectangle(nana::rectangle(r).pare_off(1), 0xE8F0F4, 0xDBECF4, true);
 					}
 
-					if(at.checked && (at.check_style != gui::menu::check_none))
+					if(at.checked && (checks::none != at.check_style))
 					{
 						graph.rectangle(r, 0xCDD3E6, false);
 						graph.rectangle(nana::rectangle(r).pare_off(1), 0xE6EFF4, true);
 
 						nana::rectangle crook_r = r;
 						crook_r.width = 16;
-						crook_.radio(at.check_style == gui::menu::check_option);
+						crook_.radio(at.check_style == checks::option);
 						crook_.draw(graph, 0xE6EFF4, 0x0, crook_r, element_state::normal);  
 					}
 				}
@@ -172,12 +176,12 @@ namespace nana{ namespace gui{
 					this->destroy();
 				}
 
-				void check_style(std::size_t index, int style)
+				void check_style(std::size_t index, checks s)
 				{
-					if(gui::menu::check_none <= style && style <= gui::menu::check_highlight)
+					if(good_checks(s))
 					{
 						if(root_.items.size() > index)
-							root_.items[index].style = style;
+							root_.items[index].style = s;
 					}
 				}
 
@@ -186,7 +190,7 @@ namespace nana{ namespace gui{
 					if(root_.items.size() > index)
 					{
 						item_type & m = root_.items[index];
-						if(check && (m.style == gui::menu::check_option))
+						if(check && (checks::option == m.style))
 						{
 							if(index)
 							{
@@ -196,7 +200,7 @@ namespace nana{ namespace gui{
 									item_type& el = root_.items[--i];
 									if(el.flags.splitter) break;
 
-									if(el.style == gui::menu::check_option)
+									if(checks::option == el.style)
 										el.flags.checked = false;
 								}while(i);
 							}
@@ -206,7 +210,7 @@ namespace nana{ namespace gui{
 								item_type & el = root_.items[i];
 								if(el.flags.splitter) break;
 
-								if(el.style == gui::menu::check_option)
+								if(checks::option == el.style)
 									el.flags.checked = false;
 							}
 						}
@@ -857,11 +861,11 @@ namespace nana{ namespace gui{
 								//and it is checked before clicking.
 								bool call_functor = true;
 
-								if(item.style == gui::menu::check_highlight)
+								if(checks::highlight == item.style)
 								{
 									item.flags.checked = !item.flags.checked;
 								}
-								else if(gui::menu::check_option == item.style)
+								else if(checks::option == item.style)
 								{
 									if(active > 0)
 									{
@@ -873,7 +877,7 @@ namespace nana{ namespace gui{
 											menu_item_type & im = menu->items.at(i);
 											if(im.flags.splitter) break;
 
-											if(im.style == gui::menu::check_option && im.flags.checked)
+											if(checks::option == im.style && im.flags.checked)
 												im.flags.checked = false;
 										}while(i);
 									}
@@ -883,7 +887,7 @@ namespace nana{ namespace gui{
 										menu_item_type & im = menu->items.at(i);
 										if(im.flags.splitter) break;
 
-										if(im.style == gui::menu::check_option && im.flags.checked)
+										if((checks::option == im.style) && im.flags.checked)
 											im.flags.checked = false;
 									}
 
@@ -1083,10 +1087,10 @@ namespace nana{ namespace gui{
 			delete impl_;
 		}
 
-		menu::item_proxy  menu::append(const nana::string& text, const menu::event_fn_t& f)
+		auto menu::append(const nana::string& text, const menu::event_fn_t& f) -> item_proxy
 		{
 			impl_->mbuilder.data().items.emplace_back(text, f);
-            return menu::item_proxy(size()-1,impl_->mbuilder.data().items.back());
+			return item_proxy(size() - 1, impl_->mbuilder.data().items.back());
 		}
 
 		void menu::append_splitter()
@@ -1170,7 +1174,7 @@ namespace nana{ namespace gui{
 			}
 		}
 
-		void menu::check_style(std::size_t index, check_t style)
+		void menu::check_style(std::size_t index, checks style)
 		{
 			impl_->mbuilder.check_style(index, style);
 		}

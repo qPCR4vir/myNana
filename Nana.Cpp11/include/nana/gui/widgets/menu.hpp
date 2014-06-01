@@ -23,19 +23,27 @@ namespace nana{ namespace gui{
 		{
 			struct menu_type; //declaration
 
+			enum class checks
+			{
+				none,
+				option,
+				highlight
+			};
+
 			struct menu_item_type
 			{
-				/// this class is used as parameter of menu event function \todo convert it into a full item_proxy like in listbox or treebox?
+				/// This class is used as parameter of menu event function.
 				class item_proxy
-					//: noncopyable. Why? It is necessary? Or just not asignable only? (It compile now)
 				{
 				public:
 					item_proxy(std::size_t n, menu_item_type &);
-					item_proxy& enabled(bool e);
-					bool        enabled() const;
-                    item_proxy& check_style(std::size_t index, int style);
-					item_proxy& checked(bool c);
-                    bool        checked( ) const;
+					item_proxy& enabled(bool);
+					bool		enabled() const;
+
+					item_proxy&	check_style(checks);
+					item_proxy&	checked(bool);
+					bool		checked() const;
+
 					std::size_t index() const;
 				private:
 					std::size_t index_;
@@ -58,7 +66,7 @@ namespace nana{ namespace gui{
 				menu_type		*sub_menu;
 				nana::string	text;
 				event_fn_t	functor;
-				int				style;
+				checks			style;
 				paint::image	image;
 				mutable nana::char_t	hotkey;
 			};
@@ -91,7 +99,7 @@ namespace nana{ namespace gui{
 					state item_state;
 					bool enabled;
 					bool checked;
-					int check_style;
+					checks check_style;
 				};
 
 				virtual ~renderer_interface() = 0;
@@ -113,7 +121,7 @@ namespace nana{ namespace gui{
 		//let menubar access the private _m_popup() method.
 		friend class menu_accessor;
 	public:
-		enum check_t{check_none, check_option, check_highlight};
+		typedef drawerbase::menu::checks checks;
 
 		typedef drawerbase::menu::renderer_interface renderer_interface;
 		typedef drawerbase::menu::menu_item_type item_type;
@@ -123,14 +131,14 @@ namespace nana{ namespace gui{
 		menu();										///< The default constructor. NO OTHER CONSTRUCTOR.
 		~menu();
 
-			/// Appends an item to the menu. \todo return an item_proxy ??
-		item_proxy  append(const nana::string& text, const event_fn_t& callback= event_fn_t());
-		void        append_splitter();
+			/// Appends an item to the menu.
+		item_proxy	append(const nana::string& text, const event_fn_t& callback= event_fn_t());
+		void		append_splitter();
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
 		void image(std::size_t index, const paint::image& icon);
-		void check_style(std::size_t index, check_t style);
+		void check_style(std::size_t index, checks);
 		void checked(std::size_t index, bool);
 		bool checked(std::size_t index) const;
 		void enabled(std::size_t index, bool);///< Enables or disables the mouse or keyboard input for the item.
@@ -157,10 +165,10 @@ namespace nana{ namespace gui{
 
 		template<typename Renderer>
 		void renderer(const Renderer& rd)			///< Sets a user-defined renderer. (See Note 5)
-
 		{
 			renderer(rd);
 		}
+
 		void renderer(const pat::cloneable<renderer_interface>&);	///< Sets a user-defined renderer. 
 		const pat::cloneable<renderer_interface>& renderer() const;
 
