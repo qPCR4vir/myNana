@@ -15,10 +15,33 @@
 #include <cstring>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
-
+#include <nana/gui/widgets/widget.hpp>
+#include <nana/gui/dragger.hpp>
+#include <nana/traits.hpp>
 
 namespace nana{	namespace gui
 {
+	namespace place_parts
+	{
+		class splitter_interface
+		{
+		public:
+			virtual ~splitter_interface(){}
+		};
+
+		class splitter_dtrigger
+			: public drawer_trigger
+		{
+		};
+
+		template<bool IsLite>
+		class splitter
+			:	public widget_object <typename nana::meta::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
+				public splitter_interface
+		{
+		};
+	}//end namespace place_parts
+
 	//number_t is used for storing a number type variable
 	//such as integer, real and percent. Essentially, percent is a typo of real.
 	class number_t
@@ -26,13 +49,18 @@ namespace nana{	namespace gui
 	public:
 		struct kind
 		{
-			enum t{integer, real, percent};
+			enum t{none, integer, real, percent};
 		};
 
 		number_t()
-			: kind_(kind::integer)
+			: kind_(kind::none)
 		{
 			value_.integer = 0;
+		}
+
+		bool is_none() const
+		{
+			return (kind::none == kind_);
 		}
 
 		kind::t kind_of() const
@@ -86,7 +114,7 @@ namespace nana{	namespace gui
 		struct token
 		{
 			enum t{
-			div_start, div_end,
+			div_start, div_end, splitter,
 			identifier, vertical, grid, number, array,
 			weight, gap, margin,
 			equal,
@@ -122,6 +150,9 @@ namespace nana{	namespace gui
 			{
 			case '\0':
 				return token::eof;
+			case '|':
+				++sp_;
+				return token::splitter;
 			case '=':
 				++sp_;
 				return token::equal;
@@ -340,6 +371,7 @@ namespace nana{	namespace gui
 		class div_arrange;
 		class div_vertical_arrange;
 		class div_grid;
+		class div_splitter;
 
 		//this is used for answering the place resize event.
 		struct place_resize_answer;
@@ -372,7 +404,7 @@ namespace nana{	namespace gui
 			struct kind
 			{
 				enum t{
-				window, gap, fixed, percent, room
+					splitter, window, gap, fixed, percent, room
 				};
 			};
 
@@ -386,39 +418,48 @@ namespace nana{	namespace gui
 				room_t	*	room_ptr;
 			}u;
 
+			mutable event_handle destroy_handle_if_window;	//Useless if the kind is not a window
+
 			element_t(window wd)
-				: kind_of_element(kind::window)
+				:	kind_of_element(kind::window),
+					destroy_handle_if_window(0)
 			{
 				u.handle = wd;
 			}
 
 			element_t(unsigned gap)
-				: kind_of_element(kind::gap)
+				:	kind_of_element(kind::gap),
+					destroy_handle_if_window(0)
 			{
 				u.gap_value = gap;
 			}
 
 			element_t(const fixed_t& fixed)
-				: kind_of_element(kind::fixed)
+				:	kind_of_element(kind::fixed),
+					destroy_handle_if_window(0)
 			{
 				u.fixed_ptr = new fixed_t(fixed);
 			}
 
 			element_t(const percent_t& per)
-				: kind_of_element(kind::percent)
+				:	kind_of_element(kind::percent),
+					destroy_handle_if_window(0)
 			{
 				u.percent_ptr = new percent_t(per);
 			}
 
 			element_t(const room_t& rm)
-				: kind_of_element(kind::room)
+				:	kind_of_element(kind::room),
+					destroy_handle_if_window(0)
 			{
 				u.room_ptr = new room_t(rm);
 			}
 
 			element_t(const element_t& rhs)
-				: kind_of_element(rhs.kind_of_element)
+				:	kind_of_element(rhs.kind_of_element),
+					destroy_handle_if_window(rhs.destroy_handle_if_window)
 			{
+				rhs.destroy_handle_if_window = 0;
 				switch(kind_of_element)
 				{
 				case kind::fixed:
@@ -441,6 +482,8 @@ namespace nana{	namespace gui
 			    if(this != &rhs)
                 {
                     kind_of_element = rhs.kind_of_element;
+					destroy_handle_if_window = rhs.destroy_handle_if_window;
+					rhs.destroy_handle_if_window = 0;
 
                     switch(kind_of_element)
                     {
@@ -463,6 +506,7 @@ namespace nana{	namespace gui
 
 			~element_t()
 			{
+				API::umake_event(destroy_handle_if_window);
 				switch(kind_of_element)
 				{
 				case kind::fixed:
@@ -552,15 +596,17 @@ namespace nana{	namespace gui
 
 		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
-		void _m_make_destroy(window wd)
+		event_handle _m_make_destroy(window wd)
 		{
-			API::make_event<events::destroy>(wd, element_destroy_handler(this));
+			return API::make_event<events::destroy>(wd, element_destroy_handler(this));
 		}
 
 		field_t& operator<<(window wd)
 		{
+			if(API::empty_window(wd))
+				throw std::invalid_argument("Place: An invalid window handle.");
 			elements.push_back(wd);
-			_m_make_destroy(wd);
+			elements.back().destroy_handle_if_window = _m_make_destroy(wd);
 			return *this;
 		}
 
@@ -573,14 +619,14 @@ namespace nana{	namespace gui
 		field_t& operator<<(const fixed_t& fx)
 		{
 			elements.push_back(fx);
-			_m_make_destroy(fx.first);
+			elements.back().destroy_handle_if_window = _m_make_destroy(fx.first);
 			return *this;
 		}
 
 		field_t& operator<<(const percent_t& pcnt)
 		{
 			elements.push_back(pcnt);
-			_m_make_destroy(pcnt.first);
+			elements.back().destroy_handle_if_window = _m_make_destroy(pcnt.first);
 			return *this;
 		}
 
@@ -592,7 +638,7 @@ namespace nana{	namespace gui
 			if(x.second.second == 0)
 				x.second.second = 1;
 			elements.push_back(x);
-			_m_make_destroy(r.first);
+			elements.back().destroy_handle_if_window = _m_make_destroy(r.first);
 			return *this;
 		}
 
@@ -650,7 +696,7 @@ namespace nana{	namespace gui
 		struct kind
 		{
 			enum t{
-			arrange, vertical_arrange, grid
+			arrange, vertical_arrange, grid, splitter
 			};
 		};
 
@@ -660,10 +706,23 @@ namespace nana{	namespace gui
 		division(kind::t k, std::string& n)
 			:	kind_of_division(k),
 				margin_for_all(true),
-				field(0)
+				field(0),
+				div_next(0),
+				div_owner(0)
 		{
 			name.swap(n);
 		}
+
+		division(kind::t k, const std::string& n)
+			:	kind_of_division(k),
+				name(n),
+				margin_for_all(true),
+				field(0),
+				div_next(0),
+				div_owner(0)
+		{
+		}
+
 
 		virtual ~division()
 		{
@@ -679,12 +738,12 @@ namespace nana{	namespace gui
 
 		bool is_fixed() const
 		{
-			return ((weight.kind_of() == number_t::kind::integer) && (weight.integer() != 0));
+			return (weight.kind_of() == number_t::kind::integer);
 		}
 
 		bool is_percent() const
 		{
-			return ((weight.kind_of() == number_t::kind::percent) && (weight.real() != 0));
+			return (weight.kind_of() == number_t::kind::percent);
 		}
 
 		//return the fixed pixels and adjustable items.
@@ -836,8 +895,19 @@ namespace nana{	namespace gui
 			return r;
 		}
 
-		virtual void collocate() = 0;
+		division * find_last_adjustable()
+		{
+			for(std::vector<division*>::reverse_iterator i = children.rbegin(); i != children.rend(); ++i)
+			{
+				if (false == (*i)->is_fixed())
+					return (*i);
+			}
+			return 0;
+		}
 
+		//Collocate the division and its children divisions,
+		//The window parameter is specified for the window which the place object binded.
+		virtual void collocate(window) = 0;
 	public:
 		kind::t kind_of_division;
 		std::string name;
@@ -849,6 +919,7 @@ namespace nana{	namespace gui
 		bool margin_for_all;	//the first element stands for all edge if margin_for_all is true.
 		std::vector<number_t> margin;
 		field_impl * field;
+		division * div_next, *div_owner;
 	};
 
 	/// Horizontal
@@ -860,7 +931,7 @@ namespace nana{	namespace gui
 			: division(kind::arrange, name)
 		{}
 
-		virtual void collocate()
+		virtual void collocate(window wd)
 		{
 			const nana::rectangle area = margin_area();
 
@@ -903,9 +974,19 @@ namespace nana{	namespace gui
 						adj_px = adjustable_pixels;
 				}
 
+				int right = static_cast<int>(left + adj_px);
+				child->field_area.width = static_cast<unsigned>(right - child->field_area.x);
+				if (gap_size && (child->field_area.height > gap_size))
+					child->field_area.width -= gap_size;
+
 				left += adj_px;
-				child->field_area.width = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
-				child->collocate();	/// The child div have full position. Now we can collocate  inside it the child fields and child-div. 
+				child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div. 
+			}
+
+			division* last_div = find_last_adjustable();
+			if (last_div && (left < this->field_area.width))
+			{
+				last_div->field_area.height += static_cast<unsigned>(field_area.width - left);
 			}
 
 			if(field)
@@ -943,6 +1024,8 @@ namespace nana{	namespace gui
 						API::move_window(el.u.room_ptr->first, x, area.y, adj_px, area.height);
 						left += adjustable_pixels;
 						break;
+					default:
+						break;
 					}
 				}
 
@@ -962,7 +1045,7 @@ namespace nana{	namespace gui
 			: division(kind::vertical_arrange, name)
 		{}
 
-		virtual void collocate()
+		virtual void collocate(window wd)
 		{
 			nana::rectangle area = margin_area();
 			std::pair<unsigned, std::size_t> pair = fixed_pixels(kind::vertical_arrange);	/// Calcule in first the summe of all fixed fields in this div and in all child div. In second count unproseced fields
@@ -1007,7 +1090,13 @@ namespace nana{	namespace gui
 
 				top += adj_px;
 				child->field_area.height = static_cast<unsigned>(adj_px) - (static_cast<unsigned>(adj_px) > gap_size ? gap_size : 0);
-				child->collocate();
+				child->collocate(wd);
+			}
+
+			division* last_div = find_last_adjustable();
+			if (last_div && (top < this->field_area.height))
+			{
+				last_div->field_area.height += static_cast<unsigned>(field_area.height - top);
 			}
 
 			if(field)
@@ -1042,6 +1131,8 @@ namespace nana{	namespace gui
 						API::move_window(el.u.room_ptr->first, r.x, r.y, r.width, adj_px);
 						top += adjustable_pixels;
 						break;
+					default:
+						break;
 					}
 				}
 
@@ -1064,7 +1155,7 @@ namespace nana{	namespace gui
 			dimension.first = dimension.second = 0;
 		}
 
-		virtual void collocate()
+		virtual void collocate(window wd)
 		{
 			if(0 == field)
 				return;
@@ -1266,6 +1357,147 @@ namespace nana{	namespace gui
 		std::pair<unsigned, unsigned> dimension;
 	};//end class div_grid
 
+
+	class place::implement::div_splitter
+		: public division
+	{
+		struct div_block
+		{
+			division * div;
+			int	pixels;
+			double		scale;
+
+			div_block(division* d, int px)
+				: div(d), pixels(px)
+			{}
+		};
+	public:
+		div_splitter()
+			:	division(kind::splitter, std::string()),
+				splitter_cursor_(gui::cursor::arrow),
+				leaf_left_(0),
+				leaf_right_(0),
+				pause_move_collocate_(false)
+		{
+			this->weight.assign(4);
+		}
+
+		void leaf_left(division * d)
+		{
+			leaf_left_ = d;
+		}
+
+		void leaf_right(division * d)
+		{
+			leaf_right_ = d;
+		}
+
+		void direction(bool horizontal)
+		{
+			splitter_cursor_ = (horizontal ? cursor::size_we : cursor::size_ns);
+		}
+	private:
+		void collocate(window wd)
+		{
+			if (splitter_.empty())
+			{
+				splitter_.create(wd);
+				splitter_.cursor(splitter_cursor_);
+
+				dragger_.trigger(splitter_);
+				splitter_.make_event<events::mouse_down>(*this, &div_splitter::_m_ms_down);
+
+				splitter_.make_event<events::mouse_move>(*this, &div_splitter::_m_ms_move);
+			}
+
+			nana::rectangle restrict_area = leaf_left_->field_area;
+			if (nana::gui::cursor::size_we == splitter_cursor_)
+			{
+				restrict_area.width += field_area.width;
+				restrict_area.width += leaf_right_->field_area.width;
+			}
+			else
+			{
+				restrict_area.height += field_area.height;
+				restrict_area.height += leaf_right_->field_area.height;
+			}
+
+			dragger_.target(splitter_, restrict_area, (gui::cursor::size_ns == splitter_cursor_ ? nana::arrange::vertical : nana::arrange::horizontal));
+
+
+			if (false == pause_move_collocate_)
+				splitter_.move(this->field_area);
+		}
+
+		void _m_ms_down(const eventinfo& ei)
+		{
+			if (false == ei.mouse.left_button)
+				return;
+
+			begin_point_ = splitter_.pos();
+
+			unsigned (nana::rectangle::* px_ptr) = &nana::rectangle::width;
+
+			left_pos_ = leaf_left_->field_area.x;
+			right_pos_ = leaf_right_->field_area.x + leaf_right_->field_area.width;
+			if (nana::gui::cursor::size_we != splitter_cursor_)
+			{
+				left_pos_ = leaf_left_->field_area.y;
+				right_pos_ = leaf_right_->field_area.y + leaf_right_->field_area.height;
+				px_ptr = &nana::rectangle::height;
+			}
+
+			left_pixels_ = leaf_left_->field_area.*px_ptr;
+			right_pixels_ = leaf_right_->field_area.*px_ptr;	
+		}
+
+		void _m_ms_move(const eventinfo& ei)
+		{
+			if (false == ei.mouse.left_button)
+				return;
+
+			int delta = splitter_.pos().x - begin_point_.x;
+			unsigned (nana::rectangle::* px_ptr) = &nana::rectangle::width;
+			if (nana::gui::cursor::size_we != splitter_cursor_)
+			{
+				delta = splitter_.pos().y - begin_point_.y;
+				px_ptr = &nana::rectangle::height;
+			}
+
+			int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
+
+			int w = static_cast<int>(left_pixels_) + delta;
+			if (w > total_pixels)
+				w = total_pixels;
+			else if (w < 0)
+				w = 0;
+
+			leaf_left_->weight.assign_percent(100.0 * w / div_owner->field_area.*px_ptr);
+
+			w = static_cast<int>(right_pixels_) - delta;
+			if (w > total_pixels)
+				w = total_pixels;
+			else if (w < 0)
+				w = 0;
+
+			leaf_right_->weight.assign_percent(100.0 * w / div_owner->field_area.*px_ptr);
+
+			pause_move_collocate_ = true;
+			div_owner->collocate(splitter_.parent());
+			pause_move_collocate_ = false;		
+		}
+	private:
+		nana::gui::cursor::t	splitter_cursor_;
+		place_parts::splitter<true>	splitter_;
+		nana::point	begin_point_;
+		division * leaf_left_;
+		division * leaf_right_;
+		int			left_pos_, right_pos_;
+		unsigned	left_pixels_, right_pixels_;
+		dragger	dragger_;
+		bool	pause_move_collocate_;	//A flag represents whether do move when collocating.
+	};//end class div_splitter
+
 	place::implement::~implement()
 	{
 		API::umake_event(event_size_handle);
@@ -1313,8 +1545,28 @@ namespace nana{	namespace gui
 			bool exit_for = false;
 			switch(tk)
 			{
+			case token::splitter:
+				if (!children.empty() && (division::kind::splitter != children.back()->kind_of_division))	//Ignore the splitter when there is not a division.
+				{
+					div_splitter* splitter = new div_splitter;
+
+					splitter->leaf_left(children.back());
+					children.back()->div_next = splitter;
+					children.push_back(splitter);
+				}
+				break;
 			case token::div_start:
-				children.push_back(scan_div(tknizer));
+				{
+					division* div = scan_div(tknizer);
+
+					if (children.size())
+					{
+						children.back()->div_next = div;
+						if (division::kind::splitter == children.back()->kind_of_division)
+							dynamic_cast<div_splitter&>(*children.back()).leaf_right(div);
+					}
+					children.push_back(div);
+				}
 				break;
 			case token::vertical:
 			case token::grid:
@@ -1426,6 +1678,27 @@ namespace nana{	namespace gui
 		div->weight = weight;
 		div->gap = gap;
 		div->field = field;		//attach the field to the division
+
+		if (children.size() && (division::kind::splitter == children.back()->kind_of_division))
+		{
+			//Erase the splitter if the last one is a splitter.
+			delete children.back();
+			children.pop_back();
+
+			if (children.size())
+				children.back()->div_next = 0;
+		}
+
+		for (std::vector<division*>::iterator i = children.begin(); i != children.end(); ++i)
+		{
+			division* child = *i;
+			child->div_owner = div;
+			if (division::kind::splitter == child->kind_of_division)
+			{
+				dynamic_cast<div_splitter&>(*child).direction(div_type != token::vertical);
+			}
+		}
+
 		div->children.swap(children);
 		div->margin_for_all = margin_for_all;
 		div->margin.swap(margin);
@@ -1450,7 +1723,7 @@ namespace nana{	namespace gui
 				if(impl->root_division)
 				{
 					impl->root_division->field_area = API::window_size(ei.window);
-					impl->root_division->collocate();
+					impl->root_division->collocate(ei.window);
 				}
 			}
 		};
@@ -1531,7 +1804,7 @@ namespace nana{	namespace gui
 			if(impl_->root_division && impl_->window_handle)
 			{
 				impl_->root_division->field_area = API::window_size(impl_->window_handle);
-				impl_->root_division->collocate();
+				impl_->root_division->collocate(impl_->window_handle);
 
 				for(std::map<std::string, implement::field_impl*>::iterator i = impl_->fields.begin(), end = impl_->fields.end(); i != end; ++i)
 				{

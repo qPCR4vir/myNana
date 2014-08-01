@@ -408,9 +408,20 @@ namespace nana{ namespace gui{
 									//!comp(x, y) != comp(x, y)
 									auto & mx = cat.items[x];
 									auto & my = cat.items[y];
-									auto & a = mx.texts[sorted_index_];
-									auto & b = my.texts[sorted_index_];
-									return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
+									if (mx.texts.size() <= sorted_index_ || my.texts.size() <= sorted_index_)
+									{
+										nana::string a;
+										if (mx.texts.size() > sorted_index_)
+											a = mx.texts[sorted_index_];
+
+										nana::string b;
+										if (my.texts.size() > sorted_index_)
+											b = my.texts[sorted_index_];
+
+										return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
+									}
+
+									return weak_ordering_comp(mx.texts[sorted_index_], mx.anyobj, my.texts[sorted_index_], my.anyobj, sorted_reverse_);
 								});
 						}
 					}
@@ -419,8 +430,24 @@ namespace nana{ namespace gui{
 						for(auto & cat: list_)
 						{
 							std::sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
-									auto & a = cat.items[x].texts[sorted_index_];
-									auto & b = cat.items[y].texts[sorted_index_];
+									auto & item_x = cat.items[x];
+									auto & item_y = cat.items[y];
+
+									if (item_x.texts.size() <= sorted_index_ || item_y.texts.size() <= sorted_index_)
+									{
+										nana::string a;
+										if (item_x.texts.size() > sorted_index_)
+											a = item_x.texts[sorted_index_];
+
+										nana::string b;
+										if (item_y.texts.size() > sorted_index_)
+											b = item_y.texts[sorted_index_];
+
+										return (sorted_reverse_ ? a > b : a < b);
+									}
+
+									auto & a = item_x.texts[sorted_index_];
+									auto & b = item_y.texts[sorted_index_];
 									return (sorted_reverse_ ? a > b : a < b);
 								});
 						}
@@ -553,6 +580,14 @@ namespace nana{ namespace gui{
 					return true;
 				}
 
+				size_type index_by_display_order(size_type cat, size_type order_pos) const
+				{
+					auto & catobj = *_m_at(cat);
+					if (order_pos >= catobj.sorted.size())
+						throw std::out_of_range("listbox: Invalid item position.");
+
+					return catobj.sorted[order_pos];
+				}
 
 				category_t::container::value_type& at(const index_pair& pos)
 				{
@@ -1345,7 +1380,7 @@ namespace nana{ namespace gui{
 																//if where == lister || where == checker, 'second' indicates the offset to the scroll offset_y which stands for the first item displayed in lister.
 																//if where == unknown, 'second' ignored.
 
-				struct
+				struct scroll_part
 				{
 					static const unsigned scale = 16;
 					int offset_x;
@@ -1627,6 +1662,13 @@ namespace nana{ namespace gui{
 				{
 					if(header.visible())
 					{
+						if (lister.wd_ptr()->borderless())
+						{
+							r = graph->size();
+							r.height = header_size;
+							return !r.empty_size();
+						}
+
 						const unsigned ex_width = 4 + (scroll.v.empty() ? 0 : scroll.scale - 1);
 						if(graph->width() > ex_width)
 						{
@@ -1642,14 +1684,27 @@ namespace nana{ namespace gui{
 
 				bool rect_lister(nana::rectangle& r) const
 				{
-					unsigned width = 4 + (scroll.v.empty() ? 0 : scroll.scale - 1);
-					unsigned height = 2 + (scroll.h.empty() ? 0 : scroll.scale) + (header.visible() ? header_size : 0);
+					unsigned head_pixels = (header.visible() ? header_size : 0);
+					unsigned width = (scroll.v.empty() ? 0 : scroll.scale - 1);
+					unsigned height = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
+
+					if (!lister.wd_ptr()->borderless())
+					{
+						width += 4;
+						height += 2;
+
+						r.x = 2;
+						r.y = head_pixels + 1;
+					}
+					else
+					{
+						r.x = 0;
+						r.y = head_pixels;
+					}
 
 					nana::size gsz = graph->size();
 					if(gsz.width <= width || gsz.height <= height) return false;
 
-					r.x = 2;
-					r.y = (header.visible() ? header_size + 1 : 1);
 					r.width = gsz.width - width;
 					r.height = gsz.height - height;
 					return true;
@@ -2243,6 +2298,9 @@ namespace nana{ namespace gui{
 
 				void trigger::_m_draw_border()
 				{
+					if (API::widget_borderless(*essence_->lister.wd_ptr()))
+						return;
+
 					auto & graph = *essence_->graph;
 					auto size = graph.size();
 					//Draw Border
@@ -2250,7 +2308,7 @@ namespace nana{ namespace gui{
 					graph.line(1, 1, 1, size.height - 2, 0xFFFFFF);
 					graph.line(size.width - 2, 1, size.width - 2, size.height - 2, 0xFFFFFF);
 
-					if((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
+					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
 						graph.rectangle(size.width - 1 - essence_->scroll.scale, size.height - 1 - essence_->scroll.scale, essence_->scroll.scale, essence_->scroll.scale, nana::gui::color::button_face, true);
 				}
 
@@ -2917,6 +2975,11 @@ namespace nana{ namespace gui{
 						throw std::runtime_error("listbox.back() no element in the container.");
 
 					return item_proxy(ess_, index_pair(pos_, cat_->items.size() - 1));
+				}
+
+				size_type cat_proxy::index_by_display_order(size_type order_pos) const
+				{
+					return ess_->lister.index_by_display_order(pos_, order_pos);
 				}
 
 				size_type cat_proxy::size() const
