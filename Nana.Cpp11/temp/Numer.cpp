@@ -35,7 +35,7 @@ NumerUpDown::NumerUpDown (  widget &parent_,      const string &label,
          _num.make_event <events::focus>([&](const eventinfo& ei)
                 {  
                     std::cerr << std::endl<< (ei.focus.getting ? "geting ":"lossing ") << "Focus: , NumerUpDown: ";
-                    std::wcerr<< label << std::endl;
+                    std::wcerr<< _label.caption() << std::endl;
                     if ( !ei.focus.getting )
                     {
                         std::cerr   << "And validating: " << _val << "Cap:" << std::string(charset(_num.caption ()));
