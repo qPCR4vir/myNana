@@ -46,8 +46,7 @@ void CUnit::add()
             std::cerr << std::endl << "Unable to define " << base << " reverting the non-lineal definition of "<< name ; 
             return;
         }
-        conv.s=-conv.s/conv.c; 
-        conv.c=1/conv.c;
+        conv.invert(); 
         name.swap(base);           
     } 
     if (unit_exist(base))   // La base ya existe
@@ -77,8 +76,8 @@ void CUnit::add()
                     CUnit(base,1,base,magnitude);// Creo Primero la base, como base
 
         // Luego la nueva Unit
+    error=false ;
     _Units[name]=*this;
     _Magnitudes[magnitude].insert(name);
 
-    error=false ;
 }
