@@ -10,8 +10,10 @@
 
 
 class CUnit;
- std::ostream& operator<<( std::ostream& o, const CUnit& u);
 
+std::ostream& operator<<( std::ostream& o, const CUnit& u);
+
+/// Converting Units (not necessarily linearly)
 class CUnit
 {
   public:   
@@ -21,31 +23,33 @@ class CUnit
     typedef std::map<unit_name     , CUnit      >   units           ;
     typedef std::map<magnitude_name, magnitude_t>   magnitudes      ;
     typedef std::function <double(double)>          nonLinealFunction;
+
+    /// An option between a linear or a general function to actually perform the conversion
     struct conversion
     {
-        double              c, s;
-        bool                lineal;
-        nonLinealFunction   nlc;
-        conversion()   :c(1),s(0)  , lineal(true)
+        double              c{ 1.0 }, s{ 0.0 };
+        bool                linear{ true };
+        nonLinealFunction   nlc{ _identity } ;
+        conversion() 
         {};
-        conversion(double c_  , double s_=0)            :c(c_),s(s_), nlc(_identity), lineal(true)
+        conversion(double c_  , double s_=0)            :c(c_),s(s_) 
         {};
-        conversion(double c_  , double s_ ,const nonLinealFunction& nlc_):c(c_),s(s_), nlc(nlc_)    , lineal(false) 
+        conversion(double c_, double s_,const nonLinealFunction& nlc_):c(c_),s(s_), nlc(nlc_)  , linear(false) 
         {};
         conversion operator*(const conversion& rc) const
         { 
-            if (lineal && rc.lineal)
+            if (linear && rc.linear)
                 return conversion (rc.c*c, c*rc.s+s);
-            if (lineal )
+            if (linear )
                 return conversion (rc.c*c, c*rc.s+s, rc.nlc);
-            if (rc.lineal )
+            if (rc.linear )
                 return conversion (c,s, [rc,this](double b){return nlc(rc.c*b+rc.s);});
 
             return conversion (c,s, [rc,this](double b){return nlc(rc.c*rc.nlc(b)+rc.s);});
         }
         conversion inverted() const
         { 
-            assert (lineal);
+            assert (linear);
             return conversion (1/c, -s/c);
         }
         conversion invert() 
@@ -56,15 +60,15 @@ class CUnit
         }
         double operator()(double ori_val) const
         {
-            if (lineal)
+            if (linear)
                 return c*ori_val+s;
             return c*nlc(ori_val)+s;
         }
     } ;
-    conversion      conv;
-    unit_name       name, base;
-    magnitude_name  magnitude;
-    bool            error;
+    conversion      conv ;
+    unit_name       name, base{name};
+    magnitude_name  magnitude ;
+    bool            error{true};
     static const magnitudes& MagnitudesDic() {return _Magnitudes;}
     static const units     & UnitsDic     () {return _Units     ;}
 
