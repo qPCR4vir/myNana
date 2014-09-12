@@ -42,7 +42,6 @@ namespace nana{ namespace gui{
 				mutable extra_evtbase_t	extra_evtbase;
 
 				drawer();
-				bool border(bool);
 				text_editor * editor();
 				const text_editor * editor() const;
 				void set_accept(nana::functor<bool(nana::char_t)>&);
@@ -63,12 +62,11 @@ namespace nana{ namespace gui{
 				void typeface_changed(graph_reference);
 			private:
 				void _m_text_area(unsigned width, unsigned height);
-				void _m_draw_border(graph_reference);
+				void _m_draw_border(graph_reference, nana::color_t bgcolor);
 			private:
 				nana::gui::widget*	widget_;
 				struct status_type
 				{
-					bool border;
 					bool has_focus;		//Indicates whether it has the keyboard focus
 				}status_;
 
@@ -94,13 +92,17 @@ namespace nana{ namespace gui{
 		void load(const nana::char_t* file);
 		void store(const nana::char_t* file) const;
 		void store(const nana::char_t* file, nana::unicode::t encoding) const;
+		textbox& reset(const nana::string& newtext = STR(""));
 
 		///@brief	The file of last store operation.
 		///@return	The filename
-		std::string filename() const;
+		nana::string filename() const;
 
 		/// Determine whether the text was edited.
 		bool edited() const;
+
+		/// Reset the edited flag to false manually
+		textbox& edited_reset();
 
 		/// Determine whether the changed text has been saved into the file.
 		bool saved() const;
@@ -110,10 +112,9 @@ namespace nana{ namespace gui{
 		textbox& append(const nana::string&, bool at_caret);
 
 		/// Determine whether the text mode is line wrapped
-		bool textbox::line_wrapped() const;
+		bool line_wrapped() const;
 		textbox& line_wrapped(bool);
 
-		textbox& border(bool);
 		bool multi_lines() const;
 		textbox& multi_lines(bool);
 		bool editable() const;

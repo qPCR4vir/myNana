@@ -21,7 +21,8 @@
 #include <sstream>
 #include <algorithm>
 
-namespace nana{ namespace gui{
+namespace nana
+{
 	namespace drawerbase
 	{
 		namespace listbox
@@ -341,7 +342,6 @@ namespace nana{ namespace gui{
 			{
 			public:
 				typedef std::list<category_t> container;
-				mutable extra_events ext_event;
 
 				std::function<std::function<bool(const nana::string&, nana::any*,
 								const nana::string&, nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
@@ -362,12 +362,12 @@ namespace nana{ namespace gui{
 				void bind(essence_t* ess, widget& wd)
 				{
 					ess_ = ess;
-					widget_ = dynamic_cast<gui::listbox*>(&wd);
+					widget_ = dynamic_cast<nana::listbox*>(&wd);
 					if(nullptr == widget_)
 						throw std::bad_cast();
 				}
 
-				gui::listbox* wd_ptr() const
+				nana::listbox* wd_ptr() const
 				{
 					return widget_;
 				}
@@ -836,12 +836,12 @@ namespace nana{ namespace gui{
 					return (good(cat) ? _m_at(cat)->expand : false);
 				}
 
-				std::list<category_t>& cat_container()
+				container& cat_container()
 				{
 					return list_;
 				}
 
-				const std::list<category_t>& cat_container() const
+				const container& cat_container() const
 				{
 					return list_;
 				}
@@ -872,7 +872,7 @@ namespace nana{ namespace gui{
 					return n;
 				}
 
-				void check_for_all(bool chk)
+				void check_for_all(bool ck)
 				{
 					index_pair pos;
 					for(auto & cat : list_)
@@ -880,10 +880,12 @@ namespace nana{ namespace gui{
 						pos.item = 0;
 						for(auto & m : cat.items)
 						{
-							if(m.flags.checked != chk)
+							if(m.flags.checked != ck)
 							{
-								m.flags.checked = chk;
-								ext_event.checked(item_proxy(ess_, pos), chk);
+								m.flags.checked = ck;
+
+								arg_listbox arg{ item_proxy{ess_, pos}, ck};
+								wd_ptr()->events().checked.emit(arg);
 							}
 							++pos.item;
 						}
@@ -935,7 +937,9 @@ namespace nana{ namespace gui{
 							{
 								changed = true;
 								m.flags.selected = sel;
-								ext_event.selected(item_proxy(ess_, i), sel);
+
+								arg_listbox arg{ item_proxy(ess_, i), sel };
+								wd_ptr()->events().selected.emit(arg);
 
 								if (m.flags.selected)
 									last_selected = i;
@@ -1058,7 +1062,10 @@ namespace nana{ namespace gui{
 							{
 								select_for_all(false);
 								at(next_selected).flags.selected = true;
-								ext_event.selected(item_proxy(ess_, index_pair(next_selected.cat, absolute(next_selected))), true);
+
+								arg_listbox arg{ item_proxy(ess_, index_pair(next_selected.cat, absolute(next_selected))), true };
+								wd_ptr()->events().selected.emit(arg);
+
 								last_selected = next_selected;
 							}
 							break;
@@ -1088,17 +1095,20 @@ namespace nana{ namespace gui{
 					return true;
 				}
 
-				bool categ_checked(size_type cat, bool chk)
+				bool categ_checked(size_type cat, bool ck)
 				{
 					bool changed = false;
 					auto & items = _m_at(cat)->items;
 					size_type index = 0;
 					for(auto & m : items)
 					{
-						if(m.flags.checked != chk)
+						if(m.flags.checked != ck)
 						{
-							m.flags.checked = chk;
-							ext_event.checked(item_proxy(ess_, index_pair(cat, index)), chk);
+							m.flags.checked = ck;
+
+							arg_listbox arg{ item_proxy(ess_, index_pair(cat, index)), ck};
+							wd_ptr()->events().checked.emit(arg);
+
 							changed = true;
 						}
 						++index;
@@ -1133,7 +1143,9 @@ namespace nana{ namespace gui{
 						if(m.flags.selected != sel)
 						{
 							m.flags.selected = sel;
-							ext_event.selected(item_proxy(ess_, pos), sel);
+
+							arg_listbox arg{ item_proxy(ess_, pos), sel };
+							wd_ptr()->events().selected.emit(arg);
 							changed = true;
 
 							if (sel)
@@ -1353,7 +1365,7 @@ namespace nana{ namespace gui{
 				index_pair last_selected;
 			private:
 				essence_t * ess_;
-				nana::gui::listbox * widget_;
+				nana::listbox * widget_;
 				std::size_t sorted_index_;		///< The index of the column used to sort
 				bool	resort_;
 				bool	sorted_reverse_;
@@ -1396,8 +1408,8 @@ namespace nana{ namespace gui{
 					int offset_x;
 					index_pair offset_y;	//cat stands for category, item stands for item. "item == npos" means that is a category.
 
-					nana::gui::scroll<true> v;
-					nana::gui::scroll<false> h;
+					nana::scroll<true> v;
+					nana::scroll<false> h;
 				}scroll;
 
 				essence_t()
@@ -1546,8 +1558,12 @@ namespace nana{ namespace gui{
 						{
 							scroll.h.create(wd, r);
 							API::take_active(scroll.h.handle(), false, wd);
-							scroll.h.make_event<events::mouse_move>(*this, &essence_t::_m_answer_scroll);
-							scroll.h.make_event<events::mouse_up>(*this, &essence_t::_m_answer_scroll);
+							scroll.h.events().mouse_move.connect([this](const nana::arg_mouse& arg){
+								_m_answer_scroll(arg);
+							});
+							scroll.h.events().mouse_up.connect([this](const nana::arg_mouse& arg){
+								_m_answer_scroll(arg);
+							});
 						}
 						else
 							scroll.h.move(r.x, r.y, r.width, r.height);
@@ -1562,8 +1578,15 @@ namespace nana{ namespace gui{
 						{
 							scroll.v.create(wd, r);
 							API::take_active(scroll.v.handle(), false, wd);
-							scroll.v.make_event<events::mouse_move>(*this, &essence_t::_m_answer_scroll);
-							scroll.v.make_event<events::mouse_up>(*this, &essence_t::_m_answer_scroll);
+							scroll.v.events().mouse_move.connect([this](const ::nana::arg_mouse& arg)
+							{
+								_m_answer_scroll(arg);
+							});
+
+							scroll.v.events().mouse_up.connect([this](const ::nana::arg_mouse& arg)
+							{
+								_m_answer_scroll(arg);
+							});
 						}
 						else
 							scroll.v.move(r.x, r.y, r.width, r.height);
@@ -1754,12 +1777,12 @@ namespace nana{ namespace gui{
 					}
 				}
 			private:
-				void _m_answer_scroll(const eventinfo& ei)
+				void _m_answer_scroll(const arg_mouse& arg)
 				{
-					if(ei.identifier == events::mouse_move::identifier && ei.mouse.left_button == false) return;
+					if(arg.evt_code == event_code::mouse_move && arg.left_button == false) return;
 
 					bool update = false;
-					if(ei.window == scroll.v.handle())
+					if(arg.window_handle == scroll.v.handle())
 					{
 						index_pair item;
 						if(lister.forward(item, scroll.v.value(), item))
@@ -1771,7 +1794,7 @@ namespace nana{ namespace gui{
 							}
 						}
 					}
-					else if(ei.window == scroll.h.handle())
+					else if(arg.window_handle == scroll.h.handle())
 					{
 						if(scroll.offset_x != static_cast<int>(scroll.h.value()))
 						{
@@ -2319,7 +2342,7 @@ namespace nana{ namespace gui{
 					graph.line(size.width - 2, 1, size.width - 2, size.height - 2, 0xFFFFFF);
 
 					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle(size.width - 1 - essence_->scroll.scale, size.height - 1 - essence_->scroll.scale, essence_->scroll.scale, essence_->scroll.scale, nana::gui::color::button_face, true);
+						graph.rectangle(size.width - 1 - essence_->scroll.scale, size.height - 1 - essence_->scroll.scale, essence_->scroll.scale, essence_->scroll.scale, nana::color::button_face, true);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
@@ -2329,17 +2352,6 @@ namespace nana{ namespace gui{
 
 					essence_->lister.bind(essence_, widget);
 					widget.background(0xFFFFFF);
-
-					window wd = essence_->lister.wd_ptr()->handle();
-					using namespace API::dev;
-					make_drawer_event<events::mouse_move>(wd);
-					make_drawer_event<events::mouse_leave>(wd);
-					make_drawer_event<events::mouse_down>(wd);
-					make_drawer_event<events::mouse_up>(wd);
-					make_drawer_event<events::dbl_click>(wd);
-					make_drawer_event<events::size>(wd);
-					make_drawer_event<events::mouse_wheel>(wd);
-					make_drawer_event<events::key_down>(wd);
 				}
 
 				void trigger::detached()
@@ -2359,7 +2371,7 @@ namespace nana{ namespace gui{
 					draw();
 				}
 
-				void trigger::mouse_move(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
 					int update = 0; //0 = nothing, 1 = update, 2 = refresh
 					if(essence_->ptr_state == essence_t::state_t::pressed)
@@ -2367,7 +2379,7 @@ namespace nana{ namespace gui{
 						if(essence_->pointer_where.first == essence_t::where_t::header)
 						{
 							essence_->ptr_state = essence_t::state_t::grabed;
-							nana::point pos(ei.mouse.x, ei.mouse.y);
+							nana::point pos = arg.pos;
 							essence_->widget_to_header(pos);
 							drawer_header_->grab(pos, true);
 							API::capture_window(essence_->lister.wd_ptr()->handle(), true);
@@ -2377,14 +2389,14 @@ namespace nana{ namespace gui{
 
 					if(essence_->ptr_state == essence_t::state_t::grabed)
 					{
-						nana::point pos(ei.mouse.x, ei.mouse.y);
+						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
 
 						nana::rectangle r;
 						essence_->rect_header(r);
 						update = drawer_header_->grab_move(r, pos);
 					}
-					else if(essence_->calc_where(ei.mouse.x, ei.mouse.y))
+					else if(essence_->calc_where(arg.pos.x, arg.pos.y))
 					{
 						essence_->ptr_state = essence_t::state_t::highlighted;
 						update = 2;
@@ -2396,7 +2408,7 @@ namespace nana{ namespace gui{
 						nana::rectangle r;
 						if(essence_->rect_header(r))
 						{
-							if(drawer_header_->mouse_spliter(r, ei.mouse.x))
+							if(drawer_header_->mouse_spliter(r, arg.pos.x))
 							{
 								set_spliter = true;
 								essence_->lister.wd_ptr()->cursor(cursor::size_we);
@@ -2425,7 +2437,7 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::mouse_leave(graph_reference graph, const eventinfo&)
+				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
 				{
 					typedef essence_t::state_t state_t;
 					if((essence_->pointer_where.first != essence_t::where_t::unknown) || (essence_->ptr_state != state_t::normal))
@@ -2441,7 +2453,7 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::mouse_down(graph_reference, const eventinfo& ei)
+				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 				{
 					bool update = false;
 					auto & ptr_where = essence_->pointer_where;
@@ -2465,9 +2477,9 @@ namespace nana{ namespace gui{
 							if(ptr_where.first == essence_t::where_t::lister)
 							{
 								bool sel = true;
-								if (ei.mouse.shift)
+								if (arg.shift)
 									lister.select_range(lister.last_selected, item_pos, sel);
-								else if (ei.mouse.ctrl)
+								else if (arg.ctrl)
 									sel = !item_proxy(essence_, item_pos).selected();
 								else
 									lister.select_for_all(false);
@@ -2477,7 +2489,9 @@ namespace nana{ namespace gui{
 									item_ptr->flags.selected = sel;
 									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
 
-									lister.ext_event.selected(item_proxy(essence_, last_selected), sel);
+									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
+									essence_->lister.wd_ptr()->events().selected.emit(arg);
+
 									if (item_ptr->flags.selected)
 										essence_->lister.last_selected = last_selected;
 									else if (essence_->lister.last_selected == last_selected)
@@ -2491,7 +2505,9 @@ namespace nana{ namespace gui{
 								if(item_ptr)
 								{
 									item_ptr->flags.checked = ! item_ptr->flags.checked;
-									lister.ext_event.checked(item_proxy(essence_, index_pair(item_pos.cat, lister.absolute(item_pos))), item_ptr->flags.checked);
+
+									arg_listbox arg{ item_proxy{ essence_, index_pair(item_pos.cat, lister.absolute(item_pos)) }, item_ptr->flags.checked };
+									lister.wd_ptr()->events().checked.emit(arg);
 								}
 								else
 									lister.categ_checked_reverse(item_pos.cat);
@@ -2517,7 +2533,7 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::mouse_up(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
 					typedef essence_t::where_t where_t;
 					typedef essence_t::state_t state_t;
@@ -2537,7 +2553,7 @@ namespace nana{ namespace gui{
 					}
 					else if(prev_state == state_t::grabed)
 					{
-						nana::point pos(ei.mouse.x, ei.mouse.y);
+						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
 						drawer_header_->grab(pos, false);
 						draw();
@@ -2546,9 +2562,9 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::mouse_wheel(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_wheel(graph_reference graph, const arg_wheel& arg)
 				{
-					if(essence_->wheel(ei.wheel.upwards))
+					if(essence_->wheel(arg.upwards))
 					{
 						draw();
 						essence_->adjust_scroll_value();
@@ -2556,7 +2572,7 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::dbl_click(graph_reference graph, const eventinfo& ei)
+				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
 					if (essence_->pointer_where.first != essence_t::where_t::lister)
 						return;
@@ -2586,18 +2602,18 @@ namespace nana{ namespace gui{
 					}
 				}
 
-				void trigger::resize(graph_reference graph, const eventinfo& ei)
+				void trigger::resized(graph_reference graph, const arg_resized&)
 				{
 					essence_->adjust_scroll_life();
 					draw();
 					API::lazy_refresh();
 				}
 
-				void trigger::key_down(graph_reference graph, const eventinfo& ei)
+				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
 					bool up = false;
 
-					switch(ei.keyboard.key)
+					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
 						up = true;
@@ -2651,7 +2667,8 @@ namespace nana{ namespace gui{
 					if(m.flags.checked != ck)
 					{
 						m.flags.checked = ck;
-						ess_->lister.ext_event.checked(*this, ck);
+						arg_listbox arg{*this, ck};
+						ess_->lister.wd_ptr()->events().checked.emit(arg);
 					}
 					return *this;
 				}
@@ -2667,7 +2684,9 @@ namespace nana{ namespace gui{
 					if(m.flags.selected != s)
 					{
 						m.flags.selected = s;
-						ess_->lister.ext_event.selected(*this, s);
+
+						arg_listbox arg{*this, s};
+						ess_->lister.wd_ptr()->events().selected.emit(arg);
 
 						if (m.flags.selected)
 							ess_->lister.last_selected = pos_;
@@ -2736,7 +2755,7 @@ namespace nana{ namespace gui{
 					{
 						auto & item = cat_->items.at(pos_.item);
 						item.img = img;
-						nana::gui::fit_zoom(img.size(), nana::size(16, 16), item.img_show_size);
+						nana::fit_zoom(img.size(), nana::size(16, 16), item.img_show_size);
 
 						ess_->if_image = true;
 						ess_->update();
@@ -3112,11 +3131,6 @@ namespace nana{ namespace gui{
 			create(wd, r, visible);
 		}
 
-		listbox::ext_event_type& listbox::ext_event() const
-		{
-			return get_drawer_trigger().essence().lister.ext_event;
-		}
-
 		void listbox::auto_draw(bool ad)
 		{
 			get_drawer_trigger().essence().set_auto_draw(ad);
@@ -3420,5 +3434,4 @@ namespace nana{ namespace gui{
 			}
 		}
 	//end class listbox
-}//end namespace gui
 }//end namespace nana

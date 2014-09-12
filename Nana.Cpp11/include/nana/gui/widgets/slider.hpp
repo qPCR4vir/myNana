@@ -1,17 +1,36 @@
+/*
+ *	A Slider Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/gui/widgets/slider.hpp
+ */
 #ifndef NANA_GUI_WIDGETS_SLIDER_HPP
 #define NANA_GUI_WIDGETS_SLIDER_HPP
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 
-namespace nana{ namespace gui{
+namespace nana
+{
 	class slider;
+
+	struct arg_slider
+	{
+		slider & widget;
+	};
+
 	namespace drawerbase
 	{
 		namespace slider
 		{
-			struct extra_events
+			struct slider_events
+				: public general_events
 			{
-				nana::fn_group<void(nana::gui::slider&)> value_changed;
+				basic_event<arg_slider> value_changed;
 			};
 
 			enum class seekdir
@@ -29,7 +48,7 @@ namespace nana{ namespace gui{
 			class renderer
 			{
 			public:
-				typedef nana::paint::graphics & graph_reference;
+				typedef ::nana::paint::graphics & graph_reference;
 
 				struct bar_t
 				{
@@ -79,11 +98,11 @@ namespace nana{ namespace gui{
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
 				void refresh(graph_reference)	override;
-				void mouse_down(graph_reference, const eventinfo&)	override;
-				void mouse_up(graph_reference, const eventinfo&)	override;
-				void mouse_move(graph_reference, const eventinfo&)	override;
-				void mouse_leave(graph_reference, const eventinfo&)	override;
-				void resize(graph_reference, const eventinfo&)		override;
+				void mouse_down(graph_reference, const arg_mouse&)	override;
+				void mouse_up(graph_reference, const arg_mouse&)	override;
+				void mouse_move(graph_reference, const arg_mouse&)	override;
+				void mouse_leave(graph_reference, const arg_mouse&)	override;
+				void resized(graph_reference, const arg_resized&)		override;
 			private:
 				controller_t * impl_;
 			};
@@ -91,18 +110,17 @@ namespace nana{ namespace gui{
 	}//end namespace drawerbase
     /// A slider widget wich the user can drag for tracking
 	class slider
-		: public widget_object<category::widget_tag, drawerbase::slider::trigger>
+		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events>
 	{
 	public:
 		typedef drawerbase::slider::renderer renderer;       ///< The interface for user-defined renderer.
 		typedef drawerbase::slider::provider provider;       ///< The interface for user-defined provider.
 		typedef drawerbase::slider::seekdir seekdir;         ///< Defines the slider seek direction.
-		typedef drawerbase::slider::extra_events ext_event_type;
 
 		slider();
 		slider(window, bool visible);
 		slider(window, const rectangle& = rectangle(), bool visible = true);
-		ext_event_type& ext_event() const;
+
 		void seek(seekdir);                                  ///< Define the direction that user can seek by using mouse.
 		void vertical(bool);
 		bool vertical() const;
@@ -119,7 +137,6 @@ namespace nana{ namespace gui{
 		void transparent(bool);
 		bool transparent() const;
 	};
-}//end namespace gui
 }//end namespace nana
 
 #endif

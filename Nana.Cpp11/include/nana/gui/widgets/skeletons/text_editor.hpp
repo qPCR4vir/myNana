@@ -17,7 +17,7 @@
 #include <nana/unicode_bidi.hpp>
 #include <memory>
 
-namespace nana{	namespace gui{	namespace widgets
+namespace nana{	namespace widgets
 {
 	namespace skeletons
 	{
@@ -49,9 +49,9 @@ namespace nana{	namespace gui{	namespace widgets
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
 			bool line_wrapped(bool);
 
-			void border_renderer(std::function<void(nana::paint::graphics&)>);
+			void border_renderer(std::function<void(nana::paint::graphics&, nana::color_t bgcolor)>);
 
-			void load(const char*);
+			bool load(const nana::char_t*);
 			void store(const char* tfs) ;
 			void store(const char* tfs, nana::unicode encoding);
 
@@ -139,8 +139,9 @@ namespace nana{	namespace gui{	namespace widgets
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
+			nana::color_t _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
-			void _m_on_scroll(const eventinfo& ei);
+			void _m_on_scroll(const arg_mouse&);
 			void _m_scrollbar();
 			nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
@@ -184,11 +185,12 @@ namespace nana{	namespace gui{	namespace widgets
 
 			void _m_offset_y(int y);
 
+			unsigned _m_char_by_pixels(const nana::char_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
 			unsigned _m_pixels_by_char(const nana::string&, std::size_t pos) const;
 			static bool _m_is_right_text(const unicode_bidi::entity&);
 		private:
 			std::unique_ptr<editor_behavior_interface> behavior_;
-			nana::gui::window window_;
+			nana::window window_;
 			graph_reference graph_;
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_;
@@ -208,8 +210,8 @@ namespace nana{	namespace gui{	namespace widgets
 				bool enable_counterpart;
 				nana::paint::graphics counterpart; //this is used to keep the background that painted by external part.
 
-				std::unique_ptr<gui::scroll<true>>	vscroll;
-				std::unique_ptr<gui::scroll<false>>	hscroll;
+				std::unique_ptr<nana::scroll<true>>	vscroll;
+				std::unique_ptr<nana::scroll<false>>	hscroll;
 			}attributes_;
 
 			struct text_area_type
@@ -221,7 +223,7 @@ namespace nana{	namespace gui{	namespace widgets
 				unsigned long scroll_pixels;
 				unsigned long vscroll;
 				unsigned long hscroll;
-				std::function<void(nana::paint::graphics&)> border_renderer;
+				std::function<void(nana::paint::graphics&, nana::color_t)> border_renderer;
 			}text_area_;
 
 			struct selection
@@ -243,7 +245,6 @@ namespace nana{	namespace gui{	namespace widgets
 		};
 	}//end namespace skeletons
 }//end namespace widgets
-}//end namespace gui
 }//end namespace nana
 
 #endif

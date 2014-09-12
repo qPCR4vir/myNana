@@ -15,8 +15,6 @@
 
 namespace nana
 {
-namespace gui
-{
 	//class widget
 	//@brief:The definition of class widget
 		widget::~widget(){}
@@ -31,12 +29,12 @@ namespace gui
 			_m_caption(str);
 		}
 
-		nana::gui::cursor widget::cursor() const
+		nana::cursor widget::cursor() const
 		{
 			return _m_cursor();
 		}
 
-		void widget::cursor(nana::gui::cursor cur)
+		void widget::cursor(nana::cursor cur)
 		{
 			_m_cursor(cur);
 		}
@@ -69,6 +67,11 @@ namespace gui
 		void widget::enabled(bool value)
 		{
 			_m_enabled(value);
+		}
+
+		void widget::enable_dropfiles(bool enb)
+		{
+			API::enable_dropfiles(handle(), enb);
 		}
 
 		bool widget::empty() const
@@ -151,6 +154,11 @@ namespace gui
 			return _m_background();
 		}
 
+		general_events& widget::events() const
+		{
+			return _m_get_general_events();
+		}
+
 		void widget::umake_event(event_handle eh) const
 		{
 			API::umake_event(eh);
@@ -158,7 +166,7 @@ namespace gui
 
 		widget& widget::tooltip(const nana::string& text)
 		{
-			nana::gui::tooltip::set(*this, text);
+			nana::tooltip::set(*this, text);
 			return *this;
 		}
 
@@ -185,12 +193,12 @@ namespace gui
 			API::dev::window_caption(handle(), str);
 		}
 
-		nana::gui::cursor widget::_m_cursor() const
+		nana::cursor widget::_m_cursor() const
 		{
 			return API::window_cursor(handle());
 		}
 
-		void widget::_m_cursor(nana::gui::cursor cur)
+		void widget::_m_cursor(nana::cursor cur)
 		{
 			API::window_cursor(handle(), cur);
 		}
@@ -267,7 +275,5 @@ namespace gui
 		}
 
 	//end class widget
-
-}//end namespace gui
 }//end namespace nana
 

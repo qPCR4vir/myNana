@@ -1,6 +1,7 @@
 /*
  *	A Menu implementation
- *	Copyright(C) 2009 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -161,6 +162,8 @@ namespace nana{ namespace gui{
 		bool exit_submenu();
 		std::size_t size() const;
 		int send_shortkey(nana::char_t key);
+		void pick();
+
 		menu& max_pixels(unsigned);
 		unsigned max_pixels() const;
 

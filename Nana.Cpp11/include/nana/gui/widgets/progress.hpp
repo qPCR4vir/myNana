@@ -1,6 +1,7 @@
 /*
  *	A Progress Indicator Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -14,8 +15,6 @@
 #include "widget.hpp"
 
 namespace nana
-{
-namespace gui
 {
 	namespace drawerbase
 	{
@@ -70,6 +69,5 @@ namespace gui
 		void unknown(bool);
 		bool unknown() const;
 	};
-}//end namespace gui
 }//end namespace nana
 #endif

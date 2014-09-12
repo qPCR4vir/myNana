@@ -1,6 +1,7 @@
 /*
  *	A CheckBox Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,8 +16,7 @@
 #include <vector>
 #include <memory>
 
-namespace nana { namespace gui
-{
+namespace nana {
 namespace drawerbase
 {
 	namespace checkbox
@@ -27,12 +27,13 @@ namespace drawerbase
 			struct implement;
 		public:
 			drawer();
+			~drawer();	//To instance imptr_;
 			void attached(widget_reference, graph_reference)	override;
 			void refresh(graph_reference)	override;
-			void mouse_enter(graph_reference, const eventinfo&)	override;
-			void mouse_leave(graph_reference, const eventinfo&)	override;
-			void mouse_down(graph_reference, const eventinfo&)	override;
-			void mouse_up(graph_reference, const eventinfo&)	override;
+			void mouse_enter(graph_reference, const arg_mouse&)	override;
+			void mouse_leave(graph_reference, const arg_mouse&)	override;
+			void mouse_down(graph_reference, const arg_mouse&)	override;
+			void mouse_up(graph_reference, const arg_mouse&)	override;
 		public:
 			implement * impl() const;
 		private:
@@ -44,7 +45,7 @@ namespace drawerbase
 			static const int interval = 4;
 			widget* widget_;
 			unsigned state_;
-			std::shared_ptr<implement> imptr_;
+			std::unique_ptr<implement> imptr_;
 			implement * impl_;
 		};
 	}//end namespace checkbox
@@ -89,12 +90,11 @@ namespace drawerbase
 		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.
 		std::size_t size() const;
 	private:
-		void _m_checked(const eventinfo&);
-		void _m_destroy(const eventinfo&);
+		void _m_checked(const arg_mouse&);
+		void _m_destroy(const arg_destroy&);
 	private:
 		std::vector<element_tag> ui_container_;
 	};
-}//end namespace gui
 }//end namespace nana
 
 #endif

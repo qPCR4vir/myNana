@@ -12,18 +12,17 @@
 
 #ifndef NANA_GUI_WIDGET_DETAIL_TEXTBASE_HPP
 #define NANA_GUI_WIDGET_DETAIL_TEXTBASE_HPP
-#include <string>
+
 #include <deque>
 #include <memory>
 #include <fstream>
-#include <functional> 
 #include <nana/charset.hpp>
+#include <nana/deploy.hpp>
+#include <nana/traits.hpp>
 
-#include "textbase_extra_evtbase.hpp"
+#include "textbase_export_interface.hpp"
 
 namespace nana
-{
-namespace gui
 {
 namespace widgets
 {
@@ -31,7 +30,7 @@ namespace skeletons
 {
 	template<typename CharT>
 	class textbase
-		: public noncopyable
+		: public ::nana::noncopyable
 	{
 	public:
 		typedef CharT						char_type;
@@ -39,15 +38,15 @@ namespace skeletons
 		typedef typename string_type::size_type	size_type;
 
 		textbase()
-			: evtbase_(nullptr), changed_(false)
 		{
+			attr_max_.reset();
 			//Insert an empty string for the first line of empty text.
 			text_cont_.emplace_back();
 		}
 
-		void bind_ext_evtbase(textbase_extra_evtbase<char_type>& extevt)
+		void set_event_agent(textbase_event_agent_interface * evt)
 		{
-			evtbase_ = &extevt;
+			evt_agent_ = evt;
 		}
 
 		bool empty() const
@@ -56,9 +55,16 @@ namespace skeletons
 					((text_cont_.size() == 1) && (text_cont_[0].size() == 0)));
 		}
 
-		void load(const char* tfs)
+		bool load(const nana::char_t* fs)
 		{
-			std::ifstream ifs(tfs);
+			if (nullptr == fs)
+				return false;
+
+			std::string fs_mbs = nana::charset(fs);
+			std::ifstream ifs(fs_mbs.data());
+			if (!ifs)
+				return false;
+
 			ifs.seekg(0, std::ios::end);
 			std::size_t bytes = static_cast<std::size_t>(ifs.tellg());
 			ifs.seekg(0, std::ios::beg);
@@ -73,8 +79,7 @@ namespace skeletons
 					if(0xBB == ch && 0xBF == ifs.get())
 					{
 						ifs.close();
-						load(tfs, nana::unicode::utf8);
-						return;
+						return load(fs, nana::unicode::utf8);
 					}
 				}
 				else if(0xFF == ch)
@@ -87,13 +92,11 @@ namespace skeletons
 							if(ifs.get() == 0 && ifs.get() == 0)
 							{
 								ifs.close();
-								load(tfs, nana::unicode::utf32);
-								return;
+								return load(fs, nana::unicode::utf32);
 							}
 						}
 						ifs.close();
-						load(tfs, nana::unicode::utf16);
-						return;
+						return load(fs, nana::unicode::utf16);
 					}
 				}
 				else if(0xFE == ch)
@@ -102,8 +105,7 @@ namespace skeletons
 					{
 						//UTF16(big-endian)
 						ifs.close();
-						load(tfs, nana::unicode::utf16);
-						return;
+						return load(fs, nana::unicode::utf16);
 					}
 				}
 				else if(0 == ch)
@@ -115,8 +117,7 @@ namespace skeletons
 						{
 							//UTF32(big_endian)
 							ifs.close();
-							load(tfs, nana::unicode::utf32);
-							return;
+							return load(fs, nana::unicode::utf32);
 						}
 					}
 				}
@@ -128,21 +129,20 @@ namespace skeletons
 			text_cont_.clear();		//Clear only if the file can be opened.
 			attr_max_.reset();
 
-                        _m_saved(tfs);       
-
-			std::string str;
-			std::size_t lines = 0;
+			std::string str_mbs;
 			while(ifs.good())
 			{
-				std::getline(ifs, str);
-				text_cont_.push_back(nana::charset(str));
+				std::getline(ifs, str_mbs);
+				text_cont_.emplace_back(nana::charset(str_mbs));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
 					attr_max_.size = text_cont_.back().size();
-					attr_max_.line = lines;
+					attr_max_.line = text_cont_.size() - 1;
 				}
-				++lines;
 			}
+
+			_m_saved(fs);
+			return true;
 		}
 
 		static void byte_order_translate_2bytes(std::string& str)
@@ -173,19 +173,26 @@ namespace skeletons
 			}
 		}
 
-		void load(const char * tfs, nana::unicode encoding)
+		bool load(const nana::char_t * fs, nana::unicode encoding)
 		{
-			std::ifstream ifs(tfs);
+			if (nullptr == fs)
+				return false;
+
+			std::string fs_mbs = nana::charset(fs);
+			std::ifstream ifs(fs_mbs.data());
+
+			if (!ifs)
+				return false;
+
 			std::string str;
 			bool big_endian = true;
 
 			if(ifs.good())
 			{
-				std::getline(ifs, str);
-				text_cont_.clear();		//Clear only if the file can be opened.        _m_saved(tfs);  ???????
+				text_cont_.clear();		//Clear only if the file can be opened.
 				attr_max_.reset();
 
-                _m_saved(tfs);                 //          _m_saved(tfs);  ???????
+				std::getline(ifs, str);
 
 				std::size_t len_of_BOM = 0;
 				switch(encoding)
@@ -196,6 +203,8 @@ namespace skeletons
 					len_of_BOM = 2;	break;
 				case nana::unicode::utf32:
 					len_of_BOM = 4;	break;
+				default:
+					throw std::runtime_error("Specified a wrong UTF");
 				}
 
 				big_endian = (str[0] == 0x00 || str[0] == char(0xFE));
@@ -208,15 +217,11 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.push_back(nana::charset(str, encoding));
-				if(text_cont_.back().size() > attr_max_.size)
-				{
-					attr_max_.size = text_cont_.back().size();
-					attr_max_.line = 0;
-				}
-			}
+				text_cont_.emplace_back(nana::charset(str, encoding));
 
-			std::size_t lines = 1;
+				attr_max_.size = text_cont_.back().size();
+				attr_max_.line = 0;
+			}
 
 			while(ifs.good())
 			{
@@ -230,19 +235,22 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.push_back(nana::charset(str, encoding));
+				text_cont_.emplace_back(nana::charset(str, encoding));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
 					attr_max_.size = text_cont_.back().size();
-					attr_max_.line = lines;
+					attr_max_.line = text_cont_.size() - 1;
 				}
-				++lines;
 			}
+
+			_m_saved(fs);
+			return true;
 		}
 
-		void store(const char* tfs) 
+		void store(const nana::char_t* fs) const
 		{
-			std::ofstream ofs(tfs, std::ios::binary);
+			std::string fs_mbs = nana::charset(fs);
+			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
 			if(ofs && text_cont_.size())
 			{
 				if(text_cont_.size() > 1)
@@ -256,13 +264,14 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back());
 				ofs.write(mbs.c_str(), mbs.size());
-				_m_saved(tfs);
+				_m_saved(fs);
 			}
 		}
 
-		void store(const char* tfs, nana::unicode encoding) const
+		void store(const nana::char_t* fs, nana::unicode encoding) const
 		{
-			std::ofstream ofs(tfs, std::ios::binary);
+			std::string fs_mbs = nana::charset(fs);
+			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
 			if(ofs && text_cont_.size())
 			{
 				const char * le_boms[] = {"\xEF\xBB\xBF", "\xFF\xFE", "\xFF\xFE\x0\x0"};	//BOM for little-endian
@@ -292,7 +301,7 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
 				ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
-				_m_saved(tfs);
+				_m_saved(fs);
 			}
 		}
 
@@ -417,7 +426,7 @@ namespace skeletons
 		{
 			std::deque<string_type>().swap(text_cont_);
 			attr_max_.reset();
-			_m_saved("");
+			_m_saved(nana::string());
 		}
 
 		void merge(size_type pos)
@@ -434,11 +443,7 @@ namespace skeletons
 			}
 		}
 
-        void set_unchanged()             ///////   ?????????
-        {
-            changed_ =false;
-        }
-		const std::string& filename() const
+		const nana::string& filename() const
 		{
 			return filename_;
 		}
@@ -446,6 +451,17 @@ namespace skeletons
 		bool edited() const
 		{
 			return changed_;
+		}
+
+		void edited_reset()
+		{
+			changed_ = false;
+		}
+
+		void reset()
+		{
+			filename_.clear();
+			changed_ = false;
 		}
 
 		bool saved() const
@@ -485,49 +501,41 @@ namespace skeletons
 
 		void _m_first_change() const
 		{
-			if(evtbase_)
-				evtbase_->first_change();
+			if (evt_agent_)
+				evt_agent_->first_change();
 		}
 
-        void _m_saved(std::string && filename) const
-        {
-            if(filename_ != filename)
-            {
-                filename_ = std::move(filename);
-                changed_ = false;
-                _m_first_change();
-            } 
-            else if(changed_)
-            {
-                changed_ = false;
-                _m_first_change();
-            }
-            changed_ = false;
-        }
+		void _m_saved(nana::string && filename) const
+		{
+			if(filename_ != filename)
+			{
+				filename_ = std::move(filename);
+				_m_first_change();
+			} 
+			else if(changed_)
+				_m_first_change();
 
-        void _m_edited()
-        {
-            if(!changed_)
-            {
-                changed_ = true;
-                _m_first_change();
-            }
-            changed_ = true;
-        }
+			changed_ = false;
+		}
+
+		void _m_edited()
+		{
+			if(!changed_)
+			{
+				_m_first_change();
+				changed_ = true;
+			}
+		}
 	private:
 		std::deque<string_type>	text_cont_;
-		textbase_extra_evtbase<char_type>*	evtbase_;
+		textbase_event_agent_interface* evt_agent_ = nullptr;
 
-		mutable bool			changed_;
-		mutable std::string		filename_;	//A string for the saved filename.
+		mutable bool			changed_ = false;
+		mutable nana::string	filename_;	//A string for the saved filename.
 		mutable std::shared_ptr<string_type> nullstr_;
 
 		struct attr_max
 		{
-			attr_max()
-				:line(0), size(0)
-			{}
-
 			std::size_t line;
 			std::size_t size;
 
@@ -541,6 +549,5 @@ namespace skeletons
 
 }//end namespace detail
 }//end namespace widgets
-}//end namespace gui
 }//end namespace nana
 #endif

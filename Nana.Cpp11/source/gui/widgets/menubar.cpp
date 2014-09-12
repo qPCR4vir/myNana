@@ -3,8 +3,6 @@
 
 namespace nana
 {
-namespace gui
-{
 	class menu_accessor
 	{
 	public:
@@ -26,7 +24,7 @@ namespace gui
 
 				nana::string	text;
 				unsigned long	shortkey;
-				nana::gui::menu	menu_obj;
+				nana::menu	menu_obj;
 				nana::point		pos;
 				nana::size		size;
 			};
@@ -48,7 +46,7 @@ namespace gui
 					cont_.push_back(new item_type(text, shortkey));
 				}
 
-				nana::gui::menu* get_menu(std::size_t index) const
+				nana::menu* get_menu(std::size_t index) const
 				{
 					return (index < cont_.size() ? &(cont_[index]->menu_obj) : nullptr);
 				}
@@ -96,12 +94,12 @@ namespace gui
 					switch(state)
 					{
 					case item_renderer::state_highlight:
-						border = nana::gui::color::highlight;
+						border = nana::color::highlight;
 						body = 0xC0DDFC;
 						corner = paint::graphics::mix(body, bground, 0.5);
 						break;
 					case item_renderer::state_selected:
-						border = nana::gui::color::dark_border;
+						border = nana::color::dark_border;
 						body = 0xFFFFFF;
 						corner = paint::graphics::mix(border, bground, 0.5);
 						break;
@@ -116,9 +114,7 @@ namespace gui
 					graph_.set_pixel(pos.x + size.width - 1, pos.y, corner);
 					graph_.set_pixel(pos.x, pos.y + size.height - 1, corner);
 					graph_.set_pixel(pos.x + size.width - 1, pos.y + size.height - 1, corner);
-
-					r.pare_off(1);
-					graph_.rectangle(r, body, true);
+					graph_.rectangle(r.pare_off(1), body, true);
 				}
 
 				void item_renderer::caption(int x, int y, const nana::string& text)
@@ -137,21 +133,21 @@ namespace gui
 					delete items_;
 				}
 
-				nana::gui::menu* trigger::push_back(const nana::string& text)
+				nana::menu* trigger::push_back(const nana::string& text)
 				{
 					nana::string::value_type shkey;
-					API::transform_shortkey_text(text, shkey, 0);
+					API::transform_shortkey_text(text, shkey, nullptr);
 
 					if(shkey)
 						API::register_shortkey(widget_->handle(), shkey);
 
-					std::size_t i = items_->cont().size();
+					auto i = items_->cont().size();
 					items_->append(text, shkey);
 					_m_draw();
 					return items_->get_menu(i);
 				}
 
-				nana::gui::menu* trigger::at(std::size_t index) const
+				nana::menu* trigger::at(std::size_t index) const
 				{
 					return items_->get_menu(index);
 				}
@@ -161,27 +157,10 @@ namespace gui
 					return items_->cont().size();
 				}
 
-				/*
-				void trigger::bind_window(widget_reference widget)	//deperecated
-				{
-					widget_ = &widget;
-				}
-				*/
-
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
 					graph_ = &graph;
 					widget_ = &widget;
-					window wd = widget_->handle();
-					using namespace API::dev;
-					make_drawer_event<events::mouse_move>(wd);
-					make_drawer_event<events::mouse_down>(wd);
-					make_drawer_event<events::mouse_up>(wd);
-					make_drawer_event<events::mouse_leave>(wd);
-					make_drawer_event<events::focus>(wd);
-					make_drawer_event<events::shortkey>(wd);
-					make_drawer_event<events::key_down>(wd);
-					make_drawer_event<events::key_up>(wd);
 				}
 
 				void trigger::refresh(graph_reference)
@@ -190,23 +169,23 @@ namespace gui
 					API::lazy_refresh();
 				}
 
-				void trigger::mouse_move(graph_reference, const eventinfo& ei)
+				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
 				{
-					if(ei.mouse.x != state_.mouse_pos.x || ei.mouse.y != state_.mouse_pos.y)
+					if (arg.pos != state_.mouse_pos)
 						state_.nullify_mouse = false;
 
 					bool popup = false;
 					if(state_.behavior == state_type::behavior_focus)
 					{
-						std::size_t index = _m_item_by_pos(ei.mouse.x, ei.mouse.y);
+						std::size_t index = _m_item_by_pos(arg.pos);
 						if(index != npos && state_.active != index)
 						{
 							state_.active = index;
 							popup = true;
 						}
 					}
-					else if(_m_track_mouse(ei.mouse.x, ei.mouse.y))
-						popup = true;
+					else
+						popup = _m_track_mouse(arg.pos);
 
 					if(popup)
 					{
@@ -215,21 +194,20 @@ namespace gui
 						API::lazy_refresh();
 					}
 
-					state_.mouse_pos.x = ei.mouse.x;
-					state_.mouse_pos.y = ei.mouse.y;
+					state_.mouse_pos = arg.pos;
 				}
 
-				void trigger::mouse_leave(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_leave(graph_reference graph, const arg_mouse& arg)
 				{
 					state_.nullify_mouse = false;
-					mouse_move(graph, ei);
+					mouse_move(graph, arg);
 				}
 
-				void trigger::mouse_down(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
 					state_.nullify_mouse = false;
 
-					state_.active = _m_item_by_pos(ei.mouse.x, ei.mouse.y);
+					state_.active = _m_item_by_pos(arg.pos);
 					if(state_.menu_active == false)
 					{
 						if(state_.active != npos)
@@ -249,7 +227,7 @@ namespace gui
 					API::lazy_refresh();
 				}
 
-				void trigger::mouse_up(graph_reference graph, const eventinfo& ei)
+				void trigger::mouse_up(graph_reference graph, const arg_mouse&)
 				{
 					state_.nullify_mouse = false;
 
@@ -268,9 +246,9 @@ namespace gui
 
 				}
 
-				void trigger::focus(graph_reference, const eventinfo& ei)
+				void trigger::focus(graph_reference, const arg_focus& arg)
 				{
-					if((ei.focus.getting == false) && (state_.active != npos))
+					if((arg.getting == false) && (state_.active != npos))
 					{
 						state_.behavior = state_type::behavior_none;
 						state_.nullify_mouse = true;
@@ -282,12 +260,12 @@ namespace gui
 					}
 				}
 
-				void trigger::key_down(graph_reference, const eventinfo& ei)
+				void trigger::key_press(graph_reference, const arg_keyboard& arg)
 				{
 					state_.nullify_mouse = true;
 					if(state_.menu)
 					{
-						switch(ei.keyboard.key)
+						switch(arg.key)
 						{
 						case keyboard::os_arrow_down:
 							state_.menu->goto_next(true);  break;
@@ -310,14 +288,17 @@ namespace gui
 								state_.menu_active = false;
 							}
 							break;
+						case keyboard::enter:
+							state_.menu->pick();
+							break;
 						default:
 							{
-								if(2 != state_.menu->send_shortkey(ei.keyboard.key))
+								if(2 != state_.menu->send_shortkey(arg.key))
 								{
 									if(state_.active != npos)
 									{
 										_m_total_close();
-										if(ei.keyboard.key == 18) //ALT
+										if(arg.key == 18) //ALT
 											state_.behavior = state_.behavior_focus;
 									}
 								}
@@ -328,7 +309,7 @@ namespace gui
 					}
 					else
 					{
-						switch(ei.keyboard.key)
+						switch(arg.key)
 						{
 						case keyboard::os_arrow_right:
 							_m_move(false);
@@ -351,9 +332,9 @@ namespace gui
 					API::lazy_refresh();
 				}
 
-				void trigger::key_up(graph_reference, const eventinfo& ei)
+				void trigger::key_release(graph_reference, const arg_keyboard& arg)
 				{
-					if(ei.keyboard.key == 18)
+					if(arg.key == 18)
 					{
 						if(state_.behavior == state_type::behavior_none)
 						{
@@ -365,7 +346,7 @@ namespace gui
 							state_.behavior = state_type::behavior_none;
 							nana::point pos = API::cursor_position();
 							API::calc_window_point(widget_->handle(), pos);
-							state_.active = _m_item_by_pos(pos.x, pos.y);
+							state_.active = _m_item_by_pos(pos);
 						}
 
 						state_.menu_active = false;
@@ -374,11 +355,11 @@ namespace gui
 					}
 				}
 
-				void trigger::shortkey(graph_reference graph, const eventinfo& ei)
+				void trigger::shortkey(graph_reference graph, const arg_keyboard& arg)
 				{
 					API::focus_window(widget_->handle());
 
-					std::size_t index = items_->find(ei.keyboard.key);
+					std::size_t index = items_->find(arg.key);
 					if(index != npos && (index != state_.active || nullptr == state_.menu))
 					{
 						_m_close_menu();
@@ -397,22 +378,21 @@ namespace gui
 
 				void trigger::_m_move(bool to_left)
 				{
-					if(items_->cont().size() == 0) return;
+					if(items_->cont().empty()) return;
 
+					const std::size_t last_pos = items_->cont().size() - 1;
 					std::size_t index = state_.active;
 					if(to_left)
 					{
-						if(index > 0)
-							--index;
-						else
-							index = items_->cont().size() - 1;
+						--index;
+						if (index > last_pos)
+							index = last_pos;
 					}
 					else
 					{
-						if(index == items_->cont().size() - 1)
+						++index;
+						if(index > last_pos)
 							index = 0;
-						else
-							++index;
 					}
 
 					if(index != state_.active)
@@ -456,7 +436,7 @@ namespace gui
 
 					nana::point pos = API::cursor_position();
 					API::calc_window_point(widget_->handle(), pos);
-					state_.active = _m_item_by_pos(pos.x, pos.y);
+					state_.active = _m_item_by_pos(pos);
 				}
 
 				bool trigger::_m_close_menu()
@@ -483,15 +463,15 @@ namespace gui
 					}
 				}
 
-				std::size_t trigger::_m_item_by_pos(int x, int y)
+				std::size_t trigger::_m_item_by_pos(const ::nana::point& pos)
 				{
-					if((2 <= x) && (2 <= y) && (y < 25))
+					if((2 <= pos.x) && (2 <= pos.y) && (pos.y < 25))
 					{
 						int item_x = 2;
 						std::size_t index = 0;
 						for(auto i : items_->cont())
 						{
-							if(item_x <= x && x < item_x + static_cast<int>(i->size.width))
+							if(item_x <= pos.x && pos.x < item_x + static_cast<int>(i->size.width))
 								return index;
 
 							item_x += i->size.width;
@@ -502,11 +482,11 @@ namespace gui
 					return npos;
 				}
 
-				bool trigger::_m_track_mouse(int x, int y)
+				bool trigger::_m_track_mouse(const ::nana::point& pos)
 				{
 					if(state_.nullify_mouse == false)
 					{
-						std::size_t which = _m_item_by_pos(x, y);
+						std::size_t which = _m_item_by_pos(pos);
 						if((which != state_.active) && (which != npos || (false == state_.menu_active)))
 						{
 							state_.active = which;
@@ -560,8 +540,11 @@ namespace gui
 						{
 							unsigned off_w = (hotkey_pos ? graph_->text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
 							nana::size hotkey_size = graph_->text_extent_size(text.c_str() + hotkey_pos, 1);
+
+							unsigned ascent, descent, inleading;
+							graph_->text_metrics(ascent, descent, inleading);
 							int x = item_pos.x + 8 + off_w;
-							int y = item_pos.y + text_top_off + hotkey_size.height;
+							int y = item_pos.y + text_top_off + ascent + 1;
 							graph_->line(x, y, x + hotkey_size.width - 1, y, 0x0);
 						}
 
@@ -612,5 +595,4 @@ namespace gui
 			return get_drawer_trigger().size();
 		}
 	//end class menubar
-}//end namespace gui
 }//end namespace nana
