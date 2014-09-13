@@ -15,7 +15,8 @@
 #include <stdexcept>
 #include <sstream>
 
-namespace nana{	namespace drawerbase {
+namespace nana{	
+    namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent
@@ -257,7 +258,7 @@ namespace nana{	namespace drawerbase {
 				API::update_window(handle());
 		}
 
-		void textbox::store(const nana::char_t* file) const
+		void textbox::store(const nana::char_t* file)/* const*/
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -265,7 +266,7 @@ namespace nana{	namespace drawerbase {
 				editor->textbase().store(file);
 		}
 
-		void textbox::store(const nana::char_t* file, nana::unicode encoding) const
+		void textbox::store(const nana::char_t* file, nana::unicode encoding) /*const*/
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -285,6 +286,18 @@ namespace nana{	namespace drawerbase {
 			}
 			return *this;
 		}
+  //      textbox& textbox::reset(const nana::string& newtext )
+		//{
+		//	auto editor = get_drawer_trigger().editor();
+		//	if(editor)
+		//	{
+		//		editor->text(newtext);
+  //              //editor->set_unchanged(); 
+		//		API::update_window(this->handle());
+		//	}
+		//	return *this;
+
+		//}
 
 		nana::string textbox::filename() const
 		{
@@ -354,18 +367,6 @@ namespace nana{	namespace drawerbase {
 			return *this;
 		}
 
-        textbox& textbox::reset(const nana::string& newtext )
-		{
-			auto editor = get_drawer_trigger().editor();
-			if(editor)
-			{
-				editor->text(newtext);
-                //editor->set_unchanged(); 
-				API::update_window(this->handle());
-			}
-			return *this;
-
-		}
 
 		bool textbox::multi_lines() const
 		{

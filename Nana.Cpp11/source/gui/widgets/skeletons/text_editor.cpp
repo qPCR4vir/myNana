@@ -1004,16 +1004,16 @@ namespace nana{	namespace widgets
 			_m_scrollbar();
 			return true;
 		}
-        void text_editor::store(const char* tfs)
+        void text_editor::store(const nana::char_t* tfs)
         {
 			textbase_.store(tfs);
         }
         void text_editor::set_unchanged()
         {
-			textbase_.set_unchanged();
+			textbase_.edited_reset();
         }
 
-        void text_editor::store(const char* tfs, nana::unicode encoding)
+        void text_editor::store(const nana::char_t* tfs, nana::unicode encoding)
         {
 			textbase_.store(tfs,encoding);
         }

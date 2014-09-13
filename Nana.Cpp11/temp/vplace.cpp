@@ -28,7 +28,8 @@
 std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
 { o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
-namespace nana{	namespace gui {
+namespace nana{	
+ 
 
 namespace vplace_impl
 {
@@ -724,7 +725,7 @@ namespace vplace_impl
             /// plus the div. find from the layot in div()
 		std::multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::multimap<std::string,    window              > fastened;
-        std::vector/*<std::unique_ptr */<nana::gui::label*>/*>*/     widgets;                                 
+        std::vector/*<std::unique_ptr */<nana::label*>/*>*/     widgets;                                 
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
 
@@ -829,17 +830,17 @@ namespace vplace_impl
         };
         field_t&  add_label(const nana::string& txt )
         {            
-            //std::unique_ptr <nana::gui::label> lab(new nana::gui::label(place_impl_->parent_window_handle, txt  ));
+            //std::unique_ptr <nana::label> lab(new nana::label(place_impl_->parent_window_handle, txt  ));
             //API::
-            nana::gui::label*lab = std::addressof(nana::gui::form_loader <nana::gui::label>()(place_impl_->parent_window_handle, txt));
-            place_impl_->widgets.push_back (lab);/*newstd::addressof (nana::gui::form_loader <nana::gui::label>()(place_impl_->parent_window_handle, txt  ))*/ 
-            //place_impl_->widgets.emplace_back (new nana::gui::label(place_impl_->parent_window_handle, txt  ));
+            nana::label*lab = std::addressof(nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt));
+            place_impl_->widgets.push_back (lab);/*newstd::addressof (nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt  ))*/ 
+            //place_impl_->widgets.emplace_back (new nana::label(place_impl_->parent_window_handle, txt  ));
             add(create_field( *place_impl_->widgets.back () ));
             auto pi = place_impl_;
-			auto dtr = API::make_event<events::destroy>(*lab, [pi](const eventinfo& ei)
+			auto dtr = API::events(*lab).destroy ( [pi](const arg_destroy& ei)
 			{
 				for (auto f=pi->widgets.begin(); f!=pi->widgets.end(); ++f)
-                    if (/*->get()*/(*f)->handle() ==  ei.window )
+                    if (/*->get()*/(*f)->handle() ==  ei.window_handle )
                     {
                         pi->widgets.erase(f);    // delete ???
 				        pi->recollocate = true;
@@ -865,10 +866,10 @@ namespace vplace_impl
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
             auto pi = place_impl_;
-			auto dtr = API::make_event<events::destroy>(wd, [pi](const eventinfo& ei)
+            auto dtr = API::events(wd).destroy ( [pi](const arg_destroy& ei)
 			{
 				for (auto f=pi->fastened.begin(); f!=pi->fastened.end(); ++f)
-                    if (f->second ==  ei.window )
+                    if (f->second ==  ei.window_handle  )
                     {
                         pi->fastened.erase(f);    // delete ???
 				        pi->recollocate = true;
@@ -898,10 +899,10 @@ namespace vplace_impl
 		void _m_make_destroy(window wd)
 		{
             auto pi = place_impl_;
-            auto dtr = API::make_event<events::destroy>(wd, [pi](const eventinfo& ei)
+            auto dtr = API::events(wd).destroy ( [pi](const arg_destroy& ei)
 			{
 				for (auto f=pi->fields.begin(); f!=pi->fields.end(); ++f)
-                    if (f->second->window_handle() ==  ei.window )
+                    if (f->second->window_handle() ==  ei.window_handle )
                     {
                         pi->fields.erase(f);    // delete ???
 				        pi->recollocate = true;
@@ -1102,8 +1103,8 @@ namespace vplace_impl
      		//  rectangle r;  //debugg
             //  r=API::window_size(this->parent_window_handle);  //debugg
             //  std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
-
-        event_size_handle = API::make_event<events::size>(parent_window_handle, [this](const eventinfo&ei)
+ 
+        event_size_handle = API::events(parent_window_handle).resized( [this](const arg_resized&ei)
 		{
             this->collocate(); 
     //        //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
@@ -1120,5 +1121,5 @@ namespace vplace_impl
 	}
 
 }//end namespace gui
-}//end namespace nana
+//end namespace nana
 

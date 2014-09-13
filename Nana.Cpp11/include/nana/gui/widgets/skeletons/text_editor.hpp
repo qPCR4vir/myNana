@@ -52,10 +52,10 @@ namespace nana{	namespace widgets
 			void border_renderer(std::function<void(nana::paint::graphics&, nana::color_t bgcolor)>);
 
 			bool load(const nana::char_t*);
-			void store(const char* tfs) ;
-			void store(const char* tfs, nana::unicode encoding);
+			void store(const nana::char_t* tfs) ;
+			void store(const nana::char_t* tfs, nana::unicode encoding);
 
-            std::string filename() const
+            nana::string filename() const
             {
                 return textbase_.filename() ;
             }

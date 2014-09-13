@@ -127,8 +127,8 @@ namespace nana
 
         ///  \brief Loads a text file. When attempt to load a unicode encoded text file, be sure the file have a BOM header.
 		void load(const nana::char_t* file);
-		void store(const nana::char_t* file)  ;  ///< Writes the text to a file with multibytes encoding.
-		void store(const nana::char_t* file, nana::unicode encoding) ;///< Writes the text to a file with unicode encoding in little-endian.
+		void store(const nana::char_t* file) /*const*/ ;  ///< Writes the text to a file with multibytes encoding.
+		void store(const nana::char_t* file, nana::unicode encoding)/*const*/ ;///< Writes the text to a file with unicode encoding in little-endian.
 		textbox& reset(const nana::string& newtext = STR("") );      ///< discard the old text and set a newtext
 
 		/// The file of last store operation.

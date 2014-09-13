@@ -105,29 +105,29 @@ void TestCUnits()
 
 
 /// A reaction to the ReSize event. Write the new width at position 10 of the caption
-void ReSize(const nana::gui::eventinfo &e, nana::gui::widget& w)
+void ReSize(const nana::arg_resized &e, nana::widget& w)
 { 
     w.caption(   w.caption().substr(0,10) + std::to_wstring(w.size().width )    ); 
 }
 
-class DemoForm : public nana::gui::form, public EditableForm 
+class DemoForm : public nana::form, public EditableForm 
 { public:
     OpenSaveBox         osb {*this, STR("Project:" )} , 
                         osb2{*this, STR("Project2:")} ;
-    nana::gui::button	but1{*this, STR("1-free   : ")} , 
+    nana::button	but1{*this, STR("1-free   : ")} , 
                         but2{*this, STR("2-Min 200: ")} , 
                         but3{*this, STR("3-Fix 200: ")} , 
                         but4{*this, STR("4-200-600: ")} ;
-    nana::gui::label   _label{*this, STR("Num out:")} ;
-    nana::gui::NumerUpDown num1 {*this, STR("G:") , -5, -30, 30}, 
+    nana::label   _label{*this, STR("Num out:")} ;
+    nana::NumerUpDown num1 {*this, STR("G:") , -5, -30, 30}, 
                            num2 {*this, STR("Tm:"), 60,  30, 90};
-    nana::gui::textbox _num{*this, } ;
-    nana::gui::button  _up{*this, STR("^")} , _down{*this, STR("v")} ;
-    nana::gui::UnitPicker      UPicker{*this, "m"} ;
-    nana::gui::NumUnitUpDown   Ta{*this, STR("Ta:"), 55,  50, 60, "°C" } ; 
+    nana::textbox _num{*this, } ;
+    nana::button  _up{*this, STR("^")} , _down{*this, STR("v")} ;
+    nana::UnitPicker      UPicker{*this, "m"} ;
+    nana::NumUnitUpDown   Ta{*this, STR("Ta:"), 55,  50, 60, "°C" } ; 
                 //Ta           ( *this, STR("Conc:"), 0.1,  0, 20, "M", STR(""), 0.1,3 /*, DefLayFile , step=1, decimals=2*/)
 
-    DemoForm ():nana::gui::form (nana::rectangle( nana::point(800,210), nana::size(500,250) )),
+    DemoForm ():nana::form (nana::rectangle( nana::point(800,210), nana::size(500,250) )),
                 EditableForm    (nullptr, *this, STR("Configurable Window"), STR("Layot_Demo.lay.txt"))
     {
         _label.text_align(nana::align::right  ); 
@@ -143,10 +143,10 @@ class DemoForm : public nana::gui::form, public EditableForm
         SelectClickableWidget( _menuBar);
         SelectClickableWidget( but2);
 
-        but1.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but1);});
-	    but2.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but2);});
-	    but3.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but3);});
-	    but4.make_event<nana::gui::events::size>([&](const nana::gui::eventinfo &e){ReSize(e, but4);});
+        but1.events().resized ([&](const nana::arg_resized &e){ReSize(e, but1);});
+	    but2.events().resized ([&](const nana::arg_resized &e){ReSize(e, but2);});
+	    but3.events().resized ([&](const nana::arg_resized &e){ReSize(e, but3);});
+	    but4.events().resized ([&](const nana::arg_resized &e){ReSize(e, but4);});
 
     }
  
@@ -187,7 +187,7 @@ int main()
 	DemoForm form;
 	form.show();
     try {
-	        nana::gui::exec();
+	        nana::exec();
 
         } catch (std::exception e)
         {

@@ -1,4 +1,4 @@
-/**\class nana::gui::combox
+/**\class nana::combox
 \brief This widget is a combo box which consists of a list box combined with a textbox. The list box should drop down when the user selects the drop-down arrow next to the control.
 
 ![](combox.png)
@@ -8,7 +8,7 @@
 
 		struct ext_event_type
 		{
-		  nana::functor_group<void(nana::gui::combox&)> selected; //Selects a new item.
+		  nana::functor_group<void(nana::combox&)> selected; //Selects a new item.
 		};
 
 	This class provides a method to implement that a program may respond to the combox 
@@ -17,7 +17,7 @@
 	mouse_move, click and so on, while the combox´ ext_event_type is used for the own 
 	providing event.
 
-2. Refer to nana::gui::listbox for details of item_renderer.
+2. Refer to nana::listbox for details of item_renderer.
 
 
 \example example_combox.cpp
