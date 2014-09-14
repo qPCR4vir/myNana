@@ -721,8 +721,7 @@ namespace vplace_impl
         unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
         bool                            recollocate{ true };
 
-            /// All the fields defined by user with field(name)<<IField, 
-            /// plus the div. find from the layot in div()
+            /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
 		std::multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::multimap<std::string,    window              > fastened;
         std::vector/*<std::unique_ptr */<nana::label*>/*>*/     widgets;                                 
@@ -893,12 +892,11 @@ namespace vplace_impl
 				x.columns = 1;
 			return add(new adj_room(x));
 		}
- 
-        //Listen to destroy of a window
-		//It will delete the element and recollocate when the window destroyed.
+
+		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
 		void _m_make_destroy(window wd)
 		{
-            auto pi = place_impl_;
+            implement * pi = place_impl_;
             auto dtr = API::events(wd).destroy ( [pi](const arg_destroy& ei)
 			{
 				for (auto f=pi->fields.begin(); f!=pi->fields.end(); ++f)

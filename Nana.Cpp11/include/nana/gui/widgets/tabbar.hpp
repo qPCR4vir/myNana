@@ -232,7 +232,7 @@ namespace nana
 
 		void activate(std::size_t pos)                  /// Actives a tab specified by i.
 		{
-			this->get_drawer_trigger().active(pos);
+			this->get_drawer_trigger().activate(pos);
 		}
 
 		std::size_t activated() const
