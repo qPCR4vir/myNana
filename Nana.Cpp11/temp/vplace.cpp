@@ -24,15 +24,40 @@
 #include <nana/gui/programming_interface.hpp>
 #include <iostream>    // temp, for debugging
 #include <nana/gui/widgets/label.hpp>
+#include <nana/gui/dragger.hpp>
 
 std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
 { o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
 namespace nana{	
+
  
 
 namespace vplace_impl
 {
+
+    namespace place_parts
+	{
+		class splitter_interface
+		{
+		public:
+			virtual ~splitter_interface(){}
+		};
+
+		class splitter_dtrigger
+			: public drawer_trigger
+		{
+		};
+
+		template<bool IsLite>
+		class splitter
+			:	public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
+				public splitter_interface
+		{
+		};
+	}//end namespace place_parts
+
+
     typedef vplace::minmax  minmax;
     typedef vplace::field_t field_t;
 
@@ -41,16 +66,22 @@ namespace vplace_impl
     struct IField  :minmax 
     {
                                 IField      (){}
+            rectangle           last ;
                                 IField      (unsigned min_,unsigned max_):minmax  (min_,max_){}
             virtual adj         pre_place   (unsigned t_w,      adj& fixed=adj()                    )=0;
             virtual adj         end_place   (unsigned t_w,const adj& fixed,       adj& adj_min=adj())=0;
             virtual unsigned    weigth      (unsigned t_w,const adj& fixed, const adj& adj_min      )=0;
             virtual            ~IField      (){}
             virtual rectangle   cells       ()   const                              =0;
-            virtual void        collocate   (const rectangle& r)   =0;
+            virtual void        collocate   (const rectangle& r)   {last=r;}
             virtual window      window_handle()const   =0;
             virtual void        populate_children(	implement*   place_impl_)  =0;
+            virtual void        setWeigth  (unsigned w){}
+
     };
+    
+    struct Splitter;
+
  	class  division : public IField
 	{
 	  public:
@@ -58,11 +89,16 @@ namespace vplace_impl
 		std::vector<IField*>      children;   //  std::vector<div*> 
 		std::vector<window>       fastened_in_div;   //  
 		std::unique_ptr<IField>   gap;        //  
+        int                       splitter{0};
 	  public:
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
         virtual int&       fixed_c(rectangle& r )=0;
         virtual unsigned&  fixed_s(rectangle& r )=0;
+          int&      weigth_c(  ){return weigth_c(last);}
+          unsigned& weigth_s(  ){return weigth_s(last);}
+          int&       fixed_c(  ){return fixed_c(last);}
+          unsigned&  fixed_s(  ){return fixed_s(last);}
 
         window    window_handle    () const  override     { return nullptr; }
         rectangle cells            () const  override     {return rectangle(-1,-1,1,1);}             
@@ -73,6 +109,7 @@ namespace vplace_impl
 		virtual void collocate( const rectangle& r) 
 		{   
                                      //std::cerr<< "\ncollocating div in: "<<r; // debugg
+            IField::collocate(r);
 			rectangle area (r);
 
             adj pre_adj, end_adj; auto t_w=weigth_s(area);
@@ -95,13 +132,17 @@ namespace vplace_impl
                 API::move_window(fsn, r);   // si alguien habia cerrado la w fsn despues del populate children, tendremos problemas? make unload fastened erase?
                 API::show_window(fsn, API::visible(fsn));
             }
+
+            split();
 		}
+        void split();
+
         virtual ~division() 	{ }
-	};
+        virtual Splitter* create_splitter()=0;
+ 	};
 
     struct Gap_field   : IField                     
     { 
-        void     collocate    (const rectangle& r)override   {}
         window   window_handle() const override              { return nullptr; }
         void     populate_children(implement*   place_impl_) override {}
         rectangle   cells         () const override          {return rectangle(-1,-1,0,0);}             
@@ -120,6 +161,7 @@ namespace vplace_impl
         rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
         void            collocate      (const rectangle& r)override
         {  
+            IField::collocate(r);
             API::move_window (handle,r ); 
             API::show_window(handle, true);
         }
@@ -151,6 +193,7 @@ namespace vplace_impl
          unsigned& weigth_s(rectangle& r )override{return r.width;}
          int&       fixed_c(rectangle& r )override{return r.y;}
          unsigned&  fixed_s(rectangle& r )override{return r.height;}
+        Splitter* create_splitter()override;// temp
 	};
 	class  div_v 	: public division
 	{
@@ -159,10 +202,13 @@ namespace vplace_impl
          unsigned& weigth_s(rectangle& r )override{return r.height;}
          int&       fixed_c(rectangle& r )override{return r.x;}
          unsigned&  fixed_s(rectangle& r )override{return r.width;}
+        Splitter* create_splitter()override;// temp
    	};
 	class  div_grid	: public div_h
 	{
 	  public:
+        Splitter* create_splitter()override{return nullptr;}// temp
+
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
 		void Init(const std::string& name_, size dim_)	
@@ -173,6 +219,9 @@ namespace vplace_impl
 
         virtual void collocate(const rectangle& r) override
 	    {
+            IField::collocate(r);
+
+
             if(! r.width || ! r.height ) return;
 
             for(auto & fsn: fastened_in_div)
@@ -275,6 +324,8 @@ namespace vplace_impl
     template <class Base> struct IFixed:  IAdjust<Base>     
     { 
         unsigned weight_; 
+
+        void setWeigth(unsigned w)override{weight_=w;}
 
         IFixed(unsigned weight)                             : weight_(weight) {}
         IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjust<Base>(min_,max_){}
@@ -491,6 +542,144 @@ namespace vplace_impl
             :IPercent<div_grid> ( percent_,min_,max_)       {Init(name_,dim_); }
     };
 
+    struct Splitter: public fixed_widget
+    {
+        nana::cursor	            splitter_cursor_{cursor::arrow};
+		place_parts::splitter<true>	splitter_;
+		nana::point	                begin_point_;
+		std::unique_ptr<division>   leaf_left_, leaf_right_;
+		dragger	                    dragger_;
+        bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
+        
+        Splitter(window pw):fixed_widget(nullptr,3)
+        {
+            splitter_.create(pw);
+            dragger_.trigger(splitter_);
+            handle = splitter_.handle();
+
+            splitter_.events().mouse_down.connect([this](const arg_mouse& arg)
+			{
+				if (arg.left_button)
+    				begin_point_ = splitter_.pos();
+			});
+
+			splitter_.events().mouse_move.connect([this](const arg_mouse& arg)
+			{
+				if (false == arg.left_button)
+					return;
+
+                unsigned tw= leaf_left_->weigth_s() + leaf_right_->weigth_s() + weight_ ;
+
+                rectangle delta_r {point(splitter_.pos().x- begin_point_.x,  splitter_.pos().y- begin_point_.y)};
+                int delta = this->leaf_left_->weigth_c(delta_r);
+
+                     if ( delta < 0  &&  -delta > leaf_left_->weigth_c( )  )
+                                                                            delta = - leaf_left_->weigth_c( ) ;
+                     if ( delta > 0  &&   delta > leaf_right_->weigth_c( ) )
+                                                                            delta = leaf_right_->weigth_c( ) ;
+                
+                leaf_left_ ->weigth_s( ) +=delta;
+                leaf_right_->weigth_s( ) -=delta;
+                leaf_right_->weigth_c( ) -=delta;
+                leaf_left_ ->weigth_s( last) +=delta;
+                
+                leaf_left_ ->collocate(leaf_left_->last);
+                leaf_right_->collocate(leaf_right_->last);
+                collocate( last);
+                actualize_left( );
+
+ 			});
+			
+
+        }
+
+        void populate_children(	implement*   place_impl_)
+        {
+            leaf_left_.reset();
+            leaf_right_.reset();
+        }
+
+        void actualize_left( )
+        {
+            double p= leaf_left_->weigth_s() + leaf_right_->weigth_s() + weight_ ;
+
+            p =   (leaf_left_->weigth_c( last) -  leaf_left_->weigth_c( ) )/p  ;
+
+                //auto &lc=*l.children.back();
+                //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
+
+            leaf_left_->setWeigth(static_cast<unsigned>(100*p));
+       }
+
+    };
+
+    void division::split()
+        {
+            if (! splitter) return;
+            Splitter *spl = create_splitter();
+            if (!spl) return;// temp
+            int i{0};
+            auto &l=*spl->leaf_left_;
+            auto &r=*spl->leaf_right_;
+                            
+            for(;i != splitter; ++i) 
+            {
+                l.children.push_back(children[i]);
+            } 
+            double p= weigth_s( );
+            p= p ? (weigth_c(spl->last) -  weigth_c( ))/p : 0 ;
+
+                //auto &lc=*l.children.back();
+                //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
+
+
+            l.setWeigth(static_cast<unsigned>(100*p));
+
+            for(++i; i != children.size(); ++i) 
+            {
+                r.children.push_back(children[i]);
+            }   
+            children = std::vector<IField*> {spl->leaf_left_.get(), spl, spl->leaf_right_.get()};
+        }
+    Splitter * division::create_splitter()
+        {
+            return nullptr;
+        }
+    Splitter * div_h::create_splitter()
+        {
+            Splitter *spl;
+            if(children.size()==3)
+                spl= dynamic_cast<Splitter*>(children[1]);
+            else
+                spl= dynamic_cast<Splitter*>(children[splitter]);
+
+            if (!spl)
+                spl= dynamic_cast<Splitter*>(children[splitter]);
+
+            if (spl->leaf_left_) return nullptr;
+
+            spl->leaf_left_ = std::make_unique<percent_div_h>(0);
+            spl->leaf_right_ = std::make_unique< adj_div_h>( );
+            //spl->splitter_cursor_ = cursor::size_we;
+            spl->splitter_.cursor( cursor::size_we);
+            spl->dragger_.target(spl->splitter_, last, nana::arrange::horizontal);
+
+            return spl;
+        }
+    Splitter * div_v::create_splitter()
+        {
+            Splitter *spl= dynamic_cast<Splitter*>(children[splitter]);
+
+            if (spl->leaf_left_) return nullptr;
+
+            spl->leaf_left_ = std::make_unique<percent_div_v>(0);
+            spl->leaf_right_ = std::make_unique<adj_div_v>( );
+            //spl->splitter_cursor_ = cursor::size_ns;
+            spl->splitter_.cursor( cursor::size_ns);
+            spl->dragger_.target(spl->splitter_, last, nana::arrange::vertical);
+
+            return spl;
+        }
     class number_t
 	{	//number_t is used to store a number type variable
 	    //such as integer, real and percent. Essentially, percent is a typo of real.
@@ -526,9 +715,9 @@ namespace vplace_impl
 	public:
 		enum class token
 		{
-			div_start, div_end,
+			div_start, div_end, splitter,
 			identifier, vertical, horizontal, grid, number, array,
-			weight, gap, min, max,
+			weight, gap, min, max, margin,
 			equal,
 			eof, error
 		};
@@ -547,6 +736,7 @@ namespace vplace_impl
 			{
 			case '\0':				                    return token::eof;
 			case '=':		        ++sp_;				return token::equal;
+			case '|':		        ++sp_;				return token::splitter;
 			case '<':				++sp_;				return token::div_start;
 			case '>':				++sp_;				return token::div_end;
 			case '[':
@@ -603,6 +793,7 @@ namespace vplace_impl
 				else if(idstr_ == "max")   {_m_attr_number_value();	return token::max;   }
 				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
 				else if(idstr_ == "grid")       					return token::grid;
+				else if(idstr_ == "margin")       					return token::margin;
                         				                            return token::identifier;
 			}
 
@@ -717,11 +908,11 @@ namespace vplace_impl
         window                          parent_window_handle{nullptr};
         event_handle                    event_size_handle{nullptr};
 		std::unique_ptr<division>       root_division;
-        std::unordered_set<std::string> names;     ///<  All the names defines. Garant no repited name.
+        std::unordered_set<std::string> names;          ///<  All the names defines. Garant no repited name.
         unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
         bool                            recollocate{ true };
 
-            /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
+                        /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
 		std::multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::multimap<std::string,    window              > fastened;
         std::vector/*<std::unique_ptr */<nana::label*>/*>*/     widgets;                                 
@@ -772,7 +963,7 @@ namespace vplace_impl
 		if(root_division && parent_window_handle)
 		{
 			rectangle r(API::window_size(this->parent_window_handle));  //debugg
-            //if(r.width && r.height ) 
+            if(r.width && r.height ) 
             {      
                if (recollocate) root_division->populate_children (this);
                recollocate = false;
@@ -865,14 +1056,14 @@ namespace vplace_impl
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
             auto pi = place_impl_;
-            auto dtr = API::events(wd).destroy ( [pi](const arg_destroy& ei)
+            auto dtr = API::events(wd).destroy.connect ( [pi](const arg_destroy& ei)
 			{
-				for (auto f=pi->fastened.begin(); f!=pi->fastened.end(); ++f)
+				for (auto f=pi->fastened.begin(), end=pi->fastened.end(); f!=end; ++f)
                     if (f->second ==  ei.window_handle  )
                     {
                         pi->fastened.erase(f);    // delete ???
 				        pi->recollocate = true;
-                        break;
+                        return;
                     }
 			});	
             //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
@@ -896,16 +1087,17 @@ namespace vplace_impl
 		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
 		void _m_make_destroy(window wd)
 		{
+            if ( ! wd ) return;
             implement * pi = place_impl_;
-            auto dtr = API::events(wd).destroy ( [pi](const arg_destroy& ei)
+            auto dtr = API::events(wd).destroy.connect ( [pi](const arg_destroy& ei)
 			{
-				for (auto f=pi->fields.begin(); f!=pi->fields.end(); ++f)
+				for (auto f=pi->fields.begin(), end=pi->fields.end(); f!=end; ++f)
                     if (f->second->window_handle() ==  ei.window_handle )
                     {
                         pi->fields.erase(f);    // delete ???
 				        pi->recollocate = true;
 				        pi->collocate();
-                        break;
+                        return;
                     }
 			});
             //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
@@ -924,6 +1116,7 @@ namespace vplace_impl
         bool        have_gap=false, have_weight=false;
         minmax      w; 
         std::string gr_name;
+        int         splitter{0};
  
         std::vector<number_t>    array;
 		std::vector<std::string> field_names_in_div;
@@ -941,16 +1134,25 @@ namespace vplace_impl
                     }
 			    case token::array:		    tknizer.array().swap(array);   		break;
 			    case token::identifier:		
-                {
-                    std::string field_name(tknizer.idstr());
-                    if (add_field_name (field_name))
-                       field_names_in_div.push_back(field_name );			    
-                    else ;     /* trow repeated name in layout !!!!!!! */       break;	     
-                }
+                    {
+                        std::string field_name(tknizer.idstr());
+                        if (add_field_name (field_name))
+                           field_names_in_div.push_back(field_name );			    
+                        else ;     /* trow repeated name in layout !!!!!!! */       break;	     
+                    }
+                case token::splitter:       
+                    {       // Use only the first splitter with some fields at the left
+                       if ( ! splitter && (splitter = field_names_in_div.size()) ) 
+                       {    
+                            std::string div_name(add_div_name ());
+                            fields.emplace(div_name, std::make_unique<Splitter>(parent_window_handle) );
+                            field_names_in_div.push_back(div_name);
+                       }
+                                                                                break;
+                    }
 			    case token::horizontal:
 			    case token::vertical:    	div_type = tk;		   		        break;
-			    case token::grid:			
-                    div_type = tk;
+			    case token::grid:			div_type = tk;
                     gr_name=field_names_in_div.back();                          break;
 
 			    case token::weight:	weight = tknizer.number();have_weight=true; break;
@@ -1035,6 +1237,7 @@ namespace vplace_impl
                 else                        div->gap.reset (new adj_gap  () );
         }
 		div->field_names.swap(field_names_in_div);
+        div->splitter=splitter;
 		return div;
 	} // scan_div
 
@@ -1096,13 +1299,14 @@ namespace vplace_impl
     }
     bool implement::bind (window wd) 
     {
-		if (parent_window_handle) return true; 
+		assert(!parent_window_handle);
+        if (parent_window_handle) return true; 
         parent_window_handle = wd;
      		//  rectangle r;  //debugg
             //  r=API::window_size(this->parent_window_handle);  //debugg
             //  std::cerr<< "\nplace(parent_widget [ "<<parent_widget<<" ]) with area: "<<r;  //debugg
  
-        event_size_handle = API::events(parent_window_handle).resized( [this](const arg_resized&ei)
+        event_size_handle = API::events(parent_window_handle).resized.connect( [this](const arg_resized&ei)
 		{
             this->collocate(); 
     //        //std::cerr<< "\nResize: collocating root div ??:[ "<<this->parent_window_handle<<" ]) with event :[ "//debug
