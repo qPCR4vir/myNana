@@ -1208,9 +1208,9 @@ namespace nana
 						{
 							room = i->u.room_ptr->second;
 							if(room.first > dimension.first - l)
-								room.first = dimension.first - l;//warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+								room.first = dimension.first - l;
 							if(room.second > dimension.second - c)
-								room.second = dimension.second - c;//warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+								room.second = dimension.second - c;
 						}
 
 						window wd = nullptr;

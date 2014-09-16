@@ -1518,7 +1518,8 @@ namespace nana
 						cs = checkstate::checked;
 
 					//Return if thay are same.
-                                        if (node->value.second.checked == cs)   return;
+					if(node->value.second.checked == cs)
+						return;
 
 					//First, check the children of node, it prevents the use of
 					//unactualized child nodes during "on_checked".

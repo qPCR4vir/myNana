@@ -15,8 +15,7 @@
 #include <stdexcept>
 #include <sstream>
 
-namespace nana{	
-    namespace drawerbase {
+namespace nana{	namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent
@@ -286,18 +285,6 @@ namespace nana{
 			}
 			return *this;
 		}
-  //      textbox& textbox::reset(const nana::string& newtext )
-		//{
-		//	auto editor = get_drawer_trigger().editor();
-		//	if(editor)
-		//	{
-		//		editor->text(newtext);
-  //              //editor->set_unchanged(); 
-		//		API::update_window(this->handle());
-		//	}
-		//	return *this;
-
-		//}
 
 		nana::string textbox::filename() const
 		{
@@ -366,7 +353,6 @@ namespace nana{
 
 			return *this;
 		}
-
 
 		bool textbox::multi_lines() const
 		{

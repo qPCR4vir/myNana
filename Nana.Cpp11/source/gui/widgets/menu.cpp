@@ -23,8 +23,7 @@ namespace nana
 				//@brief: this class is used as parameter of menu event function.
 					menu_item_type::item_proxy::item_proxy(std::size_t index, menu_item_type &item)
 						:index_(index), item_(item)
-					{
-                    }
+					{}
 
 					menu_item_type::item_proxy& menu_item_type::item_proxy::enabled(bool v)
 					{

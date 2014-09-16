@@ -12,7 +12,6 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/tooltip.hpp>
 
-
 namespace nana
 {
 	//class widget
