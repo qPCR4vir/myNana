@@ -240,9 +240,6 @@
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp">
       <Filter>Source Files\detail\win32</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\detail\win32\bedrock.cpp">
-      <Filter>Source Files\gui\detail\win32</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\charset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

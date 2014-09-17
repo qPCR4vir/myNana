@@ -85,11 +85,13 @@ namespace vplace_impl
  	class  division : public IField
 	{
 	  public:
+        using Children = std::vector<IField*>;
+
         std::vector <std::string> field_names;
-		std::vector<IField*>      children;   //  std::vector<div*> 
-		std::vector<window>       fastened_in_div;   //  
-		std::unique_ptr<IField>   gap;        //  
-        int                       splitter{0};
+		Children                  children;    
+		std::vector<window>       fastened_in_div;   
+		std::unique_ptr<IField>   gap;         
+        Splitter                  *splitter{nullptr};
 	  public:
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
@@ -352,6 +354,8 @@ namespace vplace_impl
         IPercent(double percent_)                            
             :IFixed<Base>(static_cast<unsigned>(100*percent_))          {}
 
+        //void setWeigth(unsigned percent_)override{weight_=100*percent_;}
+
         IPercent(double percent_,unsigned min_,unsigned max_)
             :IFixed<Base>(static_cast<unsigned>(100*percent_),min_,max_){}
         unsigned weigth_adj(unsigned t_w )override
@@ -550,8 +554,9 @@ namespace vplace_impl
 		std::unique_ptr<division>   leaf_left_, leaf_right_;
 		dragger	                    dragger_;
         bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
+        bool                        splitted{false};
         
-        Splitter(window pw):fixed_widget(nullptr,3)
+        Splitter(window pw ):fixed_widget(nullptr,3) 
         {
             splitter_.create(pw);
             dragger_.trigger(splitter_);
@@ -568,25 +573,23 @@ namespace vplace_impl
 				if (false == arg.left_button)
 					return;
 
-                unsigned tw= leaf_left_->weigth_s() + leaf_right_->weigth_s() + weight_ ;
-
                 rectangle delta_r {point(splitter_.pos().x- begin_point_.x,  splitter_.pos().y- begin_point_.y)};
                 int delta = this->leaf_left_->weigth_c(delta_r);
 
-                     if ( delta < 0  &&  -delta > leaf_left_->weigth_c( )  )
-                                                                            delta = - leaf_left_->weigth_c( ) ;
-                     if ( delta > 0  &&   delta > leaf_right_->weigth_c( ) )
-                                                                            delta = leaf_right_->weigth_c( ) ;
+                if ( delta < 0  &&  -delta > leaf_left_->weigth_s( )  )
+                                                                    delta = - leaf_left_->weigth_s( ) ;
+                if ( delta > 0  &&   delta > leaf_right_->weigth_s( ) )
+                                                                    delta = leaf_right_->weigth_s( ) ;
                 
                 leaf_left_ ->weigth_s( ) +=delta;
                 leaf_right_->weigth_s( ) -=delta;
-                leaf_right_->weigth_c( ) -=delta;
-                leaf_left_ ->weigth_s( last) +=delta;
+                leaf_right_->weigth_c( ) +=delta;
+                leaf_left_ ->weigth_c( last) +=delta;
                 
+                actualize_left( );
                 leaf_left_ ->collocate(leaf_left_->last);
                 leaf_right_->collocate(leaf_right_->last);
                 collocate( last);
-                actualize_left( );
 
  			});
 			
@@ -601,9 +604,9 @@ namespace vplace_impl
 
         void actualize_left( )
         {
-            double p= leaf_left_->weigth_s() + leaf_right_->weigth_s() + weight_ ;
+            double p= leaf_left_->weigth_s() + leaf_left_->weigth_s(last)  + leaf_right_->weigth_s();
 
-            p =   (leaf_left_->weigth_c( last) -  leaf_left_->weigth_c( ) )/p  ;
+            p =  leaf_left_->weigth_s() / p  ;
 
                 //auto &lc=*l.children.back();
                 //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
@@ -615,31 +618,33 @@ namespace vplace_impl
 
     void division::split()
         {
-            if (! splitter) return;
-            Splitter *spl = create_splitter();
-            if (!spl) return;// temp
-            int i{0};
-            auto &l=*spl->leaf_left_;
-            auto &r=*spl->leaf_right_;
+            if (! splitter || splitter->splitted) return;
+
+            create_splitter();
+            auto cb = children.begin();
+            auto ce = children.end();
+            auto spl=std::find(cb,ce, splitter);
+            assert(spl!=ce);
+            auto &l=*splitter->leaf_left_;
+            auto &r=*splitter->leaf_right_;
+
+            l.children = Children(cb,spl) ;
+            r.children = Children(spl+1,ce) ;
                             
-            for(;i != splitter; ++i) 
-            {
-                l.children.push_back(children[i]);
-            } 
+            l.last=last;
+            l.weigth_s()=weigth_c(splitter->last) -  weigth_c( );
             double p= weigth_s( );
-            p= p ? (weigth_c(spl->last) -  weigth_c( ))/p : 0 ;
+            p= p ? l.weigth_s()/p : 0.5 ;
+            l.setWeigth(static_cast<unsigned>(100*p));
+
+            r.last=last;
+            r.weigth_c()=weigth_c(splitter->last) +  weigth_s(splitter->last);
+            r.weigth_s()=weigth_s() -  l.weigth_s() - weigth_s(splitter->last);
+            children = Children {splitter->leaf_left_.get(), splitter, splitter->leaf_right_.get()};
+            splitter->splitted=true;
 
                 //auto &lc=*l.children.back();
                 //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
-
-
-            l.setWeigth(static_cast<unsigned>(100*p));
-
-            for(++i; i != children.size(); ++i) 
-            {
-                r.children.push_back(children[i]);
-            }   
-            children = std::vector<IField*> {spl->leaf_left_.get(), spl, spl->leaf_right_.get()};
         }
     Splitter * division::create_splitter()
         {
@@ -647,38 +652,21 @@ namespace vplace_impl
         }
     Splitter * div_h::create_splitter()
         {
-            Splitter *spl;
-            if(children.size()==3)
-                spl= dynamic_cast<Splitter*>(children[1]);
-            else
-                spl= dynamic_cast<Splitter*>(children[splitter]);
-
-            if (!spl)
-                spl= dynamic_cast<Splitter*>(children[splitter]);
-
-            if (spl->leaf_left_) return nullptr;
-
-            spl->leaf_left_ = std::make_unique<percent_div_h>(0);
-            spl->leaf_right_ = std::make_unique< adj_div_h>( );
+            splitter->leaf_left_  = std::make_unique<percent_div_h>(0.5);
+            splitter->leaf_right_ = std::make_unique< adj_div_h   >( );
             //spl->splitter_cursor_ = cursor::size_we;
-            spl->splitter_.cursor( cursor::size_we);
-            spl->dragger_.target(spl->splitter_, last, nana::arrange::horizontal);
-
-            return spl;
+            splitter->splitter_.cursor( cursor::size_we);
+            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+            return splitter ;
         }
     Splitter * div_v::create_splitter()
         {
-            Splitter *spl= dynamic_cast<Splitter*>(children[splitter]);
-
-            if (spl->leaf_left_) return nullptr;
-
-            spl->leaf_left_ = std::make_unique<percent_div_v>(0);
-            spl->leaf_right_ = std::make_unique<adj_div_v>( );
+            splitter->leaf_left_  = std::make_unique<percent_div_v>(50);
+            splitter->leaf_right_ = std::make_unique< adj_div_v   >( );
             //spl->splitter_cursor_ = cursor::size_ns;
-            spl->splitter_.cursor( cursor::size_ns);
-            spl->dragger_.target(spl->splitter_, last, nana::arrange::vertical);
-
-            return spl;
+            splitter->splitter_.cursor( cursor::size_ns);
+            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
+            return splitter ;
         }
     class number_t
 	{	//number_t is used to store a number type variable
@@ -792,6 +780,7 @@ namespace vplace_impl
 				else if(idstr_ == "min")   {_m_attr_number_value(); return token::min;   }
 				else if(idstr_ == "max")   {_m_attr_number_value();	return token::max;   }
 				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
+				else if(idstr_ == "horizontal") 		   	 	 	return token::horizontal;
 				else if(idstr_ == "grid")       					return token::grid;
 				else if(idstr_ == "margin")       					return token::margin;
                         				                            return token::identifier;
@@ -1116,7 +1105,7 @@ namespace vplace_impl
         bool        have_gap=false, have_weight=false;
         minmax      w; 
         std::string gr_name;
-        int         splitter{0};
+        Splitter    *splitter {nullptr};
  
         std::vector<number_t>    array;
 		std::vector<std::string> field_names_in_div;
@@ -1142,10 +1131,13 @@ namespace vplace_impl
                     }
                 case token::splitter:       
                     {       // Use only the first splitter with some fields at the left
-                       if ( ! splitter && (splitter = field_names_in_div.size()) ) 
+                       if ( ! splitter  ) // && (  field_names_in_div.size())
                        {    
                             std::string div_name(add_div_name ());
-                            fields.emplace(div_name, std::make_unique<Splitter>(parent_window_handle) );
+                            std::unique_ptr<Splitter> spl=std::make_unique<Splitter>
+                                            (parent_window_handle);
+                            splitter = spl.get();
+                            fields.emplace(div_name, std::move(spl) );
                             field_names_in_div.push_back(div_name);
                        }
                                                                                 break;
