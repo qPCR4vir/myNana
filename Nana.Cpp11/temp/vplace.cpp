@@ -582,21 +582,6 @@ namespace vplace_impl
 			{
 				if (false == arg.left_button)
 					return;
-
-                rectangle delta_r {point(splitter_.pos().x- begin_point_.x,  splitter_.pos().y- begin_point_.y)};
-                int delta = this->leaf_left_->weigth_c(delta_r);
-                //delta = -delta;   // ?????????????????????
-
-                std::cout << "\n\ndelta ori  =" << delta <<" ori- act: "<< begin_point_.x <<" - "<< splitter_.pos().x;
-
-                //if ( delta < 0  &&  -delta > leaf_left_->weigth_s( )  )
-                //                                                    delta = - leaf_left_->weigth_s( ) ;
-                //if ( delta > 0  &&   delta > leaf_right_->weigth_s( ) )
-                //                                                    delta = leaf_right_->weigth_s( ) ;
-
-                std::cout << "\n      delta="<<delta<<"; left="    <<leaf_left_ ->weigth_c(    )<<",   "<< leaf_left_ ->weigth_s(     )
-                                              <<"; splitter="<<leaf_right_->weigth_c(last)<<",   "<< leaf_right_->weigth_s(last )  
-                                              <<"; right="   <<leaf_right_->weigth_c(    )<<",   "<< leaf_right_->weigth_s(     ) ;
                 
                 last=rectangle(splitter_.pos(),splitter_.size());
 
@@ -610,52 +595,14 @@ namespace vplace_impl
 
                 leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/owner->weigth_s());
 
-                splitter_.show();
-                
-    //            actualize_left( );
-    //            leaf_left_ ->collocate(leaf_left_->last);
-    //            leaf_right_->collocate(leaf_right_->last);
-    //            collocate( last);
-    //           
-    //            
-    //            
-    //            
-    //            actualize_left( delta );
-
-    //            splitter_.
-    //            pause_move_collocate_ = true;
-    //            owner ->collocate(owner->last);
-				//pause_move_collocate_ = false;
-
-                begin_point_=splitter_.pos();
-    //            //begin_point_=  point(last.x,last.y);
-
-                std::cout << "\nAfter collocate; left  =" <<leaf_left_ ->weigth_c(    )<<",   "<< leaf_left_ ->weigth_s(     )
-                                         <<"; splitter="<<leaf_right_->weigth_c(last)<<",   "<< leaf_right_->weigth_s(last )  
-                                         <<"; right="   <<leaf_right_->weigth_c(    )<<",   "<< leaf_right_->weigth_s(     ) ;
  			});
 			
 
-        }
-        void  collocate  (const rectangle& r)override
-        {
-   			//if ( pause_move_collocate_) return;
-
-			fixed_widget::collocate(r);
         }
         void populate_children(	implement*   place_impl_) 
         {
             splitted=false;
         }
-
-        void actualize_left(int delta )
-        {
-            double p= owner->weigth_s();
-            double w =  p ?   (leaf_left_->weigth_s()+delta)  / p :  0.01 ;
-            
-            leaf_left_->setPercent(w);
-       }
-
     };
 
     void division::split()
