@@ -1,7 +1,7 @@
 /*
  *	An Alternative Implementation of Place for Layout
  *  (
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -76,7 +76,10 @@ namespace vplace_impl
             virtual void        collocate   (const rectangle& r)   {last=r;}
             virtual window      window_handle()const   =0;
             virtual void        populate_children(	implement*   place_impl_)  =0;
-            virtual void        setWeigth  (unsigned w){}
+            virtual void        setWeigth  (unsigned w){assert(false);}
+            virtual void        setPercent (double p){assert(false);}
+            virtual unsigned    getWeigth  (){assert(false);return 0;}
+            virtual double      getPercent (){assert(false);return 0;}
 
     };
     
@@ -165,7 +168,7 @@ namespace vplace_impl
         {  
             IField::collocate(r);
             API::move_window (handle,r ); 
-            API::show_window(handle, true);
+            //API::show_window(handle, true);
         }
     };
     struct Cell_field: virtual Widget_field    
@@ -327,7 +330,8 @@ namespace vplace_impl
     { 
         unsigned weight_; 
 
-        void setWeigth(unsigned w)override{weight_=w;}
+        void        setWeigth(unsigned w)override{weight_=w;}
+        unsigned    getWeigth  ()override{ return weight_;}
 
         IFixed(unsigned weight)                             : weight_(weight) {}
         IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjust<Base>(min_,max_){}
@@ -351,19 +355,24 @@ namespace vplace_impl
     };
     template <class Base> struct IPercent: IFixed<Base> 
     { 
+        const static unsigned fx=10000;
         IPercent(double percent_)                            
-            :IFixed<Base>(static_cast<unsigned>(100*percent_))          {}
+            :IFixed<Base>(static_cast<unsigned>(fx*percent_))          {}
 
         //void setWeigth(unsigned percent_)override{weight_=100*percent_;}
 
         IPercent(double percent_,unsigned min_,unsigned max_)
-            :IFixed<Base>(static_cast<unsigned>(100*percent_),min_,max_){}
+            :IFixed<Base>(static_cast<unsigned>(fx*percent_),min_,max_){}
+
+        void        setPercent (double p)override{weight_=p*fx;}
+        double      getPercent ()override{return weight_*fx;}
+
         unsigned weigth_adj(unsigned t_w )override
         {   
-            if ( t_w * weight_ /100.0  < min )    {return min; }
-            if ( t_w * weight_ /100.0  > max )    {return max; }
+            if ( (t_w * weight_) /fx  < min )    {return min; }
+            if ( (t_w * weight_) /fx  > max )    {return max; }
                 
-            return  t_w * weight_ /100.0;          
+            return  t_w * weight_ /fx;          
         }
     };     
     template <class Base> struct IAdjustable  :  IAdjust<Base>                      
@@ -552,6 +561,7 @@ namespace vplace_impl
 		place_parts::splitter<true>	splitter_;
 		nana::point	                begin_point_;
 		std::unique_ptr<division>   leaf_left_, leaf_right_;
+        division                    *owner;
 		dragger	                    dragger_;
         bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
         bool                        splitted{false};
@@ -575,50 +585,86 @@ namespace vplace_impl
 
                 rectangle delta_r {point(splitter_.pos().x- begin_point_.x,  splitter_.pos().y- begin_point_.y)};
                 int delta = this->leaf_left_->weigth_c(delta_r);
+                //delta = -delta;   // ?????????????????????
 
-                if ( delta < 0  &&  -delta > leaf_left_->weigth_s( )  )
-                                                                    delta = - leaf_left_->weigth_s( ) ;
-                if ( delta > 0  &&   delta > leaf_right_->weigth_s( ) )
-                                                                    delta = leaf_right_->weigth_s( ) ;
-                
-                leaf_left_ ->weigth_s( ) +=delta;
-                leaf_right_->weigth_s( ) -=delta;
-                leaf_right_->weigth_c( ) +=delta;
-                leaf_left_ ->weigth_c( last) +=delta;
-                
-                actualize_left( );
-                leaf_left_ ->collocate(leaf_left_->last);
-                leaf_right_->collocate(leaf_right_->last);
-                collocate( last);
+                std::cout << "\n\ndelta ori  =" << delta <<" ori- act: "<< begin_point_.x <<" - "<< splitter_.pos().x;
 
+                //if ( delta < 0  &&  -delta > leaf_left_->weigth_s( )  )
+                //                                                    delta = - leaf_left_->weigth_s( ) ;
+                //if ( delta > 0  &&   delta > leaf_right_->weigth_s( ) )
+                //                                                    delta = leaf_right_->weigth_s( ) ;
+
+                std::cout << "\n      delta="<<delta<<"; left="    <<leaf_left_ ->weigth_c(    )<<",   "<< leaf_left_ ->weigth_s(     )
+                                              <<"; splitter="<<leaf_right_->weigth_c(last)<<",   "<< leaf_right_->weigth_s(last )  
+                                              <<"; right="   <<leaf_right_->weigth_c(    )<<",   "<< leaf_right_->weigth_s(     ) ;
+                
+                last=rectangle(splitter_.pos(),splitter_.size());
+
+                leaf_left_ ->weigth_c( )  = owner->weigth_c( ) ;
+                leaf_left_ ->weigth_s( )  = owner->weigth_c(last) - owner->weigth_c( ) ;
+                leaf_left_ ->collocate(leaf_left_ ->last);
+
+                leaf_right_->weigth_c( )  = owner->weigth_c(last) + owner->weigth_s(last)+1 ;
+                leaf_right_->weigth_s( )  = owner->weigth_s() - (leaf_right_->weigth_c( ) -  owner->weigth_c( ));
+                leaf_right_ ->collocate(leaf_right_ ->last);
+
+                leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/owner->weigth_s());
+
+                splitter_.show();
+                
+    //            actualize_left( );
+    //            leaf_left_ ->collocate(leaf_left_->last);
+    //            leaf_right_->collocate(leaf_right_->last);
+    //            collocate( last);
+    //           
+    //            
+    //            
+    //            
+    //            actualize_left( delta );
+
+    //            splitter_.
+    //            pause_move_collocate_ = true;
+    //            owner ->collocate(owner->last);
+				//pause_move_collocate_ = false;
+
+                begin_point_=splitter_.pos();
+    //            //begin_point_=  point(last.x,last.y);
+
+                std::cout << "\nAfter collocate; left  =" <<leaf_left_ ->weigth_c(    )<<",   "<< leaf_left_ ->weigth_s(     )
+                                         <<"; splitter="<<leaf_right_->weigth_c(last)<<",   "<< leaf_right_->weigth_s(last )  
+                                         <<"; right="   <<leaf_right_->weigth_c(    )<<",   "<< leaf_right_->weigth_s(     ) ;
  			});
 			
 
         }
-
-        void populate_children(	implement*   place_impl_)
+        void  collocate  (const rectangle& r)override
         {
-            leaf_left_.reset();
-            leaf_right_.reset();
+   			//if ( pause_move_collocate_) return;
+
+			fixed_widget::collocate(r);
+        }
+        void populate_children(	implement*   place_impl_) 
+        {
+            splitted=false;
         }
 
-        void actualize_left( )
+        void actualize_left(int delta )
         {
-            double p= leaf_left_->weigth_s() + leaf_left_->weigth_s(last)  + leaf_right_->weigth_s();
-
-            p =  leaf_left_->weigth_s() / p  ;
-
-                //auto &lc=*l.children.back();
-                //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
-
-            leaf_left_->setWeigth(static_cast<unsigned>(100*p));
+            double p= owner->weigth_s();
+            double w =  p ?   (leaf_left_->weigth_s()+delta)  / p :  0.01 ;
+            
+            leaf_left_->setPercent(w);
        }
 
     };
 
     void division::split()
         {
-            if (! splitter || splitter->splitted) return;
+            if (! splitter ) return;
+            
+            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+
+            if ( splitter->splitted ) return;
 
             create_splitter();
             auto cb = children.begin();
@@ -635,7 +681,7 @@ namespace vplace_impl
             l.weigth_s()=weigth_c(splitter->last) -  weigth_c( );
             double p= weigth_s( );
             p= p ? l.weigth_s()/p : 0.5 ;
-            l.setWeigth(static_cast<unsigned>(100*p));
+            l.setPercent( p );
 
             r.last=last;
             r.weigth_c()=weigth_c(splitter->last) +  weigth_s(splitter->last);
@@ -656,16 +702,14 @@ namespace vplace_impl
             splitter->leaf_right_ = std::make_unique< adj_div_h   >( );
             //spl->splitter_cursor_ = cursor::size_we;
             splitter->splitter_.cursor( cursor::size_we);
-            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
             return splitter ;
         }
     Splitter * div_v::create_splitter()
         {
-            splitter->leaf_left_  = std::make_unique<percent_div_v>(50);
+            splitter->leaf_left_  = std::make_unique<percent_div_v>(0.5);
             splitter->leaf_right_ = std::make_unique< adj_div_v   >( );
             //spl->splitter_cursor_ = cursor::size_ns;
             splitter->splitter_.cursor( cursor::size_ns);
-            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
             return splitter ;
         }
     class number_t
@@ -1185,7 +1229,7 @@ namespace vplace_impl
 		} 
         if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
         {
-            double perc=weight.real ();
+            double perc=weight.real () ;
             switch(div_type)
             {
                 case token::eof:
@@ -1229,7 +1273,11 @@ namespace vplace_impl
                 else                        div->gap.reset (new adj_gap  () );
         }
 		div->field_names.swap(field_names_in_div);
-        div->splitter=splitter;
+        if (splitter)
+        {
+            div->splitter=splitter;
+            splitter->owner = div;
+        }
 		return div;
 	} // scan_div
 
