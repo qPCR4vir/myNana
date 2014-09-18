@@ -365,14 +365,14 @@ namespace vplace_impl
             :IFixed<Base>(static_cast<unsigned>(fx*percent_),min_,max_){}
 
         void        setPercent (double p)override{weight_=p*fx;}
-        double      getPercent ()override{return weight_*fx;}
+        double      getPercent ()override{return double(weight_)/fx;}
 
         unsigned weigth_adj(unsigned t_w )override
         {   
             if ( (t_w * weight_) /fx  < min )    {return min; }
             if ( (t_w * weight_) /fx  > max )    {return max; }
                 
-            return  t_w * weight_ /fx;          
+            return  (t_w * weight_) /fx;          
         }
     };     
     template <class Base> struct IAdjustable  :  IAdjust<Base>                      
