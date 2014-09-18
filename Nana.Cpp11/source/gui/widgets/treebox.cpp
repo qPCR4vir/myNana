@@ -603,7 +603,7 @@ namespace nana
 						item_proxy iprx(data.trigger_ptr, node_state.pointed);
 						data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
 
-						node_state.pointed = nullptr;
+						node_state.pointed = nullptr;    // This cause the CRASH in show_tooltip_window ??
 						close_tooltip_window();
 					}
 
@@ -627,7 +627,7 @@ namespace nana
 						node_state.tooltip = new tooltip_window(data.widget_ptr->handle(), text_r);
 
 						node_attribute node_attr;
-						assign_node_attr(node_attr, node_state.pointed);
+						assign_node_attr(node_attr, node);// node_state.pointed); // CRASH: node_state.pointed=0! use node or node_state.event_node ??
 						node_state.tooltip->impl().assign(node_attr, &data.renderer, &data.comp_placer);
 						node_state.tooltip->show();
 
