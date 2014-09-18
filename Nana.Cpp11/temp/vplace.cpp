@@ -168,7 +168,6 @@ namespace vplace_impl
         {  
             IField::collocate(r);
             API::move_window (handle,r ); 
-            //API::show_window(handle, true);
         }
     };
     struct Cell_field: virtual Widget_field    
@@ -561,22 +560,22 @@ namespace vplace_impl
 		place_parts::splitter<true>	splitter_;
 		nana::point	                begin_point_;
 		std::unique_ptr<division>   leaf_left_, leaf_right_;
-        division                    *owner;
+        division                    *parent;
 		dragger	                    dragger_;
-        bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
+        //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
         bool                        splitted{false};
         
-        Splitter(window pw ):fixed_widget(nullptr,3) 
+        Splitter(window pw ):fixed_widget(nullptr,4) 
         {
             splitter_.create(pw);
             dragger_.trigger(splitter_);
             handle = splitter_.handle();
 
-            splitter_.events().mouse_down.connect([this](const arg_mouse& arg)
-			{
-				if (arg.left_button)
-    				begin_point_ = splitter_.pos();
-			});
+   //         splitter_.events().mouse_down.connect([this](const arg_mouse& arg)
+			//{
+			//	if (arg.left_button)
+   // 				begin_point_ = splitter_.pos();
+			//});
 
 			splitter_.events().mouse_move.connect([this](const arg_mouse& arg)
 			{
@@ -585,35 +584,41 @@ namespace vplace_impl
                 
                 last=rectangle(splitter_.pos(),splitter_.size());
 
-                leaf_left_ ->weigth_c( )  = owner->weigth_c( ) ;
-                leaf_left_ ->weigth_s( )  = owner->weigth_c(last) - owner->weigth_c( ) ;
+                leaf_left_ ->weigth_c( )  = parent->weigth_c( ) ;
+                leaf_left_ ->weigth_s( )  = parent->weigth_c(last) - parent->weigth_c( ) ;
                 leaf_left_ ->collocate(leaf_left_ ->last);
 
-                leaf_right_->weigth_c( )  = owner->weigth_c(last) + owner->weigth_s(last)+1 ;
-                leaf_right_->weigth_s( )  = owner->weigth_s() - (leaf_right_->weigth_c( ) -  owner->weigth_c( ));
+                leaf_right_->weigth_c( )  = parent->weigth_c(last) + parent->weigth_s(last)+1 ;
+                leaf_right_->weigth_s( )  = parent->weigth_s() - (leaf_right_->weigth_c( ) -  parent->weigth_c( ));
                 leaf_right_ ->collocate(leaf_right_ ->last);
 
-                leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/owner->weigth_s());
+                leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/parent->weigth_s());
+                //pause_move_collocate_ = true;
+                //parent->collocate(parent->last);
+                //pause_move_collocate_ = false;
 
- 			});
-			
+                //API::update_window(handle);
 
+			});
         }
         void populate_children(	implement*   place_impl_) 
         {
             splitted=false;
         }
+        void  collocate  (const rectangle& r)override
+        {
+            //if ( pause_move_collocate_) return;
+                fixed_widget::collocate(r);
+        }
+        void restrict()
+        {
+        }
     };
 
     void division::split()
         {
-            if (! splitter ) return;
-            
-            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+            if (! splitter || ! create_splitter() ) return;
 
-            if ( splitter->splitted ) return;
-
-            create_splitter();
             auto cb = children.begin();
             auto ce = children.end();
             auto spl=std::find(cb,ce, splitter);
@@ -645,7 +650,9 @@ namespace vplace_impl
         }
     Splitter * div_h::create_splitter()
         {
-            splitter->leaf_left_  = std::make_unique<percent_div_h>(0.5);
+            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+            if ( splitter->splitted ) return nullptr;
+            splitter->leaf_left_  = std::make_unique<percent_div_h>(0.30);
             splitter->leaf_right_ = std::make_unique< adj_div_h   >( );
             //spl->splitter_cursor_ = cursor::size_we;
             splitter->splitter_.cursor( cursor::size_we);
@@ -653,7 +660,9 @@ namespace vplace_impl
         }
     Splitter * div_v::create_splitter()
         {
-            splitter->leaf_left_  = std::make_unique<percent_div_v>(0.5);
+            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
+            if ( splitter->splitted ) return nullptr;
+            splitter->leaf_left_  = std::make_unique<percent_div_v>(0.30);
             splitter->leaf_right_ = std::make_unique< adj_div_v   >( );
             //spl->splitter_cursor_ = cursor::size_ns;
             splitter->splitter_.cursor( cursor::size_ns);
@@ -1093,12 +1102,12 @@ namespace vplace_impl
 
 		token       div_type = token::eof;
 		number_t    weight , gap;
-        bool        have_gap=false, have_weight=false;
+        bool        have_gap{false}, have_weight{false};
         minmax      w; 
         std::string gr_name;
         Splitter    *splitter {nullptr};
  
-        std::vector<number_t>    array;
+        std::vector<number_t>    array, margin;
 		std::vector<std::string> field_names_in_div;
  
         for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
@@ -1118,10 +1127,10 @@ namespace vplace_impl
                         std::string field_name(tknizer.idstr());
                         if (add_field_name (field_name))
                            field_names_in_div.push_back(field_name );			    
-                        else ;     /* trow repeated name in layout !!!!!!! */       break;	     
+                        else ;     /* trow repeated name in layout !!!!!!! */   break;	     
                     }
                 case token::splitter:       
-                    {       // Use only the first splitter with some fields at the left
+                    {       // Use only the first splitter. with some fields at the left??
                        if ( ! splitter  ) // && (  field_names_in_div.size())
                        {    
                             std::string div_name(add_div_name ());
@@ -1131,12 +1140,11 @@ namespace vplace_impl
                             fields.emplace(div_name, std::move(spl) );
                             field_names_in_div.push_back(div_name);
                        }
-                                                                                break;
-                    }
+                    }                                                           break;
 			    case token::horizontal:
 			    case token::vertical:    	div_type = tk;		   		        break;
 			    case token::grid:			div_type = tk;
-                    gr_name=field_names_in_div.back();                          break;
+                         gr_name=field_names_in_div.back();                     break;
 
 			    case token::weight:	weight = tknizer.number();have_weight=true; break;
 			    case token::gap:	   gap = tknizer.number();have_gap=true;    break;
@@ -1181,10 +1189,10 @@ namespace vplace_impl
             switch(div_type)
             {
                 case token::eof:
-		        case token::horizontal: div = std::make_unique<percent_div_h>   (perc,w.min,w.max);  break;
-		        case token::vertical:	div = std::make_unique<percent_div_v>   (perc,w.min,w.max);	 break;
-                case token::grid:       div = std::make_unique<percent_div_grid>(gr_name,perc,rows,
-                                                                                columns,w.min,w.max);break;
+		        case token::horizontal: div.reset (new percent_div_h  (perc,w.min,w.max));  break;
+		        case token::vertical:   div.reset (new percent_div_v  (perc,w.min,w.max));	 break;
+                case token::grid:       div.reset (new percent_div_grid(gr_name,perc,rows,
+                                                                                columns,w.min,w.max));break;
                 default:
                     throw std::runtime_error("nana.place: invalid division type.");
 		    }
@@ -1194,10 +1202,10 @@ namespace vplace_impl
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:	 div = std::make_unique<fixed_div_h>   (fixed,w.min,w.max); break;
-		                case token::vertical:	 div = std::make_unique<fixed_div_v>   (fixed,w.min,w.max); break;
-                        case token::grid:        div = std::make_unique<fixed_div_grid>(gr_name,fixed,
-                                                                     rows,columns,   w.min,w.max);          break;
+		                case token::horizontal:	 div.reset (new fixed_div_h   (fixed,w.min,w.max)); break;
+		                case token::vertical:	 div.reset (new fixed_div_v   (fixed,w.min,w.max)); break;
+                        case token::grid:        div.reset (new fixed_div_grid(gr_name,fixed,
+                                                                     rows,columns,   w.min,w.max));          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -1205,10 +1213,10 @@ namespace vplace_impl
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:	 div = std::make_unique<adj_div_h>   (w.min,w.max);	 break;
-		                case token::vertical:	 div = std::make_unique<adj_div_v>   (w.min,w.max);	 break;
-                        case token::grid:        div = std::make_unique<adj_div_grid>(gr_name,
-                                                              rows,columns,   w.min,w.max);          break;
+		                case token::horizontal:	 div.reset (new adj_div_h   (w.min,w.max));	 break;
+		                case token::vertical:	 div.reset (new adj_div_v   (w.min,w.max));	 break;
+                        case token::grid:        div.reset (new adj_div_grid(gr_name,
+                                                              rows,columns,   w.min,w.max));          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -1225,7 +1233,7 @@ namespace vplace_impl
         if (splitter)
         {
             div->splitter=splitter;
-            splitter->owner = div.get();
+            splitter->parent = div.get();
         }
 		return div;
 	} // scan_div
