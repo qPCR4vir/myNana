@@ -899,10 +899,10 @@ namespace vplace_impl
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
 
-        void              collocate();
-		void              div(const char* s);
-        bool              bind     (window parent_widget);
-		division *        scan_div       (tokenizer&);
+        void                       collocate (  );
+		void                       div       (const char* s);
+        bool                       bind      (window parent_widget);
+		std::unique_ptr<division>  scan_div  (tokenizer&);
 
         /// Generate and registre in the set a new unique div name from the current layout
         std::string   add_div_name  ()  
@@ -1087,7 +1087,7 @@ namespace vplace_impl
 		}
 	};//end class field_impl
 
-	division* implement::scan_div(tokenizer& tknizer)
+	std::unique_ptr<division> implement::scan_div(tokenizer& tknizer)
 	{
 		typedef tokenizer::token token;
 
@@ -1108,7 +1108,7 @@ namespace vplace_impl
 			    case token::div_start:	    
                     {
                        std::string div_name(add_div_name ());
-                       fields.emplace(div_name,std::unique_ptr<IField>(scan_div(tknizer)));
+                       fields.emplace(div_name, scan_div(tknizer) );
                        field_names_in_div.push_back(div_name);				    break;
                                                                                
                     }
@@ -1155,7 +1155,6 @@ namespace vplace_impl
 			    default:	break;
 			}
 		}
-        division *div;
 		unsigned rows=1, columns=1;		
 
         if (div_type == token::grid)
@@ -1174,15 +1173,18 @@ namespace vplace_impl
 			if( ! columns )			  	    columns = 1;
             if(gr_name.empty())             gr_name =field_names_in_div.back();  
 		} 
+
+        std::unique_ptr<division> div;
         if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
         {
             double perc=weight.real () ;
             switch(div_type)
             {
                 case token::eof:
-		        case token::horizontal:		div = new percent_div_h(perc,w.min,w.max);			     break;
-		        case token::vertical:		div = new percent_div_v(perc,w.min,w.max);			     break;
-                case token::grid:  div = new percent_div_grid(gr_name,perc,rows,columns,w.min,w.max);break;
+		        case token::horizontal: div = std::make_unique<percent_div_h>   (perc,w.min,w.max);  break;
+		        case token::vertical:	div = std::make_unique<percent_div_v>   (perc,w.min,w.max);	 break;
+                case token::grid:       div = std::make_unique<percent_div_grid>(gr_name,perc,rows,
+                                                                                columns,w.min,w.max);break;
                 default:
                     throw std::runtime_error("nana.place: invalid division type.");
 		    }
@@ -1192,10 +1194,10 @@ namespace vplace_impl
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:		div = new fixed_div_h(fixed,w.min,w.max);		break;
-		                case token::vertical:		div = new fixed_div_v(fixed,w.min,w.max);		break;
-                        case token::grid:           div = new fixed_div_grid(gr_name,fixed,
-                                                             rows,columns,   w.min,w.max);          break;
+		                case token::horizontal:	 div = std::make_unique<fixed_div_h>   (fixed,w.min,w.max); break;
+		                case token::vertical:	 div = std::make_unique<fixed_div_v>   (fixed,w.min,w.max); break;
+                        case token::grid:        div = std::make_unique<fixed_div_grid>(gr_name,fixed,
+                                                                     rows,columns,   w.min,w.max);          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -1203,10 +1205,10 @@ namespace vplace_impl
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:			div = new adj_div_h(w.min,w.max);			break;
-		                case token::vertical:			div = new adj_div_v(w.min,w.max);			break;
-                        case token::grid:               div = new adj_div_grid(gr_name,
-                                                             rows,columns,   w.min,w.max);          break;
+		                case token::horizontal:	 div = std::make_unique<adj_div_h>   (w.min,w.max);	 break;
+		                case token::vertical:	 div = std::make_unique<adj_div_v>   (w.min,w.max);	 break;
+                        case token::grid:        div = std::make_unique<adj_div_grid>(gr_name,
+                                                              rows,columns,   w.min,w.max);          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -1223,7 +1225,7 @@ namespace vplace_impl
         if (splitter)
         {
             div->splitter=splitter;
-            splitter->owner = div;
+            splitter->owner = div.get();
         }
 		return div;
 	} // scan_div
@@ -1236,7 +1238,7 @@ namespace vplace_impl
 
 		tokenizer tknizer(s);
         root_division.reset();
-		root_division.reset( scan_div(tknizer));
+		root_division = scan_div(tknizer);
         recollocate = true;
     }
 
