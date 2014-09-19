@@ -563,8 +563,9 @@ namespace vplace_impl
 		dragger	                    dragger_;
         //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
         bool                        splitted{false};
+        double                      init_perc{30};
         
-        Splitter(window pw ):fixed_widget(nullptr,4) 
+        Splitter(window pw, double  init_perc=0.3):fixed_widget(nullptr,4),init_perc(init_perc) 
         {
             splitter_.create(pw);
             dragger_.trigger(splitter_);
@@ -609,9 +610,6 @@ namespace vplace_impl
             //if ( pause_move_collocate_) return;
                 fixed_widget::collocate(r);
         }
-        void restrict()
-        {
-        }
     };
 
     void division::split()
@@ -628,15 +626,15 @@ namespace vplace_impl
             l.children = Children(cb,spl) ;
             r.children = Children(spl+1,ce) ;
                             
-            l.last=last;
-            l.weigth_s()=weigth_c(splitter->last) -  weigth_c( );
-            double p= weigth_s( );
-            p= p ? l.weigth_s()/p : 0.5 ;
-            l.setPercent( p );
+            //l.last=last;
+            //l.weigth_s()=weigth_c(splitter->last) -  weigth_c( );
+            //double p= weigth_s( );
+            //p= p ? l.weigth_s()/p : 0.5 ;
+            //l.setPercent( p );
 
-            r.last=last;
-            r.weigth_c()=weigth_c(splitter->last) +  weigth_s(splitter->last);
-            r.weigth_s()=weigth_s() -  l.weigth_s() - weigth_s(splitter->last);
+            //r.last=last;
+            //r.weigth_c()=weigth_c(splitter->last) +  weigth_s(splitter->last);
+            //r.weigth_s()=weigth_s() -  l.weigth_s() - weigth_s(splitter->last);
             children = Children {splitter->leaf_left_.get(), splitter, splitter->leaf_right_.get()};
             splitter->splitted=true;
 
@@ -651,8 +649,8 @@ namespace vplace_impl
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
             if ( splitter->splitted ) return nullptr;
-            splitter->leaf_left_  = std::make_unique<percent_div_h>(0.30);
-            splitter->leaf_right_ = std::make_unique< adj_div_h   >( );
+            splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
+            splitter->leaf_right_.reset(new adj_div_h );
             //spl->splitter_cursor_ = cursor::size_we;
             splitter->splitter_.cursor( cursor::size_we);
             return splitter ;
@@ -661,8 +659,8 @@ namespace vplace_impl
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
             if ( splitter->splitted ) return nullptr;
-            splitter->leaf_left_  = std::make_unique<percent_div_v>(0.30);
-            splitter->leaf_right_ = std::make_unique< adj_div_v   >( );
+            splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
+            splitter->leaf_right_.reset(new adj_div_v  );
             //spl->splitter_cursor_ = cursor::size_ns;
             splitter->splitter_.cursor( cursor::size_ns);
             return splitter ;
@@ -946,6 +944,7 @@ namespace vplace_impl
             for (auto fi=f.first ; fi != f.second ; ++fi)
                 fastened_in_div.push_back (fi->second );
         }
+        split();
     }  
 
     void implement::collocate()
