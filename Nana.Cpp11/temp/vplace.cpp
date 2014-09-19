@@ -316,13 +316,46 @@ namespace vplace_impl
         { handle= handle_; row=r.y ; column=r.x ; rows=r.height ; columns=r.width ; }
     };
 	
-    template <class Base> struct IAdjust : Base
-    {    
-            IAdjust(){}
-            IAdjust(unsigned min_,unsigned max_=MAX) {MinMax(min_, max_);} 
-            virtual ~IAdjust(){}
+    template <class Base> struct IAdjustable  :  Base                      
+    { 
+        IAdjustable(         ){}
+        IAdjustable(unsigned min_,unsigned max_){MinMax(min_, max_);} 
+
+        adj   pre_place(unsigned t_w,                        adj& fixed = adj() ) override    
+                    {  
+                        ++fixed.count_adj;     
+                        fixed.min += min;    
+                        return  fixed;        
+                    }
+        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
+        {   
+            if ( t_w      <   fixed.weigth + fixed.min         )  
+                                                            { adj_min.weigth += min; return adj_min; }
+            if ( t_w <    min * fixed.count_adj + fixed.weigth )
+                                                            { adj_min.weigth += min; return adj_min; }
+            if ( t_w >    max * fixed.count_adj + fixed.weigth )
+                                                            { adj_min.weigth += max; return adj_min; }
+
+            adj_min.min += min; 
+            ++adj_min.count_adj;   return  adj_min;        
+        }
+        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )override
+        {   
+            if ( t_w      <   fixed.weigth + fixed.min         )   
+                                                                        {return min; }
+            if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
+                                                                        {return min; }
+            if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
+                                                                        {return max; }
+            if ( t_w <    min * adj_min.count_adj + adj_min.weigth )   
+                                                                        {return min; }
+            if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
+                                                                        {return max; }
+
+            return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
+        }
     };
-    template <class Base> struct IFixed:  IAdjust<Base>     
+    template <class Base> struct IFixed:  IAdjustable<Base>     
     { 
         unsigned weight_; 
 
@@ -330,7 +363,7 @@ namespace vplace_impl
         unsigned    getWeigth  ()override{ return weight_;}
 
         IFixed(unsigned weight)                             : weight_(weight) {}
-        IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjust<Base>(min_,max_){}
+        IFixed(unsigned weight, unsigned min_,unsigned max_): weight_(weight),IAdjustable<Base>(min_,max_){}
 
         adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
                     {   fixed.weigth   += weigth_adj(t_w) ;   return  fixed;        }
@@ -371,45 +404,6 @@ namespace vplace_impl
             return  (t_w * weight_) /fx;          
         }
     };     
-    template <class Base> struct IAdjustable  :  IAdjust<Base>                      
-    { 
-        IAdjustable(         ){}
-        IAdjustable(unsigned min_,unsigned max_):IAdjust<Base>  (min_,max_){}
-
-        adj   pre_place(unsigned t_w,                        adj& fixed = adj() ) override    
-                    {  
-                        ++fixed.count_adj;     
-                        fixed.min += min;    
-                        return  fixed;        
-                    }
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )  
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += max; return adj_min; }
-
-            adj_min.min += min; 
-            ++adj_min.count_adj;   return  adj_min;        
-        }
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )override
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )   
-                                                                        {return min; }
-            if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return min; }
-            if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return max; }
-            if ( t_w <    min * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return min; }
-            if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return max; }
-
-            return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
-        }
-    };
    
     struct adj_gap:   IAdjustable<Gap_field> 
     { 
