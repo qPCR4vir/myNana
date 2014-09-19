@@ -80,7 +80,6 @@ namespace vplace_impl
             virtual void        setPercent (double p){assert(false);}
             virtual unsigned    getWeigth  (){assert(false);return 0;}
             virtual double      getPercent (){assert(false);return 0;}
-
     };
     
     struct Splitter;
@@ -782,7 +781,9 @@ namespace vplace_impl
 				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
 				else if(idstr_ == "horizontal") 		   	 	 	return token::horizontal;
 				else if(idstr_ == "grid")       					return token::grid;
-				else if(idstr_ == "margin")       					return token::margin;
+				else if(idstr_ == "margin"){ if (token::equal != read())
+					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");
+                                                                    return token::margin;    }
                         				                            return token::identifier;
 			}
 
@@ -1102,10 +1103,11 @@ namespace vplace_impl
 
 		token       div_type = token::eof;
 		number_t    weight , gap;
-        bool        have_gap{false}, have_weight{false};
+        bool        have_gap{false}, have_weight{false}, margin_for_all{true};
         minmax      w; 
         std::string gr_name;
         Splitter    *splitter {nullptr};
+
  
         std::vector<number_t>    array, margin;
 		std::vector<std::string> field_names_in_div;
@@ -1160,6 +1162,21 @@ namespace vplace_impl
 					        w.max = tknizer.number().integer();                                
                          /*else trow no max percent possible */                 break;
                     }
+			    case token::margin:
+                    {
+				        margin.clear();
+				        switch (tknizer.read())
+				        {
+				            case token::number:
+					            margin_for_all = true;
+					            margin.push_back(tknizer.number()); break;
+				            case token::array:
+					            margin_for_all = false;
+					            tknizer.array().swap(margin);       break;
+				            default:					            break;
+				        }
+                    }				                                             break;
+
 			    default:	break;
 			}
 		}
