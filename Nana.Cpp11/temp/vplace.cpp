@@ -994,7 +994,7 @@ namespace vplace_impl
 			fld->MinMax (*this);
             place_impl_->fields.emplace(name,std::unique_ptr<IField>( fld));
             place_impl_->recollocate = true;
-			_m_make_destroy(fld->window_handle());
+			_m_make_destroy(fld);
 			return *this;
 		}
 
@@ -1075,11 +1075,12 @@ namespace vplace_impl
 		}
 
 		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
-		void _m_make_destroy(window wd)
+		void _m_make_destroy(IField *fld)
 		{
-            if ( ! wd ) return;
+            auto fd=dynamic_cast<Widget_field*>(fld);
+            if (!fd || ! fd->handle) return;
             implement * pi = place_impl_;
-            auto dtr = API::events(wd).destroy.connect ( [pi](const arg_destroy& ei)
+            fd->destroy_evh = API::events( fd->handle ).destroy.connect ( [pi](const arg_destroy& ei)
 			{
 				for (auto f=pi->fields.begin(), end=pi->fields.end(); f!=end; ++f)
                     if (f->second->window_handle() ==  ei.window_handle )
@@ -1090,10 +1091,6 @@ namespace vplace_impl
                         return;
                     }
 			});
-            //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
-            //{
-            //    API::umake_event(dtr); 
-            //});	
 		}
 	};//end class field_impl
 
