@@ -141,54 +141,8 @@ namespace vplace_impl
 		}
         void split();
 
-        virtual ~division() 	{ }
         virtual Splitter* create_splitter()=0;
  	};
-
-    struct Gap_field   : IField                     
-    { 
-        window   window_handle() const override              { return nullptr; }
-        void     populate_children(implement*   place_impl_) override {}
-        rectangle   cells         () const override          {return rectangle(-1,-1,0,0);}             
-
-        virtual  ~Gap_field (){}
-    };
-    struct Widget_field :  Gap_field                     
-    { 
-        //Widget_field    (window handle_):handle(handle_){}
-        window          handle; 
-        Widget_field    ():handle(nullptr){}
-        virtual        ~Widget_field    (){}
-        void            init (window handle_){handle=handle_;}
-
-        window          window_handle  () const override          { return handle; }
-        rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
-        void            collocate      (const rectangle& r)override
-        {  
-            IField::collocate(r);
-            API::move_window (handle,r ); 
-        }
-    };
-    struct Cell_field: virtual Widget_field    
-    { 
-        unsigned   row,column;
-        rectangle  cells         () const override          {return rectangle(column,row,1,1);}             
-        void       init(window handle_, unsigned row_,unsigned column_)
-        {  Widget_field::init( handle_); row=row_ ; column=column_ ; }
-    };
-    struct Room_field: virtual Widget_field    
-    { 
-        unsigned   rows,columns;
-        rectangle  cells         () const override          {return rectangle(-1,-1,columns,rows);}             
-        void       init(window handle_,unsigned rows_,unsigned columns_)
-        {  Widget_field::init( handle_);   rows=rows_;   columns=columns_;   }
-    };
-    struct Cells_field:  Cell_field, Room_field  
-    { 
-        rectangle  cells         () const override          {return rectangle(column,row,columns,rows);}             
-        void       init(window handle_, rectangle r)
-        { handle= handle_; row=r.y ; column=r.x ; rows=r.height ; columns=r.width ; }
-    };
 	class  div_h 	: public division
 	{
 	  public:
@@ -317,6 +271,50 @@ namespace vplace_impl
 			return n;
 		}
 	};//end class div_grid
+
+    struct Gap_field   : IField                     
+    { 
+        window         window_handle() const override     { return nullptr; }
+        void           populate_children(implement*   place_impl_) override {}
+        rectangle      cells         () const override    { return rectangle(-1,-1,0,0);}             
+    };
+    struct Widget_field :  Gap_field                     
+    { 
+        window          handle{nullptr}; 
+        event_handle    destroy_evh{nullptr}; 
+                        //Widget_field    () {}
+                        //Widget_field    (window handle_):handle(handle_){}
+        virtual        ~Widget_field    (){API::umake_event(destroy_evh);}
+        void            init (window handle_){handle=handle_;}
+
+        window          window_handle  () const override          { return handle; }
+        rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
+        void            collocate      (const rectangle& r)override
+        {  
+            IField::collocate(r);
+            API::move_window (handle,r ); 
+        }
+    };
+    struct Cell_field: virtual Widget_field    
+    { 
+        unsigned   row,column;
+        rectangle  cells         () const override          {return rectangle(column,row,1,1);}             
+        void       init(window handle_, unsigned row_,unsigned column_)
+        {  Widget_field::init( handle_); row=row_ ; column=column_ ; }
+    };
+    struct Room_field: virtual Widget_field    
+    { 
+        unsigned   rows,columns;
+        rectangle  cells         () const override          {return rectangle(-1,-1,columns,rows);}             
+        void       init(window handle_,unsigned rows_,unsigned columns_)
+        {  Widget_field::init( handle_);   rows=rows_;   columns=columns_;   }
+    };
+    struct Cells_field:  Cell_field, Room_field  
+    { 
+        rectangle  cells         () const override          {return rectangle(column,row,columns,rows);}             
+        void       init(window handle_, rectangle r)
+        { handle= handle_; row=r.y ; column=r.x ; rows=r.height ; columns=r.width ; }
+    };
 	
     template <class Base> struct IAdjust : Base
     {    
