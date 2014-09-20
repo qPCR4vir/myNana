@@ -106,6 +106,7 @@ namespace vplace_impl
                                      //std::cerr<< "\ncollocating div in: "<<r; // debugg
             IField::collocate(r);
 			rectangle area (r);
+            //split();
 
             adj pre_adj, end_adj; auto t_w=weigth_s(area);
 			for(auto child: children)                            
@@ -469,7 +470,6 @@ namespace vplace_impl
     using percent_gap =  IPercent<Gap_field> ;
     using percent_widget =  IPercent<Widget_field> ;
     using percent_room =  IPercent<Room_field> ;
-
     using percent_div_h =  IPercent<div_h> ;
     using percent_div_v =  IPercent<div_v> ;
     using percent_div_grid =  IPercent<div_grid> ;
@@ -496,10 +496,13 @@ namespace vplace_impl
 			{
 				if (false == arg.left_button)
 					return;
+
+                std::cout<<"\n parent: "<< parent->last<<", splitt ori: "<< last;
                 
                 last=rectangle(splitter_.pos(),splitter_.size());
+                std::cout<<"\n left: "<< leaf_left_->last<<", splitt pos: "<< last;
 
-                leaf_left_ ->weigth_c( )  = parent->weigth_c( ) ;
+                //leaf_left_ ->weigth_c( )  = parent->weigth_c( ) ;
                 leaf_left_ ->weigth_s( )  = parent->weigth_c(last) - parent->weigth_c( ) ;
                 leaf_left_ ->collocate(leaf_left_ ->last);
 
@@ -543,19 +546,21 @@ namespace vplace_impl
     Splitter * div_h::create_splitter()
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+            std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
+            splitter->splitter_.cursor( cursor::size_we);
             splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
             splitter->leaf_right_.reset(new adj_div_h );
-            splitter->splitter_.cursor( cursor::size_we);
             return splitter ;
         }
     Splitter * div_v::create_splitter()
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
+            std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
+            splitter->splitter_.cursor( cursor::size_ns);
             splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
             splitter->leaf_right_.reset(new adj_div_v  );
-            splitter->splitter_.cursor( cursor::size_ns);
             return splitter ;
         }
     class number_t
@@ -796,7 +801,7 @@ namespace vplace_impl
                         /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
 		std::multimap<std::string, std::unique_ptr<IField>> fields;    
 		std::multimap<std::string,    window              > fastened;
-        std::vector/*<std::unique_ptr */<nana::label*>/*>*/     widgets;                                 
+        std::vector<nana::label*>                           labels;                                 
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
 
@@ -905,21 +910,21 @@ namespace vplace_impl
             //std::unique_ptr <nana::label> lab(new nana::label(place_impl_->parent_window_handle, txt  ));
             //API::
             nana::label*lab = std::addressof(nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt));
-            place_impl_->widgets.push_back (lab);/*newstd::addressof (nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt  ))*/ 
-            //place_impl_->widgets.emplace_back (new nana::label(place_impl_->parent_window_handle, txt  ));
-            add(create_field( *place_impl_->widgets.back () ));
+            place_impl_->labels.push_back (lab);/*newstd::addressof (nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt  ))*/ 
+            //place_impl_->labels.emplace_back (new nana::label(place_impl_->parent_window_handle, txt  ));
+            add(create_field( *place_impl_->labels.back () ));
             auto pi = place_impl_;
-			auto dtr = API::events(*lab).destroy ( [pi](const arg_destroy& ei)
-			{
-				for (auto f=pi->widgets.begin(); f!=pi->widgets.end(); ++f)
-                    if (/*->get()*/(*f)->handle() ==  ei.window_handle )
-                    {
-                        pi->widgets.erase(f);    // delete ???
-				        pi->recollocate = true;
-				        pi->collocate();
-                        break;
-                    }
-			});
+			//auto dtr = API::events(*lab).destroy ( [pi](const arg_destroy& ei)
+			//{
+			//	for (auto f=pi->labels.begin(); f!=pi->labels.end(); ++f)
+   //                 if (/*->get()*/(*f)->handle() ==  ei.window_handle )
+   //                 {
+   //                     pi->labels.erase(f);    // delete ???
+			//	        pi->recollocate = true;
+			//	        pi->collocate();
+   //                     break;
+   //                 }
+			//});
             //API::make_event<events::destroy>(*lab, [dtr](const eventinfo& ei)
             //{
             //    API::umake_event(dtr); 
