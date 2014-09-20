@@ -30,37 +30,25 @@ std::ostream& operator<<(std::ostream& o,const nana::rectangle &r)
 { o<<" rect("<<r.x<<","<<r.y<<","<<r.width <<","<<r.height <<")\n"; return o;}
 
 namespace nana{	
-
- 
-
 namespace vplace_impl
 {
-
     namespace place_parts
 	{
 		class splitter_interface
-		{
-		public:
-			virtual ~splitter_interface(){}
-		};
+		{ public:	virtual ~splitter_interface(){}		};
 
-		class splitter_dtrigger
-			: public drawer_trigger
-		{
-		};
+		class splitter_dtrigger	: public drawer_trigger
+		{	};
 
 		template<bool IsLite>
 		class splitter
 			:	public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
 				public splitter_interface
-		{
-		};
+		{	};
 	}//end namespace place_parts
-
 
     typedef vplace::minmax  minmax;
     typedef vplace::field_t field_t;
-
     struct adj{unsigned weigth,min,count_adj; adj():weigth(0),min(0),count_adj(0){}  };
 
     struct IField  :minmax 
@@ -186,11 +174,6 @@ namespace vplace_impl
 
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
-		//void Init(const std::string& name_, size dim_)	
-  //      {  name=name_; rows=dim_.height ; columns =dim_.width ;}
-
-		//void Init(const std::string& name_, unsigned rows_, unsigned columns_)	
-  //      {  name=name_; rows=rows_ ; columns =columns_;}
 
         virtual void collocate(const rectangle& r) override
 	    {
@@ -305,12 +288,10 @@ namespace vplace_impl
         Widget_field(window handle_):handle(handle_){}
         Widget_field(window handle_, unsigned min_,unsigned max_)
             :Gap_field(min_,max_) ,handle(handle_){}
-                        //Widget_field    () {}
 
         window          handle{nullptr}; 
         event_handle    destroy_evh{nullptr}; 
         virtual        ~Widget_field    (){API::umake_event(destroy_evh);}
-        //void            init (window handle_){handle=handle_;}
 
         window          window_handle  () const override          { return handle; }
         rectangle       cells          () const override          {return rectangle(-1,-1,1,1);}             
@@ -328,11 +309,8 @@ namespace vplace_impl
         Cell_field(window handle_,unsigned row_,unsigned column_, unsigned min_,unsigned max_)
                 :Widget_field(handle_,min_,max_), row(row_), column (column_){}
 
-
         unsigned   row,column;
         rectangle  cells         () const override          {return rectangle(column,row,1,1);}             
-        //void       init(window handle_, unsigned row_,unsigned column_)
-        //{  Widget_field::init( handle_); row=row_ ; column=column_ ; }
     };
     struct Room_field:  Widget_field    /// \todo: derive from Cell_field ????
     { 
@@ -344,8 +322,6 @@ namespace vplace_impl
 
         unsigned   rows,columns;
         rectangle  cells         () const override          {return rectangle(-1,-1,columns,rows);}             
-        //void       init(window handle_,unsigned rows_,unsigned columns_)
-        //{  Widget_field::init( handle_);   rows=rows_;   columns=columns_;   }
     };
     struct Cells_field:   Cell_field,  Room_field  ///\todo: estudiar las consecuencias de tener doble el handle
     { 
@@ -364,8 +340,6 @@ namespace vplace_impl
         IAdjustable(const std::string& name_, unsigned rows_, unsigned columns_) :Base (name_,rows_,  columns_){} 
         IAdjustable(const std::string& name_, unsigned rows_, unsigned columns_, unsigned min_,unsigned max_) 
             :Base (name_,rows_,  columns_,min_, max_){} 
-
-        //using Base::Base;
 
         adj   pre_place(unsigned t_w,                        adj& fixed = adj() ) override    
                     {  
@@ -452,9 +426,6 @@ namespace vplace_impl
 
         const static unsigned fx=10000;
 
-        //void setWeigth(unsigned percent_)override{weight_=100*percent_;}
-
-
         void        setPercent (double p)override{weight_=p*fx;}
         double      getPercent ()override{return double(weight_)/fx;}
 
@@ -467,39 +438,10 @@ namespace vplace_impl
         }
     };     
     using adj_gap= IAdjustable<Gap_field> ;
-    //struct adj_gap:   IAdjustable<Gap_field> 
-    //{ 
-    //    adj_gap( )                                                   {}
-    //    adj_gap( unsigned min_,unsigned max_):IAdjustable<Gap_field> (min_,max_){}
-    //};
     using adj_widget=IAdjustable<Widget_field>;
-    //struct adj_widget:    IAdjustable<Widget_field>
-    //{ 
-    //    adj_widget(window handle_)                      
-    //            {Widget_field::init (handle_);}
-    //    adj_widget(window handle_, unsigned min_,unsigned max_)
-    //        :IAdjustable<Widget_field>(min_,max_) {Widget_field::init (handle_);}
-    //};
     using adj_room =  IAdjustable<Room_field> ;
-    //struct adj_room: IAdjustable<Room_field>   
-    //{ 
-    //    adj_room(window handle_,unsigned rows_,unsigned columns_)                             
-    //            {Room_field::init(handle_, rows_, columns_);}
-    //    adj_room(window handle_,unsigned rows_,unsigned columns_, unsigned min_,unsigned max_)
-    //            :IAdjustable<Room_field>(min_,max_){Room_field::init(handle_, rows_, columns_);}
-    //};
     using adj_div_h =  IAdjustable<div_h> ;
-	//struct adj_div_h : public IAdjustable<div_h> 
- //   {
- //       adj_div_h()                     {}
- //       adj_div_h(unsigned min_,unsigned max_):IAdjustable<div_h> (min_,max_){}
- //   };
     using adj_div_v =  IAdjustable<div_v> ;
-	//struct adj_div_v : public IAdjustable<div_v>  
- //   {
- //       adj_div_v()                     {}
- //       adj_div_v(unsigned min_,unsigned max_):IAdjustable<div_v>(min_,max_){}
- //   };
     using adj_div_grid =  IAdjustable<div_grid> ;
     //struct adj_div_grid : public IAdjustable<div_grid> 
     //{
@@ -518,110 +460,19 @@ namespace vplace_impl
     //};
 
     using fixed_gap =  IFixed<Gap_field> ;
-    //struct fixed_gap: IFixed<Gap_field> 
-    //{ 
-    //    fixed_gap(unsigned weight_                             ):IFixed<Gap_field> (weight_)          {}
-    //    fixed_gap(unsigned weight_, unsigned min_,unsigned max_):IFixed<Gap_field> (weight_,min_,max_){}
-    //};
     using fixed_widget =  IFixed<Widget_field> ;
-    //struct fixed_widget:   IFixed<Widget_field>
-    //{ 
-    //    fixed_widget(window handle_,unsigned weight_                             )
-    //        :IFixed<Widget_field>(weight_          ){Widget_field::init (handle_);}
-    //    fixed_widget(window handle_,unsigned weight_, unsigned min_,unsigned max_)
-    //        :IFixed<Widget_field>(weight_,min_,max_){Widget_field::init (handle_);}
-    //};
     using fixed_room =  IFixed<Room_field> ;
-    //struct fixed_room:  IFixed<Room_field>   
-    //{ 
-    //    fixed_room(window handle_, unsigned weight_  , 
-    //               unsigned rows_, unsigned columns_  )
-    //        :IFixed<Room_field>   (weight_)              {Room_field::init(handle_, rows_, columns_);}
-    //    fixed_room(window handle_, unsigned weight_  ,
-    //               unsigned rows_,unsigned columns_,    unsigned min_,unsigned max_)
-    //        :IFixed<Room_field>   (weight_,min_,max_)    {Room_field::init(handle_, rows_, columns_);}
-    //};
     using fixed_div_h =  IFixed<div_h> ;
-	//struct fixed_div_h : public IFixed<div_h>
- //   {
- //       fixed_div_h(unsigned weight_                             )  :IFixed<div_h> (weight_ )        {}
- //       fixed_div_h(unsigned weight_ , unsigned min_,unsigned max_):IFixed<div_h> (weight_ ,min_,max_){}
- //   };
     using fixed_div_v =  IFixed<div_v> ;
-	//struct fixed_div_v : public IFixed<div_v> 
- //   {
- //       fixed_div_v(unsigned weight_                             ):IFixed<div_v>(weight_   )       {}
- //       fixed_div_v(unsigned weight_, unsigned min_,unsigned max_):IFixed<div_v>(weight_,min_,max_){}
- //   };
     using fixed_div_grid =  IFixed<div_grid> ;
-	//struct fixed_div_grid : public IFixed<div_grid> 
- //   {
- //       fixed_div_grid(const std::string& name_,unsigned weight_ ,  unsigned rows_, unsigned columns_)  
- //           :IFixed<div_grid>(weight_)   { Init(name_,rows_,  columns_);}
- //       fixed_div_grid(const std::string& name_,unsigned weight_  , size dim_)
- //           :IFixed<div_grid>(weight_ )  {Init(name_,dim_); }
 
- //       fixed_div_grid(const std::string& name_,unsigned weight_ ,  unsigned rows_, 
- //                                               unsigned columns_, unsigned min_,unsigned max_)  
- //           :IFixed<div_grid>(weight_,min_,max_) { Init(name_,rows_,  columns_);}
- //       fixed_div_grid(const std::string& name_,unsigned weight_  , size dim_, 
- //                                                unsigned min_,unsigned max_)
- //           :IFixed<div_grid>(weight_,min_,max_) {Init(name_,dim_); }
- //   };
     using percent_gap =  IPercent<Gap_field> ;
-    //struct percent_gap: IPercent<Gap_field> 
-    //{ 
-    //    percent_gap(double   percent_):IPercent<Gap_field>(percent_){}
-    //    percent_gap(double   percent_,unsigned min_,unsigned max_):IPercent<Gap_field>(percent_,min_,max_){}
-    //};     
     using percent_widget =  IPercent<Widget_field> ;
-    //struct percent_widget: IPercent<Widget_field>
-    //{ 
-    //    percent_widget(window handle_,double   percent_)
-    //        :IPercent<Widget_field>(percent_){Widget_field::init (handle_);}
-    //    percent_widget(window handle_,double   percent_, unsigned min_,unsigned max_)
-    //        :IPercent<Widget_field>(percent_,min_,max_){Widget_field::init (handle_);}
-    //};   
     using percent_room =  IPercent<Room_field> ;
-    //struct percent_room:  IPercent<Room_field>   
-    //{ 
-    //    percent_room(window handle_, double   percent_,
-    //                 unsigned rows_, unsigned columns_  )
-    //          :IPercent<Room_field>  (percent_          ) {Room_field::init(handle_, rows_, columns_);}
 
-    //    percent_room(window handle_, double   percent_,
-    //                 unsigned rows_, unsigned columns_,   unsigned min_, unsigned max_ )
-    //          :IPercent<Room_field>(percent_,min_,max_)   {Room_field::init(handle_, rows_, columns_);}
-    //};     
     using percent_div_h =  IPercent<div_h> ;
-    //struct percent_div_h : public IPercent<div_h> 
-    //{
-    //    percent_div_h(double   percent_)  :IPercent<div_h> ( percent_   )                 {}
-    //    percent_div_h(double   percent_,unsigned min_,unsigned max_)
-    //                     :IPercent<div_h> ( percent_ ,min_,max_){}
-    //};
     using percent_div_v =  IPercent<div_v> ;
-	//struct percent_div_v : public IPercent<div_v> 
- //   {
- //       percent_div_v(double   percent_)   :IPercent<div_v> ( percent_   )                    {}
- //       percent_div_v(double   percent_,unsigned min_,unsigned max_)
- //                                :IPercent<div_v>( percent_,min_,max_){}
- //   };
     using percent_div_grid =  IPercent<div_grid> ;
-	//struct percent_div_grid : public IPercent<div_grid>  
- //   {
- //       percent_div_grid(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_)   
- //           :IPercent<div_grid> ( percent_    )        { Init(name_,rows_,  columns_);}
- //       percent_div_grid(const std::string& name_,double   percent_, size dim_)
- //           :IPercent<div_grid> ( percent_)            {Init(name_,dim_); }
-
- //       percent_div_grid(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_, 
- //                                                                    unsigned min_,unsigned max_)   
- //           :IPercent<div_grid> ( percent_ ,min_,max_   )   { Init(name_,rows_,  columns_);}
- //       percent_div_grid(const std::string& name_,double   percent_, size dim_, 
- //                                                                    unsigned min_,unsigned max_)
- //           :IPercent<div_grid> ( percent_,min_,max_)       {Init(name_,dim_); }
- //   };
 
     struct Splitter: public fixed_widget
     {
@@ -641,12 +492,6 @@ namespace vplace_impl
             dragger_.trigger(splitter_);
             handle = splitter_.handle();
 
-   //         splitter_.events().mouse_down.connect([this](const arg_mouse& arg)
-			//{
-			//	if (arg.left_button)
-   // 				begin_point_ = splitter_.pos();
-			//});
-
 			splitter_.events().mouse_move.connect([this](const arg_mouse& arg)
 			{
 				if (false == arg.left_button)
@@ -663,12 +508,6 @@ namespace vplace_impl
                 leaf_right_ ->collocate(leaf_right_ ->last);
 
                 leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/parent->weigth_s());
-                //pause_move_collocate_ = true;
-                //parent->collocate(parent->last);
-                //pause_move_collocate_ = false;
-
-                //API::update_window(handle);
-
 			});
         }
         void populate_children(	implement*   place_impl_) 
@@ -677,7 +516,6 @@ namespace vplace_impl
         }
         void  collocate  (const rectangle& r)override
         {
-            //if ( pause_move_collocate_) return;
                 fixed_widget::collocate(r);
         }
     };
@@ -695,22 +533,9 @@ namespace vplace_impl
 
             l.children = Children(cb,spl) ;
             r.children = Children(spl+1,ce) ;
-                            
-            //l.last=last;
-            //l.weigth_s()=weigth_c(splitter->last) -  weigth_c( );
-            //double p= weigth_s( );
-            //p= p ? l.weigth_s()/p : 0.5 ;
-            //l.setPercent( p );
-
-            //r.last=last;
-            //r.weigth_c()=weigth_c(splitter->last) +  weigth_s(splitter->last);
-            //r.weigth_s()=weigth_s() -  l.weigth_s() - weigth_s(splitter->last);
             children = Children {splitter->leaf_left_.get(), splitter, splitter->leaf_right_.get()};
             splitter->splitted=true;
-
-                //auto &lc=*l.children.back();
-                //p= p ? (weigth_c(lc.last) + weigth_s(lc.last) -  weigth_c( ))/p : 0 ;
-        }
+       }
     Splitter * division::create_splitter()
         {
             return nullptr;
@@ -721,7 +546,6 @@ namespace vplace_impl
             if ( splitter->splitted ) return nullptr;
             splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
             splitter->leaf_right_.reset(new adj_div_h );
-            //spl->splitter_cursor_ = cursor::size_we;
             splitter->splitter_.cursor( cursor::size_we);
             return splitter ;
         }
@@ -731,7 +555,6 @@ namespace vplace_impl
             if ( splitter->splitted ) return nullptr;
             splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
             splitter->leaf_right_.reset(new adj_div_v  );
-            //spl->splitter_cursor_ = cursor::size_ns;
             splitter->splitter_.cursor( cursor::size_ns);
             return splitter ;
         }
