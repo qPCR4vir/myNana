@@ -490,7 +490,7 @@ namespace vplace_impl
         bool                        splitted{false};
         double                      init_perc{30};
         
-        Splitter(window pw, double  init_perc=0.3):fixed_widget(nullptr,4),init_perc(init_perc) 
+        Splitter(window pw, double  init_perc=0.3):fixed_widget(nullptr,4),init_perc(init_perc?init_perc:0.3) 
         {
             splitter_.create(pw);
             dragger_.trigger(splitter_);
@@ -623,7 +623,13 @@ namespace vplace_impl
 			{
 			case '\0':				                    return token::eof;
 			case '=':		        ++sp_;				return token::equal;
-			case '|':		        ++sp_;				return token::splitter;
+			case '|':	
+                ++sp_;	
+					readbytes = _m_number(sp_, false);
+					sp_ += readbytes; 
+                
+                return token::splitter;
+
 			case '<':				++sp_;				return token::div_start;
 			case '>':				++sp_;				return token::div_end;
 			case '[':
@@ -1033,9 +1039,12 @@ namespace vplace_impl
                     {       // Use only the first splitter. with some fields at the left??
                        if ( ! splitter  ) // && (  field_names_in_div.size())
                        {    
+                            double p=0 ;
+                            if (tknizer.number().kind_of() == number_t::kind::percent)
+                                p=1-tknizer.number().real(); 
                             std::string div_name(add_div_name ());
                             std::unique_ptr<Splitter> spl=std::make_unique<Splitter>
-                                            (parent_window_handle);
+                                            (parent_window_handle,p );
                             splitter = spl.get();
                             fields.emplace(div_name, std::move(spl) );
                             field_names_in_div.push_back(div_name);
