@@ -69,6 +69,7 @@ namespace vplace_impl
             virtual void        setPercent (double p){assert(false);}
             virtual unsigned    getWeigth  (){assert(false);return 0;}
             virtual double      getPercent (){assert(false);return 0;}
+
     };
     
     struct Splitter;
@@ -302,6 +303,12 @@ namespace vplace_impl
             API::move_window (handle,r ); 
         }
     };
+
+    //struct Label_field: Widget_field
+    //{
+    //
+    //};
+
     struct Cell_field:  Widget_field    
     { 
         //using Widget_field::Widget_field;
@@ -448,13 +455,10 @@ namespace vplace_impl
     //{
     //    adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_)   
     //                                                       { Init(name_,rows_,columns_);}
-
     //    adj_div_grid(const std::string& name_, size dim_ , unsigned min_ ,  unsigned max_     )    
     //        :  IAdjustable<div_grid>(min_   ,max_       )  {Init(name_,dim_); }
-
     //    adj_div_grid(const std::string& name_, size dim_      )    
     //                                                       {Init(name_,dim_); }
-
     //    adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_,
     //                                           unsigned min_,unsigned max_)   
     //        :    IAdjustable<div_grid>(min_        ,max_       ) { Init(name_,rows_,  columns_);}
@@ -1058,14 +1062,12 @@ namespace vplace_impl
                     }
 			    case token::margin:
                     {
-				        margin.clear();
 				        switch (tknizer.read())
 				        {
 				            case token::number:
-					            margin_for_all = true;
-					            margin.push_back(tknizer.number()); break;
+					            margin=std::vector<number_t>(4,tknizer.number());
+                                                                    break;
 				            case token::array:
-					            margin_for_all = false;
 					            tknizer.array().swap(margin);       break;
 				            default:					            break;
 				        }
@@ -1073,7 +1075,8 @@ namespace vplace_impl
 
 			    default:	break;
 			}
-		}
+		}   // token::div_end
+
 		unsigned rows=1, columns=1;		
 
         if (div_type == token::grid)
@@ -1146,6 +1149,110 @@ namespace vplace_impl
             div->splitter=splitter;
             splitter->parent = div.get();
         }
+        if (  margin.size() )
+        {
+            std::unique_ptr<division> vd, td,hd,ld,cd,rd,bd; 
+
+            // central div
+            switch(div_type)
+            {
+                case token::eof:
+		        case token::horizontal:	 cd.reset (new adj_div_h    );	                    break;
+		        case token::vertical:	 cd.reset (new adj_div_v    );	                    break;
+                case token::grid:        cd.reset (new adj_div_grid(gr_name, rows,columns));break;
+                default:
+                    throw std::runtime_error("nana.place: invalid division type.");
+		    }
+            cd->field_names.swap(div->field_names);
+            std::swap(cd->splitter,div->splitter);
+            auto cn=add_div_name ();
+
+            // vert div
+            vd.reset(new adj_div_v);
+            auto vn=add_div_name ();
+
+            //top :  margin[0]
+            if (margin[0].kind_of() == number_t::kind::percent)
+                td.reset(new percent_div_h(margin[0].real()));
+            else 
+                td.reset(new fixed_div_h(margin[0].integer()));
+
+            auto tn=add_div_name ();
+            vd->field_names.push_back(tn);
+            fields.emplace(tn, std::move(td ));
+
+            int lm, rm,bm;
+
+            switch(margin.size())
+            {
+                case 1: lm=rm=bm=0; break;
+                case 2: lm=1; rm=bm=0; break;
+                case 3: rm=1; bm=2; lm=0; break;
+                case 4: rm=1; bm=2; lm=3; break;
+                default:
+                    throw std::runtime_error("nana.place: invalid numer of margins.");
+            }
+
+            if (lm || rm)
+            {
+                hd.reset (new adj_div_h    );	
+                auto hn=add_div_name ();
+                vd->field_names.push_back(hn);
+
+                if (lm)
+                {
+                    //left  
+                    if (margin[lm].kind_of() == number_t::kind::percent)
+                        ld.reset(new percent_div_h(margin[lm].real()));
+                    else 
+                        ld.reset(new fixed_div_h(margin[lm].integer()));
+
+                    auto ln=add_div_name ();
+                    hd->field_names.push_back(ln);
+                    fields.emplace(ln, std::move(ld ));
+                }
+                
+                    // central  
+                hd->field_names.push_back(cn);
+                fields.emplace(cn, std::move(cd) );
+
+                if (rm)
+                {
+                    // rigth  
+                    if (margin[rm].kind_of() == number_t::kind::percent)
+                        rd.reset(new percent_div_h(margin[rm].real()));
+                    else 
+                        rd.reset(new fixed_div_h(margin[rm].integer()));
+
+                    auto rn=add_div_name ();
+                    hd->field_names.push_back(rn);
+                    fields.emplace(rn, std::move(rd) );
+                }
+                fields.emplace(hn, std::move(hd ));
+            }
+            else 
+            {
+                    // central  
+                vd->field_names.push_back(cn);
+                fields.emplace(cn, std::move(cd) );
+            }
+
+            if (bm)
+            {
+                // botton  
+                if (margin[bm].kind_of() == number_t::kind::percent)
+                    bd.reset(new percent_div_h(margin[bm].real()));
+                else 
+                    bd.reset(new fixed_div_h(margin[bm].integer()));
+
+                auto bn=add_div_name ();
+                vd->field_names.push_back(bn);
+                fields.emplace(bn, std::move(bd) );
+            }
+            div->field_names.push_back(vn);
+            fields.emplace(vn, std::move(vd) );
+        }
+
 		return div;
 	} // scan_div
 
