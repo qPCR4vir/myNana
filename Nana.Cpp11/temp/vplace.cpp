@@ -167,9 +167,9 @@ namespace vplace_impl
         div_grid(const std::string& name_, size dim_):name(name_), rows(dim_.height), columns(dim_.width ){};
         div_grid(const std::string& name_, unsigned rows_, unsigned columns_):name(name_), rows(rows_), columns(columns_){};
         div_grid(const std::string& name_, unsigned rows_, unsigned columns_, unsigned min_,unsigned max_)   
-            :    div_h(min, max_ ), name(name_), rows(rows_), columns(columns_){};
+            :    div_h(min_, max_ ), name(name_), rows(rows_), columns(columns_){};
         div_grid(const std::string& name_, size dim_ , unsigned min_ ,  unsigned max_     )    
-            :   div_h(min, max_ ), name(name_), rows(dim_.height), columns(dim_.width ){};
+            :   div_h(min_, max_ ), name(name_), rows(dim_.height), columns(dim_.width ){};
 
         Splitter* create_splitter()override{return nullptr;}// temp
 
