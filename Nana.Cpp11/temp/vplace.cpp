@@ -1208,7 +1208,7 @@ namespace vplace_impl
                         ld.reset(new fixed_div_h(margin[lm].integer()));
 
                     auto ln=add_div_name ();
-                    hd->field_names.push_back(hn);
+                    hd->field_names.push_back(ln);
                     fields.emplace(ln, std::move(ld ));
                 }
                 
@@ -1249,8 +1249,10 @@ namespace vplace_impl
                 vd->field_names.push_back(bn);
                 fields.emplace(bn, std::move(bd) );
             }
-            fields.emplace(vn, std::move(vd ));
+            div->field_names.push_back(vn);
+            fields.emplace(vn, std::move(vd) );
         }
+
 		return div;
 	} // scan_div
 
