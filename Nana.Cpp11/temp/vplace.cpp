@@ -501,10 +501,10 @@ namespace vplace_impl
 				if (false == arg.left_button)
 					return;
 
-                std::cout<<"\n parent: "<< parent->last<<", splitt ori: "<< last;
+                //std::cout<<"\n parent: "<< parent->last<<", splitt ori: "<< last;
                 
                 last=rectangle(splitter_.pos(),splitter_.size());
-                std::cout<<"\n left: "<< leaf_left_->last<<", splitt pos: "<< last;
+                //std::cout<<"\n left: "<< leaf_left_->last<<", splitt pos: "<< last;
 
                 //leaf_left_ ->weigth_c( )  = parent->weigth_c( ) ;
                 leaf_left_ ->weigth_s( )  = parent->weigth_c(last) - parent->weigth_c( ) ;
@@ -513,6 +513,9 @@ namespace vplace_impl
                 leaf_right_->weigth_c( )  = parent->weigth_c(last) + parent->weigth_s(last)+1 ;
                 leaf_right_->weigth_s( )  = parent->weigth_s() - (leaf_right_->weigth_c( ) -  parent->weigth_c( ));
                 leaf_right_ ->collocate(leaf_right_ ->last);
+
+                //API::lazy_refresh();
+                //API::refresh_window_tree(parent_window_handle);
 
                 leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/parent->weigth_s());
 			});
@@ -550,7 +553,7 @@ namespace vplace_impl
     Splitter * div_h::create_splitter()
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
-            std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
+            //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_we);
             splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
@@ -560,7 +563,7 @@ namespace vplace_impl
     Splitter * div_v::create_splitter()
         {
             splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
-            std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
+            //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_ns);
             splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
@@ -862,9 +865,18 @@ namespace vplace_impl
 			rectangle r(API::window_size(this->parent_window_handle));  //debugg
             if(r.width && r.height ) 
             {      
-               if (recollocate) root_division->populate_children (this);
-               recollocate = false;
+                //auto re=recollocate;
+               if (recollocate) 
+                   root_division->populate_children (this);
                root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
+               //if (re)       
+               //{    
+               //    API::lazy_refresh();
+               //    API::refresh_window_tree(parent_window_handle);
+               //    API::update_window(parent_window_handle);
+               //}
+               recollocate = false;
+
             }
             //			                                //rectangle r; // debugg
             //root_division->collocate(r/*=API::window_size(parent_window_handle)*/);
