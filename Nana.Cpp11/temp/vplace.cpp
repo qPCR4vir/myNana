@@ -489,6 +489,7 @@ namespace vplace_impl
         //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
         bool                        splitted{false};
         double                      init_perc{30};
+        nana::arrange               arrange_;
         
         Splitter(window pw, double  init_perc=0.3):fixed_widget(nullptr,4),init_perc(init_perc?init_perc:0.3) 
         {
@@ -524,6 +525,16 @@ namespace vplace_impl
         {
             splitted=false;
         }
+        void restrict (const rectangle &r, nana::arrange   arrange)
+        {
+            arrange_=arrange;
+            restrict (r);
+        }
+        void restrict ( rectangle  r )
+        {
+             dragger_.target( splitter_, r.pare_off(1), arrange_);
+        }
+
         void  collocate  (const rectangle& r)override
         {
                 fixed_widget::collocate(r);
@@ -552,7 +563,7 @@ namespace vplace_impl
         }
     Splitter * div_h::create_splitter()
         {
-            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::horizontal);
+            splitter->restrict(  last, nana::arrange::horizontal);
             //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_we);
@@ -562,7 +573,7 @@ namespace vplace_impl
         }
     Splitter * div_v::create_splitter()
         {
-            splitter->dragger_.target(splitter->splitter_, last, nana::arrange::vertical);
+            splitter->restrict( last, nana::arrange::vertical);
             //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_ns);
