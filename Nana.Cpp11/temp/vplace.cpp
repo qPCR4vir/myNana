@@ -14,10 +14,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <cassert>
-#include <typeinfo>
-#include <typeindex>
 	
-//#include <unordered_map>
 #include <map>
 #include <vector>
 #include <stdexcept>
@@ -186,8 +183,6 @@ namespace vplace_impl
             virtual void        collocate_field   (const rectangle& r)   {last=r;}
             virtual void        populate_children (	implement*   place_impl_){}
             virtual rectangle   cells_       ()   const    =0;
-
-            //virtual window      window_handle()const   =0;
     };
 
     
@@ -818,7 +813,7 @@ namespace vplace_impl
         
         void registre(std::string name, std::unique_ptr<adjustable> adj)
         {
-            std::cout << "\nRegistering: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
+            //std::cout << "\nRegistering: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
             fields_.emplace(name,std::move(adj));
         }
 
@@ -922,28 +917,33 @@ namespace vplace_impl
 	  public:
         adjustable * create_field(window    wd                                      )
                                       {
-             std::cout<< "\n field window";
-            return  new Field< adjustable,Widget> ( wd ) ;}//adj_widget dynamic_cast<Adjustable*>
+                                         //std::cout<< "\n field window";
+                                        return  new Field< adjustable,Widget> ( wd ) ;
+                                      } 
         adjustable * create_field(unsigned gap                                      )
                                       {
-             std::cout<< "\n field gap";
-            return  new Field< fixed,Gap>  ( gap ) ;}//fixed_gap    
+                                            //std::cout<< "\n field gap";
+                                        return  new Field<fixed,Gap>  ( gap ) ;
+                                      }    
         adjustable * create_field(window handle_,unsigned weight_                   )
                                       {
-             std::cout<< "\n field fix widg";
-            return  new  Field< fixed,Widget>( handle_, weight_)      ;}//fixed_widget  
+                                             //std::cout<< "\n field fix widg";
+                                            return  new  Field< fixed,Widget>( handle_, weight_)      ;
+                                        }  
         adjustable * create_field(window handle_,double   percent_                  )
                                       {
-             std::cout<< "\n field perc widg";
-            return new Field< percent,Widget>( handle_, percent_) ;}//percent_widget
+                                             //std::cout<< "\n field perc widg";
+                                            return new Field< percent,Widget>( handle_, percent_) ;
+                                        } 
         adjustable * create_field(window handle_,unsigned rows_,unsigned columns_   )
                                       {
-             std::cout<< "\n field adj rom";
-            return new Field< adjustable,Room>    ( handle_, rows_, columns_ );}//adj_room
+                                             //std::cout<< "\n field adj rom";
+                                            return new Field< adjustable,Room>    ( handle_, rows_, columns_ );
+                                        } 
 	 private:
          field_t& add(adjustable * fld)
 		{
-             std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
+             //std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
 			fld->MinMax (*this);
 			place_impl_->_m_make_destroy(fld);
             place_impl_->registre(name,std::unique_ptr<adjustable>( fld));
@@ -1052,7 +1052,7 @@ namespace vplace_impl
 			    case token::div_start:	    
                     {
 
-                                    std::cout<< "\nAdd div:";
+                                    //std::cout<< "\nAdd div:";
                        field_names_in_div.push_back(registre(scan_div(tknizer)));	
                                                                   			    break;             
                     }
@@ -1074,7 +1074,7 @@ namespace vplace_impl
                             std::unique_ptr<Splitter> spl=std::make_unique<Splitter>
                                             ( parent_window_handle,p );
                             splitter = spl.get();
-                                    std::cout<< "\n Add Splitter:" ;
+                                    //std::cout<< "\n Add Splitter:" ;
                             field_names_in_div.push_back(registre( std::move(spl) ));
                        }
                     }                                                           break;
@@ -1202,7 +1202,7 @@ namespace vplace_impl
             else 
                 td.reset(new Field<fixed,div_h>  (unsigned(margin[0].integer())));
 
-                                                std::cout<< "\n Add top margin:";// <<ld.get()->min;
+                                                //std::cout<< "\n Add top margin:";// <<ld.get()->min;
             vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(td.release()) )));
 
 
@@ -1244,12 +1244,12 @@ namespace vplace_impl
                     else 
                         ld.reset(new Field<fixed,div_h> (unsigned(margin[lm].integer())));
 
-                                                std::cout<< "\n Add left margin:"; 
+                                                //std::cout<< "\n Add left margin:"; 
                     hd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(ld.release()) )));
                 }
                 
                     // central  
-                                                std::cout<< "\n Add central, real div betwen margins:"; 
+                                                //std::cout<< "\n Add central, real div betwen margins:"; 
                 hd->field_names.push_back(registre(std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) )));
 
                 if (rm)
@@ -1260,18 +1260,18 @@ namespace vplace_impl
                     else 
                         rd.reset(new Field<fixed,div_h> (unsigned(margin[rm].integer())));
 
-                                                std::cout<< "\n Add rigth margin:"; 
+                                                //std::cout<< "\n Add rigth margin:"; 
                     hd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(rd.release()) )));
                 }
 
 
-                                                std::cout<< "\n Add horizontal central row: left margin + central + rigth margin:"; 
+                                                //std::cout<< "\n Add horizontal central row: left margin + central + rigth margin:"; 
                 vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(hd.release()) )));
             }
             else 
             {
                     // only central  
-                                                std::cout<< "\n Add only central row: no left margin or rigth margin:"; 
+                                                //std::cout<< "\n Add only central row: no left margin or rigth margin:"; 
                 vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) )));
             }
 
@@ -1283,10 +1283,10 @@ namespace vplace_impl
                 else 
                     bd.reset(new Field<fixed,div_h> (unsigned(margin[bm].integer())));
 
-                                                std::cout<< "\n Add botton margin:"; 
+                                                //std::cout<< "\n Add botton margin:"; 
                     vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(bd.release()) )));
             }
-                                                std::cout<< "\n Add vertical div for margin:"; 
+                                                //std::cout<< "\n Add vertical div for margin:"; 
             pdiv->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(vd.release()) )));
         }
 
@@ -1303,7 +1303,7 @@ namespace vplace_impl
 		tokenizer tknizer(s);
         root_division=scan_div(tknizer) ;//  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
         for (auto &f: fields_)
-             std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
+             //std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
         recollocate = true;
     }
 

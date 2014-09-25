@@ -71,19 +71,6 @@ namespace nana
 		void               collocate();
 		field_reference    field   (const ::std::string & name);    /// TODO: Add min and max
 
-  //      struct element{};
-  //      vplace& operator ()  (const ::std::string & name){ Set_def_field(name); return *this; }
-		//vplace& operator<<(minmax              Size_range)	;
-  //      vplace& operator<<(const std::wstring& txt)	;
-  //      vplace& operator<<(const std::string&  txt)	;
-		//vplace& operator<<(window              wd)	;    
-		//vplace& operator<<(unsigned            gap) ;
-		//vplace& fasten(window wd)	    ;
-  //      vplace& operator<<(element             e )	;
-		//element    Fixed   (window wd, unsigned size         );
-		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-		//element    Room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
-                                                        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
 
 
 		static adjustable*     fixed   (window wd                    , unsigned size    );
@@ -101,3 +88,19 @@ namespace nana
 //end namespace nana
 
 #endif //#ifndef NANA_GUI_PLACE_HPP
+
+
+
+  //      struct element{};
+  //      vplace& operator ()  (const ::std::string & name){ Set_def_field(name); return *this; }
+		//vplace& operator<<(minmax              Size_range)	;
+  //      vplace& operator<<(const std::wstring& txt)	;
+  //      vplace& operator<<(const std::string&  txt)	;
+		//vplace& operator<<(window              wd)	;    
+		//vplace& operator<<(unsigned            gap) ;
+		//vplace& fasten(window wd)	    ;
+  //      vplace& operator<<(element             e )	;
+		//element    Fixed   (window wd, unsigned size         );
+		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
+		//element    Room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
+                                                        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
