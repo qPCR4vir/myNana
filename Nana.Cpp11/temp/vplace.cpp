@@ -431,18 +431,19 @@ namespace vplace_impl
 		place_parts::splitter<true>	splitter_;
 		nana::point	                begin_point_;
         
-		std::unique_ptr<Field<percent,    division>>   leaf_left_ ;  // ??
-		std::unique_ptr<Field<adjustable, division>>   leaf_right_;  // ??
-        division                    *parent;
+		percent                     *leaf_left_a; 
+        adjustable                  *leaf_right_a;
+		division                    *parent;
+        std::unique_ptr<division>   leaf_left_  , leaf_right_;
 		dragger	                    dragger_;
         //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
         bool                        splitted{false};
         double                      init_perc{30};
         nana::arrange               arrange_;
         
-        Splitter(window pw, double  init_perc=0.3):Field<fixed,Widget>(nullptr,unsigned(4)),init_perc(init_perc?init_perc:0.3) 
+        Splitter( window wd, double  init_perc=0.3):Field<fixed,Widget>(nullptr,unsigned(4)),init_perc(init_perc?init_perc:0.3) 
         {
-            splitter_.create(pw);
+            splitter_.create(wd);
             dragger_.trigger(splitter_);
             handle = splitter_.handle();
 
@@ -458,16 +459,16 @@ namespace vplace_impl
 
                 //leaf_left_ ->weigth_c( )  = parent->weigth_c( ) ;
                 leaf_left_ ->weigth_s( )  = parent->weigth_c(last) - parent->weigth_c( ) ;
-                leaf_left_ ->collocate(leaf_left_ ->last);
+                leaf_left_ ->collocate_field(leaf_left_ ->last);
 
                 leaf_right_->weigth_c( )  = parent->weigth_c(last) + parent->weigth_s(last)+1 ;
                 leaf_right_->weigth_s( )  = parent->weigth_s() - (leaf_right_->weigth_c( ) -  parent->weigth_c( ));
-                leaf_right_ ->collocate(leaf_right_ ->last);
+                leaf_right_ ->collocate_field(leaf_right_ ->last);
 
                 //API::lazy_refresh();
                 //API::refresh_window_tree(parent_window_handle);
 
-                leaf_left_ ->setPercent(double(leaf_left_ ->weigth_s( ))/parent->weigth_s());
+                leaf_left_a ->setPercent(double(leaf_left_ ->weigth_s( ))/parent->weigth_s());
 			});
         }
         void populate_children(	implement*   place_impl_)  // ???????????????????
@@ -503,7 +504,7 @@ namespace vplace_impl
 
             l.children = Children(cb,spl) ;
             r.children = Children(spl+1,ce) ;
-            children = Children {splitter->leaf_left_.get(), splitter, splitter->leaf_right_.get()};
+            children = Children {splitter->leaf_left_a, splitter, splitter->leaf_right_a};
             splitter->splitted=true;
        }
     Splitter * division::create_splitter()
@@ -513,28 +514,39 @@ namespace vplace_impl
     Splitter * div_h::create_splitter()
         {
             splitter->restrict(  last, nana::arrange::horizontal);
-            //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
+
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_we);
-            auto div_l=dynamic_cast<Field<percent,division>*>(new Field<percent,div_h> (splitter->init_perc));
-            assert(div_l);
-            //auto div_l=dynamic_cast<Field<percent,division>*>(new Field<percent,div_h> (splitter->init_perc));
-            splitter->leaf_left_.reset(div_l);//percent_div_h
-            splitter->leaf_right_.reset(dynamic_cast<Field<adjustable,division>*>(new Field<adjustable,div_h>  )); // adj_div_h 
-            //splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
-            //splitter->leaf_right_.reset(new adj_div_h );
+
+            auto div_l=std::make_unique<Field<percent,div_h>>(splitter->init_perc);
+
+            splitter->leaf_left_a = div_l.get();
+            splitter->leaf_left_.reset(div_l.release());
+
+            auto div_r=std::make_unique<Field<adjustable,div_h>>() ;
+
+            splitter->leaf_right_a = div_r.get();
+            splitter->leaf_right_.reset(div_r.release());
+
             return splitter ;
         }
     Splitter * div_v::create_splitter()
         {
-            splitter->restrict( last, nana::arrange::vertical);
-            //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
+            splitter->restrict(  last, nana::arrange::vertical);
+
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_ns);
-            splitter->leaf_left_.reset(dynamic_cast<Field<percent,division>*>(new Field<percent,div_v>(splitter->init_perc)));
-            splitter->leaf_right_.reset(dynamic_cast<Field<adjustable,division>*>(new Field<adjustable,div_v>  ));
-            //splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
-            //splitter->leaf_right_.reset(new adj_div_v  );
+
+            auto div_l=std::make_unique<Field<percent,div_h>>(splitter->init_perc);
+
+            splitter->leaf_left_a=div_l.get();
+            splitter->leaf_left_.reset(div_l.release());
+
+            auto div_r=std::make_unique<Field<adjustable,div_v>>() ;
+
+            splitter->leaf_right_a = div_r.get();
+            splitter->leaf_right_.reset(div_r.release());
+
             return splitter ;
         }
     class number_t
@@ -806,7 +818,7 @@ namespace vplace_impl
         
         void registre(std::string name, std::unique_ptr<adjustable> adj)
         {
-            std::cout << "\nRegistring: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
+            std::cout << "\nRegistering: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
             fields_.emplace(name,std::move(adj));
         }
 
@@ -1039,13 +1051,10 @@ namespace vplace_impl
 			{
 			    case token::div_start:	    
                     {
-                       std::string div_name(add_div_name ());
-                       auto fld=scan_div(tknizer);
-                                    std::cout<< "\n Add "<<div_name<<" adjustable to : Min=" <<fld.get()->min;
 
-                       registre(div_name, std::move(fld) );
-                       field_names_in_div.push_back(div_name);				    break;
-                                                                               
+                                    std::cout<< "\nAdd div:";
+                       field_names_in_div.push_back(registre(scan_div(tknizer)));	
+                                                                  			    break;             
                     }
 			    case token::array:		    tknizer.array().swap(array);   		break;
 			    case token::identifier:		
@@ -1062,14 +1071,11 @@ namespace vplace_impl
                             double p=0 ;
                             if (tknizer.number().kind_of() == number_t::kind::percent)
                                 p=1-tknizer.number().real(); 
-                            std::string div_name(add_div_name ());
                             std::unique_ptr<Splitter> spl=std::make_unique<Splitter>
-                                            (parent_window_handle,p );
+                                            ( parent_window_handle,p );
                             splitter = spl.get();
-                                    std::cout<< "\n Add "<<div_name<<" splitter to : Min=" <<spl.get()->min;
-                            registre(div_name, std::move(spl) );
-                            field_names_in_div.push_back(div_name);
-                                    std::cout<< "\n Add "<<div_name<<" adjustable to : Min=" <<splitter->min;
+                                    std::cout<< "\n Add Splitter:" ;
+                            field_names_in_div.push_back(registre( std::move(spl) ));
                        }
                     }                                                           break;
 			    case token::horizontal:
@@ -1186,6 +1192,20 @@ namespace vplace_impl
         {
             std::unique_ptr<division> vd, td,hd,ld,cd,rd,bd; 
 
+
+            // vert div
+            vd.reset(new Field<adjustable,div_v> );
+
+            //top :  margin[0]
+            if (margin[0].kind_of() == number_t::kind::percent)
+                td.reset(new Field<percent,div_h> (margin[0].real()));
+            else 
+                td.reset(new Field<fixed,div_h>  (unsigned(margin[0].integer())));
+
+                                                std::cout<< "\n Add top margin:";// <<ld.get()->min;
+            vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(td.release()) )));
+
+
             // central div
             switch(div_type)
             {
@@ -1198,23 +1218,6 @@ namespace vplace_impl
 		    }
             cd->field_names.swap(pdiv->field_names);
             std::swap(cd->splitter,pdiv->splitter);
-            auto cn=add_div_name ();
-
-            // vert div
-            vd.reset(new Field<adjustable,div_v> );
-            auto vn=add_div_name ();
-
-            //top :  margin[0]
-            if (margin[0].kind_of() == number_t::kind::percent)
-                td.reset(new Field<percent,div_h> (margin[0].real()));
-            else 
-                td.reset(new Field<fixed,div_h>  (unsigned(margin[0].integer())));
-
-            auto tn=add_div_name_ ();
-            vd->field_names.push_back(tn);
-                                                std::cout<< "\n Add "<<tn<<" splitter to : Min=" ;//<<td.get()->field_names;
-    //auto
-            registre(tn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(td.release()) ));
 
             int lm, rm,bm;
 
@@ -1230,9 +1233,8 @@ namespace vplace_impl
 
             if (lm || rm)
             {
+                //  horizontal central "row": left margin + central + rigth margin   
                 hd.reset (new Field<adjustable,div_h>    );	
-                auto hn=add_div_name ();
-                vd->field_names.push_back(hn);
 
                 if (lm)
                 {
@@ -1242,15 +1244,13 @@ namespace vplace_impl
                     else 
                         ld.reset(new Field<fixed,div_h> (unsigned(margin[lm].integer())));
 
-                    auto ln=add_div_name ();
-                    hd->field_names.push_back(ln);
-                                                std::cout<< "\n Add "<<ln<<" splitter to : Min=";// <<ld.get()->min;
-                    registre(ln, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(ld.release()) ));
+                                                std::cout<< "\n Add left margin:"; 
+                    hd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(ld.release()) )));
                 }
                 
                     // central  
-                hd->field_names.push_back(cn);
-                registre(cn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) ));// std::move(cd) );
+                                                std::cout<< "\n Add central, real div betwen margins:"; 
+                hd->field_names.push_back(registre(std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) )));
 
                 if (rm)
                 {
@@ -1260,17 +1260,19 @@ namespace vplace_impl
                     else 
                         rd.reset(new Field<fixed,div_h> (unsigned(margin[rm].integer())));
 
-                    auto rn=add_div_name ();
-                    hd->field_names.push_back(rn);
-                    registre(rn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(rd.release()) ));//std::move(rd) );
+                                                std::cout<< "\n Add rigth margin:"; 
+                    hd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(rd.release()) )));
                 }
-                registre(hn,std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(hd.release()) ));// std::move(hd ));
+
+
+                                                std::cout<< "\n Add horizontal central row: left margin + central + rigth margin:"; 
+                vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(hd.release()) )));
             }
             else 
             {
-                    // central  
-                vd->field_names.push_back(cn);
-                registre(cn,std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) ));// std::move(cd) );
+                    // only central  
+                                                std::cout<< "\n Add only central row: no left margin or rigth margin:"; 
+                vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) )));
             }
 
             if (bm)
@@ -1281,12 +1283,11 @@ namespace vplace_impl
                 else 
                     bd.reset(new Field<fixed,div_h> (unsigned(margin[bm].integer())));
 
-                auto bn=add_div_name ();
-                vd->field_names.push_back(bn);
-                registre(bn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(bd.release()) ));//std::move(bd) );
+                                                std::cout<< "\n Add botton margin:"; 
+                    vd->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(bd.release()) )));
             }
-            pdiv->field_names.push_back(vn);
-            registre(vn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(vd.release()) ));//std::move(vd) );
+                                                std::cout<< "\n Add vertical div for margin:"; 
+            pdiv->field_names.push_back(registre( std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(vd.release()) )));
         }
 
 		return div;
@@ -1366,7 +1367,6 @@ namespace vplace_impl
 
 }//end namespace gui
 //end namespace nana
-
 
 
 //        template <class Adj= Adjustable , class Fld=Widget> struct Field : Adj<Fld>
