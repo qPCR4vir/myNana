@@ -14,6 +14,9 @@
 #include <cmath>
 #include <unordered_set>
 #include <cassert>
+#include <typeinfo>
+#include <typeindex>
+	
 //#include <unordered_map>
 #include <map>
 #include <vector>
@@ -51,13 +54,14 @@ namespace vplace_impl
     typedef vplace::field_t field_t;
     struct adj{unsigned weigth,min,count_adj; adj():weigth(0),min(0),count_adj(0){}  };
 
-    struct Adjustable    :minmax                 
-    { 
-        Adjustable(minmax MinMax=minmax())  : minmax(MinMax){} 
-        Adjustable(unsigned Min=MIN, unsigned Max=MAX)  : minmax(Min, Max){} 
 
+    struct adjustable    :minmax                 
+    { 
+        adjustable(minmax MinMax=minmax())  : minmax(MinMax){} 
+        virtual ~adjustable(){}
         virtual void        collocate (const rectangle& r)  =0;
         virtual rectangle   cells       ()   const  =0;
+        virtual void        populate_children (	implement*   place_impl_)=0;
 
         virtual adj   pre_place(unsigned t_w,                        adj& fixed = adj() )      
                     {  
@@ -93,10 +97,9 @@ namespace vplace_impl
             return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
         }
     };
-    struct Fixed:  Adjustable     
+    struct fixed:  adjustable     
     { 
-        Fixed(unsigned weight, unsigned min_=MIN,unsigned max_=MAX): Adjustable(min_,max_), weight_(weight){}
-        Fixed(unsigned weight, minmax MinMax=minmax() ):  weight_(weight) , Adjustable(MinMax){}
+        fixed(unsigned weight, minmax MinMax=minmax() ):  weight_(weight) , adjustable(MinMax){}
 
         unsigned weight_; 
 
@@ -121,9 +124,9 @@ namespace vplace_impl
             return  weight_;          
         }
     };
-    struct Percent: Fixed 
+    struct percent: fixed 
     { 
-        Percent(double percent_,unsigned min_,unsigned max_):Fixed (static_cast<unsigned>(fx*percent_),min_,max_){}
+        percent(double percent_,minmax MinMax=minmax()):fixed (static_cast<unsigned>(fx*percent_),MinMax){}
 
         const static unsigned fx=10000;
 
@@ -138,80 +141,80 @@ namespace vplace_impl
             return  (t_w * weight_) /fx;          
         }
     };     
-
-template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
+       template <class Adj= adjustable , class Fld=Widget> 
+     struct Field : Fld, Adj
 {
     void      Adj::collocate (const rectangle& r) override{Fld::collocate_field(r);}
-    rectangle  cells () const override{ cells_ ( );}
+    rectangle  cells () const override{ return cells_ ( );}
+    void       populate_children (	implement*   place_impl_)override{Fld::populate_children(place_impl_);}
 
     // for Gap
     Field(minmax MinMax=minmax() )  : Adj(MinMax){} 
     Field(unsigned weight, minmax MinMax=minmax() ): Adj(weight  , MinMax){}
     Field(double percent_, minmax MinMax=minmax() ): Adj(percent_, MinMax){}
+
     // for Widget
     Field(window handle_, minmax MinMax=minmax() )  : Fld(handle_ ), Adj(MinMax){} 
     Field(window handle_, unsigned weight, minmax MinMax=minmax() ): Fld(handle_ ), Adj(weight  ,MinMax){}
     Field(window handle_, double percent_, minmax MinMax=minmax() ): Fld(handle_ ), Adj(percent_,MinMax){}
+
     // for Cell and Room
-    Field(window handle_, unsigned row_,unsigned column_, minmax MinMax=minmax() )  : Fld(handle_,rows_,  columns_ ), Adj(MinMax){} 
-    Field(window handle_, unsigned row_,unsigned column_, unsigned weight, minmax MinMax=minmax() ): Fld(handle_,rows_,  columns_ ), Adj(weight  ,MinMax){}
-    Field(window handle_, unsigned row_,unsigned column_, double percent_, minmax MinMax=minmax() ): Fld(handle_,rows_,  columns_ ), Adj(percent_,MinMax){}
+    Field(window handle_, unsigned row_,unsigned column_, minmax MinMax=minmax() )                  : Fld(handle_,row_,  column_ ), Adj(MinMax){} 
+    Field(window handle_, unsigned row_,unsigned column_, unsigned weight, minmax MinMax=minmax() ) : Fld(handle_,row_,  column_ ), Adj(weight  ,MinMax){}
+    Field(window handle_, unsigned row_,unsigned column_, double percent_, minmax MinMax=minmax() ) : Fld(handle_,row_,  column_ ), Adj(percent_,MinMax){}
+
     // for Cells
-    Field(window handle_, rectangle r, minmax MinMax=minmax() )  : Fld(handle_,r ), Adj(MinMax){} 
-    Field(window handle_, rectangle r, unsigned weight, minmax MinMax=minmax() ): Fld(handle_,r ), Adj(weight  ,MinMax){}
+    Field(window handle_, rectangle r, minmax MinMax=minmax() )                 : Fld(handle_,r ) , Adj(MinMax){} 
+    Field(window handle_, rectangle r, unsigned weight, minmax MinMax=minmax() ): Fld(handle_,r ) , Adj(weight  ,MinMax){}
     Field(window handle_, rectangle r, double percent_, minmax MinMax=minmax() ): Fld(handle_,r  ), Adj(percent_,MinMax){}
 
+    // for div_grid
+    Field(const std::string& name_, size dim_, minmax MinMax=minmax())                         : Adj(MinMax), Fld (name_,dim_){} 
+    Field(const std::string& name_, size dim_, unsigned weight, minmax MinMax=minmax())        : Adj(weight, MinMax), Fld (name_,dim_){} 
+    Field(const std::string& name_, size dim_, double percent_, minmax MinMax=minmax())        : Fld (name_ , dim_),  Adj(static_cast<unsigned>(fx*percent_), MinMax){} 
+    Field(const std::string& name_, unsigned rows_, unsigned columns_,                minmax MinMax=minmax())    : Adj(MinMax), Fld (name_,rows_,  columns_){} 
+    Field(const std::string& name_, unsigned rows_, unsigned columns_,unsigned weight, minmax MinMax=minmax())   : Fld (name_,rows_,  columns_ ), Adj(weight, MinMax){} 
+    Field(const std::string& name_, unsigned rows_, unsigned columns_,double   percent_, minmax MinMax=minmax()) : Fld (name_ , rows_,  columns_),  Adj(static_cast<unsigned>(fx*percent_), MinMax){} 
+
+
+
 };
-    struct IField  
-    {
-            using minmax::minmax;
-            IField(         ){}
-            IField(unsigned min_,unsigned max_): minmax(min_, max_){} 
-            rectangle           last ;
-            virtual adj         pre_place   (unsigned t_w,      adj& fixed=adj()                    )=0;
-            virtual adj         end_place   (unsigned t_w,const adj& fixed,       adj& adj_min=adj())=0;
-            virtual unsigned    weigth      (unsigned t_w,const adj& fixed, const adj& adj_min      )=0;
-            virtual            ~IField      (){}
-            virtual rectangle   cells       ()   const                              =0;
-            virtual void        collocate   (const rectangle& r)   {last=r;}
-            virtual window      window_handle()const   =0;
-            virtual void        populate_children(	implement*   place_impl_)  =0;
-            virtual void        setWeigth  (unsigned w){assert(false);}
-            virtual void        setPercent (double p){assert(false);}
-            virtual unsigned    getWeigth  (){assert(false);return 0;}
-            virtual double      getPercent (){assert(false);return 0;}
-    };
-
-    
-     struct IField  
+     struct Ifield  
     {
             rectangle           last ;
-
-            virtual            ~IField      (){}
-            virtual rectangle   cells_       ()   const  =0;
+            virtual            ~Ifield      (){}
             virtual void        collocate_field   (const rectangle& r)   {last=r;}
+            virtual void        populate_children (	implement*   place_impl_){}
+            virtual rectangle   cells_       ()   const    =0;
+
+            //virtual window      window_handle()const   =0;
     };
+
     
-    struct Gap  : IField                     
+    struct Gap  : Ifield                     
     { 
         rectangle      cells_         () const override    { return rectangle(-1,-1,0,0);}             
     };
     struct Widget :  Gap                    
     { 
         Widget(window handle_):handle(handle_){}
+        ~Widget    ()override{API::umake_event(destroy_evh);}
  
         window          handle{nullptr}; 
         event_handle    destroy_evh{nullptr}; 
-        virtual        ~Widget    (){API::umake_event(destroy_evh);}
 
         window          window_handle  () const            { return handle; }
-        rectangle       cells_          () const override   {return rectangle(-1,-1,1,1);}             
+        rectangle       cells_         () const override   {return rectangle(-1,-1,1,1);}             
         void            collocate_field(const rectangle& r)override
         {  
-            IField::collocate_field(r);
+            Ifield::collocate_field(r);
             API::move_window (handle,r ); 
         }
     };
+    //struct Label_field: Widget_field
+    //{
+    //
+    //};
     struct Cell:  Widget   
     { 
         Cell(window handle_,unsigned row_,unsigned column_)  :                           
@@ -235,14 +238,14 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 
     struct Splitter;
 
-    class  division : public IField
+    class  division : public Ifield
 	{
 	  public:
-        using Children = std::vector< Adjustable*>;
+        using Children = std::vector< adjustable*>;
 		Children                  children;    
         std::vector <std::string> field_names;
 		std::vector<window>       fastened_in_div;   
-		std::unique_ptr< Adjustable>   gap;         
+		std::unique_ptr< adjustable>   gap;         
         Splitter                  *splitter{nullptr};
 	  public:
         virtual int&      weigth_c(rectangle& r )=0;
@@ -257,12 +260,12 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
         rectangle cells_            () const  override     {return rectangle(-1,-1,1,1);}             
                     /// populate childen in the same order in with they were introduced in the div layout str,
                     /// and then in the order in with they were added to the field
-        void populate_children(	implement*   place_impl_);
+        void populate_children(	implement*   place_impl_) override;
         /// add field names in the same order in with they are introduced in the div layout str
 		virtual void collocate_field( const rectangle& r) override
 		{   
                                      //std::cerr<< "\ncollocating div in: "<<r; // debugg
-            IField::collocate_field(r);
+            Ifield::collocate_field(r);
 			rectangle area (r);
             //split();
 
@@ -325,7 +328,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 
         virtual void collocate_field(const rectangle& r) override
 	    {
-            IField::collocate_field(r);
+            Ifield::collocate_field(r);
 
 
             if(! r.width || ! r.height ) return;
@@ -421,163 +424,15 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 		}
 	};//end class div_grid
 
-
-    //struct Label_field: Widget_field
-    //{
-    //
-    //};
-
-	
-    template <class Base> struct IAdjustable  :  Base                      
-    { 
-        IAdjustable(         ){}
-        IAdjustable(unsigned min_,unsigned max_)                   : Base(min_, max_){} 
-        IAdjustable(window handle_)                                : Base(handle_){}
-        IAdjustable(window handle_, unsigned min_,unsigned max_)   : Base(handle_,min_, max_){} 
-        IAdjustable(const std::string& name_, size dim_)           : Base (name_,dim_){} 
-        IAdjustable(const std::string& name_, unsigned rows_, unsigned columns_) :Base (name_,rows_,  columns_){} 
-        IAdjustable(const std::string& name_, unsigned rows_, unsigned columns_, unsigned min_,unsigned max_) 
-            :Base (name_,rows_,  columns_,min_, max_){} 
-
-        adj   pre_place(unsigned t_w,                        adj& fixed = adj() ) override    
-                    {  
-                        ++fixed.count_adj;     
-                        fixed.min += min;    
-                        return  fixed;        
-                    }
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )  
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += min; return adj_min; }
-            if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                                                            { adj_min.weigth += max; return adj_min; }
-
-            adj_min.min += min; 
-            ++adj_min.count_adj;   return  adj_min;        
-        }
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )override
-        {   
-            if ( t_w      <   fixed.weigth + fixed.min         )   
-                                                                        {return min; }
-            if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return min; }
-            if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
-                                                                        {return max; }
-            if ( t_w <    min * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return min; }
-            if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
-                                                                        {return max; }
-
-            return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
-        }
-    };
-    template <class Base> struct IFixed:  IAdjustable<Base>     
-    { 
-        IFixed(unsigned weight)                             : weight_(weight) {}
-        IFixed(unsigned weight, unsigned min_,unsigned max_): IAdjustable<Base>(min_,max_), weight_(weight){}
-        IFixed(window handle_,unsigned weight ) : weight_(weight), IAdjustable<Base>(handle_){}
-        IFixed(window handle_,unsigned weight, unsigned min_,unsigned max_ ) : weight_(weight), IAdjustable<Base>(handle_,min_, max_){} 
-
-        IFixed(const std::string& name_, unsigned weight,size dim_)           : IAdjustable<Base> (name_,dim_), weight_(weight){} 
-        IFixed(const std::string& name_, unsigned weight,unsigned rows_, unsigned columns_) :IAdjustable<Base> (name_,rows_,  columns_), weight_(weight){} 
-        IFixed(const std::string& name_, unsigned weight,unsigned rows_, unsigned columns_, unsigned min_,unsigned max_) 
-            :IAdjustable<Base> (name_,rows_,  columns_,min_, max_), weight_(weight){} 
-
-        unsigned weight_; 
-
-        void        setWeigth(unsigned w)override{weight_=w;}
-        unsigned    getWeigth  ()override{ return weight_;}
-
-
-        adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
-                    {   fixed.weigth   += weigth_adj(t_w) ;   return  fixed;        }
-
-        adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
-                    {   adj_min.weigth += weigth_adj(t_w) ;   return  adj_min;      }   
-
-        unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )  override              
-                    {   return weigth_adj(t_w);      }    
-
-        virtual unsigned weigth_adj(unsigned t_w )
-        {   
-            if ( weight_  < min )    {return min; }
-            if ( weight_  > max )    {return max; }
-                
-            return  weight_;          
-        }
-    };
-    template <class Base> struct IPercent: IFixed<Base> 
-    { 
-        IPercent(double percent_)                            :IFixed<Base>(static_cast<unsigned>(fx*percent_))          {}
-        IPercent(double percent_,unsigned min_,unsigned max_):IFixed<Base>(static_cast<unsigned>(fx*percent_),min_,max_){}
-        IPercent(window handle_, double percent_):IFixed<Base> (handle_, static_cast<unsigned>(fx*percent_)){}
-        IPercent(window handle_, double percent_, unsigned min_,unsigned max_)
-                                                 :IFixed<Base> (handle_, static_cast<unsigned>(fx*percent_),min_, max_){} 
-
-        IPercent(const std::string& name_,double   percent_,size dim_) :  IFixed<Base>(name_, static_cast<unsigned>(fx*percent_), dim_){} 
-        IPercent(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_) 
-                : IFixed<Base>(name_, static_cast<unsigned>(fx*percent_),rows_,  columns_){} 
-        IPercent(const std::string& name_, double   percent_, unsigned rows_, unsigned columns_, unsigned min_,unsigned max_) 
-            :IFixed<Base>(name_, static_cast<unsigned>(fx*percent_),rows_,  columns_,min_, max_){} 
-
-        const static unsigned fx=10000;
-
-        void        setPercent (double p)override{weight_=p*fx;}
-        double      getPercent ()override{return double(weight_)/fx;}
-
-        unsigned weigth_adj(unsigned t_w )override
-        {   
-            if ( (t_w * weight_) /fx  < min )    {return min; }
-            if ( (t_w * weight_) /fx  > max )    {return max; }
-                
-            return  (t_w * weight_) /fx;          
-        }
-    };     
-    using adj_gap= IAdjustable<Gap_field> ;
-    using adj_widget=IAdjustable<Widget_field>;
-    using adj_room =  IAdjustable<Room_field> ;
-    using adj_div_h =  IAdjustable<div_h> ;
-    using adj_div_v =  IAdjustable<div_v> ;
-    using adj_div_grid =  IAdjustable<div_grid> ;
-    //struct adj_div_grid : public IAdjustable<div_grid> 
-    //{
-    //    adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_)   
-    //                                                       { Init(name_,rows_,columns_);}
-    //    adj_div_grid(const std::string& name_, size dim_ , unsigned min_ ,  unsigned max_     )    
-    //        :  IAdjustable<div_grid>(min_   ,max_       )  {Init(name_,dim_); }
-    //    adj_div_grid(const std::string& name_, size dim_      )    
-    //                                                       {Init(name_,dim_); }
-    //    adj_div_grid(const std::string& name_, unsigned rows_, unsigned columns_,
-    //                                           unsigned min_,unsigned max_)   
-    //        :    IAdjustable<div_grid>(min_        ,max_       ) { Init(name_,rows_,  columns_);}
-    //};
-
-    using fixed_gap =  IFixed<Gap_field> ;
-    using fixed_widget =  IFixed<Widget_field> ;
-    using fixed_room =  IFixed<Room_field> ;
-    using fixed_div_h =  IFixed<div_h> ;
-    using fixed_div_v =  IFixed<div_v> ;
-    using fixed_div_grid =  IFixed<div_grid> ;
-
-    using percent_gap =  IPercent<Gap_field> ;
-    using percent_widget =  IPercent<Widget_field> ;
-    using percent_room =  IPercent<Room_field> ;
-    using percent_div_h =  IPercent<div_h> ;
-    using percent_div_v =  IPercent<div_v> ;
-    using percent_div_grid =  IPercent<div_grid> ;
-
-    struct Splitter: public Field<Fixed,Widget>
-    {
     
-    struct Splitter: public fixed_widget
+    struct Splitter: public Field<fixed,Widget> //fixed_widget
     {
         nana::cursor	            splitter_cursor_{cursor::arrow};
 		place_parts::splitter<true>	splitter_;
 		nana::point	                begin_point_;
-		std::unique_ptr<Field<Percent,    division>>   leaf_left_ ;  // ??
-		std::unique_ptr<Field<Adjustable, division>>   leaf_right_;  // ??
+        
+		std::unique_ptr<Field<percent,    division>>   leaf_left_ ;  // ??
+		std::unique_ptr<Field<adjustable, division>>   leaf_right_;  // ??
         division                    *parent;
 		dragger	                    dragger_;
         //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
@@ -585,7 +440,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
         double                      init_perc{30};
         nana::arrange               arrange_;
         
-        Splitter(window pw, double  init_perc=0.3):Field<Fixed,Widget>(nullptr,unsigned(4)),init_perc(init_perc?init_perc:0.3) 
+        Splitter(window pw, double  init_perc=0.3):Field<fixed,Widget>(nullptr,unsigned(4)),init_perc(init_perc?init_perc:0.3) 
         {
             splitter_.create(pw);
             dragger_.trigger(splitter_);
@@ -629,8 +484,9 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
              dragger_.target( splitter_, r.pare_off(1), arrange_);
         }
 
-        void  collocate_field  (const rectangle& r)override        {
-                Field<Fixed,Widget>::collocate(r);
+        void  collocate_field  (const rectangle& r)override        
+        {
+                Field<fixed,Widget>::collocate(r);
         }
     };
 
@@ -660,10 +516,13 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_we);
-            splitter->leaf_left_.reset(dynamic_cast<Field<Percent,division>*>(new Field<Percent,div_h> (splitter->init_perc)));//percent_div_h
-            splitter->leaf_right_.reset(dynamic_cast<Field<Adjustable,division>*>(new Field<Adjustable,div_h>  )); // adj_div_h 
-            splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
-            splitter->leaf_right_.reset(new adj_div_h );
+            auto div_l=dynamic_cast<Field<percent,division>*>(new Field<percent,div_h> (splitter->init_perc));
+            assert(div_l);
+            //auto div_l=dynamic_cast<Field<percent,division>*>(new Field<percent,div_h> (splitter->init_perc));
+            splitter->leaf_left_.reset(div_l);//percent_div_h
+            splitter->leaf_right_.reset(dynamic_cast<Field<adjustable,division>*>(new Field<adjustable,div_h>  )); // adj_div_h 
+            //splitter->leaf_left_.reset(new percent_div_h(splitter->init_perc));
+            //splitter->leaf_right_.reset(new adj_div_h );
             return splitter ;
         }
     Splitter * div_v::create_splitter()
@@ -672,10 +531,10 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             //std::cout<<"\n restric: "<< last<<", splitt: "<<splitter->last;
             if ( splitter->splitted ) return nullptr;
             splitter->splitter_.cursor( cursor::size_ns);
-            splitter->leaf_left_.reset(dynamic_cast<Field<Percent,division>*>(new Field<Percent,div_v>(splitter->init_perc)));
-            splitter->leaf_right_.reset(dynamic_cast<Field<Adjustable,division>*>(new Field<Adjustable,div_v>  ));
-            splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
-            splitter->leaf_right_.reset(new adj_div_v  );
+            splitter->leaf_left_.reset(dynamic_cast<Field<percent,division>*>(new Field<percent,div_v>(splitter->init_perc)));
+            splitter->leaf_right_.reset(dynamic_cast<Field<adjustable,division>*>(new Field<adjustable,div_v>  ));
+            //splitter->leaf_left_.reset(new percent_div_v(splitter->init_perc));
+            //splitter->leaf_right_.reset(new adj_div_v  );
             return splitter ;
         }
     class number_t
@@ -914,51 +773,92 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
         std::unique_ptr<field_t>        temp_field_t;
         window                          parent_window_handle{nullptr};
         event_handle                    event_size_handle{nullptr};
-		std::unique_ptr<division>       root_division;
+		std::unique_ptr<adjustable>     root_division;
         std::unordered_set<std::string> names;          ///<  All the names defines. Garant no repited name.
         unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
         bool                            recollocate{ true };
 
                         /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
-		std::multimap<std::string, std::unique_ptr<Adjustable>> fields;    
-		std::multimap<std::string, std::unique_ptr<IField>> fields;    
-		std::multimap<std::string,    window              > fastened;
-        std::vector<nana::label*>                           labels;                                 
+		//std::multimap<std::string,std::unique_ptr< adjustable>> fields;    
+		std::multimap<std::string,    window                 >  fastened;
+        std::vector<nana::label*>                               labels;                                 
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
 
         void                       collocate (  );
 		void                       div       (const char* s);
         bool                       bind      (window parent_widget);
-		std::unique_ptr<division>  scan_div  (tokenizer&);
+		std::unique_ptr<adjustable>  scan_div  (tokenizer&);
 
         /// Generate and registre in the set a new unique div name from the current layout
-        std::string   add_div_name  ()  
-        {
-            std::string name= std::to_string (div_numer++);
-            names.insert (name);
-            return name; 
-        }
         bool          add_field_name(const std::string& n)  /// is unique? (registre it)
         {
             if (names.insert (n).second)
                 return true; 
             else return false;//trow name repit;
         }
+        std::string   registre(std::unique_ptr<adjustable> adj)
+        {
+            auto n=add_div_name_();
+            registre(n,std::move(adj));
+            return n;
+        }
+        
+        void registre(std::string name, std::unique_ptr<adjustable> adj)
+        {
+            std::cout << "\nRegistring: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
+            fields_.emplace(name,std::move(adj));
+        }
+
+    private:
+        std::multimap<std::string,std::unique_ptr< adjustable>> fields_;    
+        std::string   add_div_name_  ()  
+        {
+            std::string name= std::to_string (div_numer++);
+            assert(names.insert (name).second);
+            return name; 
+        }
+
+    public:
+        auto find(std::string name)-> decltype(fields_.equal_range(name))
+        {
+            return fields_.equal_range(name);
+        }
+    void _m_make_destroy(adjustable *fld)
+		{
+            auto fd=dynamic_cast<Widget *>(fld);
+            if (!fd || ! fd->handle) return;
+            fd->destroy_evh = API::events( fd->handle ).destroy.connect ( [this](const arg_destroy& ei)
+			{
+				for (auto f=fields_.begin(), end=fields_.end(); f!=end; ++f)
+                    if (Widget *fd=dynamic_cast<Widget *>(f->second.get() ) )
+                        if ( fd->window_handle() ==  ei.window_handle )
+                        {
+                            fields_.erase(f);    // delete ???
+				            recollocate = true;
+				            collocate();
+                            return;
+                        }
+			});
+		}
+
+
 	};	      //struct implement
+
+
+
 
     void division::populate_children(	implement*   place_impl_)
     {   fastened_in_div.clear ();
         children.clear ();             /// .clear(); the children or it is empty allways ????
         for (const auto &name : field_names)      /// for all the names in this div
         {                             /// find in the place global list of fields all the fields attached to it
-            auto r= place_impl_->fields.equal_range(name);     
+            auto r= place_impl_->find(name);     
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
-                children.push_back (fi->second.get () );       /// to form the div children
-                auto div=dynamic_cast<division*>(fi->second.get());
-                if (div) div->populate_children (place_impl_);
-                fi->second->populate_children (place_impl_);
+                auto fld=fi->second.get ();
+                children.push_back (fld );       /// to form the div children
+                fld->populate_children (place_impl_);
                 if (gap) 
                     children.push_back (gap.get() );
             }
@@ -979,7 +879,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
                 //auto re=recollocate;
                if (recollocate) 
                    root_division->populate_children (this);
-                   root_division->collocate_field(r/*=API::window_size(this->parent_window_handle)*/);
+                   root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
                //if (re)       
                //{    
                //    API::lazy_refresh();
@@ -1008,23 +908,34 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
          field_impl(implement * p, const std::string& name_):	place_impl_(p),   name(name_){}
 
 	  public:
-        Adjustable * create_field(window    wd                                      )
-                                      {return  new Field< Adjustable,Widget> ( wd ) ;}//adj_widget dynamic_cast<Adjustable*>
-        Adjustable * create_field(unsigned gap                                      )
-                                      {return  new Field< Fixed,Gap>  ( gap ) ;}//fixed_gap    
-        Adjustable * create_field(window handle_,unsigned weight_                   )
-                                      {return  new  Field< Fixed,Widget>( handle_, weight_)      ;}//fixed_widget  
-        Adjustable * create_field(window handle_,double   percent_                  )
-                                      {return new Field< Percent,Widget>( handle_, percent_) ;}//percent_widget
-        Adjustable * create_field(window handle_,unsigned rows_,unsigned columns_   )
-                                      {return new Field< Adjustable,Room>    ( handle_, rows_, columns_ );}//adj_room
+        adjustable * create_field(window    wd                                      )
+                                      {
+             std::cout<< "\n field window";
+            return  new Field< adjustable,Widget> ( wd ) ;}//adj_widget dynamic_cast<Adjustable*>
+        adjustable * create_field(unsigned gap                                      )
+                                      {
+             std::cout<< "\n field gap";
+            return  new Field< fixed,Gap>  ( gap ) ;}//fixed_gap    
+        adjustable * create_field(window handle_,unsigned weight_                   )
+                                      {
+             std::cout<< "\n field fix widg";
+            return  new  Field< fixed,Widget>( handle_, weight_)      ;}//fixed_widget  
+        adjustable * create_field(window handle_,double   percent_                  )
+                                      {
+             std::cout<< "\n field perc widg";
+            return new Field< percent,Widget>( handle_, percent_) ;}//percent_widget
+        adjustable * create_field(window handle_,unsigned rows_,unsigned columns_   )
+                                      {
+             std::cout<< "\n field adj rom";
+            return new Field< adjustable,Room>    ( handle_, rows_, columns_ );}//adj_room
 	 private:
-         field_t& add(Adjustable * fld)
+         field_t& add(adjustable * fld)
 		{
+             std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
 			fld->MinMax (*this);
-            place_impl_->fields.emplace(name,std::unique_ptr<Adjustable>( fld));
+			place_impl_->_m_make_destroy(fld);
+            place_impl_->registre(name,std::unique_ptr<adjustable>( fld));
             place_impl_->recollocate = true;
-			_m_make_destroy(fld);
 			return *this;
 		}
 
@@ -1046,7 +957,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             place_impl_->labels.push_back (lab);/*newstd::addressof (nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt  ))*/ 
             //place_impl_->labels.emplace_back (new nana::label(place_impl_->parent_window_handle, txt  ));
             add(create_field( *place_impl_->labels.back () ));
-            auto pi = place_impl_;
+            //auto pi = place_impl_;
 			//auto dtr = API::events(*lab).destroy ( [pi](const arg_destroy& ei)
 			//{
 			//	for (auto f=pi->labels.begin(); f!=pi->labels.end(); ++f)
@@ -1066,7 +977,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 			return *this;
         }
         field_t& operator<<(minmax Size_range)	override { MinMax(Size_range) ;return *this;};
-        field_t& operator<<(IField * fld)       override {return add(fld);                  }
+        field_t& operator<<(adjustable * fld)   override {return add(fld);                  }
         field_t& operator<<(window   wd)        override {return add(create_field(wd));		}
 		field_t& operator<<(unsigned gap)       override {return add(create_field(gap));    }
 		field_t& fasten(window wd)              override
@@ -1092,40 +1003,22 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             //});	
 			return *this;
 		}
-		field_t& operator<<(const fixed_widget& fx)    {return add(new fixed_widget(fx));	 }
-    	field_t& operator<<(const percent_widget& pcnt){return add(new percent_widget(pcnt));}
-		field_t& operator<<(const adj_room& r) 
+		field_t& operator<<(const Field<fixed,Widget>& fx)    {return add(new Field<fixed,Widget>(fx));	 }//fixed_widget
+    	field_t& operator<<(const Field<percent,Widget>& pcnt){return add(new Field<percent,Widget>(pcnt));}//percent_widget
+		field_t& operator<<(const Field<adjustable,Room>& r) 
 		{
-			adj_room x = r;
+			Field<adjustable,Room> x = r;
 			if(x.rows == 0)   //  sure ????
 				x.rows = 1;
 			if(x.columns == 0)
 				x.columns = 1;
-			return add(new adj_room(x));
+			return add(new Field<adjustable,Room>(x));//adj_room
 		}
 
 		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
-		void _m_make_destroy(Adjustable *fld)
-		void _m_make_destroy(IField *fld)
-		{
-            auto fd=dynamic_cast<Widget *>(fld);
-            if (!fd || ! fd->handle) return;
-            implement * pi = place_impl_;
-            fd->destroy_evh = API::events( fd->handle ).destroy.connect ( [pi](const arg_destroy& ei)
-			{
-				for (auto f=pi->fields.begin(), end=pi->fields.end(); f!=end; ++f)
-                    if (f->second->window_handle() ==  ei.window_handle )
-                    {
-                        pi->fields.erase(f);    // delete ???
-				        pi->recollocate = true;
-				        pi->collocate();
-                        return;
-                    }
-			});
-		}
 	};//end class field_impl
 
-	std::unique_ptr<division> implement::scan_div(tokenizer& tknizer)
+	std::unique_ptr<adjustable> implement::scan_div(tokenizer& tknizer)
 	{
 		typedef tokenizer::token token;
 
@@ -1147,7 +1040,10 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 			    case token::div_start:	    
                     {
                        std::string div_name(add_div_name ());
-                       fields.emplace(div_name, scan_div(tknizer) );
+                       auto fld=scan_div(tknizer);
+                                    std::cout<< "\n Add "<<div_name<<" adjustable to : Min=" <<fld.get()->min;
+
+                       registre(div_name, std::move(fld) );
                        field_names_in_div.push_back(div_name);				    break;
                                                                                
                     }
@@ -1170,8 +1066,10 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
                             std::unique_ptr<Splitter> spl=std::make_unique<Splitter>
                                             (parent_window_handle,p );
                             splitter = spl.get();
-                            fields.emplace(div_name, std::move(spl) );
+                                    std::cout<< "\n Add "<<div_name<<" splitter to : Min=" <<spl.get()->min;
+                            registre(div_name, std::move(spl) );
                             field_names_in_div.push_back(div_name);
+                                    std::cout<< "\n Add "<<div_name<<" adjustable to : Min=" <<splitter->min;
                        }
                     }                                                           break;
 			    case token::horizontal:
@@ -1229,30 +1127,30 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             if(gr_name.empty())             gr_name =field_names_in_div.back();  
 		} 
 
-        std::unique_ptr<division> div;
+        std::unique_ptr<adjustable> div;
         if (weight.kind_of () == number_t::kind::percent && weight.real() > 0 )
         {
             double perc=weight.real () ;
             switch(div_type)
             {
                 case token::eof:
-		        case token::horizontal: div.reset (new percent_div_h  (perc,w.min,w.max));  break;
-		        case token::vertical:   div.reset (new percent_div_v  (perc,w.min,w.max));	 break;
-                case token::grid:       div.reset (new percent_div_grid(gr_name,perc,rows,
-                                                                                columns,w.min,w.max));break;
+		        case token::horizontal: div.reset (new Field<percent,div_h> (perc,w));  break;
+		        case token::vertical:   div.reset (new Field<percent,div_v> (perc,w));	 break;
+                case token::grid:       div.reset (new Field<percent,div_grid>(gr_name,perc,rows,
+                                                                                columns,w));break;
                 default:
                     throw std::runtime_error("nana.place: invalid division type.");
 		    }
         } else 
-            {   unsigned fixed=weight.integer();
-                if (fixed)
+            {   unsigned fix=weight.integer();
+                if (fix)
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:	 div.reset (new fixed_div_h   (fixed,w.min,w.max)); break;
-		                case token::vertical:	 div.reset (new fixed_div_v   (fixed,w.min,w.max)); break;
-                        case token::grid:        div.reset (new fixed_div_grid(gr_name,fixed,
-                                                                     rows,columns,   w.min,w.max));          break;
+		                case token::horizontal:	 div.reset (new Field<fixed,div_h>   (fix,w)); break;
+		                case token::vertical:	 div.reset (new Field<fixed,div_v>   (fix,w)); break;
+                        case token::grid:        div.reset (new Field<fixed,div_grid> (gr_name,fix,
+                                                                     rows,columns,   w));        break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
@@ -1260,27 +1158,29 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
                     switch(div_type)
                     {
                         case token::eof:
-		                case token::horizontal:	 div.reset (new adj_div_h   (w.min,w.max));	 break;
-		                case token::vertical:	 div.reset (new adj_div_v   (w.min,w.max));	 break;
-                        case token::grid:        div.reset (new adj_div_grid(gr_name,
-                                                              rows,columns,   w.min,w.max));          break;
+		                case token::horizontal:	 div.reset (new Field<adjustable,div_h>   (w ));	 break;
+		                case token::vertical:	 div.reset (new Field<adjustable,div_v>   (w ));	 break;
+                        case token::grid:        div.reset (new Field<adjustable,div_grid>(gr_name,
+                                                              rows,columns,   w ));          break;
                         default:
                             throw std::runtime_error("nana.place: invalid division type.");
 		            }
         }
+        auto pdiv=dynamic_cast<division*>(div.get());
+        assert(pdiv);
         if (have_gap)
         {
             if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
-                div->gap.reset (new percent_gap(gap.real ()) );
+                pdiv->gap.reset (new Field<percent,Gap> (gap.real ()) );
 		    else 
-                if (gap.integer())          div->gap.reset (new fixed_gap(gap.integer()) );
-                else                        div->gap.reset (new adj_gap  () );
+                if (gap.integer())          pdiv->gap.reset (new Field<fixed,Gap>(unsigned(gap.integer())) );
+                else                        pdiv->gap.reset (new Field<adjustable,Gap>  () );
         }
-		div->field_names.swap(field_names_in_div);
+		pdiv->field_names.swap(field_names_in_div);
         if (splitter)
         {
-            div->splitter=splitter;
-            splitter->parent = div.get();
+            pdiv->splitter=splitter;
+            splitter->parent = pdiv;
         }
         if (  margin.size() )
         {
@@ -1290,29 +1190,31 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
             switch(div_type)
             {
                 case token::eof:
-		        case token::horizontal:	 cd.reset (new adj_div_h    );	                    break;
-		        case token::vertical:	 cd.reset (new adj_div_v    );	                    break;
-                case token::grid:        cd.reset (new adj_div_grid(gr_name, rows,columns));break;
+		        case token::horizontal:	 cd.reset (new Field<adjustable,div_h>     );	                    break;
+		        case token::vertical:	 cd.reset (new Field<adjustable,div_v>    );	                    break;
+                case token::grid:        cd.reset (new Field<adjustable,div_grid>(gr_name, rows,columns));break;
                 default:
                     throw std::runtime_error("nana.place: invalid division type.");
 		    }
-            cd->field_names.swap(div->field_names);
-            std::swap(cd->splitter,div->splitter);
+            cd->field_names.swap(pdiv->field_names);
+            std::swap(cd->splitter,pdiv->splitter);
             auto cn=add_div_name ();
 
             // vert div
-            vd.reset(new adj_div_v);
+            vd.reset(new Field<adjustable,div_v> );
             auto vn=add_div_name ();
 
             //top :  margin[0]
             if (margin[0].kind_of() == number_t::kind::percent)
-                td.reset(new percent_div_h(margin[0].real()));
+                td.reset(new Field<percent,div_h> (margin[0].real()));
             else 
-                td.reset(new fixed_div_h(margin[0].integer()));
+                td.reset(new Field<fixed,div_h>  (unsigned(margin[0].integer())));
 
-            auto tn=add_div_name ();
+            auto tn=add_div_name_ ();
             vd->field_names.push_back(tn);
-            fields.emplace(tn, std::move(td ));
+                                                std::cout<< "\n Add "<<tn<<" splitter to : Min=" ;//<<td.get()->field_names;
+    //auto
+            registre(tn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(td.release()) ));
 
             int lm, rm,bm;
 
@@ -1328,7 +1230,7 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 
             if (lm || rm)
             {
-                hd.reset (new adj_div_h    );	
+                hd.reset (new Field<adjustable,div_h>    );	
                 auto hn=add_div_name ();
                 vd->field_names.push_back(hn);
 
@@ -1336,54 +1238,55 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
                 {
                     //left  
                     if (margin[lm].kind_of() == number_t::kind::percent)
-                        ld.reset(new percent_div_h(margin[lm].real()));
+                        ld.reset(new Field<percent,div_h>(margin[lm].real()));
                     else 
-                        ld.reset(new fixed_div_h(margin[lm].integer()));
+                        ld.reset(new Field<fixed,div_h> (unsigned(margin[lm].integer())));
 
                     auto ln=add_div_name ();
                     hd->field_names.push_back(ln);
-                    fields.emplace(ln, std::move(ld ));
+                                                std::cout<< "\n Add "<<ln<<" splitter to : Min=";// <<ld.get()->min;
+                    registre(ln, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(ld.release()) ));
                 }
                 
                     // central  
                 hd->field_names.push_back(cn);
-                fields.emplace(cn, std::move(cd) );
+                registre(cn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) ));// std::move(cd) );
 
                 if (rm)
                 {
                     // rigth  
                     if (margin[rm].kind_of() == number_t::kind::percent)
-                        rd.reset(new percent_div_h(margin[rm].real()));
+                        rd.reset(new Field<percent,div_h>(margin[rm].real()));
                     else 
-                        rd.reset(new fixed_div_h(margin[rm].integer()));
+                        rd.reset(new Field<fixed,div_h> (unsigned(margin[rm].integer())));
 
                     auto rn=add_div_name ();
                     hd->field_names.push_back(rn);
-                    fields.emplace(rn, std::move(rd) );
+                    registre(rn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(rd.release()) ));//std::move(rd) );
                 }
-                fields.emplace(hn, std::move(hd ));
+                registre(hn,std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(hd.release()) ));// std::move(hd ));
             }
             else 
             {
                     // central  
                 vd->field_names.push_back(cn);
-                fields.emplace(cn, std::move(cd) );
+                registre(cn,std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(cd.release()) ));// std::move(cd) );
             }
 
             if (bm)
             {
                 // botton  
                 if (margin[bm].kind_of() == number_t::kind::percent)
-                    bd.reset(new percent_div_h(margin[bm].real()));
+                    bd.reset(new Field<percent,div_h>(margin[bm].real()));
                 else 
-                    bd.reset(new fixed_div_h(margin[bm].integer()));
+                    bd.reset(new Field<fixed,div_h> (unsigned(margin[bm].integer())));
 
                 auto bn=add_div_name ();
                 vd->field_names.push_back(bn);
-                fields.emplace(bn, std::move(bd) );
+                registre(bn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(bd.release()) ));//std::move(bd) );
             }
-            div->field_names.push_back(vn);
-            fields.emplace(vn, std::move(vd) );
+            pdiv->field_names.push_back(vn);
+            registre(vn, std::unique_ptr<adjustable>(dynamic_cast<adjustable*>(vd.release()) ));//std::move(vd) );
         }
 
 		return div;
@@ -1393,11 +1296,13 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
     {
         names.clear ();
         while(div_numer)
-                fields.erase (std::to_string (--div_numer));
+                fields_.erase (std::to_string (--div_numer));
+
 
 		tokenizer tknizer(s);
-        root_division.reset();
-		root_division = scan_div(tknizer);
+        root_division=scan_div(tknizer) ;//  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
+        for (auto &f: fields_)
+             std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
         recollocate = true;
     }
 
@@ -1411,20 +1316,20 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 	vplace::field_reference vplace::field  (const std::string& name)
 	{
          impl_->temp_field_t.reset (new vplace_impl::field_impl(this->impl_,name)); 
-        return  *impl_->temp_field_t.get();
+        return  *impl_->temp_field_t;
 	}
 
-	IField*         vplace::fixed  (window wd, unsigned size)
+	adjustable*         vplace::fixed  (window wd, unsigned size)
 	{
-		return new vplace_impl::Field<vplace_impl::Fixed, vplace_impl::Widget>(wd, size);//fixed_widget
+		return new vplace_impl::Field<vplace_impl::fixed, vplace_impl::Widget>(wd, size);//fixed_widget
 	}
-	IField*         vplace::percent(window wd, double per, minmax w)
+	adjustable*         vplace::percent(window wd, double per, minmax w)
 	{
-		return new vplace_impl::Field<vplace_impl::Percent, vplace_impl::Widget>(wd, per, w.min ,w.max );//percent_widget
+		return new vplace_impl::Field<vplace_impl::percent, vplace_impl::Widget>(wd, per, w  );//percent_widget
 	}
-	IField*         vplace::room   (window wd, unsigned width, unsigned height)
+	adjustable*         vplace::room   (window wd, unsigned width, unsigned height)
 	{
-		return new vplace_impl::Field<vplace_impl::Adjustable,vplace_impl::Room >(wd, height, width);//adj_room
+		return new vplace_impl::Field<vplace_impl::adjustable,vplace_impl::Room >(wd, height, width);//adj_room
 	}
     vplace::minmax::minmax (unsigned Min, unsigned Max) : min(Min), max(Max){}
     vplace::field_t::~field_t(){}
@@ -1462,3 +1367,191 @@ template <class Adj= Adjustable , class Fld=Widget> struct Field : Fld, Adj
 }//end namespace gui
 //end namespace nana
 
+
+
+//        template <class Adj= Adjustable , class Fld=Widget> struct Field : Adj<Fld>
+//{
+//    void      Adj::collocate (const rectangle& r) override{Fld::collocate_field(r);}
+//    rectangle  cells () const override{ cells_ ( );}
+//
+//    // for Gap
+//    Field(minmax MinMax=minmax() )  : Adj(MinMax){} 
+//    Field(unsigned weight, minmax MinMax=minmax() ): Adj(weight  , MinMax){}
+//    Field(double percent_, minmax MinMax=minmax() ): Adj(percent_, MinMax){}
+//    // for Widget
+//    Field(window handle_, minmax MinMax=minmax() )  : Fld(handle_ ), Adj(MinMax){} 
+//    Field(window handle_, unsigned weight, minmax MinMax=minmax() ): Fld(handle_ ), Adj(weight  ,MinMax){}
+//    Field(window handle_, double percent_, minmax MinMax=minmax() ): Fld(handle_ ), Adj(percent_,MinMax){}
+//    // for Cell and Room
+//    Field(window handle_, unsigned row_,unsigned column_, minmax MinMax=minmax() )  : Fld(handle_,rows_,  columns_ ), Adj(MinMax){} 
+//    Field(window handle_, unsigned row_,unsigned column_, unsigned weight, minmax MinMax=minmax() ): Fld(handle_,rows_,  columns_ ), Adj(weight  ,MinMax){}
+//    Field(window handle_, unsigned row_,unsigned column_, double percent_, minmax MinMax=minmax() ): Fld(handle_,rows_,  columns_ ), Adj(percent_,MinMax){}
+//    // for Cells
+//    Field(window handle_, rectangle r, minmax MinMax=minmax() )  : Fld(handle_,r ), Adj(MinMax){} 
+//    Field(window handle_, rectangle r, unsigned weight, minmax MinMax=minmax() ): Fld(handle_,r ), Adj(weight  ,MinMax){}
+//    Field(window handle_, rectangle r, double percent_, minmax MinMax=minmax() ): Fld(handle_,r  ), Adj(percent_,MinMax){}
+//
+//};
+
+        
+    //using adj_gap     = Adjustable<Gap>   ;
+    //using adj_widget  = Adjustable<Widget>;
+    //using adj_room    = Adjustable<Room>  ;
+    //using adj_div_h   = Adjustable<div_h> ;
+    //using adj_div_v   = Adjustable<div_v> ;
+    //using adj_div_grid= Adjustable<div_grid> ;
+
+    //using fixed_gap    =  Fixed<Gap> ;
+    //using fixed_widget =  Fixed<Widget> ;
+    //using fixed_room   =  Fixed<Room> ;
+    //using fixed_div_h  =  Fixed<div_h> ;
+    //using fixed_div_v  =  Fixed<div_v> ;
+    //using fixed_div_grid =  Fixed<div_grid> ;
+
+    //using percent_gap    =  Percent<Gap> ;
+    //using percent_widget =  Percent<Widget> ;
+    //using percent_room   =  Percent<Room> ;
+    //using percent_div_h  =  Percent<div_h> ;
+    //using percent_div_v  =  Percent<div_v> ;
+    //using percent_div_grid = Percent<div_grid> ;
+
+
+
+
+    //struct IAdjustable    :minmax                 
+    //{ 
+    //    IAdjustable(minmax MinMax=minmax())  : minmax(MinMax){} 
+    //    IAdjustable(unsigned Min=MIN, unsigned Max=MAX)  : minmax(Min, Max){} 
+
+    //    virtual void        collocate (const rectangle& r)  =0;
+    //    virtual rectangle   cells       ()   const  =0;
+
+    //    virtual adj   pre_place(unsigned t_w,                        adj& fixed = adj() )      
+    //                {  
+    //                    ++fixed.count_adj;     
+    //                    fixed.min += min;    
+    //                    return  fixed;        
+    //                }
+    //    virtual adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() )      
+    //    {   
+    //        if ( t_w      <   fixed.weigth + fixed.min         )  
+    //                                                        { adj_min.weigth += min; return adj_min; }
+    //        if ( t_w <    min * fixed.count_adj + fixed.weigth )
+    //                                                        { adj_min.weigth += min; return adj_min; }
+    //        if ( t_w >    max * fixed.count_adj + fixed.weigth )
+    //                                                        { adj_min.weigth += max; return adj_min; }
+
+    //        adj_min.min += min; 
+    //        ++adj_min.count_adj;   return  adj_min;        
+    //    }
+    //    virtual unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min ) 
+    //    {   
+    //        if ( t_w      <   fixed.weigth + fixed.min         )   
+    //                                                                    {return min; }
+    //        if ( t_w <    min * fixed.count_adj   + fixed.weigth   )   
+    //                                                                    {return min; }
+    //        if ( t_w >    max * fixed.count_adj   + fixed.weigth   )   
+    //                                                                    {return max; }
+    //        if ( t_w <    min * adj_min.count_adj + adj_min.weigth )   
+    //                                                                    {return min; }
+    //        if ( t_w >    max * adj_min.count_adj + adj_min.weigth )   
+    //                                                                    {return max; }
+
+    //        return  (t_w - adj_min.weigth) / adj_min.count_adj  ;        
+    //    }
+    //};
+    //template <class Fld> struct Adjustable  : IAdjustable, Fld                      
+    //{ 
+    //    void       collocate (const rectangle& r) override{Fld::collocate_field(r);}
+    //    rectangle  cells () const override{ cells_ ( );}
+
+    //    // for Gap, division, div_v and div_h
+    //    Adjustable(minmax MinMax=minmax())                      : IAdjustable(MinMax){} 
+    //    // for Widget
+    //    Adjustable(window handle_, minmax MinMax=minmax() )     : IAdjustable(MinMax), Fld(handle_){}  
+    //    // for Cell and Room
+    //    Adjustable(window handle_, unsigned row_,unsigned column_, minmax MinMax=minmax() )  
+    //                                                            : IAdjustable(MinMax), Fld(handle_,rows_,  columns_ ){} 
+    //    // for Cells
+    //    Adjustable(window handle_, rectangle r, minmax MinMax=minmax() )  
+    //                                                            : IAdjustable(MinMax), Fld(handle_,r ){} 
+    //    // for div_grid
+    //    Adjustable(const std::string& name_, size dim_, minmax MinMax=minmax())           
+    //                                                            : IAdjustable(MinMax), Fld (name_,dim_){} 
+    //    Adjustable(const std::string& name_, unsigned rows_, unsigned columns_, minmax MinMax=minmax()) 
+    //                                                            : IAdjustable(MinMax), Fld (name_,rows_,  columns_){} 
+    //};
+    //template <class Base> struct Fixed:  Adjustable<Base>     
+    //{ 
+    //    // for Gap, division, div_v and div_h
+    //    Fixed(unsigned weight, minmax MinMax=minmax())         : weight_(weight), Adjustable(MinMax) {}
+    //    // for Widget
+    //    Fixed(window handle_,unsigned weight, minmax MinMax=minmax() ) 
+    //                                                           : weight_(weight), Adjustable<Base>(handle_, MinMax){}
+    //    // for Cell and Room
+    //    Fixed(window handle_, unsigned weight,unsigned rows_, unsigned columns_, minmax MinMax=minmax()) 
+    //                                                            : Adjustable<Base> (handle_,rows_,  columns_, MinMax), weight_(weight){} 
+    //    // for div_grid
+    //    Fixed(const std::string& name_, unsigned weight, size dim_, minmax MinMax=minmax())           
+    //                                                            : weight_(weight), Base (name_,dim_, MinMax){} 
+    //    Fixed(const std::string& name_, unsigned weight,unsigned rows_, unsigned columns_, minmax MinMax=minmax()) 
+    //                                                            : Adjustable<Base> (name_,rows_,  columns_, MinMax), weight_(weight){} 
+
+    //    unsigned weight_; 
+
+    //    void        setWeigth(unsigned w)override{weight_=w;}
+    //    unsigned    getWeigth  ()override{ return weight_;}
+
+    //    adj   pre_place(unsigned t_w,                          adj&   fixed = adj() ) override    
+    //                {   fixed.weigth   += weigth_adj(t_w) ;   return  fixed;        }
+
+    //    adj   end_place(unsigned t_w,const adj& fixed = adj(), adj& adj_min = adj() ) override    
+    //                {   adj_min.weigth += weigth_adj(t_w) ;   return  adj_min;      }   
+
+    //    unsigned weigth(unsigned t_w,const adj& fixed,const adj& adj_min )  override              
+    //                {   return weigth_adj(t_w);      }    
+
+    //    virtual unsigned weigth_adj(unsigned t_w )
+    //    {   
+    //        if ( weight_  < min )    {return min; }
+    //        if ( weight_  > max )    {return max; }
+    //            
+    //        return  weight_;          
+    //    }
+    //};
+    //template <class Base> struct Percent: Fixed<Base> 
+    //{ 
+    //    // for Gap, division, div_v and div_h
+    //    Percent(double percent_, minmax MinMax=minmax())     : Fixed<Base> (static_cast<unsigned>(fx*percent_), MinMax)            {}
+    //    // for Widget
+    //    Percent(window handle_, double percent_, minmax MinMax=minmax())
+    //                                                         : Fixed<Base> (handle_, static_cast<unsigned>(fx*percent_),    MinMax){}
+    //    // for Cell and Room
+    //    Percent(window handle_, double   percent_,unsigned rows_, unsigned columns_, minmax MinMax=minmax()) 
+    //                                                         : Fixed<Base> (handle_, static_cast<unsigned>(fx*percent_), rows_,  columns_, MinMax){} 
+    //    // for div_grid
+    //    Percent(const std::string& name_,double   percent_,size dim_, minmax MinMax=minmax()) 
+    //                                                         : Fixed<Base> (name_  , static_cast<unsigned>(fx*percent_), dim_, MinMax){} 
+    //    Percent(const std::string& name_,double   percent_, unsigned rows_, unsigned columns_, minmax MinMax=minmax()) 
+    //                                                         : Fixed<Base> (name_  , static_cast<unsigned>(fx*percent_), rows_,  columns_, MinMax){} 
+
+    //    const static unsigned fx=10000;
+
+    //    void        setPercent (double p)override{weight_=p*fx;}
+    //    double      getPercent ()override{return double(weight_)/fx;}
+
+    //    unsigned weigth_adj(unsigned t_w )override
+    //    {   
+    //        if ( (t_w * weight_) /fx  < min )    {return min; }
+    //        if ( (t_w * weight_) /fx  > max )    {return max; }
+    //            
+    //        return  (t_w * weight_) /fx;          
+    //    }
+    //};     
+    //struct IField  
+    //{
+    //        rectangle           last ;
+    //        virtual            ~IField      (){}
+    //        virtual void        collocate_field   (const rectangle& r)   {last=r;}
+    //        virtual rectangle   cells_       ()   const  =0;
+    //};

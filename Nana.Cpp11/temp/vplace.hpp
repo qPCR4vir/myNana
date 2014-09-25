@@ -22,10 +22,10 @@ namespace nana
 {
 	namespace vplace_impl
     {
-        struct IField ;
+        struct adjustable ;
         struct implement;
     }
-    using  vplace_impl::IField ;
+    using  vplace_impl::adjustable ;
     using  vplace_impl::implement ;
 
     class vplace		: noncopyable
@@ -47,7 +47,7 @@ namespace nana
 		struct field_t
 		{
 			virtual field_t& operator<<(minmax              Size_range)	= 0;
-            virtual field_t& operator<<(IField *            fld)		= 0;
+            virtual field_t& operator<<(adjustable *            fld)		= 0;
             virtual field_t& operator<<(const std::wstring& txt)		= 0;
             virtual field_t& operator<<(const std::string&  txt)		= 0;
 			virtual field_t& operator<<(window              wd)		= 0;    
@@ -86,12 +86,12 @@ namespace nana
                                                         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
 
 
-		static IField*     fixed   (window wd                    , unsigned size    );
-		static IField*     fixed   (const std::wstring& txt      , unsigned size    );
-		static IField*     fixed   (const std::string&  txt      , unsigned size    );
-		static IField*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
+		static adjustable*     fixed   (window wd                    , unsigned size    );
+		static adjustable*     fixed   (const std::wstring& txt      , unsigned size    );
+		static adjustable*     fixed   (const std::string&  txt      , unsigned size    );
+		static adjustable*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
-		static IField*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
+		static adjustable*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
 
 	  private:
 		implement * impl_;
