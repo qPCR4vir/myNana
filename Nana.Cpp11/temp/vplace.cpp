@@ -831,6 +831,7 @@ namespace vplace_impl
         {
             return fields_.equal_range(name);
         }
+		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
     void _m_make_destroy(adjustable *fld)
 		{
             auto fd=dynamic_cast<Widget *>(fld);
@@ -904,17 +905,13 @@ namespace vplace_impl
 
     class field_impl 		:	public field_t , public minmax
 	{
-	public:
-		std::string name;
-
-	private:
-		implement * place_impl_;
-	 public:
-		//typedef std::vector<std::unique_ptr<IField>>::const_iterator const_iterator;
+		 implement * place_impl_;
+	  public:
+		 std::string name;
 
          field_impl(implement * p, const std::string& name_):	place_impl_(p),   name(name_){}
 
-	  public:
+	 public:
         adjustable * create_field(window    wd                                      )
                                       {
                                          //std::cout<< "\n field window";
@@ -1027,7 +1024,6 @@ namespace vplace_impl
 			return add(new Field<adjustable,Room>(x));//adj_room
 		}
 
-		/// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
 	};//end class field_impl
 
 	std::unique_ptr<adjustable> implement::scan_div(tokenizer& tknizer)
