@@ -84,8 +84,7 @@ namespace nana
 		implement * impl_;
         //void Set_def_field  (const ::std::string & name);   
 	};
-}//end namespace gui
-//end namespace nana
+}//end namespace nana
 
 #endif //#ifndef NANA_GUI_PLACE_HPP
 
