@@ -1,6 +1,7 @@
 /*
  *	Basic Types definition
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -167,7 +168,9 @@ namespace nana
 		size(const rectangle&);
 
 		size& operator=(const rectangle&);
-		bool is_zero() const;
+
+		bool empty() const;		///< true if width * height == 0
+		bool is_hit(const point&) const;	///< Assume it is a rectangle at (0,0), and check whether a specified position is in the rectange.
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
 
@@ -185,15 +188,19 @@ namespace nana
 		bool operator==(const rectangle& rhs) const;
 		bool operator!=(const rectangle& rhs) const;
 
-		rectangle & operator=(const point&);
-		rectangle & operator=(const size&);
+		rectangle& operator=(const point&);
+		rectangle& operator=(const size&);
+
+		rectangle& set_pos(const point&);
+		rectangle& set_size(const size&);
 
 		rectangle& pare_off(int pixels);	 ///<Pares the specified pixels off the rectangle. It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
 
 		int right() const;
 		int bottom() const;
 		bool is_hit(int x, int y) const;
-		bool empty_size() const;
+		bool is_hit(const point& pos) const;
+		bool empty() const;		///< true if width * height == 0
 
 		int x;
 		int y;

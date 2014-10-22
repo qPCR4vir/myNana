@@ -131,9 +131,14 @@ namespace nana
 			return *this;
 		}
 
-		bool size::is_zero() const
+		bool size::empty() const
 		{
-			return (width == 0 || height == 0);
+			return (0 == width || 0 == height);
+		}
+
+		bool size::is_hit(const point& pos) const
+		{
+			return (0 <= pos.x && pos.x < static_cast<int>(width) && 0 <= pos.y && pos.y < static_cast<int>(height));
 		}
 
 		bool size::operator==(const size& rhs) const
@@ -188,6 +193,20 @@ namespace nana
 			return *this;
 		}
 
+		rectangle& rectangle::set_pos(const point& pos)
+		{
+			x = pos.x;
+			y = pos.y;
+			return *this;
+		}
+
+		rectangle& rectangle::set_size(const size& sz)
+		{
+			width = sz.width;
+			height = sz.height;
+			return *this;
+		}
+
 		rectangle& rectangle::pare_off(int pixels)
 		{
 			x += pixels;
@@ -213,7 +232,13 @@ namespace nana
 					(y <= pos_y && pos_y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::empty_size() const
+		bool rectangle::is_hit(const point& pos) const
+		{
+			return	(x <= pos.x && pos.x < x + static_cast<int>(width)) &&
+				(y <= pos.y && pos.y < y + static_cast<int>(height));
+		}
+
+		bool rectangle::empty() const
 		{
 			return (0 == width) || (0 == height);
 		}

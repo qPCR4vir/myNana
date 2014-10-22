@@ -230,7 +230,7 @@ namespace nana
 			return static_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
 		}
 
-		void activate(std::size_t pos)                  /// Actives a tab specified by i.
+		void activate(std::size_t pos)                  /// Activates a tab specified by i.
 		{
 			this->get_drawer_trigger().activate(pos);
 		}
