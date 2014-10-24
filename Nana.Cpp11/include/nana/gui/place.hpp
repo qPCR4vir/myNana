@@ -1,12 +1,16 @@
 /*
  *	An Implementation of Place for Layout
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/place.cpp
+ *
+ *	Contributions:
+ *	min/max and splitter bar initial weight by qPCR4vir.
  */
 
 #ifndef NANA_GUI_PLACE_HPP
@@ -18,28 +22,25 @@ namespace nana
 {
     ///  Layout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
 	class place
-		: nana::noncopyable
+		: ::nana::noncopyable
 	{
-		typedef std::pair<window, unsigned>	fixed_t;
-		typedef std::pair<window, int>	percent_t;
-		typedef std::pair<window, std::pair<unsigned, unsigned> > room_t;
-
 		struct implement;
 
-		class field_t
+		class field_interface
 		{
+			field_interface(const field_interface&) = delete;
+			field_interface& operator=(const field_interface&) = delete;
+			field_interface(field_interface&&) = delete;
+			field_interface& operator=(field_interface&&) = delete;
 		public:
-			virtual ~field_t() = 0;
-			virtual field_t& operator<<(window wd)		= 0;
-			virtual field_t& operator<<(unsigned gap)	= 0;
-			virtual field_t& operator<<(const fixed_t& f)	= 0;
-			virtual field_t& operator<<(const percent_t& p)	= 0;
-			virtual field_t& operator<<(const room_t& r)	= 0;
-			virtual field_t& fasten(window wd)	= 0;
+			field_interface() = default;
+			virtual ~field_interface() = default;
+			virtual field_interface& operator<<(window) = 0;
+			virtual field_interface& fasten(window) = 0;
 		};
 	public:
         ///  reference to a field manipulator which refers to a field object created by place 
-		typedef field_t & field_reference;
+		typedef field_interface & field_reference;
 
 		place();
 		place(window);///< Attaches to a specified widget.
@@ -56,9 +57,7 @@ namespace nana
 		field_reference field(const char* name);///< Returns a field with the specified name.
 		void collocate();                     ///< Layouts the widgets.
 
-		static fixed_t fixed(window wd, unsigned size);  ///< Generates a fixed object to send it to the field.
-		static percent_t percent(window wd, int per);    ///< Generates a percent object to send it to the field.
-		static room_t room(window wd, unsigned w, unsigned h); ///< Generates a room object to send it to the field.
+		void erase(window handle);				///< Erases a window from field.
 	private:
 		implement * impl_;
 	};

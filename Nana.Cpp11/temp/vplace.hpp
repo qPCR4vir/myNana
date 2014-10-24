@@ -46,14 +46,14 @@ namespace nana
         };
 		struct field_t
 		{
-			virtual field_t& operator<<(minmax              Size_range)	= 0;
-            virtual field_t& operator<<(adjustable *            fld)		= 0;
-            virtual field_t& operator<<(const std::wstring& txt)		= 0;
-            virtual field_t& operator<<(const std::string&  txt)		= 0;
 			virtual field_t& operator<<(window              wd)		= 0;    
 			virtual field_t& operator<<(unsigned            gap)  	= 0;
+            virtual field_t& operator<<(const std::wstring& txt)		= 0;
+            virtual field_t& operator<<(const std::string&  txt)		= 0;
 			virtual field_t& fasten(window wd)	    = 0;
 			virtual ~field_t()                      = 0;
+            virtual field_t& operator<<(adjustable *            fld)		= 0;
+			virtual field_t& operator<<(minmax              Size_range)	= 0;
 		};
 
 		typedef field_t &             field_reference;
@@ -84,8 +84,7 @@ namespace nana
 		implement * impl_;
         //void Set_def_field  (const ::std::string & name);   
 	};
-}//end namespace gui
-//end namespace nana
+}//end namespace nana
 
 #endif //#ifndef NANA_GUI_PLACE_HPP
 

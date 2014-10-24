@@ -31,16 +31,17 @@ namespace nana
 	{
 		if(overlap(r1, r2))
 		{
+			auto l1 = static_cast<long long>(r1.x) + r1.width;
+			auto l2 = static_cast<long long>(r2.x) + r2.width;
+
+			auto b1 = static_cast<long long>(r1.y) + r1.height;
+			auto b2 = static_cast<long long>(r2.y) + r2.height;
+
 			r.x = r1.x < r2.x ? r2.x : r1.x;
 			r.y = r1.y < r2.y ? r2.y : r1.y;
 
-			long long li1 = static_cast<long long>(r1.x) + r1.width;
-			long long li2 = static_cast<long long>(r2.x) + r2.width;
-			r.width = static_cast<unsigned>(li1 < li2 ? li1 - r.x: li2 - r.x);
-
-			li1 = static_cast<long long>(r1.y) + r1.height;
-			li2 = static_cast<long long>(r2.y) + r2.height;
-			r.height = static_cast<unsigned>(li1 < li2 ? li1 - r.y: li2 - r.y);
+			r.width = static_cast<unsigned>(l1 < l2 ? l1 - r.x: l2 - r.x);
+			r.height = static_cast<unsigned>(b1 < b2 ? b1 - r.y: b2 - r.y);
 
 			return true;
 		}
@@ -69,19 +70,11 @@ namespace nana
 
 	bool intersection(const rectangle & r, point pos_beg, point pos_end, point& good_pos_beg, point& good_pos_end)
 	{
-		const int right = r.x + static_cast<int>(r.width);
-		const int bottom = r.y + static_cast<int>(r.height);
+		const int right = r.right();
+		const int bottom = r.bottom();
 
 		if(pos_beg.x > pos_end.x)
-		{
-			int t = pos_end.x;
-			pos_end.x = pos_beg.x;
-			pos_beg.x = t;
-
-			t = pos_end.y;
-			pos_end.y = pos_beg.y;
-			pos_beg.y = t;
-		}
+			std::swap(pos_beg, pos_end);
 
 		bool good_beg = (0 <= pos_beg.x && pos_beg.x < right && 0 <= pos_beg.y && pos_beg.y < bottom);
 		bool good_end = (0 <= pos_end.x && pos_end.x < right && 0 <= pos_end.y && pos_end.y < bottom);
@@ -264,15 +257,8 @@ namespace nana
 	bool covered(const rectangle& r1, //Rectangle 1 is must under rectangle 2
 						const rectangle& r2) //Rectangle 2
 	{
-		if(r1.x < r2.x || r1.x + r1.width > r2.x + r2.width) return false;
-		if(r1.y < r2.y || r1.y + r1.height > r2.y + r2.height) return false;
+		if(r1.x < r2.x || r1.right() > r2.right()) return false;
+		if(r1.y < r2.y || r1.bottom() > r2.bottom()) return false;
 		return true;
-	}
-
-	bool is_hit_the_rectangle(const rectangle& r, int x, int y)
-	{
-		return	(r.x <= x) && (x < r.x + static_cast<int>(r.width))
-				&&
-				(r.y <= y) && (y < r.y + static_cast<int>(r.height));
 	}
 }

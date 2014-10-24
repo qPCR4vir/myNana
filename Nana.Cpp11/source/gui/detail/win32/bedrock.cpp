@@ -360,7 +360,8 @@ namespace detail
 
 		++(context->event_pump_ref_count);
 
-		wd_manager.internal_lock().revert();
+		auto & intr_locker = wd_manager.internal_lock();
+		intr_locker.revert();
 
 		try
 		{
@@ -468,7 +469,7 @@ namespace detail
 					interface_type::close_window(i);
 			}
 
-			wd_manager.internal_lock().forward();
+			intr_locker.forward();
 
 			if(0 == --(context->event_pump_ref_count))
 			{
@@ -479,8 +480,7 @@ namespace detail
 			throw;
 		}
 
-		wd_manager.internal_lock().forward();
-
+		intr_locker.forward();
 		if(0 == --(context->event_pump_ref_count))
 		{
 			if((nullptr == modal_window) || (0 == context->window_count))
@@ -491,6 +491,7 @@ namespace detail
 	void assign_arg(nana::arg_mouse& arg, basic_window* wd, unsigned msg, const parameter_decoder& pmdec)
 	{
 		arg.window_handle = reinterpret_cast<window>(wd);
+		//event code
 		switch (msg)
 		{
 		case WM_LBUTTONUP: case WM_RBUTTONUP: case WM_MBUTTONUP:
@@ -504,6 +505,7 @@ namespace detail
 			break;
 		}
 
+		//event arguments
 		switch (msg)
 		{
 		case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
@@ -548,8 +550,8 @@ namespace detail
 		::ScreenToClient(reinterpret_cast<HWND>(wd->root), &point);
 
 		arg.upwards = (pmdec.mouse.button.wheel_delta >= 0);
-		arg.pos.x = static_cast<short>(point.x - wd->pos_root.x);
-		arg.pos.y = static_cast<short>(point.y - wd->pos_root.y);
+		arg.pos.x = static_cast<int>(point.x) - wd->pos_root.x;
+		arg.pos.y = static_cast<int>(point.y) - wd->pos_root.y;
 		arg.left_button = pmdec.mouse.button.left;
 		arg.mid_button = pmdec.mouse.button.middle;
 		arg.right_button = pmdec.mouse.button.right;
@@ -945,7 +947,7 @@ namespace detail
 								msgwnd->flags.action = mouse_action::normal;
 
 								arg.evt_code = event_code::mouse_up;
-								emit_drawer(&drawer::mouse_up_arg, msgwnd, arg, &context);
+								emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 								brock.wd_manager.do_lazy_refresh(msgwnd, false);
 							}
 						}
@@ -968,7 +970,7 @@ namespace detail
 					nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 
-					const bool hit = is_hit_the_rectangle(msgwnd->dimension, arg.pos.x, arg.pos.y);
+					const bool hit = msgwnd->dimension.is_hit(arg.pos);
 
 					bool fire_click = false;
 					if(brock.wd_manager.available(mouse_window) && (msgwnd == mouse_window))
@@ -977,7 +979,7 @@ namespace detail
 						{
 							msgwnd->flags.action = mouse_action::over;
 							arg.evt_code = event_code::click;
-							emit_drawer(&drawer::click_arg, msgwnd, arg, &context);
+							emit_drawer(&drawer::click, msgwnd, arg, &context);
 							fire_click = true;
 						}
 					}
@@ -989,7 +991,9 @@ namespace detail
 							msgwnd->flags.action = mouse_action::over;
 
 						arg.evt_code = event_code::mouse_up;
-						emit_drawer(&drawer::mouse_up_arg, msgwnd, arg, &context);
+						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+
+						auto evt_ptr = msgwnd->together.events_ptr;
 
 						if (fire_click)
 						{
@@ -997,8 +1001,11 @@ namespace detail
 							msgwnd->together.attached_events->click.emit(arg);
 						}
 
-						arg.evt_code = event_code::mouse_up;
-						msgwnd->together.attached_events->mouse_up.emit(arg);
+						if (brock.wd_manager.available(msgwnd))
+						{
+							arg.evt_code = event_code::mouse_up;
+							msgwnd->together.attached_events->mouse_up.emit(arg);
+						}
 					}
 					else if (fire_click)
 					{
@@ -1308,7 +1315,7 @@ namespace detail
 					{
 						if((wParam == 9) && (false == (msgwnd->flags.tab & tab_type::eating))) //Tab
 						{
-							auto the_next = brock.wd_manager.tabstop_next(msgwnd);
+							auto the_next = brock.wd_manager.tabstop(msgwnd, true);
 							if(the_next)
 							{
 								brock.wd_manager.set_focus(the_next);

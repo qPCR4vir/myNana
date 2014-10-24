@@ -685,6 +685,7 @@ namespace nana
 						want_focus_(nullptr == wd),
 						event_focus_(nullptr)
 				{
+					caption(STR("nana menu window"));
 					get_drawer_trigger().renderer = rdptr;
 					state_.owner_menubar = state_.self_submenu = false;
 					state_.auto_popup_submenu = true;
@@ -716,10 +717,6 @@ namespace nana
 						API::register_menu_window(this->handle(), !owner_menubar);
 					}
 
-					timer_.interval(100);
-					//timer_.make_tick(nana::make_fun(*this, &menu_window::_m_check_repeatly));
-					timer_.elapse(std::bind(&menu_window::_m_check_repeatly, this));
-
 					events().destroy.connect([this]{
 						_m_destroy();
 					});
@@ -739,6 +736,12 @@ namespace nana
 							_m_focus_changed(arg);
 						});
 					}
+
+					timer_.interval(100);
+					timer_.elapse([this]{
+						this->_m_check_repeatly();
+					});
+					timer_.start();
 
 					show();
 				}

@@ -56,6 +56,30 @@ namespace nana
 		{
 			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
 		}
+
+		point point::operator-(const point& rhs) const
+		{
+			return{x - rhs.x, y - rhs.y};
+		}
+
+		point point::operator+(const point& rhs) const
+		{
+			return{ x + rhs.x, y + rhs.y };
+		}
+
+		point& point::operator-=(const point& rhs)
+		{
+			x -= rhs.x;
+			y -= rhs.y;
+			return *this;
+		}
+
+		point& point::operator+=(const point& rhs)
+		{
+			x += rhs.x;
+			y += rhs.y;
+			return *this;
+		}
 	//end struct point
 
 	//struct upoint
@@ -107,9 +131,14 @@ namespace nana
 			return *this;
 		}
 
-		bool size::is_zero() const
+		bool size::empty() const
 		{
-			return (width == 0 || height == 0);
+			return (0 == width || 0 == height);
+		}
+
+		bool size::is_hit(const point& pos) const
+		{
+			return (0 <= pos.x && pos.x < static_cast<int>(width) && 0 <= pos.y && pos.y < static_cast<int>(height));
 		}
 
 		bool size::operator==(const size& rhs) const
@@ -164,6 +193,20 @@ namespace nana
 			return *this;
 		}
 
+		rectangle& rectangle::set_pos(const point& pos)
+		{
+			x = pos.x;
+			y = pos.y;
+			return *this;
+		}
+
+		rectangle& rectangle::set_size(const size& sz)
+		{
+			width = sz.width;
+			height = sz.height;
+			return *this;
+		}
+
 		rectangle& rectangle::pare_off(int pixels)
 		{
 			x += pixels;
@@ -189,9 +232,77 @@ namespace nana
 					(y <= pos_y && pos_y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::empty_size() const
+		bool rectangle::is_hit(const point& pos) const
+		{
+			return	(x <= pos.x && pos.x < x + static_cast<int>(width)) &&
+				(y <= pos.y && pos.y < y + static_cast<int>(height));
+		}
+
+		bool rectangle::empty() const
 		{
 			return (0 == width) || (0 == height);
 		}
 	//end struct rectangle
+
+	//class area_rotator
+		area_rotator::area_rotator(bool rotated, const ::nana::rectangle& area)
+			: rotated_(rotated),
+			area_(area)
+		{}
+
+		int area_rotator::x() const
+		{
+			return (rotated_ ? area_.y : area_.x);
+		}
+
+		int & area_rotator::x_ref()
+		{
+			return (rotated_ ? area_.y : area_.x);
+		}
+
+		int area_rotator::y() const
+		{
+			return (rotated_ ? area_.x : area_.y);
+		}
+
+		int & area_rotator::y_ref()
+		{
+			return (rotated_ ? area_.x : area_.y);
+		}
+
+		unsigned area_rotator::w() const
+		{
+			return (rotated_ ? area_.height : area_.width);
+		}
+
+		unsigned & area_rotator::w_ref()
+		{
+			return (rotated_ ? area_.height : area_.width);
+		}
+
+		unsigned area_rotator::h() const
+		{
+			return (rotated_ ? area_.width : area_.height);
+		}
+
+		unsigned & area_rotator::h_ref()
+		{
+			return (rotated_ ? area_.width : area_.height);
+		}
+
+		int area_rotator::right() const
+		{
+			return (rotated_ ? area_.y + static_cast<int>(area_.height) : area_.x + static_cast<int>(area_.width));
+		}
+
+		int area_rotator::bottom() const
+		{
+			return (rotated_ ? area_.x + static_cast<int>(area_.width) : area_.y + static_cast<int>(area_.height));
+		}
+
+		const ::nana::rectangle& area_rotator::result() const
+		{
+			return area_;
+		}
+	//end class area_rotator
 }
