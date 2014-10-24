@@ -67,7 +67,7 @@ class CUnit
         }
     } ;
     conversion      conv ;
-    unit_name       name, base{name};
+    unit_name       name, base=unit_name{name};
     magnitude_name  magnitude ;
     bool            error{true};
     static const magnitudes& MagnitudesDic() {return _Magnitudes;}
