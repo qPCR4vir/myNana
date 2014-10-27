@@ -58,6 +58,9 @@
     <Filter Include="Source Files\nana\threads">
       <UniqueIdentifier>{e95b4a72-643f-4416-af95-b0bbaf7f0c57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\temp">
+      <UniqueIdentifier>{ba646453-f835-415a-9ddb-92b35a7bec30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp">
@@ -284,6 +287,27 @@
     </ClCompile>
     <ClCompile Include="..\..\source\gui\notifier.cpp">
       <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\CompoWidget.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\EditableForm.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\EditLayot_Form_Demo.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\Numer.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\place-vplace_Demo.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\Units.cpp">
+      <Filter>Source Files\temp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\temp\vplace.cpp">
+      <Filter>Source Files\temp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

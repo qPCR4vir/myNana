@@ -180,7 +180,7 @@ class UnitPicker : public combox
 {
           CUnit::unit_name      _defUnitName;
           CUnit                 _defUnit{_defUnitName};
-          const CUnit::magnitude_name  magnitude{_defUnit.magnitude};
+          const CUnit::magnitude_name  magnitude=CUnit::magnitude_name{_defUnit.magnitude};
   public: 
     UnitPicker(widget &wd, const CUnit::unit_name& def)
           :combox(wd), _defUnitName(def) 
