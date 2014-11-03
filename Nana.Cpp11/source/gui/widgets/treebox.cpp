@@ -889,7 +889,7 @@ namespace nana
 				item_proxy & item_proxy::operator++()
 				{
 					if(trigger_ && node_)
-						node_ = node_->child;
+						node_ = node_->next;//child;
 
 					return *this;
 				}
