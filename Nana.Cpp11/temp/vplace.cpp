@@ -346,7 +346,7 @@ namespace vplace_impl
                     ++edge;
                 rows=columns=edge;
 		    }
-		    double block_w = /*weigth_s( area )*/  area.width / double(columns );    // TODO: adapt to vert
+		    double block_w = /*weigth_s( area )*/  area.width / double(columns );    /// \todo: adapt to vert
 		    double block_h = /*fixed_s( area )*/   area.height/ double(rows );
             std::vector<std::vector<size>> table(columns,std::vector<size>(rows,size(1,1)));  
 

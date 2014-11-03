@@ -74,11 +74,11 @@ class EditableWidget: public EnablingEditing
 			nana::API::emit_event(nana::event_code::click,w, ei);
 		}
 
-    nana::widget  *_EdWd_owner ;                                    ///< The ownwer of the form or panel 
-    nana::widget  &_thisEdWd;   ///< the form or panel, owner of place and all other widgets of the editable widget
-	nana::string		_Titel;   //  ????
-    std::string         _myLayout, _DefLayout;
-    nana::string        _DefLayoutFileName;	
+    nana::widget   *_EdWd_owner ;                                    ///< The ownwer of the form or panel 
+    nana::widget   &_thisEdWd;   ///< the form or panel, owner of place and all other widgets of the editable widget
+	nana::string	_Titel;   //  ????
+    std::string     _myLayout, _DefLayout;
+    nana::string    _DefLayoutFileName;	
 	nana::menu	    _menuProgram;
     nana::vplace	_place;
 	EditLayout_Form*    _myEdLayForm{nullptr};    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
@@ -90,7 +90,7 @@ class EditableWidget: public EnablingEditing
         try
         {
             for(auto &v:_validate)
-               if( !v()) return false;                /// TODO: change to return bool: validated &= v();
+               if( !v()) return false;                /// \todo: change to return bool: validated &= v();
             return true;
         }
         catch ( ... )
@@ -105,7 +105,7 @@ class EditableWidget: public EnablingEditing
         try
         {
             for ( auto &v : _validated )
-                validated &= v ();             /// TODO: change to return bool: validated &= v();   ???? actualize validate ????????
+                validated &= v ();             /// \todo: change to return bool: validated &= v();   ???? actualize validate ????????
             return validated;
         }
         catch ( ... )

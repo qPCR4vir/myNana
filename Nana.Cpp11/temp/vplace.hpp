@@ -69,7 +69,7 @@ namespace nana
 
 		void               div      (const ::std::string & layout);
 		void               collocate();
-		field_reference    field   (const ::std::string & name);    /// TODO: Add min and max
+		field_reference    field   (const ::std::string & name);    /// todo: Add min and max
 
 
 
@@ -78,7 +78,7 @@ namespace nana
 		static adjustable*     fixed   (const std::string&  txt      , unsigned size    );
 		static adjustable*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
-		static adjustable*     room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
+		static adjustable*     room    (window wd, unsigned width, unsigned height);/// todo: Add min and max
 
 	  private:
 		implement * impl_;
@@ -101,5 +101,5 @@ namespace nana
   //      vplace& operator<<(element             e )	;
 		//element    Fixed   (window wd, unsigned size         );
 		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-		//element    Room    (window wd, unsigned width, unsigned height);/// TODO: Add min and max
+		//element    Room    (window wd, unsigned width, unsigned height);/// todo: Add min and max
                                                         /// Use room (wd,w,h) in combination with a <Table grid[W,H]>

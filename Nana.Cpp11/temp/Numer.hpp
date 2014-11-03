@@ -227,8 +227,8 @@ class NumUnitUpDown : public CompoWidget
     //double      _val;
     CUnit::unit_name _curr_un;
 public:
-    NumerUpDown _num; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
-    UnitPicker  _unit; /// TODO: make private and provide a funtion to change the def lay, especialy the length of the label
+    NumerUpDown _num; /// \todo: make private and provide a funtion to change the def lay, especialy the length of the label
+    UnitPicker  _unit; /// \todo: make private and provide a funtion to change the def lay, especialy the length of the label
     NumUnitUpDown ( widget &wd,        
                     const string& label, 
                     double defVal,    double min,     double max,    
