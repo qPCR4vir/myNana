@@ -1998,7 +1998,7 @@ namespace nana
 							{
 								impl_->set_selected(node);
 								redraw = true;
-								if(impl_->make_adjust(node_state.selected, 4))
+								if(impl_->make_adjust(node_state.selected, 4))  // sometimes dont go down any more
 									scroll = true;
 							}
 						}
@@ -2050,6 +2050,28 @@ namespace nana
 
 				void trigger::key_char(graph_reference, const arg_keyboard& arg)
 				{
+                    if (arg.key == '*')
+                    {
+                       node_type * node = impl_->node_state.selected, *nxt;
+                        while (node)
+                        {
+                            nxt=node;
+                            while (nxt)
+                            {
+                                impl_->set_expanded( nxt, true ) ;
+                                if (nxt->child)
+                                {
+                                    nxt= nxt->child;
+                                    continue;
+                                }
+                                nxt= nxt->next;
+                            }
+                            node=node->next;
+                        }
+						impl_->draw(false);
+						API::lazy_refresh();
+                     }
+
 					auto node = const_cast<node_type*>(impl_->find_track_node(arg.key));
 
 					if(node && (node != impl_->node_state.selected))
