@@ -255,6 +255,19 @@ namespace nana
 				/// An end node.
 				item_proxy end() const;
 
+                /// Make an action for each sub item; returning the item that stop the action (the item for with action return false)
+                item_proxy visit_all_sub_items(bool (action)(item_proxy it))
+                {
+                    if (!action(*this)) return *this;
+                    for (item_proxy it:*this)
+                    {
+                        item_proxy stop=it.visit_all_sub_items(action);
+                        if ( stop!= it.end())
+                            return stop;
+                    }
+                    return end();
+                }
+
 				bool operator==(const nana::string& s) const; ///< Compare the text of node with s.
 				bool operator==(const char* s ) const;        ///< Compare the text of node with s.
 				bool operator==(const wchar_t* s ) const;     ///< Compare the text of node with s.
