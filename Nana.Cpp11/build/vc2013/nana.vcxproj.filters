@@ -309,5 +309,8 @@
     <ClCompile Include="..\..\temp\vplace.cpp">
       <Filter>Source Files\temp</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\state_cursor.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
