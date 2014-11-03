@@ -250,9 +250,9 @@ namespace nana{
 			win_attr.colormap = restrict::spec.colormap();
 
 			win_attr.background_pixmap = None;
-			win_attr.background_pixel = 0xFFFFFF;
+			win_attr.background_pixel = 0xFFFFFF;  ///\todo: use codigo
 			win_attr.border_pixmap = None;
-			win_attr.border_pixel = 0x0;
+			win_attr.border_pixel = 0x0;  ///\todo: use codigo
 			win_attr.bit_gravity = 0;
 			win_attr.win_gravity = NorthWestGravity;
 			win_attr.backing_store = 0;
@@ -397,9 +397,9 @@ namespace nana{
 			win_attr.colormap = restrict::spec.colormap();
 
 			win_attr.background_pixmap = None;
-			win_attr.background_pixel = 0xFFFFFF;
+			win_attr.background_pixel = 0xFFFFFF;  ///\todo: use codigo
 			win_attr.border_pixmap = None;
-			win_attr.border_pixel = 0x0;
+			win_attr.border_pixel = 0x0;  ///\todo: use codigo
 			win_attr.bit_gravity = 0;
 			win_attr.win_gravity = NorthWestGravity;
 			win_attr.backing_store = 0;

@@ -61,10 +61,10 @@ namespace nana
 
 				void trigger::_m_init_color()
 				{
-					color_.selected = 0x2F3699;
-					color_.highlight = 0x4D56C8;
-					color_.normal = 0x0;
-					color_.bkcolor = 0x88C4FF;
+					color_.selected = 0x2F3699;  ///\todo: use codigo
+					color_.highlight = 0x4D56C8;  ///\todo: use codigo
+					color_.normal = 0x0;  ///\todo: use codigo
+					color_.bkcolor = 0x88C4FF;  ///\todo: use codigo
 				}
 
 				trigger::where trigger::_m_pos_where(graph_reference graph, int x, int y)
@@ -97,8 +97,8 @@ namespace nana
 
 					const unsigned width = graph.width() - 2;
 
-					graph.rectangle(0xB0B0B0, false);
-					graph.rectangle(1, 1, width, topbar_height, 0xFFFFFF, true);
+					graph.rectangle(0xB0B0B0, false);  ///\todo: use codigo
+					graph.rectangle(1, 1, width, topbar_height, 0xFFFFFF, true);  ///\todo: use codigo
 
 					_m_draw_topbar(graph);
 
@@ -107,7 +107,7 @@ namespace nana
 						nana::point refpos(1, static_cast<int>(topbar_height) + 1);
 
 						nana::paint::graphics gbuf(width, graph.height() - 2 - topbar_height);
-						gbuf.rectangle(0xF0F0F0, true);
+						gbuf.rectangle(0xF0F0F0, true);  ///\todo: use codigo
 
 						switch(page_)
 						{
@@ -206,7 +206,7 @@ namespace nana
 					}
 
 					if(primary == false)
-						color = 0xB0B0B0;
+						color = 0xB0B0B0;  ///\todo: use codigo
 
 					nana::size txt_s = graph.text_extent_size(str);
 					graph.string(r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2, color, str);
@@ -417,7 +417,7 @@ namespace nana
 							r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 							r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 
-							dzbuf.rectangle(0xFFFFFF, true);
+							dzbuf.rectangle(0xFFFFFF, true);  ///\todo: use codigo
 							dirtybuf.stretch(dzbuf, r);
 
 							r.width = static_cast<int>(newbuf.width() + delta * (count - i));
@@ -451,7 +451,7 @@ namespace nana
 							r.height = static_cast<int>(newbuf.height() - delta_h * (count - i));
 							r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 							r.y = static_cast<int>(newbuf.height() - r.height) / 2;
-							nzbuf.rectangle(0xFFFFFF, true);
+							nzbuf.rectangle(0xFFFFFF, true);  ///\todo: use codigo
 							newbuf.stretch(nzbuf, r);
 
 							nzbuf.blend(nzbuf.size(), dzbuf, nana::point(), fade * (count - i));

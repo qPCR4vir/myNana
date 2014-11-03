@@ -150,14 +150,14 @@ namespace nana
 				{
 					//draw background
 					if(state != state_t::normal)
-						graph.rectangle(x, y, width, height, 0x3399FF, false);
+						graph.rectangle(x, y, width, height, 0x3399FF, false);   ///\todo: use codigo
 					switch(state)
 					{
 					case state_t::highlighted:
-						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0xC0DDFC, 0.5)*/ 0xC0DDFC, true);
+						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0xC0DDFC, 0.5)*/ 0xC0DDFC, true);  ///\todo: use codigo
 						break;
 					case state_t::selected:
-						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0x99CCFF, 0.5)*/0x99CCFF, true);
+						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0x99CCFF, 0.5)*/0x99CCFF, true);  ///\todo: use codigo
 					default:	break;
 					}
 
@@ -180,7 +180,7 @@ namespace nana
 							gh.paste(graph, pos.x, pos.y);
 						}
 						else if(state == state_t::normal)
-							graph.blend(nana::rectangle(pos, size), graph.mix(color, 0xC0DDFC, 0.5), 0.25);
+							graph.blend(nana::rectangle(pos, size), graph.mix(color, 0xC0DDFC, 0.5), 0.25);  ///\todo: use codigo
 
 						x += scale;
 						width -= scale;
@@ -188,7 +188,7 @@ namespace nana
 
 					if(textout)
 					{
-						graph.string(x + (width - item.textsize.width) / 2, y + (height - item.textsize.height) / 2, 0x0, item.text);
+						graph.string(x + (width - item.textsize.width) / 2, y + (height - item.textsize.height) / 2, 0x0, item.text);  ///\todo: use codigo
 					}
 				}
 
@@ -405,7 +405,7 @@ namespace nana
 
 				void drawer::_m_draw_background(nana::color_t color)
 				{
-					graph_->shadow_rectangle(graph_->size(), graph_->mix(color, 0xFFFFFF, 0.9), graph_->mix(color, 0x0, 0.95), true);
+					graph_->shadow_rectangle(graph_->size(), graph_->mix(color, 0xFFFFFF, 0.9), graph_->mix(color, 0x0, 0.95), true);  ///\todo: use codigo
 				}
 
 				void drawer::_m_draw()
@@ -428,7 +428,7 @@ namespace nana
 						}
 						else
 						{
-							graph_->line(x + 2, y + 2, x + 2, y + impl_->scale + ir.extra_size - 4, 0x808080);
+							graph_->line(x + 2, y + 2, x + 2, y + impl_->scale + ir.extra_size - 4, 0x808080);  ///\todo: use codigo
 							x += 6;
 						}
 						++index;

@@ -249,8 +249,8 @@ namespace nana
 				mutable nana::any * anyobj;
 
 				item_t()
-					:	bgcolor(0xFF000000),
-						fgcolor(0xFF000000),
+					:	bgcolor(0xFF000000),  ///\todo: use codigo
+						fgcolor(0xFF000000),  ///\todo: use codigo
 						anyobj(nullptr)
 				{
 					flags.selected = flags.checked = false;
@@ -276,8 +276,8 @@ namespace nana
 				}
 
 				item_t(nana::string&& s)
-					:	bgcolor(0xFF000000),
-						fgcolor(0xFF000000),
+					:	bgcolor(0xFF000000),  ///\todo: use codigo
+						fgcolor(0xFF000000),  ///\todo: use codigo
 						anyobj(nullptr)
 				{
 					flags.selected = flags.checked = false;
@@ -286,8 +286,8 @@ namespace nana
 
 				item_t(container&& texts)
 					:	texts(std::move(texts)),
-						bgcolor(0xFF000000),
-						fgcolor(0xFF000000),
+						bgcolor(0xFF000000),  ///\todo: use codigo
+						fgcolor(0xFF000000),  ///\todo: use codigo
 						anyobj(nullptr)
 				{
 					flags.selected = flags.checked = false;
@@ -1883,7 +1883,7 @@ namespace nana
 					_m_draw(essence_->header.cont(), r);
 
 					const int y = r.y + r.height - 1;
-					essence_->graph->line(r.x, y, r.x + r.width, y, 0xDEDFE1);
+					essence_->graph->line(r.x, y, r.x + r.width, y, 0xDEDFE1);  ///\todo: use codigo
 				}
 			private:
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
@@ -1913,7 +1913,7 @@ namespace nana
 							x = (place_front ? item_xpos : essence_->header.xpos(essence_->header.neighbor(i, false)));
 
 							if(i != npos)
-								essence_->graph->rectangle(x - essence_->scroll.offset_x + rect.x, rect.y, 2, rect.height, 0xFF0000, true);
+								essence_->graph->rectangle(x - essence_->scroll.offset_x + rect.x, rect.y, 2, rect.height, 0xFF0000, true);  ///\todo: use codigo
 						}
 						return i;
 					}
@@ -1944,7 +1944,7 @@ namespace nana
 							if(next_x > rect.x)
 							{
 								_m_draw_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : essence_t::state_t::normal));
-								graph.line(next_x - 1, rect.y, next_x - 1, bottom_y, 0xDEDFE1);
+								graph.line(next_x - 1, rect.y, next_x - 1, bottom_y, 0xDEDFE1);  ///\todo: use codigo
 							}
 							x = next_x;
 							if(x - rect.x > static_cast<int>(rect.width)) break;
@@ -1952,7 +1952,7 @@ namespace nana
 					}
 
 					if(x - rect.x < static_cast<int>(rect.width))
-						graph.rectangle(x, rect.y, rect.width - x + rect.x, height, 0xF1F2F4, true);
+						graph.rectangle(x, rect.y, rect.width - x + rect.x, height, 0xF1F2F4, true);  ///\todo: use codigo
 				}
 
 				template<typename Item>
@@ -1962,11 +1962,11 @@ namespace nana
 					typedef essence_t::state_t state_t;
 					switch(state)
 					{
-					case state_t::normal:		bgcolor = 0xF1F2F4; break;
-					case state_t::highlighted:	bgcolor = 0xFFFFFF; break;
+					case state_t::normal:		bgcolor = 0xF1F2F4; break;  ///\todo: use codigo
+					case state_t::highlighted:	bgcolor = 0xFFFFFF; break;  ///\todo: use codigo
 					case state_t::pressed:
-					case state_t::grabed:		bgcolor = 0x8BD6F6; break;
-					case state_t::floated:		bgcolor = 0xBABBBC;	break;
+					case state_t::grabed:		bgcolor = 0x8BD6F6; break;  ///\todo: use codigo
+					case state_t::floated:		bgcolor = 0xBABBBC;	break;  ///\todo: use codigo
 					}
 
 					graph.rectangle(x, y, item.pixels, height, bgcolor, true);
@@ -1975,7 +1975,7 @@ namespace nana
 					if(item.index == essence_->lister.sort_index())
 					{
 						nana::paint::gadget::directions::t dir = essence_->lister.sort_reverse() ? nana::paint::gadget::directions::to_south : nana::paint::gadget::directions::to_north;
-						nana::paint::gadget::arrow_16_pixels(graph, x + (item.pixels - 16) / 2, -4, 0x0, 0, dir);
+						nana::paint::gadget::arrow_16_pixels(graph, x + (item.pixels - 16) / 2, -4, 0x0, 0, dir);  ///\todo: use codigo
 					}
 				}
 
@@ -1987,7 +1987,7 @@ namespace nana
 					ext_graph.typeface(essence_->graph->typeface());
 
 					int txtop = (essence_->header_size - essence_->text_height) / 2;
-					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, 0xFFFFFF, item, essence_t::state_t::floated);
+					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, 0xFFFFFF, item, essence_t::state_t::floated);  ///\todo: use codigo
 
 					int xpos = essence_->header.xpos(item.index) + pos.x - ref_xpos_;
 					ext_graph.blend(ext_graph.size(), *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
@@ -2136,17 +2136,17 @@ namespace nana
 				{
 					bool sel = categ.selected();
 					if(sel && (categ.expand == false))
-						bgcolor = 0xD5EFFC;
+						bgcolor = 0xD5EFFC;  ///\todo: use codigo
 
 					if(state == essence_t::state_t::highlighted)
-						bgcolor = essence_->graph->mix(bgcolor, 0x99DEFD, 0.8);
+						bgcolor = essence_->graph->mix(bgcolor, 0x99DEFD, 0.8);  ///\todo: use codigo
 
 					auto graph = essence_->graph;
 					graph->rectangle(x, y, width, essence_->item_size, bgcolor, true);
 
-					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) /2, 0x3399, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));
+					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) /2, 0x3399, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));  ///\todo: use codigo
 					nana::size text_s = graph->text_extent_size(categ.text);
-					graph->string(x + 20, y + txtoff, 0x3399, categ.text);
+					graph->string(x + 20, y + txtoff, 0x3399, categ.text);  ///\todo: use codigo
 
 					std::stringstream ss;
 					ss<<'('<<static_cast<unsigned>(categ.items.size())<<')';
@@ -2154,10 +2154,10 @@ namespace nana
 
 					unsigned str_w = graph->text_extent_size(str).width;
 
-					graph->string(x + 25 + text_s.width, y + txtoff, 0x3399, str);
+					graph->string(x + 25 + text_s.width, y + txtoff, 0x3399, str);  ///\todo: use codigo
 
 					if(x + 35 + text_s.width + str_w < x + width)
-						graph->line(x + 30 + text_s.width + str_w, y + essence_->item_size / 2, x + width - 5, y + essence_->item_size / 2, 0x3399);
+						graph->line(x + 30 + text_s.width + str_w, y + essence_->item_size / 2, x + width - 5, y + essence_->item_size / 2, 0x3399);  ///\todo: use codigo
 
 					//Draw selecting inner rectangle
 					if(sel && categ.expand == false)
@@ -2170,16 +2170,16 @@ namespace nana
 				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color_t bgcolor, nana::color_t txtcolor, essence_t::state_t state) const
 				{
 					if(item.flags.selected)
-						bgcolor = 0xD5EFFC;
-					else if ((item.bgcolor & 0xFF000000) == 0)
+						bgcolor = 0xD5EFFC;  ///\todo: use codigo
+					else if ((item.bgcolor & 0xFF000000) == 0)  ///\todo: use codigo
 						bgcolor = item.bgcolor;
 
-					if((item.fgcolor & 0xFF000000) == 0)
+					if((item.fgcolor & 0xFF000000) == 0)  ///\todo: use codigo
 						txtcolor = item.fgcolor;
 
 					auto graph = essence_->graph;
 					if(state == essence_t::state_t::highlighted)
-						bgcolor = graph->mix(bgcolor, 0x99DEFD, 0.8);
+						bgcolor = graph->mix(bgcolor, 0x99DEFD, 0.8);  ///\todo: use codigo
 
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
@@ -2250,7 +2250,7 @@ namespace nana
 							}
 						}
 
-						graph->line(item_xpos - 1, y, item_xpos - 1, y + essence_->item_size - 1, 0xEBF4F9);
+						graph->line(item_xpos - 1, y, item_xpos - 1, y + essence_->item_size - 1, 0xEBF4F9);  ///\todo: use codigo
 
 						item_xpos += header.pixels;
 						first = false;
@@ -2265,13 +2265,13 @@ namespace nana
 				{
 					//Draw selecting inner rectangle
 					auto graph = essence_->graph;
-					graph->rectangle(x , y , width, essence_->item_size, 0x99DEFD, false);
+					graph->rectangle(x , y , width, essence_->item_size, 0x99DEFD, false);  ///\todo: use codigo
 
-					graph->rectangle(x + 1, y + 1, width - 2, essence_->item_size - 2, 0xFFFFFF, false);
-					graph->set_pixel(x, y, 0xFFFFFF);
-					graph->set_pixel(x, y + essence_->item_size - 1, 0xFFFFFF);
-					graph->set_pixel(x + width - 1, y, 0xFFFFFF);
-					graph->set_pixel(x + width - 1, y + essence_->item_size - 1, 0xFFFFFF);
+					graph->rectangle(x + 1, y + 1, width - 2, essence_->item_size - 2, 0xFFFFFF, false);  ///\todo: use codigo
+					graph->set_pixel(x, y, 0xFFFFFF);  ///\todo: use codigo
+					graph->set_pixel(x, y + essence_->item_size - 1, 0xFFFFFF);  ///\todo: use codigo
+					graph->set_pixel(x + width - 1, y, 0xFFFFFF);  ///\todo: use codigo
+					graph->set_pixel(x + width - 1, y + essence_->item_size - 1, 0xFFFFFF);  ///\todo: use codigo
 				}
 			private:
 				essence_t * essence_;
@@ -2321,9 +2321,9 @@ namespace nana
 					auto & graph = *essence_->graph;
 					auto size = graph.size();
 					//Draw Border
-					graph.rectangle(0x9CB6C5, false);
-					graph.line(1, 1, 1, size.height - 2, 0xFFFFFF);
-					graph.line(size.width - 2, 1, size.width - 2, size.height - 2, 0xFFFFFF);
+					graph.rectangle(0x9CB6C5, false);  ///\todo: use codigo
+					graph.line(1, 1, 1, size.height - 2, 0xFFFFFF);  ///\todo: use codigo
+					graph.line(size.width - 2, 1, size.width - 2, size.height - 2, 0xFFFFFF);  ///\todo: use codigo
 
 					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
 						graph.rectangle(size.width - 1 - essence_->scroll.scale, size.height - 1 - essence_->scroll.scale, essence_->scroll.scale, essence_->scroll.scale, nana::color::button_face, true);
@@ -2335,7 +2335,7 @@ namespace nana
 					typeface_changed(graph);
 
 					essence_->lister.bind(essence_, widget);
-					widget.background(0xFFFFFF);
+					widget.background(0xFFFFFF);  ///\todo: use codigo
 				}
 
 				void trigger::detached()

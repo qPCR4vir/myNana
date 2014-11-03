@@ -226,7 +226,7 @@ namespace nana
 
 				nana::color_t _m_fgcolor(nana::widgets::skeletons::fblock* fp)
 				{
-					while(fp->fgcolor == 0xFFFFFFFF)
+					while(fp->fgcolor == 0xFFFFFFFF)  ///\todo: use codigo
 					{
 						fp = fp->parent;
 						if(nullptr == fp)
@@ -237,7 +237,7 @@ namespace nana
 
 				std::size_t _m_font_size(nana::widgets::skeletons::fblock* fp)
 				{
-					while(fp->font_size == 0xFFFFFFFF)
+					while(fp->font_size == 0xFFFFFFFF)  ///\todo: use codigo
 					{
 						fp = fp->parent;
 						if(nullptr == fp)

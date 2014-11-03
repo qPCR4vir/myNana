@@ -22,7 +22,7 @@ namespace detail
 {
 	drawable_impl_type::drawable_impl_type()
 		:	pixbuf_ptr(nullptr), bytes_per_line(0),
-			fgcolor_(0xFFFFFFFF)
+			fgcolor_(0xFFFFFFFF)  ///\todo: use codigo
 	{
 		pen.handle = nullptr;
 		pen.color = nana::null_color;

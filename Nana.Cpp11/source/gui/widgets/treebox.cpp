@@ -1068,9 +1068,9 @@ namespace nana
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const nana::color_t color_table[][2] = {	{0xE8F5FD, 0xD8F0FA}, //highlighted
-															{0xC4E8FA, 0xB6E6FB}, //Selected and highlighted
-															{0xD5EFFC, 0x99DEFD}  //Selected but not highlighted
+						const nana::color_t color_table[][2] = {	{0xE8F5FD, 0xD8F0FA}, //highlighted   ///\todo: use codigo
+															{0xC4E8FA, 0xB6E6FB}, //Selected and highlighted   ///\todo: use codigo
+															{0xD5EFFC, 0x99DEFD}  //Selected but not highlighted   ///\todo: use codigo
 														};
 
 						const nana::color_t *colptr = nullptr;
@@ -1106,7 +1106,7 @@ namespace nana
 							style = 0;
 							dir = gadget::directions::to_east;
 						}
-						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? 0x1CC4F7 : 0x0), style, dir);
+						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? 0x1CC4F7 : 0x0), style, dir);  ///\todo: use codigo
 					}
 				}
 
@@ -1383,7 +1383,7 @@ namespace nana
 						renderer_->text(item_graph, bgcolor, fgcolor, this);
 
 						item_graph.paste(attr.area, *graph_, 1, 1);
-						graph_->rectangle(0x0, false);
+						graph_->rectangle(0x0, false);   ///\todo: use codigo
 					}
 				}
 			private:
@@ -1776,7 +1776,7 @@ namespace nana
 				{
 					impl_->data.graph = &graph;
 
-					widget.background(0xFFFFFF);
+					widget.background(0xFFFFFF);  ///\todo: use codigo
 					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
 					widget.caption(STR("Nana Treebox"));
 				}

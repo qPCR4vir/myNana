@@ -220,7 +220,7 @@ namespace nana{	namespace drawerbase
 						++x;
 						++y;
 					}
-					color_t fgcolor = (attr_.focus_color ? (attr_.focused ? 0xFF : attr_.fgcolor) : attr_.fgcolor);
+					color_t fgcolor = (attr_.focus_color ? (attr_.focused ? 0xFF : attr_.fgcolor) : attr_.fgcolor);  ///\todo: use codigo
 					if(attr_.omitted)
 						tr.render(x, y, fgcolor, txtptr, txtlen, omitted_pixels, true);
 					else
@@ -232,20 +232,20 @@ namespace nana{	namespace drawerbase
 						nana::size shortkey_size = graph.text_extent_size(txtptr + shortkey_pos, 1);
 						x += off_w;
 						y += shortkey_size.height;
-						graph.line(x, y, x + shortkey_size.width - 1, y, 0x0);
+						graph.line(x, y, x + shortkey_size.width - 1, y, 0x0);  ///\todo: use codigo
 					}
 				}
 				else
 				{
 					if(attr_.omitted)
 					{
-						tr.render(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen, omitted_pixels, true);
-						tr.render(x, y, 0x808080, txtptr, txtlen, omitted_pixels, true);
+						tr.render(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen, omitted_pixels, true);  ///\todo: use codigo
+						tr.render(x, y, 0x808080, txtptr, txtlen, omitted_pixels, true);  ///\todo: use codigo
 					}
 					else
 					{
-						graph.bidi_string(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen);
-						graph.bidi_string(x, y, 0x808080, txtptr, txtlen);
+						graph.bidi_string(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen);  ///\todo: use codigo
+						graph.bidi_string(x, y, 0x808080, txtptr, txtlen);  ///\todo: use codigo
 					}
 				}
 			}
@@ -291,8 +291,8 @@ namespace nana{	namespace drawerbase
 		{
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
-			nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor, 0xFFFFFF, 0.2);
-			nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor, 0x0, 0.95);
+			nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor, 0xFFFFFF, 0.2);  ///\todo: use codigo
+			nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor, 0x0, 0.95);  ///\todo: use codigo
 
 			if (element_state::pressed == attr_.e_state)
 			{
@@ -309,12 +309,12 @@ namespace nana{	namespace drawerbase
 			int bottom = r.height - 1;
 
 			graph.rectangle_line(r,
-					0x7F7F7F, 0x7F7F7F, 0x707070, 0x707070);
+					0x7F7F7F, 0x7F7F7F, 0x707070, 0x707070);  ///\todo: use codigo
 
-			graph.set_pixel(1, 1, 0x919191);
-			graph.set_pixel(right - 1, 1, 0x919191);
-			graph.set_pixel(right - 1, bottom - 1, 0x919191);
-			graph.set_pixel(1, bottom - 1, 0x919191);
+			graph.set_pixel(1, 1, 0x919191);  ///\todo: use codigo
+			graph.set_pixel(right - 1, 1, 0x919191);  ///\todo: use codigo
+			graph.set_pixel(right - 1, bottom - 1, 0x919191);  ///\todo: use codigo
+			graph.set_pixel(1, bottom - 1, 0x919191);  ///\todo: use codigo
 
 			graph.set_pixel(0, 0, color::button_face);
 			graph.set_pixel(right, 0, color::button_face);
@@ -322,7 +322,7 @@ namespace nana{	namespace drawerbase
 			graph.set_pixel(right, bottom, color::button_face);
 
 			if (element_state::pressed == attr_.e_state)
-				graph.rectangle(r.pare_off(1), 0xC3C3C3, false);
+				graph.rectangle(r.pare_off(1), 0xC3C3C3, false);  ///\todo: use codigo
 		}
 
 		void trigger::emit_click()

@@ -943,8 +943,8 @@ namespace nana{	namespace widgets
 			select_.dragged = false;
 
 			API::create_caret(wd, 1, line_height());
-			API::background(wd, 0xFFFFFF);
-			API::foreground(wd, 0x000000);
+			API::background(wd, 0xFFFFFF);  ///\todo: use codigo
+			API::foreground(wd, 0x000000);  ///\todo: use codigo
 		}
 
 		text_editor::~text_editor()
@@ -1791,7 +1791,7 @@ namespace nana{	namespace widgets
 	//private:
 		nana::color_t text_editor::_m_bgcolor() const
 		{
-			return (!API::window_enabled(window_) ? 0xE0E0E0 : API::background(window_));
+			return (!API::window_enabled(window_) ? 0xE0E0E0 : API::background(window_));  ///\todo: use codigo
 		}
 
 		bool text_editor::_m_scroll_text(bool vertical)
@@ -2225,7 +2225,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_tip_string() const
 		{
-			graph_.string(text_area_.area.x - points_.offset.x, text_area_.area.y, 0x787878, attributes_.tip_string);
+			graph_.string(text_area_.area.x - points_.offset.x, text_area_.area.y, 0x787878, attributes_.tip_string);  ///\todo: use codigo
 		}
 
 		void text_editor::_m_draw_string(int top, nana::color_t color, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
@@ -2266,8 +2266,8 @@ namespace nana{	namespace widgets
 					{
 						if (selected)
 						{
-							color = 0xFFFFFF;
-							graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);
+							color = 0xFFFFFF;  ///\todo: use codigo
+							graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
 						}
 
 						graph_.string(x, top, color, ent.begin, len);
@@ -2275,7 +2275,7 @@ namespace nana{	namespace widgets
 					x += static_cast<int>(str_w);
 				}
 				if (selected)
-					graph_.rectangle(x, top, whitespace_w, line_h_pixels, 0x3399FF, true);
+					graph_.rectangle(x, top, whitespace_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
 			}
 			else
 			{
@@ -2298,8 +2298,8 @@ namespace nana{	namespace widgets
 							else if (a.x <= pos && pos + len <= b.x)
 							{
 								//Whole selected
-								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);
-								graph_.string(x, top, 0xFFFFFF, ent.begin, len);
+								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+								graph_.string(x, top, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 							}
 							else if (pos <= a.x && a.x < pos + len)
 							{	//Partial selected
@@ -2320,8 +2320,8 @@ namespace nana{	namespace widgets
 										graph_.string(x, top, color, ent.begin, len);
 										nana::paint::graphics graph(str_w, line_h_pixels);
 										graph.typeface(graph_.typeface());
-										graph.rectangle(0x3399FF, true);
-										graph.string(0, 0, 0xFFFFFF, ent.begin, len);
+										graph.rectangle(0x3399FF, true);  ///\todo: use codigo
+										graph.string(0, 0, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 
 										int sel_xpos = static_cast<int>(str_w - head_w - sel_w);
 										graph_.bitblt(nana::rectangle(x + sel_xpos, top, sel_w, line_h_pixels), graph, nana::point(sel_xpos, 0));
@@ -2330,8 +2330,8 @@ namespace nana{	namespace widgets
 									{	//LTR
 										graph_.string(x, top, color, ent.begin, a.x - pos);
 
-										graph_.rectangle(x + head_w, top, sel_w, line_h_pixels, 0x3399FF, true);
-										graph_.string(x + head_w, top, 0xFFFFFF, ent.begin + (a.x - pos), endpos - a.x);
+										graph_.rectangle(x + head_w, top, sel_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+										graph_.string(x + head_w, top, 0xFFFFFF, ent.begin + (a.x - pos), endpos - a.x);  ///\todo: use codigo
 
 										if (static_cast<size_t>(endpos) < pos + len)
 											graph_.string(x + static_cast<int>(head_w + sel_w), top, color, ent.begin + (endpos - pos), pos + len - endpos);
@@ -2348,14 +2348,14 @@ namespace nana{	namespace widgets
 									graph_.string(x, top, color, ent.begin, len);
 									nana::paint::graphics graph(str_w, line_h_pixels);
 									graph.typeface(graph_.typeface());
-									graph.rectangle(0x3399FF, true);
-									graph.string(0, 0, 0xFFFFFF, ent.begin, len);
+									graph.rectangle(0x3399FF, true);  ///\todo: use codigo
+									graph.string(0, 0, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 									graph_.bitblt(nana::rectangle(x + (str_w - sel_w), top, sel_w, line_h_pixels), graph, nana::point(str_w - sel_w, 0));
 								}
 								else
 								{	//LTR
-									graph_.rectangle(x, top, sel_w, line_h_pixels, 0x3399FF, true);
-									graph_.string(x, top, 0xFFFFFF, ent.begin, endpos - pos);
+									graph_.rectangle(x, top, sel_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+									graph_.string(x, top, 0xFFFFFF, ent.begin, endpos - pos);  ///\todo: use codigo
 									graph_.string(x + sel_w, top, color, ent.begin + (endpos - pos), pos + len - endpos);
 								}
 							}
@@ -2380,8 +2380,8 @@ namespace nana{	namespace widgets
 							else if (a.x < pos)
 							{
 								//Whole selected
-								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);
-								graph_.string(x, top, 0xFFFFFF, ent.begin, len);
+								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+								graph_.string(x, top, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 							}
 							else
 							{
@@ -2391,15 +2391,15 @@ namespace nana{	namespace widgets
 									graph_.string(x, top, color, ent.begin, len);
 									nana::paint::graphics graph(str_w, line_h_pixels);
 									graph.typeface(graph_.typeface());
-									graph.rectangle(0x3399FF, true);
-									graph.string(0, 0, 0xFFFFFF, ent.begin, len);
+									graph.rectangle(0x3399FF, true);  ///\todo: use codigo
+									graph.string(0, 0, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 									graph_.bitblt(nana::rectangle(x, top, str_w - head_w, line_h_pixels), graph);
 								}
 								else
 								{	//LTR
 									graph_.string(x, top, color, ent.begin, a.x - pos);
-									graph_.rectangle(x + head_w, top, str_w - head_w, line_h_pixels, 0x3399FF, true);
-									graph_.string(x + head_w, top, 0xFFFFFF, ent.begin + a.x - pos, len - (a.x - pos));
+									graph_.rectangle(x + head_w, top, str_w - head_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+									graph_.string(x + head_w, top, 0xFFFFFF, ent.begin + a.x - pos, len - (a.x - pos));  ///\todo: use codigo
 								}
 							}
 						}
@@ -2407,7 +2407,7 @@ namespace nana{	namespace widgets
 						x += static_cast<int>(str_w);
 					}
 					if (a.y <= static_cast<unsigned>(str_pos.y) && static_cast<unsigned>(str_pos.y) < b.y)
-						graph_.rectangle(x, top, whitespace_w, line_h_pixels, 0x3399FF, true);
+						graph_.rectangle(x, top, whitespace_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
 				}
 				else if (b.y == str_pos.y)
 				{
@@ -2421,8 +2421,8 @@ namespace nana{	namespace widgets
 
 							if (pos + len <= b.x)
 							{
-								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);
-								graph_.string(x, top, 0xFFFFFF, ent.begin, len);
+								graph_.rectangle(x, top, str_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+								graph_.string(x, top, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
 							}
 							else if (pos <= b.x && b.x < pos + len)
 							{
@@ -2431,16 +2431,16 @@ namespace nana{	namespace widgets
 								{
 									nana::paint::graphics graph(str_w, line_h_pixels);
 									graph.typeface(graph_.typeface());
-									graph.rectangle(0x3399FF, true);
-									graph.string(0, 0, 0xFFFFFF, ent.begin, len);
-									graph_.string(x, top, color, ent.begin, len);
+									graph.rectangle(0x3399FF, true);  ///\todo: use codigo
+									graph.string(0, 0, 0xFFFFFF, ent.begin, len);  ///\todo: use codigo
+									graph_.string(x, top, color, ent.begin, len);  ///\todo: use codigo
 
 									graph_.bitblt(nana::rectangle(x + (str_w - sel_w), top, sel_w, line_h_pixels), graph, nana::point(str_w - sel_w, 0));
 								}
 								else
 								{
-									graph_.rectangle(x, top, sel_w, line_h_pixels, 0x3399FF, true);
-									graph_.string(x, top, 0xFFFFFF, ent.begin, b.x - pos);
+									graph_.rectangle(x, top, sel_w, line_h_pixels, 0x3399FF, true);  ///\todo: use codigo
+									graph_.string(x, top, 0xFFFFFF, ent.begin, b.x - pos);  ///\todo: use codigo
 									graph_.string(x + sel_w, top, color, ent.begin + b.x - pos, len - (b.x - pos));
 								}
 							}

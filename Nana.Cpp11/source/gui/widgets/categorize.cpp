@@ -78,7 +78,7 @@ namespace nana
 
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
-						style_.bgcolor = nana::paint::graphics::mix(style_.bgcolor, 0xA0C9F5, 0.9);
+						style_.bgcolor = nana::paint::graphics::mix(style_.bgcolor, 0xA0C9F5, 0.9);  ///\todo: use codigo
 					}
 					graph.rectangle(r, style_.bgcolor, true);
 				}
@@ -90,7 +90,7 @@ namespace nana
 					if(ui_el_.what == ui_el_.item_root)
 					{
 						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
-						graph.rectangle(r, 0x3C7FB1, false);
+						graph.rectangle(r, 0x3C7FB1, false);  ///\todo: use codigo
 						if(state == mouse_action::pressed)
 						{
 							++x;
@@ -132,10 +132,10 @@ namespace nana
 							_m_item_bground(graph, left, top, 15, height, state_arrow);
 							width -= 16;
 							--left;
-							graph.line(left, top, left, r.y + height, 0x3C7FB1);
+							graph.line(left, top, left, r.y + height, 0x3C7FB1);  ///\todo: use codigo
 						}
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
-						graph.rectangle(r, 0x3C7FB1, false);
+						graph.rectangle(r, 0x3C7FB1, false);  ///\todo: use codigo
 					}
 					graph.string(strpos.x, strpos.y, style_.fgcolor, name);
 
@@ -148,9 +148,9 @@ namespace nana
 
 				void border(graph_reference graph)
 				{
-					graph.rectangle(0xF0F0F0, false);
+					graph.rectangle(0xF0F0F0, false);  ///\todo: use codigo
 					graph.rectangle_line(nana::rectangle(graph.size()).pare_off(1),
-										0x9DABB9, 0x484E55, 0x484E55, 0x9DABB9);
+										0x9DABB9, 0x484E55, 0x484E55, 0x9DABB9);  ///\todo: use codigo
 				}
 			private:
 				void _m_item_bground(graph_reference graph, int x, int y, unsigned width, unsigned height, mouse_action state)
@@ -162,19 +162,19 @@ namespace nana
 					switch(state)
 					{
 					case mouse_action::over:
-						upcol = 0x0DFF2FC;
-						downcol = 0xA9DAF5;
+						upcol = 0x0DFF2FC;  ///\todo: use codigo
+						downcol = 0xA9DAF5;  ///\todo: use codigo
 						break;
 					case mouse_action::pressed:
-						upcol = 0xA6D7F2;
-						downcol = 0x92C4F6;
+						upcol = 0xA6D7F2;  ///\todo: use codigo
+						downcol = 0x92C4F6;  ///\todo: use codigo
 						++left;
 						++top;
 						break;
 					case mouse_action::normal:
 					default:
-						upcol = 0xEAEAEA;
-						downcol = 0xDCDCDC;
+						upcol = 0xEAEAEA;  ///\todo: use codigo
+						downcol = 0xDCDCDC;  ///\todo: use codigo
 						break;
 					}
 
@@ -184,12 +184,12 @@ namespace nana
 					{
 						int bottom = y + height - 1;
 						int right = x + width - 1;
-						graph.line(x, y, right, y, 0x6E8D9F);
-						graph.line(x, y + 1, x, bottom, 0x6E8D9F);
+						graph.line(x, y, right, y, 0x6E8D9F);  ///\todo: use codigo
+						graph.line(x, y + 1, x, bottom, 0x6E8D9F);  ///\todo: use codigo
 						++x;
 						++y;
-						graph.line(x, y, right, y, 0xA6C7D9);
-						graph.line(x, y + 1, x, bottom, 0xA6C7D9);
+						graph.line(x, y, right, y, 0xA6C7D9);  ///\todo: use codigo
+						graph.line(x, y + 1, x, bottom, 0xA6C7D9);  ///\todo: use codigo
 					}
 				}
 
@@ -379,7 +379,7 @@ namespace nana
 				void attach(window wd, nana::paint::graphics* graph)
 				{
 					window_ = wd;
-					API::background(wd, 0xFFFFFF);
+					API::background(wd, 0xFFFFFF);  ///\todo: use codigo
 					graph_ = graph;
 				}
 

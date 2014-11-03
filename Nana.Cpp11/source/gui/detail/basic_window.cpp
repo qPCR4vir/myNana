@@ -351,9 +351,9 @@ namespace nana
 
 				visible = false;
 
-				color.foreground = 0x0;
+				color.foreground = 0x0;  ///\todo: use codigo
 				color.background = nana::color::button_face;
-				color.active = 0x60C8FD;
+				color.active = 0x60C8FD;  ///\todo: use codigo
 
 				effect.edge_nimbus = effects::edge_nimbus::none;
 				effect.bground = nullptr;

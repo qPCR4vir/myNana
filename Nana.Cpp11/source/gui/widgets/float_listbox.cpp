@@ -38,24 +38,24 @@ namespace nana
 				{
 					if(state == StateHighlighted)
 					{
-						graph.rectangle(r, 0xAFC7E3, false);
+						graph.rectangle(r, 0xAFC7E3, false);  ///\todo: use codigo
 
-						graph.set_pixel(r.x, r.y, 0xFFFFFF);
-						graph.set_pixel(r.x + r.width - 1, r.y, 0xFFFFFF);
-						graph.set_pixel(r.x, r.y + r.height - 1, 0xFFFFFF);
-						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1, 0xFFFFFF);
+						graph.set_pixel(r.x, r.y, 0xFFFFFF);  ///\todo: use codigo
+						graph.set_pixel(r.x + r.width - 1, r.y, 0xFFFFFF);  ///\todo: use codigo
+						graph.set_pixel(r.x, r.y + r.height - 1, 0xFFFFFF);  ///\todo: use codigo
+						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1, 0xFFFFFF);  ///\todo: use codigo
 
-						graph.set_pixel(r.x + 1, r.y + 1, 0xAFC7E3);
-						graph.set_pixel(r.x + r.width - 2, r.y + 1, 0xAFC7E3);
-						graph.set_pixel(r.x + 1, r.y + r.height - 2, 0xAFC7E3);
-						graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2, 0xAFC7E3);
+						graph.set_pixel(r.x + 1, r.y + 1, 0xAFC7E3);  ///\todo: use codigo
+						graph.set_pixel(r.x + r.width - 2, r.y + 1, 0xAFC7E3);  ///\todo: use codigo
+						graph.set_pixel(r.x + 1, r.y + r.height - 2, 0xAFC7E3);  ///\todo: use codigo
+						graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2, 0xAFC7E3);  ///\todo: use codigo
 
 						nana::rectangle po_r(r);
-						graph.rectangle(po_r.pare_off(1), 0xEBF4FB, false);
-						graph.shadow_rectangle(po_r.pare_off(1), 0xDDECFD, 0xC2DCFD, true);
+						graph.rectangle(po_r.pare_off(1), 0xEBF4FB, false);  ///\todo: use codigo
+						graph.shadow_rectangle(po_r.pare_off(1), 0xDDECFD, 0xC2DCFD, true);  ///\todo: use codigo
 					}
 					else
-						graph.rectangle(r, 0xFFFFFF, true);
+						graph.rectangle(r, 0xFFFFFF, true);  ///\todo: use codigo
 					
 					int x = r.x + 2;
 					if(image_enabled_)
@@ -100,7 +100,7 @@ namespace nana
 						}
 						x += (image_pixels_ + 2);
 					}
-					graph.string(x, r.y + 2, 0x0, item->text());
+					graph.string(x, r.y + 2, 0x0, item->text());  ///\todo: use codigo
 				}
 
 				unsigned item_pixels(graph_reference graph) const
@@ -339,11 +339,11 @@ namespace nana
 						_m_open_scrollbar(*widget_, pages);
 					}
 					else
-						graph_->string(4, 4, 0x808080, STR("Empty Listbox, No Module!"));
+						graph_->string(4, 4, 0x808080, STR("Empty Listbox, No Module!"));  ///\todo: use codigo
 
 					//Draw border
-					graph_->rectangle(0x0, false);
-					graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), 0xFFFFFF, false);
+					graph_->rectangle(0x0, false);  ///\todo: use codigo
+					graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), 0xFFFFFF, false);  ///\todo: use codigo
 				}
 			private:
 				bool _m_image_enabled() const

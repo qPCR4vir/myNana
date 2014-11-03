@@ -108,8 +108,8 @@ namespace checkbox
 					nana::paint::text_renderer tr(graph);
 					if(API::window_enabled(widget_->handle()) == false)
 					{
-						tr.render(17 + interval, 2, 0xFFFFFF, title.c_str(), title.length(), pixels);
-						fgcolor = 0x808080;
+						tr.render(17 + interval, 2, 0xFFFFFF, title.c_str(), title.length(), pixels);  ///\todo: use codigo
+						fgcolor = 0x808080;  ///\todo: use codigo
 					}
 
 					tr.render(16 + interval, 1, fgcolor, title.c_str(), title.length(), pixels);

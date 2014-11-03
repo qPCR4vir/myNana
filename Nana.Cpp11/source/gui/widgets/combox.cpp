@@ -286,7 +286,7 @@ namespace nana
 
 				void draw_border(graph_reference graph, nana::color_t bgcolor)
 				{
-					graph.rectangle((state_.focused ? 0x0595E2 : 0x999A9E), false);
+					graph.rectangle((state_.focused ? 0x0595E2 : 0x999A9E), false);  ///\todo: use codigo
 					nana::rectangle r(graph.size());
 					graph.rectangle(r.pare_off(1), bgcolor, false);
 				}
@@ -471,25 +471,25 @@ namespace nana
 					nana::color_t arrow_color;
 					if (enabled && items_.size())
 					{
-						arrow_color = 0xFFFFFF;
+						arrow_color = 0xFFFFFF;  ///\todo: use codigo
 						double percent = 1;
 						if (has_lister() || (state_.state == state_t::pressed && state_.pointer_where == where_t::push_button))
 							percent = 0.8;
 						else if (state_.state == state_t::mouse_over)
 							percent = 0.9;
 
-						topcol_ln = graphics::mix(0x3F476C, 0xFFFFFF, percent);
-						botcol_ln = graphics::mix(0x031141, 0xFFFFFF, percent);
-						topcol = graphics::mix(0x3F83B4, 0xFFFFFF, percent);
-						botcol = graphics::mix(0x0C4A95, 0xFFFFFF, percent);
+						topcol_ln = graphics::mix(0x3F476C, 0xFFFFFF, percent);  ///\todo: use codigo
+						botcol_ln = graphics::mix(0x031141, 0xFFFFFF, percent);  ///\todo: use codigo
+						topcol = graphics::mix(0x3F83B4, 0xFFFFFF, percent);  ///\todo: use codigo
+						botcol = graphics::mix(0x0C4A95, 0xFFFFFF, percent);  ///\todo: use codigo
 					}
 					else
 					{
-						arrow_color = 0xFFFFFF;
-						topcol_ln = 0x7F7F7F;
-						botcol_ln = 0x505050;
-						topcol = 0xC3C3C3;
-						botcol = 0xA0A0A0;
+						arrow_color = 0xFFFFFF;  ///\todo: use codigo
+						topcol_ln = 0x7F7F7F;  ///\todo: use codigo
+						botcol_ln = 0x505050;  ///\todo: use codigo
+						topcol = 0xC3C3C3;  ///\todo: use codigo
+						botcol = 0xA0A0A0;  ///\todo: use codigo
 					}
 
 					graph_->line(left, top, left, mid, topcol_ln);
@@ -599,7 +599,7 @@ namespace nana
 
 				void trigger::attached(widget_reference wdg, graph_reference graph)
 				{
-					wdg.background(0xFFFFFF);
+					wdg.background(0xFFFFFF);  ///\todo: use codigo
 					drawer_->attached(wdg, graph);
 
 					API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);

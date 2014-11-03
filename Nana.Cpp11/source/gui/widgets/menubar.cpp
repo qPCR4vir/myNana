@@ -95,12 +95,12 @@ namespace nana
 					{
 					case item_renderer::state_highlight:
 						border = nana::color::highlight;
-						body = 0xC0DDFC;
+						body = 0xC0DDFC;  ///\todo: use codigo
 						corner = paint::graphics::mix(body, bground, 0.5);
 						break;
 					case item_renderer::state_selected:
 						border = nana::color::dark_border;
-						body = 0xFFFFFF;
+						body = 0xFFFFFF;  ///\todo: use codigo
 						corner = paint::graphics::mix(border, bground, 0.5);
 						break;
 					default:	//Don't process other states.
@@ -119,7 +119,7 @@ namespace nana
 
 				void item_renderer::caption(int x, int y, const nana::string& text)
 				{
-					graph_.string(x, y, 0x0, text);
+					graph_.string(x, y, 0x0, text);  ///\todo: use codigo
 				}
 			//end class item_renderer
 
@@ -545,7 +545,7 @@ namespace nana
 							graph_->text_metrics(ascent, descent, inleading);
 							int x = item_pos.x + 8 + off_w;
 							int y = item_pos.y + text_top_off + ascent + 1;
-							graph_->line(x, y, x + hotkey_size.width - 1, y, 0x0);
+							graph_->line(x, y, x + hotkey_size.width - 1, y, 0x0);  ///\todo: use codigo
 						}
 
 						item_pos.x += i->size.width;
