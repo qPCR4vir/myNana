@@ -297,6 +297,9 @@
     <ClCompile Include="..\..\source\gui\detail\events_operation.cpp">
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\state_cursor.cpp">
+      <Filter>Source Files\gui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\ReadME - solution config.md" />
