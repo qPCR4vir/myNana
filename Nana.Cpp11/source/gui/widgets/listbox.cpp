@@ -2649,7 +2649,7 @@ namespace nana
 
 				bool item_proxy::empty() const
 				{
-					return ! ess_ ;
+					return !ess_;
 				}
 
 				item_proxy & item_proxy::check(bool ck)
