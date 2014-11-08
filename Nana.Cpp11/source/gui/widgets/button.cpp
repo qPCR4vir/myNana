@@ -328,6 +328,7 @@ namespace nana{	namespace drawerbase
 		void trigger::emit_click()
 		{
 			arg_mouse arg;
+			arg.evt_code = event_code::click;
 			arg.window_handle = widget_->handle();
 			arg.ctrl = arg.shift = false;
 			arg.mid_button = arg.right_button = false;

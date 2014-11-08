@@ -87,6 +87,7 @@ namespace detail
 	private:
 		bool _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg_interface&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);
+		void _m_except_handler();
 	private:
 		static bedrock bedrock_object;
 
