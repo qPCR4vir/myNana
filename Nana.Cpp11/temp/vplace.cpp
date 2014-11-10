@@ -1227,6 +1227,8 @@ namespace vplace_impl
  
         std::vector<number_t>    array, margin;
 		std::vector<std::string> field_names_in_div;
+        std::unordered_map<std::string, repeated_array> arrange_;
+
  
         for(token tk = tknizer.read(); tk != token::eof && tk!=token::div_end ; tk = tknizer.read())
 		{
@@ -1281,7 +1283,10 @@ namespace vplace_impl
 					        w.max = tknizer.number().integer();                                
                          /*else throw no max percent possible ??? */             break;
                     }
-			    case token::margin:
+			    case token::arrange:   /// \todo Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
+                     arrange_[ field_names_in_div.back()] = tknizer.reparray();  break;
+
+                case token::margin:
                     {
 				        switch (tknizer.read())
 				        {
@@ -1375,6 +1380,7 @@ namespace vplace_impl
             pdiv->splitter=splitter;
             splitter->parent = pdiv;
         }
+        pdiv->arrange_.swap(arrange_);
         if (  margin.size() )
         {
             std::unique_ptr<division> vd, td,hd,ld,cd,rd,bd; 
