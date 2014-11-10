@@ -558,13 +558,13 @@ namespace vplace_impl
                 adj pre_adj_x, end_adj_x,  pre_adj_y, end_adj_y;
                         children[field]->pre_place(  cell.width , pre_adj_x ); 
                         children[field]->pre_place(  cell.height, pre_adj_y ); 
-                if(gap) {           gap->pre_place(  cell.width , pre_adj_x ); 
-                                    gap->pre_place(  cell.height, pre_adj_y );      }
+                //if(gap) {           gap->pre_place(  cell.width , pre_adj_x ); 
+                //                    gap->pre_place(  cell.height, pre_adj_y );      }
 
                         children[field]->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
                         children[field]->end_place(  cell.height, pre_adj_y, end_adj_y  ); 
-                if(gap) {           gap->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
-                                    gap->end_place(  cell.height, pre_adj_y, end_adj_y  ); }
+                //if(gap) {           gap->end_place(  cell.width , pre_adj_x, end_adj_x  ); 
+                //                    gap->end_place(  cell.height, pre_adj_y, end_adj_y  ); }
 			    rectangle child_area (cell);
                 child_area.width = children[field]->weigth(   cell.width  ,pre_adj_x, end_adj_x  )   ;
                 child_area.height= children[field]->weigth(   cell.height ,pre_adj_y, end_adj_y  )   ;
@@ -1293,7 +1293,73 @@ namespace vplace_impl
 			    case token::horizontal:
 			    case token::vertical:    	div_type = tk;		   		        break;
 			    case token::grid:			div_type = tk;
-                         gr_name=field_names_in_div.back();                     break;
+                         gr_name=field_names_in_div.back();  /// \todo Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
+				            switch (tknizer.read())
+				            {
+				                case token::number:
+					                array.push_back(tknizer.number());
+					                array.push_back(tknizer.number());
+					                break;
+				                case token::array:
+					                tknizer.array().swap(array);
+					                break;
+				                case token::reparray:
+					                array.push_back(tknizer.reparray().at(0));
+					                array.push_back(tknizer.reparray().at(1));
+					                break;
+                                default:
+                                    break;
+				            }
+                         
+                         break;
+			    case token::collapse:
+				    if (tknizer.parameters().size() == 4)
+				    {
+					    auto get_number = [](const number_t & arg, const std::string& nth)
+					    {
+						    if (arg.kind_of() == number_t::kind::integer)
+							    return arg.integer();
+						    else if (arg.kind_of() == number_t::kind::real)
+							    return static_cast<int>(arg.real());
+
+						    throw std::runtime_error("place: the type of the "+ nth +" parameter for collapse should be integer.");
+					    };
+
+					    ::nana::rectangle col;
+					    auto arg = tknizer.parameters().at(0);
+					    col.x = get_number(arg, "1st");
+
+					    arg = tknizer.parameters().at(1);
+					    col.y = get_number(arg, "2nd");
+
+					    arg = tknizer.parameters().at(2);
+					    col.width = static_cast<decltype(col.width)>(get_number(arg, "3rd"));
+
+					    arg = tknizer.parameters().at(3);
+					    col.height = static_cast<decltype(col.height)>(get_number(arg, "4th"));
+
+					    //Check the collapse area.
+					    //Ignore this collapse if its area is less than 2(col.width * col.height < 2)
+					    if (!col.empty() && (col.width > 1 || col.height > 1) && (col.x >= 0 && col.y >= 0))
+					    {
+						    //Overwrite if a exist_col in collapses has same position as the col.
+						    bool use_col = true;
+						    for (auto & exist_col : collapses)
+						    {
+							    if (exist_col.x == col.x && exist_col.y == col.y)
+							    {
+								    exist_col = col;
+								    use_col = false;
+								    break;
+							    }
+						    }
+						    if (use_col)
+							    collapses.emplace_back(col);
+					    }
+				    }
+				    else
+					    throw std::runtime_error("place: collapse requires 4 parameters.");
+				    break;
 
 			    case token::weight:	weight = tknizer.number();have_weight=true; break;
 			    //case token::gap:	   gap = tknizer.number();have_gap=true;    break;
@@ -1345,11 +1411,11 @@ namespace vplace_impl
 		{
 			if(array.size())
 			{
-				if(array[0].kind_of() != number_t::kind::percent)
+				if(array[0].kind_of() != number_t::kind::percent) /// why not % ?
 					columns = array[0].integer();
                 if(array.size() > 1)
 			    {
-				    if(array[1].kind_of() != number_t::kind::percent)
+				    if(array[1].kind_of() != number_t::kind::percent) /// why not % ?
 					    rows = array[1].integer();
 			    }
 			}
@@ -1408,6 +1474,10 @@ namespace vplace_impl
             splitter->parent = pdiv;
         }
         pdiv->arrange_.swap(arrange_);
+        if (div_type == token::grid)
+		{
+            static_cast<div_grid*>( pdiv )-> collapses_.swap(collapses);
+        }
         if (  margin.size() )
         {
             std::unique_ptr<division> vd, td,hd,ld,cd,rd,bd; 
