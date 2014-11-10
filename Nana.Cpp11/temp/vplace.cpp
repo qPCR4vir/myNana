@@ -163,6 +163,8 @@ namespace vplace_impl
 	};//end class number_t
 	class repeated_array
 	{
+		bool repeated_ = false;
+		std::vector<number_t> values_;
 	public:
 		repeated_array()		{}
 
@@ -199,9 +201,6 @@ namespace vplace_impl
 
 			return values_[pos];
 		}
-	private:
-		bool repeated_ = false;
-		std::vector<number_t> values_;
 	};
 
     typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
@@ -396,8 +395,10 @@ namespace vplace_impl
         using Children = std::vector< adjustable*>;
 		Children                  children;        ///< contain the fiels with are directly collocated
         std::vector <std::string> field_names;     ///< names used to find the fields in the global multimap of place fields to built the children
-		std::vector<window>       fastened_in_div;   
-		std::unique_ptr< adjustable>   gap;       ///< betwen fields
+		std::vector<window>       fastened_in_div;  
+        repeated_array            gap;
+		std::vector<std::unique_ptr< adjustable>>   gaps;       ///< betwen fields
+
         Splitter                  *splitter{nullptr}; ///< this division have an splitter?
         std::unordered_map<std::string, repeated_array> arrange_;
 	  public:
@@ -726,11 +727,13 @@ namespace vplace_impl
 
 		tokenizer(const char* p)	: div_str(p), divstr_(div_str.c_str() ), sp_(div_str.c_str())	{}
 
-		const std::string& idstr() const	{	return idstr_;		}
-		number_t           number() const	{	return number_;		}
-		std::vector<number_t>& array()		{	return array_;		}
-		repeated_array& reparray()		    {	return reparray_;		}
-		token read()
+		const std::string&      idstr () const	{	return idstr_;		}
+		number_t                number() const	{	return number_;		}
+		std::vector<number_t>&  array ()		{	return array_;		}
+		repeated_array&         reparray()		{	return reparray_;	}
+		std::vector<number_t>&  parameters()    {	return parameters_;	}
+
+        token read()
 		{
 			sp_ = _m_eat_whitespace(sp_);
 
@@ -1029,13 +1032,24 @@ namespace vplace_impl
     void division::populate_children(	implement*   place_impl_)
     {   fastened_in_div.clear ();  /// the vector of direct windows (not resized) is (re)built to.
         children.clear ();             /// .clear(); the children or it is empty allways ????
+        gaps.clear();
         for (const auto &name : field_names)      /// for all the names in this div
         {                               /// find in the place global list of fields all the fields attached to it
-            auto r= place_impl_->find(name);     
+            auto r= place_impl_->find(name);
+            int gap_index{0};
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
-                if (gap && fi!=r.first)         /// add posible gaps betwen fields,
-                    children.push_back (gap.get() );
+                if (!gap.empty() && fi!=r.first)         /// add posible gaps betwen fields,
+                {                    
+                    auto &gp=gap.at(gap_index++);
+                    if (gp.kind_of() == number_t::kind::percent && gp.real () > 0 )
+                        gaps.emplace_back (new Field<percent,Gap> (gp.real ()) );
+		            else 
+                        if (gp.integer()) gaps.emplace_back (new Field<fixed,Gap>(unsigned(gp.integer())) );
+                        else              gaps.emplace_back (new Field<adjustable,Gap>  () );
+
+                    children.push_back (gaps.back().get() );
+                }
                 auto field=fi->second.get (); 
                 children.push_back (field );       /// add the finded field to form the div children
                 field->populate_children (place_impl_); /// and let the child field to populate recursively his own children
@@ -1201,9 +1215,9 @@ namespace vplace_impl
 		typedef tokenizer::token token;
 
 		token       div_type = token::eof;
-		number_t    weight , gap;
+		number_t    weight;  // , gap;
         bool        have_gap{false}, have_weight{false}, margin_for_all{true};
-		repeated_array arrange;//, gap;
+		repeated_array arrange , gap;
 
         minmax      w; 
         std::string gr_name;
@@ -1233,6 +1247,7 @@ namespace vplace_impl
                             splitter = spl.get();
                                     //std::cout<< "\n Add Splitter:" ;
                             field_names_in_div.push_back(registre( std::move(spl) ));
+                            /// we can move spl because splitter is only used as a bool, and not dereferenced
                        }
                     }                                                           break;
 			    case token::array:		    tknizer.array().swap(array);   		break;
@@ -1252,18 +1267,19 @@ namespace vplace_impl
                          gr_name=field_names_in_div.back();                     break;
 
 			    case token::weight:	weight = tknizer.number();have_weight=true; break;
-			    case token::gap:	   gap = tknizer.number();have_gap=true;    break;
+			    //case token::gap:	   gap = tknizer.number();have_gap=true;    break;
+			    case token::gap:	    gap = tknizer.reparray();have_gap=true; break;   // ???????
 			    case token::min:		    
                     {
                         if(tknizer.number().kind_of() != number_t::kind::percent   )
 					        w.min = tknizer.number().integer();                                
-                         /*else trow no min percent possible */                 break;
+                         /*else throw no min percent possible ??? */             break;
                     }
 			    case token::max:		    
                     {
                         if(tknizer.number().kind_of() != number_t::kind::percent   )
 					        w.max = tknizer.number().integer();                                
-                         /*else trow no max percent possible */                 break;
+                         /*else throw no max percent possible ??? */             break;
                     }
 			    case token::margin:
                     {
@@ -1342,14 +1358,8 @@ namespace vplace_impl
         }
         auto pdiv=dynamic_cast<division*>(div.get());
         assert(pdiv);
-        if (have_gap)
-        {
-            if (gap.kind_of() == number_t::kind::percent && gap.real () > 0 )
-                pdiv->gap.reset (new Field<percent,Gap> (gap.real ()) );
-		    else 
-                if (gap.integer())          pdiv->gap.reset (new Field<fixed,Gap>(unsigned(gap.integer())) );
-                else                        pdiv->gap.reset (new Field<adjustable,Gap>  () );
-        }
+
+        if (have_gap)        {           pdiv->gap=gap;        }
 		pdiv->field_names.swap(field_names_in_div);
         if (splitter)
         {
