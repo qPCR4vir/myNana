@@ -353,11 +353,11 @@ namespace vplace_impl
 	{
 	  public:
         using Children = std::vector< adjustable*>;
-		Children                  children;    
-        std::vector <std::string> field_names;
+		Children                  children;        ///< contain the fiels with are directly collocated
+        std::vector <std::string> field_names;     ///< names used to find the fields in the global multimap of place fields to built the children
 		std::vector<window>       fastened_in_div;   
-		std::unique_ptr< adjustable>   gap;         
-        Splitter                  *splitter{nullptr};
+		std::unique_ptr< adjustable>   gap;       ///< betwen fields
+        Splitter                  *splitter{nullptr}; ///< this division have an splitter?
 	  public:
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
@@ -947,11 +947,12 @@ namespace vplace_impl
 		std::unique_ptr<adjustable>     root_division;
         std::unordered_set<std::string> names;          ///<  All the names defines. Garant no repited name.
         unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
-        bool                            recollocate{ true };
+        bool                            recollocate{ false }; /// we need to rebuilt the children of each division??
 
-                        /// All the fields defined by user with field(name)<<IField, plus the div. find from the layot in div()
 		//std::multimap<std::string,std::unique_ptr< adjustable>> fields;    
 		std::multimap<std::string,    window                 >  fastened;
+
+        ///  labels automaticaly created "on the fly" by field(name)<<"myLabel";
         std::vector<nana::label*>                               labels;                                 
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
@@ -979,9 +980,11 @@ namespace vplace_impl
         {
             //std::cout << "\nRegistering: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
             fields_.emplace(name,std::move(adj));
+            recollocate = true;
         }
 
     private:
+        /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
         std::multimap<std::string,std::unique_ptr< adjustable>> fields_;    
         std::string   add_div_name_  ()  
         {
@@ -991,6 +994,7 @@ namespace vplace_impl
         }
 
     public:
+        /// return all the fields associated whit this name (a par of iterators)
         auto find(std::string name)-> decltype(fields_.equal_range(name))
         {
             return fields_.equal_range(name);
@@ -1019,26 +1023,27 @@ namespace vplace_impl
 
 
 
-
+    /// \brief Completely (re)built the division, constructing the children (vector of adjustable fields) 
+    /// only from the (vector) field names in division and the place global multimap name/field
     void division::populate_children(	implement*   place_impl_)
-    {   fastened_in_div.clear ();
+    {   fastened_in_div.clear ();  /// the vector of direct windows (not resized) is (re)built to.
         children.clear ();             /// .clear(); the children or it is empty allways ????
         for (const auto &name : field_names)      /// for all the names in this div
         {                             /// find in the place global list of fields all the fields attached to it
             auto r= place_impl_->find(name);     
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
-                auto fld=fi->second.get ();
-                children.push_back (fld );       /// to form the div children
-                fld->populate_children (place_impl_);
-                if (gap) 
+                if (gap && fi!=r.first)         /// add posible gaps betwen fields,
                     children.push_back (gap.get() );
+                auto field=fi->second.get (); 
+                children.push_back (field );       /// add the finded field to form the div children
+                field->populate_children (place_impl_); /// and let the child field to populate recursively his own children
             }
             auto f= place_impl_->fastened.equal_range(name);
             for (auto fi=f.first ; fi != f.second ; ++fi)
                 fastened_in_div.push_back (fi->second );
         }
-        split();
+        split(); /// check if this division have an split and implement it
     }  
 
     void implement::collocate()
@@ -1051,7 +1056,7 @@ namespace vplace_impl
                 //auto re=recollocate;
                if (recollocate) 
                    root_division->populate_children (this);
-                   root_division->collocate(r/*=API::window_size(this->parent_window_handle)*/);
+               root_division->collocate(r);  /* r=API::window_size(this->parent_window_handle)*/
                //if (re)       
                //{    
                //    API::lazy_refresh();
