@@ -46,6 +46,70 @@ namespace vplace_impl
 				public splitter_interface
 		{	};
 	}//end namespace place_parts
+    class number_t
+	{	//number_t is used to store a number type variable
+	    //such as integer, real and percent. Essentially, percent is a typo of real.
+	public:
+		enum class kind{/*empty, */ none, integer, real, percent};
+		number_t() 			: kind_(kind::integer)		{	value_.integer = 0;		}
+
+		void reset()			{	kind_ = kind::none;		value_.integer = 0;		}
+		bool is_negative() const
+			{
+				switch (kind_)
+				{
+				case kind::integer:
+					return (value_.integer < 0);
+				case kind::real:
+				case kind::percent:
+					return (value_.real < 0);
+				default:
+					break;
+				}
+				return false;
+			}
+		bool is_none() const
+			{
+				return (kind::none == kind_);
+			}
+		bool is_not_none() const	{	return (kind::none != kind_);		}
+		kind kind_of() const		{			return kind_;		}
+		double get_value(int ref_percent) const
+			{
+				switch (kind_)
+				{
+				case kind::integer:
+					return value_.integer;
+				case kind::real:
+					return value_.real;
+				case kind::percent:
+					return value_.real * ref_percent;
+				default:
+					break;
+				}
+				return 0;
+			}
+		int integer() const
+		{
+           //        if( kind::empty  == kind_ )				//return 0;
+            if(kind::integer == kind_ )				return value_.integer;
+			return static_cast<int>(value_.real);
+		}
+		double real() const
+		{
+            //        if( kind::empty  == kind_ )				//return 0;
+			if(kind::integer == kind_  )				return value_.integer;
+			return value_.real;
+		}
+		void assign      (int i)      { kind_ = kind::integer;  value_.integer = i; }
+		void assign    (double d)     { kind_ = kind::real; 	value_.real    = d; }
+		void assign_percent(double d) { kind_ = kind::percent; value_.real = d / 100; }
+        void clear(){*this = number_t(); 	}
+    private:
+		kind kind_;
+		union valueset 	{ int integer; double real; }value_;
+	};//end class number_t
+
 
     typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
     typedef vplace::field_t field_t;
@@ -544,35 +608,48 @@ namespace vplace_impl
 
             return splitter ;
         }
-    class number_t
-	{	//number_t is used to store a number type variable
-	    //such as integer, real and percent. Essentially, percent is a typo of real.
+	class repeated_array
+	{
 	public:
-		enum class kind{/*empty, */integer, real, percent};
-		number_t() 			: kind_(kind::integer)		{	value_.integer = 0;		}
+		repeated_array()		{}
 
-		kind kind_of() const		{			return kind_;		}
+		repeated_array(repeated_array&& rhs)
+			: repeated_(rhs.repeated_),			values_(std::move(rhs.values_))		{		}
 
-		int integer() const
+		repeated_array& operator=(const repeated_array& rhs)
 		{
-           //        if( kind::empty  == kind_ )				//return 0;
-            if(kind::integer == kind_ )				return value_.integer;
-			return static_cast<int>(value_.real);
+            if(this != &rhs)
+            {
+                repeated_ = rhs.repeated_;
+                values_ = rhs.values_;
 		}
-		double real() const
+            return *this;
+		}
+		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
+		bool empty() const		{			return values_.empty();		}
+		void reset()
 		{
-            //        if( kind::empty  == kind_ )				//return 0;
-			if(kind::integer == kind_  )				return value_.integer;
-			return value_.real;
+			repeated_ = false;
+			values_.clear();
 		}
-		void assign      (int i)      { kind_ = kind::integer;  value_.integer = i; }
-		void assign    (double d)     { kind_ = kind::real; 	value_.real    = d; }
-		void assign_percent(double d) { kind_ = kind::percent; value_.real = d / 100; }
-        void clear(){*this = number_t(); 	}
+		void repeated()		{			repeated_ = true;		}
+		void push(const number_t& n)		{			values_.emplace_back(n);		}
+        number_t at(std::size_t pos) const
+		{
+			if (values_.empty())
+				return{};
+
+			if (repeated_)
+				pos %= values_.size();
+			else if (pos >= values_.size())
+				return{};
+
+			return values_[pos];
+		}
     private:
-		kind kind_;
-		union valueset 	{ int integer; double real; }value_;
-	};//end class number_t
+		bool repeated_ = false;
+		std::vector<number_t> values_;
+	};
 
 	class tokenizer
 	{
