@@ -1290,6 +1290,15 @@ namespace vplace_impl
                                                                     break;
 				            case token::array:
 					            tknizer.array().swap(margin);       break;
+				            case token::reparray:
+					            for (std::size_t i = 0; i < 4; ++i)
+					            {
+						            auto n = tknizer.reparray().at(i);
+						            if (n.is_none()) n.assign(0);
+						            margin.emplace_back(n);
+					            }
+					            break;
+
 				            default:					            break;
 				        }
                     }				                                             break;
