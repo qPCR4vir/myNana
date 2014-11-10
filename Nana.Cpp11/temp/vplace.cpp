@@ -705,12 +705,20 @@ namespace vplace_impl
 
 	class tokenizer
 	{
+        std::string     div_str;   // for the future. kip a copy of the layout
+		const char*     divstr_;
+		const char*     sp_;
+		std::string     idstr_;
+		number_t        number_;
+		std::vector<number_t> array_;
+        repeated_array		  reparray_;
+		std::vector<number_t> parameters_;
 	public:
 		enum class token
 		{
 			div_start, div_end, splitter,
-			identifier, vertical, horizontal, grid, number, array,
-			weight, gap, min, max, margin,
+			identifier, vertical, horizontal, grid, number, array, reparray,
+			weight, gap, min, max, margin, arrange, variable, repeated, collapse, parameters,
 			equal,
 			eof, error
 		};
@@ -720,6 +728,7 @@ namespace vplace_impl
 		const std::string& idstr() const		{			return idstr_;		}
 		number_t           number() const		{			return number_;		}
 		std::vector<number_t>& array()		{			return array_;		}
+		repeated_array& reparray()		    {	return reparray_;		}
 		token read()
 		{
 			sp_ = _m_eat_whitespace(sp_);
@@ -729,35 +738,60 @@ namespace vplace_impl
 			{
 			case '\0':				                    return token::eof;
 			case '=':		        ++sp_;				return token::equal;
-			case '|':	
-                ++sp_;	
+			case '|':	            ++sp_;	
 					readbytes = _m_number(sp_, false);
-					sp_ += readbytes; 
-                
-                return token::splitter;
+					    sp_ += readbytes;               return token::splitter;
 
 			case '<':				++sp_;				return token::div_start;
 			case '>':				++sp_;				return token::div_end;
-			case '[':
+			case '[':{
 				array_.clear();
 				sp_ = _m_eat_whitespace(sp_ + 1);
 				if(*sp_ == ']')		{	++sp_;		return token::array;	}
 
+				bool repeated = false;    //When search the repeated.
+
 				while(true)
 				{
 					sp_ = _m_eat_whitespace(sp_);
-					if(token::number != read())
+					auto tk = read();
+					if (token::number != tk && token::variable != tk && token::repeated != tk)
 						_m_throw_error("invalid array element");
-
-					array_.push_back(number_);
-
+					if (!repeated)
+					{
+						switch (tk)
+						{
+						case token::number:	  array_.push_back(number_);			break;
+						case token::variable: array_.push_back({});					break;
+						default:
+							repeated = true;
+							reparray_.repeated();
+							reparray_.assign(std::move(array_));
+						}
+					}
 					sp_ = _m_eat_whitespace(sp_);
 					char ch = *sp_++;
 
-					if(ch == ']')						break;
+					if(ch == ']')			return (repeated ? token::reparray : token::array);
 					if(ch != ',')						_m_throw_error("invalid array");
+				}}
+				break;
+			case '(':
+				parameters_.clear();
+				sp_ = _m_eat_whitespace(sp_ + 1);
+				if (*sp_ == ')')	{			++sp_;			return token::parameters;	}
+
+				while (true)
+				{
+					if (token::number == read())		parameters_.push_back(number_);
+					else						        _m_throw_error("invalid parameter.");
+
+					sp_ = _m_eat_whitespace(sp_);
+					char ch = *sp_++;
+					if (ch == ')')						return token::parameters;
+					if (ch != ',')						_m_throw_error("invalid parameter.");
 				}
-				return token::array;
+				break;
 			case '.': case '-':
 				if(*sp_ == '-')
 				{
@@ -790,18 +824,24 @@ namespace vplace_impl
 				else if(idstr_ == "gap")   {_m_attr_number_value();	return token::gap;   }
 				else if(idstr_ == "min")   {_m_attr_number_value(); return token::min;   }
 				else if(idstr_ == "max")   {_m_attr_number_value();	return token::max;   }
-				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
+				else if(idstr_ == "vertical" || idstr_  == "vert") 	return token::vertical;
 				else if(idstr_ == "horizontal") 		   	 	 	return token::horizontal;
+				else if(idstr_ == "variable")                       return token::variable;
+				else if(idstr_ == "arrange")                        return token::arrange;
+				else if(idstr_ == "repeated")                       return token::repeated;
 				else if(idstr_ == "grid")  { if (token::equal != read())
 					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");  
                                                                     return token::grid;    }
 				else if(idstr_ == "margin"){ if (token::equal != read())
 					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");
                                                                     return token::margin;    }
+				else if(idstr_ =="collapse"){if (token::parameters != read())
+					_m_throw_error("a parameter list is required after 'collapse'");
+					                                                return token::collapse;}
                         				                            return token::identifier;
 			}
-
-			return token::error;
+			_m_throw_error(std::string ("an invalid character '") + *sp_ + "'");
+			return token::error;	//Useless, just for syntax correction.
 		}
 	private:
 		void _m_throw_error(char err_char)
@@ -846,8 +886,7 @@ namespace vplace_impl
 
 		const char* _m_eat_whitespace(const char* sp)
 		{
-			while (*sp && !isgraph(*sp))
-				++sp;
+			while (*sp && !isgraph(*sp))	++sp;
 			return sp;
 		}
 
@@ -898,12 +937,6 @@ namespace vplace_impl
 			return 0;
 		}
 	private:
-        std::string div_str;   // for the future. kip a copy of the layout
-		const char* divstr_;
-		const char* sp_;
-		std::string idstr_;
-		number_t number_;
-		std::vector<number_t> array_;
 	};	//end class tokenizer
 
     struct implement           //struct implement
