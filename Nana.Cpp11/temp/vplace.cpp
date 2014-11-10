@@ -429,7 +429,7 @@ namespace vplace_impl
 	{
 	  public:
         //using division::division;
-        div_grid(const std::string& name_, size dim_):name(name_), rows(dim_.height), columns(dim_.width ){};
+        div_grid(const std::string& name_, size dim_)                     :name(name_), rows(dim_.height), columns(dim_.width ){};
         div_grid(const std::string& name_, unsigned rows_, unsigned columns_):name(name_), rows(rows_), columns(columns_){};
 
         Splitter* create_splitter()override{return nullptr;}// temp
@@ -674,7 +674,7 @@ namespace vplace_impl
             {
                 repeated_ = rhs.repeated_;
                 values_ = rhs.values_;
-		}
+            }
             return *this;
 		}
 		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
@@ -698,7 +698,7 @@ namespace vplace_impl
 
 			return values_[pos];
 		}
-    private:
+	private:
 		bool repeated_ = false;
 		std::vector<number_t> values_;
 	};
@@ -725,9 +725,9 @@ namespace vplace_impl
 
 		tokenizer(const char* p)	: div_str(p), divstr_(div_str.c_str() ), sp_(div_str.c_str())	{}
 
-		const std::string& idstr() const		{			return idstr_;		}
-		number_t           number() const		{			return number_;		}
-		std::vector<number_t>& array()		{			return array_;		}
+		const std::string& idstr() const	{	return idstr_;		}
+		number_t           number() const	{	return number_;		}
+		std::vector<number_t>& array()		{	return array_;		}
 		repeated_array& reparray()		    {	return reparray_;		}
 		token read()
 		{
@@ -739,7 +739,7 @@ namespace vplace_impl
 			case '\0':				                    return token::eof;
 			case '=':		        ++sp_;				return token::equal;
 			case '|':	            ++sp_;	
-					readbytes = _m_number(sp_, false);
+					    readbytes = _m_number(sp_, false);
 					    sp_ += readbytes;               return token::splitter;
 
 			case '<':				++sp_;				return token::div_start;
@@ -747,7 +747,7 @@ namespace vplace_impl
 			case '[':{
 				array_.clear();
 				sp_ = _m_eat_whitespace(sp_ + 1);
-				if(*sp_ == ']')		{	++sp_;		return token::array;	}
+				if(*sp_ == ']')	{	++sp_;		        return token::array;	}
 
 				bool repeated = false;    //When search the repeated.
 
@@ -773,7 +773,7 @@ namespace vplace_impl
 					char ch = *sp_++;
 
 					if(ch == ']')			return (repeated ? token::reparray : token::array);
-					if(ch != ',')						_m_throw_error("invalid array");
+					if(ch != ',')			_m_throw_error("invalid array");
 				}}
 				break;
 			case '(':
@@ -834,7 +834,7 @@ namespace vplace_impl
                                                                     return token::grid;    }
 				else if(idstr_ == "margin"){ if (token::equal != read())
 					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");
-                                                                    return token::margin;    }
+                                                                    return token::margin;  }
 				else if(idstr_ =="collapse"){if (token::parameters != read())
 					_m_throw_error("a parameter list is required after 'collapse'");
 					                                                return token::collapse;}
@@ -950,10 +950,10 @@ namespace vplace_impl
         bool                            recollocate{ false }; /// we need to rebuilt the children of each division??
 
 		//std::multimap<std::string,std::unique_ptr< adjustable>> fields;    
-		std::multimap<std::string,    window                 >  fastened;
+		std::multimap<std::string,    window    >  fastened;
 
         ///  labels automaticaly created "on the fly" by field(name)<<"myLabel";
-        std::vector<nana::label*>                               labels;                                 
+        std::vector<nana::label*>   labels;                                 
 			
        ~implement() 	{ API::umake_event(event_size_handle);	    }
 
@@ -1029,7 +1029,7 @@ namespace vplace_impl
     {   fastened_in_div.clear ();  /// the vector of direct windows (not resized) is (re)built to.
         children.clear ();             /// .clear(); the children or it is empty allways ????
         for (const auto &name : field_names)      /// for all the names in this div
-        {                             /// find in the place global list of fields all the fields attached to it
+        {                               /// find in the place global list of fields all the fields attached to it
             auto r= place_impl_->find(name);     
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
@@ -1053,16 +1053,16 @@ namespace vplace_impl
 			rectangle r(API::window_size(this->parent_window_handle));  //debugg
             if(r.width && r.height ) 
             {      
-                //auto re=recollocate;
+                    //auto re=recollocate;
                if (recollocate) 
                    root_division->populate_children (this);
                root_division->collocate(r);  /* r=API::window_size(this->parent_window_handle)*/
-               //if (re)       
-               //{    
-               //    API::lazy_refresh();
-               //    API::refresh_window_tree(parent_window_handle);
-               //    API::update_window(parent_window_handle);
-               //}
+                   //if (re)       
+                   //{    
+                   //    API::lazy_refresh();
+                   //    API::refresh_window_tree(parent_window_handle);
+                   //    API::update_window(parent_window_handle);
+                   //}
                recollocate = false;
 
             }
@@ -1202,10 +1202,13 @@ namespace vplace_impl
 		token       div_type = token::eof;
 		number_t    weight , gap;
         bool        have_gap{false}, have_weight{false}, margin_for_all{true};
+		repeated_array arrange;//, gap;
+
         minmax      w; 
         std::string gr_name;
         Splitter    *splitter {nullptr};
 
+		std::vector<rectangle> collapses;
  
         std::vector<number_t>    array, margin;
 		std::vector<std::string> field_names_in_div;
@@ -1215,20 +1218,8 @@ namespace vplace_impl
 			switch(tk)
 			{
 			    case token::div_start:	    
-                    {
-
-                                    //std::cout<< "\nAdd div:";
                        field_names_in_div.push_back(registre(scan_div(tknizer)));	
                                                                   			    break;             
-                    }
-			    case token::array:		    tknizer.array().swap(array);   		break;
-			    case token::identifier:		
-                    {
-                        std::string field_name(tknizer.idstr());
-                        if (add_field_name (field_name))
-                           field_names_in_div.push_back(field_name );			    
-                        else ;     /* trow repeated name in layout !!!!!!! */   break;	     
-                    }
                 case token::splitter:       
                     {       // Use only the first splitter. with some fields at the left??
                        if ( ! splitter  ) // && (  field_names_in_div.size())
@@ -1243,6 +1234,14 @@ namespace vplace_impl
                             field_names_in_div.push_back(registre( std::move(spl) ));
                        }
                     }                                                           break;
+			    case token::array:		    tknizer.array().swap(array);   		break;
+			    case token::identifier:		
+                    {
+                        std::string field_name(tknizer.idstr());
+                        if (add_field_name (field_name))
+                           field_names_in_div.push_back(field_name );			    
+                        else ;     /* trow repeated name in layout !!!!!!! */   break;	     
+                    }
 			    case token::horizontal:
 			    case token::vertical:    	div_type = tk;		   		        break;
 			    case token::grid:			div_type = tk;
