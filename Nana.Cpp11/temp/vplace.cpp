@@ -161,7 +161,48 @@ namespace vplace_impl
 		kind kind_;
 		union valueset 	{ int integer; double real; }value_;
 	};//end class number_t
+	class repeated_array
+	{
+	public:
+		repeated_array()		{}
 
+		repeated_array(repeated_array&& rhs)
+			: repeated_(rhs.repeated_),			values_(std::move(rhs.values_))		{		}
+
+		repeated_array& operator=(const repeated_array& rhs)
+		{
+            if(this != &rhs)
+            {
+                repeated_ = rhs.repeated_;
+                values_ = rhs.values_;
+            }
+            return *this;
+		}
+		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
+		bool empty() const		{			return values_.empty();		}
+		void reset()
+		{
+			repeated_ = false;
+			values_.clear();
+		}
+		void repeated()		{			repeated_ = true;		}
+		void push(const number_t& n)		{			values_.emplace_back(n);		}
+        number_t at(std::size_t pos) const
+		{
+			if (values_.empty())
+				return{};
+
+			if (repeated_)
+				pos %= values_.size();
+			else if (pos >= values_.size())
+				return{};
+
+			return values_[pos];
+		}
+	private:
+		bool repeated_ = false;
+		std::vector<number_t> values_;
+	};
 
     typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
     typedef vplace::field_t field_t;
@@ -660,48 +701,6 @@ namespace vplace_impl
 
             return splitter ;
         }
-	class repeated_array
-	{
-	public:
-		repeated_array()		{}
-
-		repeated_array(repeated_array&& rhs)
-			: repeated_(rhs.repeated_),			values_(std::move(rhs.values_))		{		}
-
-		repeated_array& operator=(const repeated_array& rhs)
-		{
-            if(this != &rhs)
-            {
-                repeated_ = rhs.repeated_;
-                values_ = rhs.values_;
-            }
-            return *this;
-		}
-		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
-		bool empty() const		{			return values_.empty();		}
-		void reset()
-		{
-			repeated_ = false;
-			values_.clear();
-		}
-		void repeated()		{			repeated_ = true;		}
-		void push(const number_t& n)		{			values_.emplace_back(n);		}
-        number_t at(std::size_t pos) const
-		{
-			if (values_.empty())
-				return{};
-
-			if (repeated_)
-				pos %= values_.size();
-			else if (pos >= values_.size())
-				return{};
-
-			return values_[pos];
-		}
-	private:
-		bool repeated_ = false;
-		std::vector<number_t> values_;
-	};
 
 	class tokenizer
 	{
