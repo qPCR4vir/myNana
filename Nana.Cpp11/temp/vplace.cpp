@@ -14,6 +14,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <cassert>
+#include <memory>
 	
 #include <map>
 #include <vector>
@@ -45,6 +46,57 @@ namespace vplace_impl
 			:	public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
 				public splitter_interface
 		{	};
+        
+        struct Number;
+        using  num=std::unique_ptr<Number>;
+        //struct Integer ; 
+        //struct Real ; 
+        //struct Percent; 
+        struct Number
+        {enum class Kind{ none, integer, real, percent};
+		 virtual bool is_negative() const { return false; }
+		 virtual bool is_none()     const { return true;  }
+		         bool is_not_none() const {	return  !is_none()   ;	}
+		 virtual Kind kind_of()     const {	return Kind::none;		}
+		 virtual int integer()      const { return 0; }
+		 virtual double real()      const { return 0; }
+		 virtual double get_value(int ref_percent=1) const{ return real();}
+         virtual ~Number(){}
+
+         static num reset           (    ) ;// we need this?
+         static num assign          (int    i); // we need this?
+         static num assign          (double d);
+         static num assign_percent  (double d);
+         static num clear()     {  return reset(); }
+        };
+        struct Integer : Number
+        {int value_{};
+         Integer(int i):value_{i}{}
+		 bool is_negative() const override { return value_<0; }
+		 bool is_none()     const override { return false;    }
+		 Kind kind_of()     const override { return Kind::integer;}
+		 int integer()      const override { return value_; }
+		 double real()      const override { return static_cast<double>(value_); }
+        };
+        struct Real : Number
+        {double value_{};
+         Real(double d):value_{d}{}
+		 bool is_negative() const override { return value_<0; }
+		 bool is_none()     const override { return false;    }
+		 Kind kind_of()     const override { return Kind::real;}
+		 int integer()      const override { return static_cast<int>(value_); }
+		 double real()      const override { return value_; }
+        };
+        struct Percent : Real
+        { 
+         Percent(double d):Real{d}{}
+		 Kind kind_of()     const override {	return Kind::percent;}
+		 double get_value(int ref_percent=1) const override{ return  real()*ref_percent;}
+        };
+        num Number::reset         (        ) { return num{new Number    };	}  
+        num Number::assign        (int    i) { return num{new Integer(i)};	}  
+        num Number::assign        (double d) { return num{new Real   (d)};	}  
+        num Number::assign_percent(double d) { return num{new Percent(d)};	} 
 	}//end namespace place_parts
     class number_t
 	{	//number_t is used to store a number type variable
