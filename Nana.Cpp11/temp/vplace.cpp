@@ -1241,7 +1241,10 @@ namespace vplace_impl
                         std::string field_name(tknizer.idstr());
                         if (add_field_name (field_name))
                            field_names_in_div.push_back(field_name );			    
-                        else ;     /* trow repeated name in layout !!!!!!! */   break;	     
+                        else 
+                            throw std::runtime_error("place, the name '" 
+                                            + field_name + "' is redefined.");
+                             /* throw repeated name in layout !!!!!!! */        break;	     
                     }
 			    case token::horizontal:
 			    case token::vertical:    	div_type = tk;		   		        break;
