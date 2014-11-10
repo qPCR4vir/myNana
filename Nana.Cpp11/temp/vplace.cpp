@@ -182,7 +182,7 @@ namespace vplace_impl
 		}
 		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
 		bool empty() const		{			return values_.empty();		}
-        std::size_t size(){return size();}
+        std::size_t size()const{return size();}
 		void reset()
 		{
 			repeated_ = false;
@@ -202,7 +202,7 @@ namespace vplace_impl
 
 			return values_[pos];
 		}
-        bool pass_end(std::size_t pos) 
+        bool pass_end(std::size_t pos) const
         {
             return !repeated_ || pos>=values_.size() ; 
         }
@@ -396,6 +396,10 @@ namespace vplace_impl
 
     class  division : public Ifield
 	{
+        using owned = std::vector<std::unique_ptr< adjustable>> ;
+        bool division::insert_gap (int gap_index);
+        bool division::set_arrange(const repeated_array& arranges, int gap_index, adjustable* field);      ///< betwen fields
+
 	  public:
         using Children = std::vector< adjustable*>;
 		Children                  children;        ///< contain the fiels with are directly collocated
@@ -403,6 +407,7 @@ namespace vplace_impl
 		std::vector<window>       fastened_in_div;  
         repeated_array            gap;
 		std::vector<std::unique_ptr< adjustable>>   gaps;       ///< betwen fields
+		std::vector<std::unique_ptr< adjustable>>   arranges;       ///< betwen fields
 
         Splitter                  *splitter{nullptr}; ///< this division have an splitter?
         std::unordered_map<std::string, repeated_array> arrange_;
@@ -1034,51 +1039,102 @@ namespace vplace_impl
 
     /// \brief Completely (re)built the division, constructing the children (vector of adjustable fields) 
     /// only from the (vector) field names in division and the place global multimap name/field
-    void division::populate_children(	implement*   place_impl_)
-    {   fastened_in_div.clear ();  /// the vector of direct windows (not resized) is (re)built to.
-        children.clear ();             /// .clear(); the children or it is empty allways ????
-        gaps.clear();
-        for (const auto &name : field_names)      /// for all the names in this div
-        {                               /// find in the place global list of fields all the fields attached to it
-            auto r= place_impl_->find(name);
-            int gap_index{0}, arrange_index{0};
-            for (auto fi=r.first ; fi != r.second ; ++fi)      
-            {
-                if (!gap.empty() && fi!=r.first)         /// add posible gaps betwen fields,
-                {                    
-                    auto &gp=gap.at(gap_index);
-                    bool added=false;
-                    switch ( gp.kind_of() )
-                    {
-                        case number_t::kind::percent:
-                            if ( gp.real () > 0 )
-                            {
-                                 gaps.emplace_back (new Field<percent,Gap> (gp.real ()) );
-                                 added=true;
-                            } break;
-                        case number_t::kind::integer:
-                        case number_t::kind::real:
-                            if ( gp.integer () > 0 )
-                            {
-                                 gaps.emplace_back (new Field<fixed,Gap>(unsigned(gp.integer())) );
-                                 added=true;
-                            } break;
-                        case number_t::kind::none:
-                            if ( ! gap.pass_end(gap_index) )
-                            {
-                                 gaps.emplace_back (new Field<adjustable,Gap>  () );
-                                 added=true;
-                            } break;
+    bool division::insert_gap (int gap_index)
+    {
+        if (gap.empty()) return false; 
+        auto &gp=gap.at(gap_index);
+        bool added=false;
+        switch ( gp.kind_of() )
+        {
+            case number_t::kind::percent:
+                if ( gp.real () > 0 )
+                {
+                        gaps.emplace_back (new Field<percent,Gap> (gp.real ()) );
+                        added=true;
+                } break;
+            case number_t::kind::integer:
+            case number_t::kind::real:
+                if ( gp.integer () > 0 )
+                {
+                        gaps.emplace_back (new Field<fixed,Gap>(unsigned(gp.integer())) );
+                        added=true;
+                } break;
+            case number_t::kind::none:
+                if ( ! gap.pass_end(gap_index) )
+                {
+                        gaps.emplace_back (new Field<adjustable,Gap>  () );
+                        added=true;
+                } break;
                         
-                        default:
-                            break;
-                    }
-
-                    if (added) children.push_back (gaps.back().get() );
-                    gap_index++;
+            default:
+                break;
+        }
+        if (added) children.push_back (gaps.back().get() );
+        return added;
+    }
+    bool division::set_arrange(const repeated_array& arrang_array, int arr_index, adjustable* field)       ///< betwen fields
+    {
+        if (arrang_array.empty()) return false; 
+        auto &arr=arrang_array.at(arr_index);
+        div_h* div{};
+        adjustable *adj;
+        switch ( arr.kind_of() )
+        {
+            case number_t::kind::percent:
+                if ( arr.real () > 0 )
+                {
+                    auto fld=new Field<percent,div_h> (arr.real ()) ;
+                    div=fld; adj=fld;
                 }
-                auto field=fi->second.get (); 
-                children.push_back (field );       /// add the finded field to form the div children
+                break;
+            case number_t::kind::integer:
+            case number_t::kind::real:
+                if ( arr.integer () > 0 )
+                {
+                    auto fld=new Field<fixed,div_h>(unsigned(arr.integer())) ;
+                    div=fld; adj=fld;
+                }
+                break;
+            case number_t::kind::none:
+                if ( ! arrang_array.pass_end(arr_index) )
+                {
+                    auto fld=new Field<adjustable,div_h>  () ;
+                    div=fld; adj=fld;
+                }
+                break;
+            default:
+                break;
+        }
+        if (div) 
+        {
+            arranges.emplace_back(adj);
+            children.push_back (adj);
+            div->children.push_back(field);
+        }
+       return div;
+    }
+   void division::populate_children(	implement*   place_impl_)
+    {   fastened_in_div.clear ();               /// the vector of direct windows (not resized) is (re)built to.
+        children.clear ();                      /// .clear(); the children or it is empty allways ????
+        gaps.clear();
+        arranges.clear();
+        int gap_index{0} ;
+        for (const auto &name : field_names)    /// for all the names in this div
+        {                                       /// find in the place global list of fields all the fields attached to it
+            int  arrange_index{0};
+            auto arr_it=arrange_.find(name); 
+            auto r= place_impl_->find(name); 
+            for (auto fi=r.first ; fi != r.second ; ++fi)   /// fi iterator that point to unique_ptr<IField>   
+            {
+                if (fi!=r.first)                /// add posible gaps betwen fields,
+                    if (insert_gap(gap_index))   
+                        gap_index++;
+                auto field=fi->second.get ();      /// a ref to the unique_ptr<IField> 
+                if (arr_it!=arrange_.end() && set_arrange(arr_it->second, gap_index, field))
+                    arrange_index++;
+                else 
+                    children.push_back (field);       /// add the finded field to form the div children
+
                 field->populate_children (place_impl_); /// and let the child field to populate recursively his own children
             }
             auto f= place_impl_->fastened.equal_range(name);
