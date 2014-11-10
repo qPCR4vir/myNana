@@ -1,14 +1,19 @@
 /** \class nana::place
-\brief Layout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
+\brief Generally, an object of class place attachs to a widget, and it automatically positions and resizes widgets which are the children of the attached widget.
 
-A place divids a widget into fields, and then the children widgets are inserted into a specified field for layouting. 
-The field is a basic concept for place. There are 3 differenct types of field, each type describes how widgets are laied out. These types of field are:
+see http://www.nanapro.org/en-us/help/utilities/place.htm
+
+The class place is used for layout management. 
+A place divides the surface of widget into fields, and then the children widgets are inserted into a specified field for layouting. 
+The field is a basic concept for place. There are 4 different types of field, each type describes how widgets are positioned. 
+These types of field are:
 
 Types     | Description
 ----------|----------------------------------------------------------------------
-Horizontal| Widgets are laied out horizontally, such as the buttons in a toolbox.
-Vertical  | Widgets are laied out vertically, such as the items in a menu.
-Grid      | Widgets are laied out like a grid, such as keys on the keyboard.
+Horizontal| Widgets are positioned horizontally, such as the buttons in a toolbox.
+Vertical  | Widgets are positioned vertically, such as the items in a menu.
+Grid      | Widgets are positioned like a grid, such as keys on the keyboard.
+Splitter  | A splitter bar is used for adjusting the size of fields on both sides of it. 
 
 1. The definition of field manipulator:
     \code
