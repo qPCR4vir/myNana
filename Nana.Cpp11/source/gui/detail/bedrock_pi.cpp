@@ -11,7 +11,6 @@
 */
 
 #include <nana/config.hpp>
-
 #include PLATFORM_SPEC_HPP
 #include GUI_BEDROCK_HPP
 #include <nana/gui/detail/event_code.hpp>
@@ -230,6 +229,30 @@ namespace nana
 				throw std::runtime_error("Invalid event code");
 			}
 			return true;
+		}
+
+		void bedrock::_m_except_handler()
+		{
+			std::vector<core_window_t*> v;
+			wd_manager.all_handles(v);
+			if (v.size())
+			{
+				std::vector<native_window_type> roots;
+				native_window_type root = nullptr;
+				unsigned tid = nana::system::this_thread_id();
+				for (auto wd : v)
+				{
+					if ((wd->thread_id == tid) && (wd->root != root))
+					{
+						root = wd->root;
+						if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
+							roots.push_back(root);
+					}
+				}
+
+				for (auto i : roots)
+					interface_type::close_window(i);
+			}
 		}
 	}//end namespace detail
 }//end namespace nana

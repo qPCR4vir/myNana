@@ -442,45 +442,36 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, STR("std::exception have been trow during message pumping: ")) /*.icon(msgbox::icon_information)*/
-                                 <<STR("\n   in windows: ") << API::window_caption(modal_window)
+             (msgbox(modal_window, STR("An uncaptured std::exception during message pumping: ")).icon(msgbox::icon_information)
+                                 <<STR("\n   in form: ") << API::window_caption(modal_window)
                                  <<STR("\n   exception : ") << e.what() 
              ).show();
 
+			 internal_scope_guard lock;
+			 _m_except_handler();
+
+			 intr_locker.forward();
+			 if (0 == --(context->event_pump_ref_count))
+			 {
+				 if ((nullptr == modal_window) || (0 == context->window_count))
+					 remove_thread_context();
+			 }
+			 throw;
         }
 		catch(...)
 		{
-			internal_scope_guard isg;
-
-			std::vector<core_window_t*> v;
-			wd_manager.all_handles(v);
-			if(v.size())
-			{
-				std::vector<native_window_type> roots;
-				native_window_type root = 0;
-				unsigned tid = nana::system::this_thread_id();
-				for(auto wd : v)
-				{
-					if((wd->thread_id == tid) && (wd->root != root))
-					{
-						root = wd->root;
-						if(roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
-							roots.push_back(root);
-					}
-				}
-
-				for(auto i : roots)
-					interface_type::close_window(i);
-			}
+			(msgbox(modal_window, STR("An exception during message pumping!")).icon(msgbox::icon_information)
+				<< STR("An uncaptured non-std exception during message pumping!")
+				).show();
+			internal_scope_guard lock;
+			_m_except_handler();
 
 			intr_locker.forward();
-
 			if(0 == --(context->event_pump_ref_count))
 			{
 				if((nullptr == modal_window) || (0 == context->window_count))
 					remove_thread_context();
 			}
-
 			throw;
 		}
 
