@@ -77,7 +77,7 @@ namespace nana
 		static adjustable*     fixed   (const std::wstring& txt      , unsigned size    );
 		static adjustable*     fixed   (const std::string&  txt      , unsigned size    );
 		static adjustable*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
+        /// Use room (wd,w,h) in combination with a <Table grid=[W,H]>
 		static adjustable*     room    (window wd, unsigned width, unsigned height);/// \todo: Add min and max
 
 	  private:
@@ -102,4 +102,4 @@ namespace nana
 		//element    Fixed   (window wd, unsigned size         );
 		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
 		//element    Room    (window wd, unsigned width, unsigned height);/// \todo: Add min and max
-                                                        /// Use room (wd,w,h) in combination with a <Table grid[W,H]>
+                                                        /// Use room (wd,w,h) in combination with a <Table grid=[W,H]>

@@ -663,7 +663,9 @@ namespace vplace_impl
 				else if(idstr_ == "max")   {_m_attr_number_value();	return token::max;   }
 				else if(idstr_ == "vertical") 		   	 	 	    return token::vertical;
 				else if(idstr_ == "horizontal") 		   	 	 	return token::horizontal;
-				else if(idstr_ == "grid")       					return token::grid;
+				else if(idstr_ == "grid")  { if (token::equal != read())
+					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");  
+                                                                    return token::grid;    }
 				else if(idstr_ == "margin"){ if (token::equal != read())
 					_m_throw_error("an equal sign is required after \'" + idstr_ + "\'");
                                                                     return token::margin;    }
