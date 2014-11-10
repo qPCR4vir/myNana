@@ -399,6 +399,7 @@ namespace vplace_impl
 		std::vector<window>       fastened_in_div;   
 		std::unique_ptr< adjustable>   gap;       ///< betwen fields
         Splitter                  *splitter{nullptr}; ///< this division have an splitter?
+        std::unordered_map<std::string, repeated_array> arrange_;
 	  public:
         virtual int&      weigth_c(rectangle& r )=0;
         virtual unsigned& weigth_s(rectangle& r )=0;
@@ -477,6 +478,7 @@ namespace vplace_impl
 
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
+        std::vector<rectangle> collapses_;
 
         virtual void collocate_field(const rectangle& r) override
 	    {
