@@ -182,13 +182,14 @@ namespace vplace_impl
 		}
 		void assign(std::vector<number_t>&& c)		{	values_ = std::move(c);		}
 		bool empty() const		{			return values_.empty();		}
+        std::size_t size(){return size();}
 		void reset()
 		{
 			repeated_ = false;
 			values_.clear();
 		}
-		void repeated()		{			repeated_ = true;		}
-		void push(const number_t& n)		{			values_.emplace_back(n);		}
+		void repeated()		            {		repeated_ = true;		}
+		void push(const number_t& n)	{		values_.emplace_back(n);}
         number_t at(std::size_t pos) const
 		{
 			if (values_.empty())
@@ -201,6 +202,10 @@ namespace vplace_impl
 
 			return values_[pos];
 		}
+        bool pass_end(std::size_t pos) 
+        {
+            return !repeated_ || pos>=values_.size() ; 
+        }
 	};
 
     typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
@@ -766,7 +771,7 @@ namespace vplace_impl
 						switch (tk)
 						{
 						case token::number:	  array_.push_back(number_);			break;
-						case token::variable: array_.push_back({});					break;
+						case token::variable: array_.push_back({});					break;/// token::variable is translated into number_t::none
 						default:
 							repeated = true;
 							reparray_.repeated();
@@ -1036,19 +1041,41 @@ namespace vplace_impl
         for (const auto &name : field_names)      /// for all the names in this div
         {                               /// find in the place global list of fields all the fields attached to it
             auto r= place_impl_->find(name);
-            int gap_index{0};
+            int gap_index{0}, arrange_index{0};
             for (auto fi=r.first ; fi != r.second ; ++fi)      
             {
                 if (!gap.empty() && fi!=r.first)         /// add posible gaps betwen fields,
                 {                    
-                    auto &gp=gap.at(gap_index++);
-                    if (gp.kind_of() == number_t::kind::percent && gp.real () > 0 )
-                        gaps.emplace_back (new Field<percent,Gap> (gp.real ()) );
-		            else 
-                        if (gp.integer()) gaps.emplace_back (new Field<fixed,Gap>(unsigned(gp.integer())) );
-                        else              gaps.emplace_back (new Field<adjustable,Gap>  () );
+                    auto &gp=gap.at(gap_index);
+                    bool added=false;
+                    switch ( gp.kind_of() )
+                    {
+                        case number_t::kind::percent:
+                            if ( gp.real () > 0 )
+                            {
+                                 gaps.emplace_back (new Field<percent,Gap> (gp.real ()) );
+                                 added=true;
+                            } break;
+                        case number_t::kind::integer:
+                        case number_t::kind::real:
+                            if ( gp.integer () > 0 )
+                            {
+                                 gaps.emplace_back (new Field<fixed,Gap>(unsigned(gp.integer())) );
+                                 added=true;
+                            } break;
+                        case number_t::kind::none:
+                            if ( ! gap.pass_end(gap_index) )
+                            {
+                                 gaps.emplace_back (new Field<adjustable,Gap>  () );
+                                 added=true;
+                            } break;
+                        
+                        default:
+                            break;
+                    }
 
-                    children.push_back (gaps.back().get() );
+                    if (added) children.push_back (gaps.back().get() );
+                    gap_index++;
                 }
                 auto field=fi->second.get (); 
                 children.push_back (field );       /// add the finded field to form the div children
