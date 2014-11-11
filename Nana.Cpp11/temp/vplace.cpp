@@ -398,9 +398,9 @@ namespace vplace_impl
     class  division : public Ifield
 	{
         using owned = std::vector<std::unique_ptr< adjustable>> ;
-        bool division::insert_gap (int gap_index);
         bool division::set_arrange(const repeated_array& arranges, int gap_index, adjustable* field);      ///< betwen fields
-
+      protected:
+        bool division::insert_gap (int gap_index);
 	  public:
         using Children = std::vector< adjustable*>;
 		Children                  children;        ///< contain the fiels with are directly collocated
@@ -503,9 +503,12 @@ namespace vplace_impl
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
         //std::vector<rectangle> collapses_;
-        std::set<rectangle, comp_collapse> collapses_ ;
+        using Collapses =  std::set<rectangle, comp_collapse> ;
+        Collapses collapses_ ;
+        void set_collapses(Collapses && collapses);
+        void populate_children(	implement*   place_impl_) override;
 
-        virtual void collocate_field(const rectangle& r) override
+        void collocate_field(const rectangle& r) override
 	    {
             Ifield::collocate_field(r);
 
@@ -728,6 +731,22 @@ namespace vplace_impl
 
             return splitter ;
         }
+    void div_grid::set_collapses(Collapses &&c)
+    {
+        for (Collapses::iterator i=c.begin(); i != c.end(); )
+            if (i->x > columns || i->y > rows)  // >=   ?????
+                i=c.erase(i);
+            else 
+            { 
+                if (i->right() > columns) i->width = columns - i->x ;
+                    
+                    || i->bottom() > rows)  // >=   ?????
+                i=c.erase(i);
+               ++i;
+
+        collapses_.swap(c);
+
+    }
 
 	class tokenizer
 	{
@@ -1157,6 +1176,36 @@ namespace vplace_impl
         }
         split(); /// check if this division have an split and implement it
     }  
+   void div_grid::populate_children(	implement*   place_impl_)
+    {   fastened_in_div.clear ();               /// the vector of direct windows (not resized) is (re)built to.
+        children.clear ();                      /// .clear(); the children or it is empty allways ????
+        gaps.clear();
+        arranges.clear();
+        int gap_index{0} ;
+        for (const auto &name : field_names)    /// for all the names in this div
+        {                                       /// find in the place global list of fields all the fields attached to it
+            int  arrange_index{0};
+            auto arr_it=arrange_.find(name); 
+            auto r= place_impl_->find(name); 
+            for (auto fi=r.first ; fi != r.second ; ++fi)   /// fi iterator that point to unique_ptr<IField>   
+            {
+                if (fi!=r.first)                /// add posible gaps betwen fields,
+                    if (insert_gap(gap_index))   
+                        gap_index++;
+                auto field=fi->second.get ();      /// a ref to the unique_ptr<IField> 
+                if (arr_it!=arrange_.end() && set_arrange(arr_it->second, gap_index, field))
+                    arrange_index++;
+                else 
+                    children.push_back (field);       /// add the finded field to form the div children
+
+                field->populate_children (place_impl_); /// and let the child field to populate recursively his own children
+            }
+            auto f= place_impl_->fastened.equal_range(name);
+            for (auto fi=f.first ; fi != f.second ; ++fi)
+                fastened_in_div.push_back (fi->second );
+        }
+        split(); /// check if this division have an split and implement it
+    }  
 
     void implement::collocate()
 	{
@@ -1539,22 +1588,21 @@ namespace vplace_impl
         assert(pdiv);
 
         if (have_gap)        {           pdiv->gap=gap;        }
+
 		pdiv->field_names.swap(field_names_in_div);
+
         if (splitter)
         {
             pdiv->splitter=splitter;
             splitter->parent = pdiv;
         }
+
         pdiv->arrange_.swap(arrange_);
+
         if (div_type == token::grid)
 		{
-            for (auto i=collapses.begin(); i != collapses.end(); )
-                if (i->right() > columns || i->bottom() > rows)  // >=   ?????
-                    i=collapses.erase(i);
-                else 
-                    ++i;
-
-            static_cast<div_grid*>( pdiv )-> collapses_.swap(collapses);
+            
+            static_cast<div_grid*>( pdiv )->set_collapses (std::move(collapses));
         }
         if (  margin.size() )
         {
