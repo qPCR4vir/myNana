@@ -17,6 +17,7 @@
 #include <memory>
 	
 #include <map>
+#include <set>
 #include <vector>
 #include <stdexcept>
 #include <cstring>
@@ -478,7 +479,19 @@ namespace vplace_impl
          unsigned&  fixed_s(rectangle& r )override{return r.width;}
         Splitter* create_splitter()override;// temp
    	};
-	class  div_grid	: public div_h
+    struct comp_collapse
+    {
+        bool operator()(const rectangle&a,const rectangle& b) 
+                            {
+                                if (a.overlap(b)) return false;
+                                if (a.y < b.y)    return true;
+                                if (a.y > b.y)    return false;
+                                if (a.x < b.x)    return true;
+                                //if (a.x > b.x)    return false;
+                                return false;
+                            };
+    };
+    class  div_grid	: public div_h
 	{
 	  public:
         //using division::division;
@@ -489,7 +502,8 @@ namespace vplace_impl
 
         std::string name; ///< field name to be refered in the field(name)<<room instr.
         unsigned rows, columns;      ///< w=rows and h=columns   dim; 
-        std::vector<rectangle> collapses_;
+        //std::vector<rectangle> collapses_;
+        std::set<rectangle, comp_collapse> collapses_ ;
 
         virtual void collocate_field(const rectangle& r) override
 	    {
@@ -1306,8 +1320,9 @@ namespace vplace_impl
         std::string gr_name;
         Splitter    *splitter {nullptr};
 
-		std::vector<rectangle> collapses;
- 
+		//std::vector<rectangle> collapses;
+        std::set<rectangle, comp_collapse> collapses;
+
         std::vector<number_t>    array, margin;
 		std::vector<std::string> field_names_in_div;
         std::unordered_map<std::string, repeated_array> arrange_;
@@ -1398,19 +1413,20 @@ namespace vplace_impl
 					    //Ignore this collapse if its area is less than 2(col.width * col.height < 2)
 					    if (!col.empty() && (col.width > 1 || col.height > 1) && (col.x >= 0 && col.y >= 0))
 					    {
-						    //Overwrite if a exist_col in collapses has same position as the col.
-						    bool use_col = true;
-						    for (auto & exist_col : collapses)
-						    {
-							    if (exist_col.x == col.x && exist_col.y == col.y)
-							    {
-								    exist_col = col;
-								    use_col = false;
-								    break;
-							    }
-						    }
-						    if (use_col)
-							    collapses.emplace_back(col);
+						    ////Overwrite if a exist_col in collapses has same position as the col.
+						    //bool use_col = true;
+						    //for (auto & exist_col : collapses)
+						    //{
+							   // if (exist_col.x == col.x && exist_col.y == col.y)
+							   // {
+								  //  exist_col = col;
+								  //  use_col = false;
+								  //  break;
+							   // }
+						    //}
+						    //if (use_col)
+							   // collapses.emplace_back(col);
+                            collapses.insert(col);
 					    }
 				    }
 				    else
@@ -1467,11 +1483,11 @@ namespace vplace_impl
 		{
 			if(array.size())
 			{
-				if(array[0].kind_of() != number_t::kind::percent) /// why not % ?
+				if(array[0].kind_of() != number_t::kind::percent) ///  
 					columns = array[0].integer();
                 if(array.size() > 1)
 			    {
-				    if(array[1].kind_of() != number_t::kind::percent) /// why not % ?
+				    if(array[1].kind_of() != number_t::kind::percent) ///  
 					    rows = array[1].integer();
 			    }
 			}
@@ -1532,6 +1548,12 @@ namespace vplace_impl
         pdiv->arrange_.swap(arrange_);
         if (div_type == token::grid)
 		{
+            for (auto i=collapses.begin(); i != collapses.end(); )
+                if (i->right() > columns || i->bottom() > rows)  // >=   ?????
+                    i=collapses.erase(i);
+                else 
+                    ++i;
+
             static_cast<div_grid*>( pdiv )-> collapses_.swap(collapses);
         }
         if (  margin.size() )
