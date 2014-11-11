@@ -237,6 +237,24 @@ namespace nana
 			return	(x <= pos.x && pos.x < x + static_cast<int>(width)) &&
 				(y <= pos.y && pos.y < y + static_cast<int>(height));
 		}
+		bool rectangle::is_hit(const rectangle& r) const
+		{
+			return	((x <= r.x  &&  r.x < right ()) || (x <= r.right ()  &&  r.right () < right () )) &&
+                    ((y <= r.y  &&  r.y < bottom()) || (y <= r.bottom()  &&  r.bottom() < bottom() ));
+		}
+        bool rectangle::overlap(const rectangle& r) const
+		{
+			return	! not_overlap(r) ; // is_hit(r) || r.contain(*this) ;
+		}
+        bool rectangle::not_overlap(const rectangle& r) const
+		{
+			return	x > r.right() || r.x > right()  || y > r.bottom() || r.bottom() > y;
+		}
+		bool rectangle::contain(const rectangle& r) const
+		{
+			return	 (x <= r.x  &&  r.right () <= right ())  &&
+                     (y <= r.y  &&  r.bottom() <= bottom())  ;
+		}
 
 		bool rectangle::empty() const
 		{

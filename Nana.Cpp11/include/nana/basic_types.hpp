@@ -196,10 +196,17 @@ namespace nana
 
 		rectangle& pare_off(int pixels);	 ///<Pares the specified pixels off the rectangle. It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
 
+        int left () const{return x;}
 		int right() const;
+        int top  () const{return y;}
 		int bottom() const;
 		bool is_hit(int x, int y) const;
 		bool is_hit(const point& pos) const;
+		bool rectangle::is_hit(const rectangle& r) const;
+        bool rectangle::overlap(const rectangle& r) const;
+        bool rectangle::not_overlap(const rectangle& r) const;
+		bool rectangle::contain(const rectangle& r) const;
+
 		bool empty() const;		///< true if width * height == 0
 
 		int x;
