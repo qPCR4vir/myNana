@@ -143,9 +143,9 @@ namespace detail
 
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool move(core_window_t*, int x, int y, bool passive);
-		bool move(core_window_t*, int x, int y, unsigned width, unsigned height);
+		bool move(core_window_t*, const rectangle&);
 
-		bool size(core_window_t*, unsigned width, unsigned height, bool passive, bool ask_update);
+		bool size(core_window_t*, nana::size, bool passive, bool ask_update);
 
 		core_window_t* root(native_window_type) const;
 

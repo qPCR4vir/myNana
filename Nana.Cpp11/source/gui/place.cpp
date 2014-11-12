@@ -1229,7 +1229,7 @@ namespace nana
 			if ((gap_size * dimension.first >= area.width) || (gap_size * dimension.second >= area.height))
 			{
 				for (auto & el : field->elements)
-					API::window_size(el.handle, 0, 0);
+					API::window_size(el.handle, size{ 0, 0 });
 				return;
 			}
 
@@ -1280,7 +1280,7 @@ namespace nana
 
 						unsigned width = (value > uns_block_w ? uns_block_w : value);
 						if (width > gap_size)	width -= gap_size;
-						API::move_window(i->handle, static_cast<int>(x), static_cast<int>(y), width, height);
+						API::move_window(i->handle, rectangle{ static_cast<int>(x), static_cast<int>(y), width, height });
 						x += block_w;
 						++i;
 					}
@@ -1353,14 +1353,15 @@ namespace nana
 						unsigned result_w = static_cast<unsigned>(precise_w);
 						precise_w -= result_w;
 
-						API::move_window(i->handle, pos_x, pos_y, result_w, result_h);
+						API::move_window(i->handle, rectangle{ pos_x, pos_y, result_w, result_h });
 						++i;
 					}
 
 					if (exit_for)
 					{
+						size empty_sz;
 						for (; i != end; ++i)
-							API::window_size(i->handle, 0, 0);
+							API::window_size(i->handle, empty_sz);
 						break;
 					}
 					lbp += dimension.first;

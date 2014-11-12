@@ -197,6 +197,23 @@ namespace API
 			}
 		}
 
+		void window_caption(window wd, nana::string&& title)
+		{
+			if (wd)
+			{
+				auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+				internal_scope_guard isg;
+
+				if (restrict::window_manager.available(iwd))
+				{
+					iwd->title = title;
+					if (iwd->other.category == category::flags::root)
+						restrict::interface_type::window_caption(iwd->root, iwd->title);
+				}
+				restrict::window_manager.update(iwd, true, false);
+			}
+		}
+
 		window create_window(window owner, bool nested, const rectangle& r, const appearance& ap, widget* wdg)
 		{
 			return reinterpret_cast<window>(restrict::window_manager.create_root(reinterpret_cast<restrict::core_window_t*>(owner), nested, r, ap, wdg));
@@ -520,11 +537,11 @@ namespace API
 		}
 	}
 
-	void move_window(window wd, int x, int y, unsigned width, unsigned height)
+	void move_window(window wd, const rectangle& r)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard isg;
-		if(restrict::window_manager.move(iwd, x, y, width, height))
+		if(restrict::window_manager.move(iwd, r))
 		{
 			if(category::flags::root != iwd->other.category)
 				iwd = reinterpret_cast<restrict::core_window_t*>(API::get_parent_window(wd));
@@ -568,11 +585,11 @@ namespace API
 		return nana::size(r.width, r.height);
 	}
 
-	void window_size(window wd, unsigned width, unsigned height)
+	void window_size(window wd, const size& sz)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard isg;
-		if(restrict::window_manager.size(iwd, width, height, false, false))
+		if(restrict::window_manager.size(iwd, sz, false, false))
 		{
 			if(category::flags::root != iwd->other.category)
 				iwd = reinterpret_cast<restrict::core_window_t*>(API::get_parent_window(wd));

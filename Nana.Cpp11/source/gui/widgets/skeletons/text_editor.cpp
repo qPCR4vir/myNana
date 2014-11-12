@@ -1862,7 +1862,7 @@ namespace nana{	namespace widgets
 				if (points_.offset.y != static_cast<int>(wdptr->value()))
 					wdptr->value(points_.offset.y);
 
-				wdptr->move(x, text_area_.area.y, text_area_.vscroll, tx_area.height);
+				wdptr->move(rectangle{ x, text_area_.area.y, text_area_.vscroll, tx_area.height });
 			}
 			else
 				attributes_.vscroll.reset();
@@ -1900,7 +1900,7 @@ namespace nana{	namespace widgets
 				if(points_.offset.x != static_cast<int>(wdptr->value()))
 					wdptr->value(points_.offset.x);
 
-				wdptr->move(text_area_.area.x, y, tx_area.width, text_area_.hscroll);
+				wdptr->move(rectangle{ text_area_.area.x, y, tx_area.width, text_area_.hscroll });
 			}
 			else
 				attributes_.hscroll.reset();

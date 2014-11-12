@@ -150,6 +150,11 @@ namespace nana
 		{
 			return (width != rhs.width) || (height != rhs.height);
 		}
+
+		size size::operator+(const size& sz) const
+		{
+			return{width + sz.width, height + sz.height};
+		}
 	//end struct size
 
 	//struct rectangle

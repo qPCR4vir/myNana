@@ -1949,7 +1949,7 @@ namespace nana
 					if(!impl_->shape.scroll.empty())
 					{
 						nana::size s = impl_->data.graph->size();
-						impl_->shape.scroll.move(s.width - 16, 0, 16, s.height);
+						impl_->shape.scroll.move(rectangle{ static_cast<int>(s.width) - 16, 0, 16, s.height });
 					}
 				}
 

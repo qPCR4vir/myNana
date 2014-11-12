@@ -173,6 +173,7 @@ namespace nana
 		bool is_hit(const point&) const;	///< Assume it is a rectangle at (0,0), and check whether a specified position is in the rectange.
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
+		size operator+(const size&) const;
 
 		unsigned width;
 		unsigned height;

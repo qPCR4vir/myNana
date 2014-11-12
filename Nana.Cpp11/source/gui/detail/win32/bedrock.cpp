@@ -1238,7 +1238,7 @@ namespace detail
 				break;
 			case WM_SIZE:
 				if(wParam != SIZE_MINIMIZED)
-					brock.wd_manager.size(msgwnd, pmdec.size.width, pmdec.size.height, true, true);
+					brock.wd_manager.size(msgwnd, size(pmdec.size.width, pmdec.size.height), true, true);
 				break;
 			case WM_MOVE:
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));

@@ -41,7 +41,6 @@ namespace nana
 	//class form
 	typedef widget_object<category::root_tag, drawerbase::form::trigger, ::nana::detail::events_root_extension> form_base_t;
 
-
 		form::form(const form& fm, const ::nana::size& sz, const appearance& apr)
 			: form_base_t(fm.handle(), false, API::make_center(fm.handle(), sz.width, sz.height), apr)
 		{
@@ -51,8 +50,8 @@ namespace nana
 			: form_base_t(nullptr, false, r, apr)
 		{}
 
-		form::form(window owner, const appearance& apr)
-			: form_base_t(owner, false, API::make_center(owner, 300, 150), apr)
+		form::form(window owner, const ::nana::size& sz, const appearance& apr)
+			: form_base_t(owner, false, API::make_center(owner, sz.width, sz.height), apr)
 		{}
 
 		form::form(window owner, const rectangle& r, const appearance& apr)
