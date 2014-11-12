@@ -1813,6 +1813,7 @@ namespace nana
 				break;
 		}
 
+		field_impl * attached_field = nullptr;
 		if (name.size())
 		{
 			//find the field with specified name.
@@ -1820,12 +1821,13 @@ namespace nana
 			auto i = fields.find(name);
 			if (fields.end() != i)
 			{
+				attached_field = i->second;
 				//the field is attached to a division, it means there is another division with same name.
-				if (i->second->attached)
+				if (attached_field->attached)
 					throw std::runtime_error("place, the name '" + name + "' is redefined.");
 
 				//this field will be attached to the division that will be created later.
-				i->second->attached = true;
+				attached_field->attached = true;
 			}
 		}
 
@@ -1882,7 +1884,9 @@ namespace nana
 		}
 
 		div->gap = gap;
-		div->field = nullptr;		//attach the field to the division
+
+		//attach the field to the division
+		div->field = attached_field;
 
 		if (children.size())
 		{
