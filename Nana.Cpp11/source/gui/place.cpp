@@ -26,6 +26,13 @@ namespace nana
 {
 	namespace place_parts
 	{
+		void check_field_name(const char* name)
+		{
+			//check the name
+			if (*name && (*name != '_' && !(('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z'))))
+				throw std::invalid_argument("place.field: bad field name");
+		}
+
 		class splitter_interface
 		{
 		public:
@@ -736,7 +743,23 @@ namespace nana
 			for (auto & e : fastened)
 				API::umake_event(e.evt_destroy);
 		}
+
+		void visible(bool vsb)
+		{
+			for (auto & e : elements)
+				API::show_window(e.handle, vsb);
+
+			for (auto & e : fastened)
+				API::show_window(e.handle, vsb);
+		}
 	private:
+		template<typename Function>
+		void _m_for_each(division * div, Function fn)
+		{
+			for (auto & up : div->children)	//The element of children is unique_ptr
+				fn(up.get());
+		}
+
 		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
 		event_handle _m_make_destroy(window wd)
@@ -793,7 +816,7 @@ namespace nana
 			return *this;
 		}
 	public:
-		bool attached;
+		division* attached{ nullptr };
 		std::vector<element_t>	elements;
 		std::vector<element_t>	fastened;
 	private:
@@ -817,7 +840,38 @@ namespace nana
 		{
 			//detach the field
 			if (field)
-				field->attached = false;
+				field->attached = nullptr;
+		}
+
+		void set_visible(bool vsb)
+		{
+			if (field)
+				field->visible(vsb);
+
+			_m_visible_for_child(this, vsb);
+			visible = vsb;
+		}
+
+		void set_display(bool dsp)
+		{
+			if (field)
+				field->visible(dsp);
+
+			_m_visible_for_child(this, dsp);
+			visible = dsp;
+			display = dsp;
+		}
+
+		bool is_back(const division* div) const
+		{
+			for (auto i = children.crbegin(); i != children.crend(); ++i)
+			{
+				if (!(i->get()->display))
+					continue;
+
+				return (div == i->get());
+			}
+			return false;
 		}
 
 		static double limit_px(const division* div, double px, unsigned area_px)
@@ -852,12 +906,31 @@ namespace nana
 			return margin.area(field_area);
 		}
 	public:
+		void _m_visible_for_child(division * div, bool vsb)
+		{
+			for (auto & child : div->children)
+			{
+				if (child->field)
+				{
+					if (vsb)
+					{
+						if (child->visible)
+							child->field->visible(true);
+					}
+					else
+						child->field->visible(false);
+				}
+				_m_visible_for_child(child.get(), vsb);
+			}
+		}
 		//Collocate the division and its children divisions,
 		//The window parameter is specified for the window which the place object binded.
 		virtual void collocate(window) = 0;
 
 	public:
 		kind kind_of_division;
+		bool display{ true };
+		bool visible{ true };
 		const std::string name;
 		std::vector<std::unique_ptr<division>> children;
 
@@ -898,6 +971,9 @@ namespace nana
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
 				auto child = child_ptr.get();
+				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
+					continue;
+
 				area_rotator child_area(vert, child->field_area);
 				child_area.x_ref() = static_cast<int>(position);
 				child_area.y_ref() = area.y();
@@ -921,7 +997,7 @@ namespace nana
 
 				//Use 'endpos' to calc width is to avoid deviation
 				int endpos = static_cast<int>(position + child_px);
-				if ((!child->is_fixed()) && child->max_px.is_none() && (child_ptr == children.back()) && (endpos != area.right()))
+				if ((!child->is_fixed()) && child->max_px.is_none() && is_back(child) && (endpos != area.right()))
 					endpos = area.right();
 
 				child_area.w_ref() = static_cast<unsigned>(endpos - child_area.x());
@@ -938,11 +1014,12 @@ namespace nana
 			for (auto child : delay_collocates)
 				child->collocate(wd);
 
-			if (field)
+			if (visible && display && field)
 			{
 				auto element_r = area;
 				std::size_t index = 0;
 				double precise_px = 0;
+
 				for (auto & el : field->elements)
 				{
 					element_r.x_ref() = static_cast<int>(position);
@@ -1039,6 +1116,9 @@ namespace nana
 			double children_fixed_px = 0;
 			for (auto& child : children)
 			{
+				if (!child->display)	//Ignore the division if the corresponding field is not displayed.
+					continue;
+
 				if (child->weight.is_not_none())
 					children_fixed_px += child->weight.get_value(area_px);
 				else
@@ -1067,7 +1147,7 @@ namespace nana
 			std::vector<revise_t> revises;
 			for (auto& child : children)
 			{
-				if (child->weight.is_not_none())
+				if (child->weight.is_not_none() || !child->display)
 					continue;
 
 				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
@@ -1220,7 +1300,8 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			if (nullptr == field)
+
+			if (!field || !(visible && display))
 				return;
 
 			auto area = margin_area();
@@ -1833,9 +1914,6 @@ namespace nana
 				//the field is attached to a division, it means there is another division with same name.
 				if (attached_field->attached)
 					throw std::runtime_error("place, the name '" + name + "' is redefined.");
-
-				//this field will be attached to the division that will be created later.
-				attached_field->attached = true;
 			}
 		}
 
@@ -1895,6 +1973,8 @@ namespace nana
 
 		//attach the field to the division
 		div->field = attached_field;
+		if (attached_field)
+			attached_field->attached = div.get();
 
 		if (children.size())
 		{
@@ -1966,9 +2046,8 @@ namespace nana
 		if (nullptr == name)
 			name = "";
 
-		//check the name
-		if (*name && (*name != '_' && !(('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z'))))
-			throw std::invalid_argument("place.field: bad field name");
+		//May throw std::invalid_argument
+		place_parts::check_field_name(name);
 
 		//get the field with specified name, if no such field with specified name
 		//then create one.
@@ -1987,10 +2066,56 @@ namespace nana
 					throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
 
 				div->field = p;
-				p->attached = true;
+				p->attached = div;
 			}
 		}
 		return *p;
+	}
+
+	void place::field_visible(const char* name, bool vsb)
+	{
+		if (!name)	name = "";
+		
+		//May throw std::invalid_argument
+		place_parts::check_field_name(name);
+
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		if (div)
+			div->set_visible(vsb);
+	}
+
+	bool place::field_visible(const char* name) const
+	{
+		if (!name)	name = "";
+
+		//May throw std::invalid_argument
+		place_parts::check_field_name(name);
+
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		return (div && div->visible);
+	}
+
+	void place::field_display(const char* name, bool dsp)
+	{
+		if (!name)	name = "";
+
+		//May throw std::invalid_argument
+		place_parts::check_field_name(name);
+
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		if (div)
+			div->set_display(dsp);
+	}
+
+	bool place::field_display(const char* name) const
+	{
+		if (!name)	name = "";
+
+		//May throw std::invalid_argument
+		place_parts::check_field_name(name);
+
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		return (div && div->display);
 	}
 
 	void place::collocate()
@@ -2002,9 +2127,21 @@ namespace nana
 
 			for (auto & field : impl_->fields)
 			{
-				bool is_show = field.second->attached;
-				if (field.second->attached)
-					is_show = (nullptr != implement::search_div_name(impl_->root_division.get(), field.first));
+				bool is_show = false;
+				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
+				{
+					is_show = true;
+					auto div = field.second->attached->div_owner;
+					while (div)
+					{
+						if (!div->visible || !div->display)
+						{
+							is_show = false;
+							break;
+						}
+						div = div->div_owner;
+					}
+				}
 
 				for (auto & el : field.second->elements)
 					API::show_window(el.handle, is_show);
@@ -2024,7 +2161,7 @@ namespace nana
 				{
 					API::umake_event(i->evt_destroy);
 					i = elements.erase(i);
-					recollocate |= fld.second->attached;
+					recollocate |= (nullptr != fld.second->attached);
 				}
 				else
 					++i;
