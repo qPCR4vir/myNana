@@ -28,6 +28,11 @@ namespace nana
 			_m_caption(str);
 		}
 
+		void widget::caption(nana::string&& str)
+		{
+			_m_caption(std::move(str));
+		}
+
 		nana::cursor widget::cursor() const
 		{
 			return _m_cursor();
@@ -108,9 +113,9 @@ namespace nana
 			return API::window_size(handle());
 		}
 
-		void widget::size(unsigned width, unsigned height)
+		void widget::size(const nana::size& sz)
 		{
-			_m_size(width, height);
+			_m_size(sz);
 		}
 
 		nana::point widget::pos() const
@@ -123,14 +128,9 @@ namespace nana
 			_m_move(x, y);
 		}
 
-		void widget::move(int x, int y, unsigned width, unsigned height)
+		void widget::move(const rectangle& r)
 		{
-			_m_move(x, y, width, height);
-		}
-
-		void widget::move(const nana::rectangle& r)
-		{
-			_m_move(r.x, r.y, r.width, r.height);
+			_m_move(r);
 		}
 
 		void widget::foreground(nana::color_t value)
@@ -192,6 +192,11 @@ namespace nana
 			API::dev::window_caption(handle(), str);
 		}
 
+		void widget::_m_caption(nana::string&& str)
+		{
+			API::dev::window_caption(handle(), std::move(str));
+		}
+
 		nana::cursor widget::_m_cursor() const
 		{
 			return API::window_cursor(handle());
@@ -228,9 +233,9 @@ namespace nana
 			return API::visible(handle());
 		}
 
-		void widget::_m_size(unsigned width, unsigned height)
+		void widget::_m_size(const nana::size& sz)
 		{
-			API::window_size(handle(), width, height);
+			API::window_size(handle(), sz);
 		}
 
 		void widget::_m_move(int x, int y)
@@ -238,12 +243,12 @@ namespace nana
 			API::move_window(handle(), x, y);
 		}
 
-		void widget::_m_move(int x, int y, unsigned width, unsigned height)
+		void widget::_m_move(const rectangle& r)
 		{
-			API::move_window(handle(), x, y, width, height);
+			API::move_window(handle(), r);
 		}
 
-		void widget::_m_typeface(const nana::paint::font& font)
+		void widget::_m_typeface(const paint::font& font)
 		{
 			API::typeface(handle(), font);
 		}

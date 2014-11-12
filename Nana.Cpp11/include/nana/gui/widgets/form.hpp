@@ -41,12 +41,12 @@ namespace nana
 	public:
 		typedef ::nana::appear appear;
 
-		form(const form& fm, const ::nana::size& = ::nana::size(300, 200), const appearance& = appearance());
 		/// Creates a window at the point and size specified by rect, and with the specified appearance. Creates a form owned by the desktop.
-		form(const rectangle& = API::make_center(300, 200), const appearance& = appearance());
-		form(window, const appearance& = appearance());
+		form(const rectangle& = API::make_center(300, 200), const appearance& = {});	//Default constructor
+		form(const form&, const ::nana::size& = { 300, 200 }, const appearance& = {});	//Copy constructor
+		form(window, const ::nana::size& = { 300, 200 }, const appearance& = {});
         /// Creates a window at the point and size specified by rect, with the specified appearance. This window is always floating above its owner.
-		form(window, const rectangle&, const appearance& = appearance());
+		form(window, const rectangle&, const appearance& = {});
 	};
 
 	class nested_form : public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
@@ -54,11 +54,11 @@ namespace nana
 	public:
 		typedef ::nana::appear appear;
 
-		nested_form(const form&, const rectangle& = rectangle(), const appearance& = appearance());
-		nested_form(const nested_form&, const rectangle& = rectangle(), const appearance& = appearance());
+		nested_form(const form&, const rectangle& = {}, const appearance& = {});
+		nested_form(const nested_form&, const rectangle& = {}, const appearance& = {});
 
 		nested_form(window, const appearance&);
-		nested_form(window, const rectangle& = rectangle(), const appearance& = appearance());
+		nested_form(window, const rectangle& = {}, const appearance& = {});
 	};
 }//end namespace nana
 #endif

@@ -38,7 +38,8 @@ namespace nana
 		window parent() const;
 
 		nana::string caption() const;
-		void caption(const nana::string& str);
+		void caption(const nana::string&);
+		void caption(nana::string&&);
 
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
@@ -59,12 +60,11 @@ namespace nana
 		bool visible() const;
 
 		nana::size size() const;
-		void size(unsigned width, unsigned height);
+		void size(const nana::size&);
 		
-		nana::point pos() const;
+		point pos() const;
 		void move(int x, int y);
-		void move(int x, int y, unsigned width, unsigned height);
-		void move(const nana::rectangle&);
+		void move(const rectangle&);
 
 		void foreground(nana::color_t);
 		nana::color_t foreground() const;
@@ -85,6 +85,7 @@ namespace nana
 		virtual general_events& _m_get_general_events() const = 0;
 		virtual nana::string _m_caption() const;
 		virtual void _m_caption(const nana::string&);
+		virtual void _m_caption(nana::string&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);
 		virtual void _m_close();
@@ -92,9 +93,9 @@ namespace nana
 		virtual void _m_enabled(bool);
 		virtual bool _m_show(bool);
 		virtual bool _m_visible() const;
-		virtual void _m_size(unsigned width, unsigned height);
+		virtual void _m_size(const nana::size&);
 		virtual void _m_move(int x, int y);
-		virtual void _m_move(int x, int y, unsigned width, unsigned height);
+		virtual void _m_move(const rectangle&);
 
 		virtual void _m_typeface(const nana::paint::font& font);
 		virtual nana::paint::font _m_typeface() const;
@@ -113,8 +114,7 @@ namespace nana
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
 		widget_object()
-			:	handle_(nullptr),
-				events_(new Events)
+			: events_(std::make_shared<Events>())
 		{}
 
 		~widget_object()
@@ -149,7 +149,7 @@ namespace nana
 			return (this->empty() == false);
 		}
 
-		window handle() const
+		window handle() const override
 		{
 			return handle_;
 		}
@@ -199,7 +199,7 @@ namespace nana
 			return *events_;
 		}
 	private:
-		window handle_;
+		window handle_{nullptr};
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
 	};//end class widget_object
@@ -213,8 +213,7 @@ namespace nana
 	public:
 
 		widget_object()
-			:	handle_(nullptr),
-				events_(new Events)
+			:	events_(std::make_shared<Events>())
 		{}
 
 		~widget_object()
@@ -275,7 +274,7 @@ namespace nana
 			return *events_;
 		}
 	private:
-		window handle_;
+		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
 	};//end class widget_object
 
@@ -393,7 +392,7 @@ namespace nana
 
 		void _m_bind_and_attach()
 		{
-			events_.reset(new Events);
+			events_ = std::make_shared<Events>();
 			API::dev::set_events(handle_, events_);
 			API::dev::attach_signal(handle_, *this, &widget_object::signal);
 			API::dev::attach_drawer(*this, trigger_);
@@ -421,8 +420,7 @@ namespace nana
 		typedef int drawer_trigger_t;
 	public:
 		widget_object()
-			:	handle_(nullptr),
-				events_(new Events)
+			:	events_(std::make_shared<Events>())
 		{}
 
 		~widget_object()
@@ -488,7 +486,7 @@ namespace nana
 			return *events_;
 		}
 	private:
-		window handle_;
+		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
 	};//end class widget_object<category::frame_tag>
 }//end namespace nana

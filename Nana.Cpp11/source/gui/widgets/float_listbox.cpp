@@ -266,7 +266,7 @@ namespace nana
 					{
 						std::size_t items = (module_->max_items <= module_->items.size() ? module_->max_items : module_->items.size());
 						std::size_t h = items * state_.renderer->item_pixels(*graph_);
-						widget_->size(widget_->size().width, static_cast<unsigned>(h + 4));
+						widget_->size(size{ widget_->size().width, static_cast<unsigned>(h + 4) });
 					}
 				}
 

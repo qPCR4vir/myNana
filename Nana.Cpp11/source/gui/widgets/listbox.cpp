@@ -1557,7 +1557,7 @@ namespace nana
 							});
 						}
 						else
-							scroll.h.move(r.x, r.y, r.width, r.height);
+							scroll.h.move(r);
 					}
 					else if(!scroll.h.empty())
 						scroll.h.close();
@@ -1580,7 +1580,7 @@ namespace nana
 							});
 						}
 						else
-							scroll.v.move(r.x, r.y, r.width, r.height);
+							scroll.v.move(r);
 
 					}
 					else if(!scroll.v.empty())

@@ -48,7 +48,8 @@ namespace API
 
 		void attach_drawer(widget&, drawer_trigger&);
 		nana::string window_caption(window);
-		void window_caption(window, const nana::string& str);
+		void window_caption(window, const nana::string&);
+		void window_caption(window, nana::string&&);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
@@ -156,19 +157,15 @@ namespace API
 
 	nana::point window_position(window);
 	void move_window(window, int x, int y);
-	void move_window(window, int x, int y, unsigned width, unsigned height);
-	inline void move_window(window wd, const rectangle& r)
-	{
-		move_window(wd, r.x, r.y, r.width, r.height);
-	}
+	void move_window(window wd, const rectangle&);
 
 	void bring_to_top(window);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);
 
 	nana::size window_size(window);
-	void window_size(window, unsigned width, unsigned height);
-	bool window_rectangle(window, rectangle& rect);
-	bool track_window_size(window, const nana::size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
+	void window_size(window, const size&);
+	bool window_rectangle(window, rectangle&);
+	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
 	bool window_enabled(window);
 

@@ -651,7 +651,7 @@ namespace nana
 					size.width += detail_.border.x * 2;
 					size.height += detail_.border.y * 2;
 
-					widget_->size(size.width, size.height);
+					widget_->size(size);
 
 					nana::point pos;
 					API::calc_screen_point(*widget_, pos);

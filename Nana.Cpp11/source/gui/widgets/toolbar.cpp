@@ -438,7 +438,7 @@ namespace nana
 				void drawer::_m_owner_sized(const arg_resized& arg)
 				{
 					auto wd = widget_->handle();
-					API::window_size(wd, arg.width, widget_->size().height);
+					API::window_size(wd, nana::size(arg.width, widget_->size().height));
 					_m_draw();
 					API::update_window(wd);
 				}

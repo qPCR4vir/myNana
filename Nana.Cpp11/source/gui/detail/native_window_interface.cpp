@@ -854,21 +854,23 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::move_window(native_window_type wd, int x, int y, unsigned width, unsigned height)
+		void native_interface::move_window(native_window_type wd, const rectangle& r)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				auto * mw = new nana::detail::messages::move_window;
-				mw->x = x;
-				mw->y = y;
-				mw->width = width;
-				mw->height = height;
+				mw->x = r.x;
+				mw->y = r.y;
+				mw->width = r.width;
+				mw->height = r.height;
 				mw->ignore = 0;
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_move_window, reinterpret_cast<WPARAM>(mw), 0);
 			}
 			else
 			{
+				int x = r.x;
+				int y = r.y;
 				HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
 				if(owner)
 				{
@@ -885,7 +887,7 @@ namespace nana{
 				::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
 				unsigned ext_w = (wd_area.right - wd_area.left) - client.right;
 				unsigned ext_h = (wd_area.bottom - wd_area.top) - client.bottom;
-				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, width + ext_w, height + ext_h, true);
+				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true);
 			}
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
@@ -897,18 +899,20 @@ namespace nana{
 			if((hints.flags & (PMinSize | PMaxSize)) && (hints.min_width == hints.max_width) && (hints.min_height == hints.max_height))
 			{
 				hints.flags = PMinSize | PMaxSize;
-				hints.min_width = hints.max_width = width;
-				hints.min_height = hints.max_height = height;
+				hints.min_width = hints.max_width = r.width;
+				hints.min_height = hints.max_height = r.height;
 			}
 			else
 				hints.flags = 0;
 
 			Window owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
+			int x = r.x;
+			int y = r.y;
 			if(owner)
 			{
 				Window child;
 				::XTranslateCoordinates(disp, owner, restrict::spec.root_window(),
-										x, y, &x, &y, &child);
+										r.x, r.y, &x, &y, &child);
 			}
 
 			XWindowAttributes attr;
@@ -918,14 +922,14 @@ namespace nana{
 				hints.flags |= (USPosition | USSize);
 				hints.x = x;
 				hints.y = y;
-				hints.width = width;
-				hints.height = height;
+				hints.width = r.width;
+				hints.height = r.height;
 			}
 
 			if(hints.flags)
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 
-			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, width, height);
+			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
 #endif
 		}
 
@@ -1003,14 +1007,14 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_size(native_window_type wd, unsigned width, unsigned height)
+		void native_interface::window_size(native_window_type wd, const size& sz)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				auto * mw = new nana::detail::messages::move_window;
-				mw->width = width;
-				mw->height = height;
+				mw->width = sz.width;
+				mw->height = sz.height;
 				mw->ignore = mw->Pos;
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_move_window, reinterpret_cast<WPARAM>(mw), 0);
 			}
@@ -1027,7 +1031,7 @@ namespace nana{
 					r.left = pos.x;
 					r.top = pos.y;
 				}
-				::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(width), static_cast<int>(height), true);
+				::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true);
 			}
 #elif defined(NANA_X11)
 			auto disp = restrict::spec.open_display();
@@ -1040,11 +1044,11 @@ namespace nana{
 			if((hints.flags & (PMinSize | PMaxSize)) && (hints.min_width == hints.max_width) && (hints.min_height == hints.max_height))
 			{
 				hints.flags = PMinSize | PMaxSize;
-				hints.min_width = hints.max_width = width;
-				hints.min_height = hints.max_height = height;
+				hints.min_width = hints.max_width = sz.width;
+				hints.min_height = hints.max_height = sz.height;
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 			}
-			::XResizeWindow(disp, reinterpret_cast<Window>(wd), width, height);
+			::XResizeWindow(disp, reinterpret_cast<Window>(wd), sz.width, sz.height);
 #endif
 		}
 

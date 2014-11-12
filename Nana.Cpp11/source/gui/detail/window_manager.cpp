@@ -506,7 +506,7 @@ namespace detail
 			return false;
 		}
 
-		bool window_manager::move(core_window_t* wd, int x, int y, unsigned width, unsigned height)
+		bool window_manager::move(core_window_t* wd, const rectangle& r)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -515,15 +515,15 @@ namespace detail
 				
 			auto & brock = bedrock::instance();
 			bool moved = false;
-			const bool size_changed = (width != wd->dimension.width || height != wd->dimension.height);
+			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
 			if(wd->other.category != category::root_tag::value)
 			{
 				//Move child widgets
-				if(x != wd->pos_owner.x || y != wd->pos_owner.y)
+				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
 				{
-					point delta{ x - wd->pos_owner.x, y - wd->pos_owner.y };
-					wd->pos_owner.x = x;
-					wd->pos_owner.y = y;
+					point delta{ r.x - wd->pos_owner.x, r.y - wd->pos_owner.y };
+					wd->pos_owner.x = r.x;
+					wd->pos_owner.y = r.y;
 					_m_move_core(wd, delta);
 					moved = true;
 
@@ -532,32 +532,32 @@ namespace detail
 
 					arg_move arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
-					arg.x = x;
-					arg.y = y;
+					arg.x = r.x;
+					arg.y = r.y;
 					brock.emit(event_code::move, wd, arg, true, brock.get_thread_context());
 				}
 
 				if(size_changed)
-					size(wd, width, height, true, false);
+					size(wd, nana::size{r.width, r.height}, true, false);
 			}
 			else
 			{
 				if(size_changed)
 				{
-					wd->dimension.width = width;
-					wd->dimension.height = height;
-					wd->drawer.graphics.make(width, height);
-					wd->root_graph->make(width, height);
-					native_interface::move_window(wd->root, x, y, width, height);
+					wd->dimension.width = r.width;
+					wd->dimension.height = r.height;
+					wd->drawer.graphics.make(r.width, r.height);
+					wd->root_graph->make(r.width, r.height);
+					native_interface::move_window(wd->root, r);
 
 					arg_resized arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
-					arg.width = width;
-					arg.height = height;
+					arg.width = r.width;
+					arg.height = r.height;
 					brock.emit(event_code::resized, wd, arg, true, brock.get_thread_context());
 				}
 				else
-					native_interface::move_window(wd->root, x, y);
+					native_interface::move_window(wd->root, r.x, r.y);
 			}
 
 			return (moved || size_changed);
@@ -569,7 +569,7 @@ namespace detail
 		//			e.g, when the size of window is changed by OS/user, the function should not resize the
 		//			window again, otherwise, it causes an infinite loop, because when a root_widget is resized,
 		//			window_manager will call the function.
-		bool window_manager::size(core_window_t* wd, unsigned width, unsigned height, bool passive, bool ask_update)
+		bool window_manager::size(core_window_t* wd, nana::size sz, bool passive, bool ask_update)
 		{	
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -577,46 +577,42 @@ namespace detail
 				return false;
 			
 			auto & brock = bedrock::instance();
-			if(wd->dimension.width != width || wd->dimension.height != height)
+			if (sz != wd->dimension)
 			{
 				arg_resizing arg;
 				arg.window_handle = reinterpret_cast<window>(wd);
 				arg.border = window_border::none;
-				arg.width = width;
-				arg.height = height;
+				arg.width = sz.width;
+				arg.height = sz.height;
 				brock.emit(event_code::resizing, wd, arg, false, brock.get_thread_context());
-				width = arg.width;
-				height = arg.height;
+				sz.width = arg.width;
+				sz.height = arg.height;
 			}
-
-			if ((wd->dimension.width == width) && (wd->dimension.height == height))
-				return false;
 
 			if(wd->max_track_size.width && wd->max_track_size.height)
 			{
-				if(width > wd->max_track_size.width)
-					width = wd->max_track_size.width;
-				if(height > wd->max_track_size.height)
-					height = wd->max_track_size.height;
+				if(sz.width > wd->max_track_size.width)
+					sz.width = wd->max_track_size.width;
+				if(sz.height > wd->max_track_size.height)
+					sz.height = wd->max_track_size.height;
 			}
 			if(wd->min_track_size.width && wd->min_track_size.height)
 			{
-				if(width < wd->min_track_size.width)
-					width = wd->min_track_size.width;
-				if(height < wd->min_track_size.height)
-					height = wd->min_track_size.height;
+				if(sz.width < wd->min_track_size.width)
+					sz.width = wd->min_track_size.width;
+				if(sz.height < wd->min_track_size.height)
+					sz.height = wd->min_track_size.height;
 			}
 
-			if(wd->dimension.width == width && wd->dimension.height == height)
+			if (wd->dimension == sz)
 				return false;
 
-			wd->dimension.width = width;
-			wd->dimension.height = height;
+			wd->dimension = sz;
 
 			if(category::lite_widget_tag::value != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
-				wd->drawer.graphics.make(width, height);
+				wd->drawer.graphics.make(sz.width, sz.height);
 
 				//It shall make a typeface_changed() call when the graphics state is changing.
 				//Because when a widget is created with zero-size, it may get some wrong result in typeface_changed() call
@@ -626,22 +622,22 @@ namespace detail
 
 				if(category::root_tag::value == wd->other.category)
 				{
-					wd->root_graph->make(width, height);
+					wd->root_graph->make(sz.width, sz.height);
 					if(false == passive)
-						native_interface::window_size(wd->root, width + wd->extra_width, height + wd->extra_height);
+						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
 				else if(category::frame_tag::value == wd->other.category)
 				{
-					native_interface::window_size(wd->other.attribute.frame->container, width, height);
+					native_interface::window_size(wd->other.attribute.frame->container, sz);
 					for(auto natwd : wd->other.attribute.frame->attach)
-						native_interface::window_size(natwd, width, height);
+						native_interface::window_size(natwd, sz);
 				}
 				else
 				{
 					//update the bground buffer of glass window.
 					if(wd->effect.bground && wd->parent)
 					{
-						wd->other.glass_buffer.make(width, height);
+						wd->other.glass_buffer.make(sz.width, sz.height);
 						wndlayout_type::make_bground(wd);
 					}
 				}
@@ -649,8 +645,8 @@ namespace detail
 
 			arg_resized arg;
 			arg.window_handle = reinterpret_cast<window>(wd);
-			arg.width = width;
-			arg.height = height;
+			arg.width = sz.width;
+			arg.height = sz.height;
 			brock.emit(event_code::resized, wd, arg, ask_update, brock.get_thread_context());
 			return true;
 		}

@@ -77,8 +77,8 @@ namespace nana
 				{
 					label_.caption(text);
 					auto text_s = label_.measure(API::screen_size().width * 2 / 3);
-					this->size(text_s.width + 10, text_s.height + 10);
-					label_.move(5, 5, text_s.width, text_s.height);
+					this->size(nana::size{ text_s.width + 10, text_s.height + 10 });
+					label_.move(rectangle{ 5, 5, text_s.width, text_s.height });
 
 					timer_.reset();
 					if (duration_)
