@@ -725,9 +725,17 @@ namespace nana
 		};
 
 		field_impl(place * p)
-			: attached(false),
-			place_ptr_(p)
+			: place_ptr_(p)
 		{}
+
+		~field_impl()
+		{
+			for (auto & e : elements)
+				API::umake_event(e.evt_destroy);
+
+			for (auto & e : fastened)
+				API::umake_event(e.evt_destroy);
+		}
 	private:
 		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
@@ -768,26 +776,26 @@ namespace nana
 			if (API::get_parent_window(wd) != place_ptr_->window_handle())
 				throw std::invalid_argument("Place: the window is not a child of place bind window");
 
-			fastened.push_back(wd);
-
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
-			API::events(wd).destroy.connect([this](const arg_destroy& arg)
+			auto evt = API::events(wd).destroy([this](const arg_destroy& arg)
 			{
 				auto destroyed_wd = arg.window_handle;
-				auto i = std::find_if(fastened.begin(), fastened.end(), [destroyed_wd](window wd){
-					return (wd == destroyed_wd);
+				auto i = std::find_if(fastened.begin(), fastened.end(), [destroyed_wd](element_t& e){
+					return (e.handle == destroyed_wd);
 				});
 
 				if (i != fastened.end())
 					fastened.erase(i);
 			});
+
+			fastened.emplace_back(wd, evt);
 			return *this;
 		}
 	public:
 		bool attached;
 		std::vector<element_t>	elements;
-		std::vector<window>	fastened;
+		std::vector<element_t>	fastened;
 	private:
 		place * place_ptr_;
 	};//end class field_impl
@@ -952,7 +960,7 @@ namespace nana
 				}
 
 				for (auto & fsn : field->fastened)
-					API::move_window(fsn, area_margined);
+					API::move_window(fsn.handle, area_margined);
 			}
 		}
 	private:
@@ -1369,7 +1377,7 @@ namespace nana
 			}
 
 			for (auto & fsn : field->fastened)
-				API::move_window(fsn, area);
+				API::move_window(fsn.handle, area);
 		}
 	public:
 		std::pair<unsigned, unsigned> dimension;
@@ -2022,9 +2030,16 @@ namespace nana
 					++i;
 			}
 
-			auto i = std::find(fld.second->fastened.begin(), fld.second->fastened.end(), handle);
+			auto i = std::find_if(fld.second->fastened.begin(), fld.second->fastened.end(), [handle](implement::field_impl::element_t& e)
+			{
+				return (e.handle == handle);
+			});
+
 			if (i != fld.second->fastened.end())
+			{
+				API::umake_event(i->evt_destroy);
 				fld.second->fastened.erase(i);
+			}
 		}
 
 		if (recollocate)
