@@ -397,18 +397,19 @@ namespace vplace_impl
 
     class  division : public Ifield
 	{
-        using owned = std::vector<std::unique_ptr< adjustable>> ;
-        bool division::set_arrange(const repeated_array& arranges, int gap_index, adjustable* field);      ///< betwen fields
       protected:
-        bool division::insert_gap (int gap_index);
+        using Owned = std::vector<std::unique_ptr< adjustable>> ;
 	  public:
-        using Children = std::vector< adjustable*>;
+        bool division::set_arrange(const repeated_array& arranges, int gap_index, adjustable* field);      ///< betwen fields
+        bool division::insert_gap (int gap_index);
+       using Children = std::vector< adjustable*>;
 		Children                  children;        ///< contain the fiels with are directly collocated
         std::vector <std::string> field_names;     ///< names used to find the fields in the global multimap of place fields to built the children
 		std::vector<window>       fastened_in_div;  
         repeated_array            gap;
-		std::vector<std::unique_ptr< adjustable>>   gaps;       ///< betwen fields
-		std::vector<std::unique_ptr< adjustable>>   arranges;       ///< betwen fields
+		Owned   owned;           ///< betwen fields
+		Owned   gaps;           ///< betwen fields
+		Owned   arranges;       ///< betwen fields
 
         Splitter                  *splitter{nullptr}; ///< this division have an splitter?
         std::unordered_map<std::string, repeated_array> arrange_;
@@ -505,7 +506,7 @@ namespace vplace_impl
         //std::vector<rectangle> collapses_;
         using Collapses =  std::set<rectangle, comp_collapse> ;
         Collapses collapses_ ;
-        void set_collapses(Collapses && collapses);
+        void add_collapses(const Collapses & collapses);
         void populate_children(	implement*   place_impl_) override;
 
         void collocate_field(const rectangle& r) override
@@ -731,21 +732,17 @@ namespace vplace_impl
 
             return splitter ;
         }
-    void div_grid::set_collapses(Collapses &&c)
+    void div_grid::add_collapses(const Collapses & collapses)
     {
-        for (Collapses::iterator i=c.begin(); i != c.end(); )
-            if (i->x > columns || i->y > rows)  // >=   ?????
-                i=c.erase(i);
+        for (rectangle r: collapses )
+            if (r.x > columns || r.y > rows)  // >=   ?????
+               continue;
             else 
             { 
-                if (i->right() > columns) i->width = columns - i->x ;
-                    
-                    || i->bottom() > rows)  // >=   ?????
-                i=c.erase(i);
-               ++i;
-
-        collapses_.swap(c);
-
+                if (r.right () > columns) r.width  = columns - r.x ;
+                if (r.bottom() > rows   ) r.height = rows    - r.y ;
+                collapses_.insert(r);
+            }
     }
 
 	class tokenizer
@@ -1182,18 +1179,46 @@ namespace vplace_impl
         gaps.clear();
         arranges.clear();
         int gap_index{0} ;
-        for (const auto &name : field_names)    /// for all the names in this div
-        {                                       /// find in the place global list of fields all the fields attached to it
+        auto cells=collapses_;
+        for(int c=0; c < columns; ++c)
+            for(int r=0; r < rows; ++c)
+                cells.insert(rectangle(c,r,1,1));
+
+        //for (const auto &name : field_names)    /// for all the names in this div : only gr_name !!?
+        //{                                       /// find in the place global list of fields all the fields attached to it
             int  arrange_index{0};
             auto arr_it=arrange_.find(name); 
             auto r= place_impl_->find(name); 
-            for (auto fi=r.first ; fi != r.second ; ++fi)   /// fi iterator that point to unique_ptr<IField>   
+            
+            auto cell=cells.begin() ;
+            for (auto fi=r.first ; fi != r.second && cell!=cells.end() ; ++fi, ++cell)   /// fi iterator that point to unique_ptr<IField>   
             {
-                if (fi!=r.first)                /// add posible gaps betwen fields,
-                    if (insert_gap(gap_index))   
-                        gap_index++;
                 auto field=fi->second.get ();      /// a ref to the unique_ptr<IField> 
-                if (arr_it!=arrange_.end() && set_arrange(arr_it->second, gap_index, field))
+
+                div_h* div{};    /// create a div where the gap will live
+                adjustable *adj;
+                auto fld=new Field<adjustable,div_h>  () ;
+                div=fld; adj=fld;
+                owned.emplace_back(adj);
+                children.push_back (adj);
+                div->children.push_back(field);
+
+                Room* room{};
+                adjustable *adj;
+                auto room_fld=new Field<adjustable,div_h>  () ;
+                div=fld; adj=fld;
+                owned.emplace_back(adj);
+                children.push_back (adj);
+                div->children.push_back(field);
+
+
+
+                if (fi!=r.first)                /// add posible gaps betwen fields,
+                    if (div->insert_gap (gap_index))   
+                        gap_index++;
+
+
+                if (arr_it!=arrange_.end() && div->set_arrange (arr_it->second, gap_index, field))
                     arrange_index++;
                 else 
                     children.push_back (field);       /// add the finded field to form the div children
@@ -1203,7 +1228,7 @@ namespace vplace_impl
             auto f= place_impl_->fastened.equal_range(name);
             for (auto fi=f.first ; fi != f.second ; ++fi)
                 fastened_in_div.push_back (fi->second );
-        }
+        //}
         split(); /// check if this division have an split and implement it
     }  
 
