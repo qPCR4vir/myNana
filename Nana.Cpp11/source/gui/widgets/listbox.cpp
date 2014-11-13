@@ -236,22 +236,20 @@ namespace nana
 				typedef std::vector<nana::string> container;
 
 				container texts;
-				color_t bgcolor;
-				color_t fgcolor;
+				color_t bgcolor{0xFF000000};
+				color_t fgcolor{0xFF000000};
 				nana::paint::image img;
 				nana::size img_show_size;
 
 				struct flags_tag
 				{
-					bool selected : 1;
-					bool checked : 1;
+					bool selected	:1;
+					bool checked	:1;
 				}flags;
-				mutable nana::any * anyobj;
+
+				mutable nana::any * anyobj{nullptr};
 
 				item_t()
-					:	bgcolor(0xFF000000),  ///\todo: use codigo
-						fgcolor(0xFF000000),  ///\todo: use codigo
-						anyobj(nullptr)
 				{
 					flags.selected = flags.checked = false;
 				}
@@ -276,19 +274,20 @@ namespace nana
 				}
 
 				item_t(nana::string&& s)
-					:	bgcolor(0xFF000000),  ///\todo: use codigo
-						fgcolor(0xFF000000),  ///\todo: use codigo
-						anyobj(nullptr)
 				{
 					flags.selected = flags.checked = false;
 					texts.emplace_back(std::move(s));
 				}
 
 				item_t(container&& texts)
-					:	texts(std::move(texts)),
-						bgcolor(0xFF000000),  ///\todo: use codigo
-						fgcolor(0xFF000000),  ///\todo: use codigo
-						anyobj(nullptr)
+					:	texts(std::move(texts))
+				{
+					flags.selected = flags.checked = false;
+				}
+
+				item_t(nana::string&& s, color_t bg, color_t fg)
+					:	bgcolor(bg),
+						fgcolor(fg)
 				{
 					flags.selected = flags.checked = false;
 				}
@@ -328,8 +327,12 @@ namespace nana
 
 				category_t() = default;
 
-				category_t(nana::string&& txt)
-					:text(std::move(txt))
+				category_t(nana::string&& str)
+					:text(std::move(str))
+				{}
+
+				category_t(const nana::string& str)
+					:text(str)
 				{}
 
 				bool selected() const
@@ -509,6 +512,12 @@ namespace nana
 				{
 					list_.emplace_back(std::move(text));
 					return &list_.back();
+				}
+
+				void create_cat(const std::initializer_list<nana::string> & args)
+				{
+					for (auto & arg : args)
+						list_.emplace_back(arg);
 				}
 
 				category_t* create_cat(std::shared_ptr<nana::detail::key_interface> ptr)
@@ -1009,7 +1018,9 @@ namespace nana
 						{
 							if(size_item(i))
 							{
-								next_selected = {i, 0};  // the first item of the first non-empty cat
+								//The first item which contains at least one item.
+								next_selected.cat = i;
+								next_selected.item = 0;
 								good = true;
 								break;
 							}
@@ -1248,7 +1259,7 @@ namespace nana
 					if(from.is_category())
 					{
 						//because the first is a category, and offs must not be 0, the category would not be candidated.
-						//the algorithm above to calc the offset item is always starting with an item.
+						//the algorithm above to calc the offset item is always starting with a item.
 						--offs;
 						from.item = 0;
 					}
@@ -2896,6 +2907,20 @@ namespace nana
 					}
 				}
 
+				void cat_proxy::append(std::initializer_list<nana::string> arg)
+				{
+					const auto items = columns();
+					push_back(nana::string{});
+					item_proxy ip{ ess_, index_pair(pos_, size() - 1) };
+					size_type pos = 0;
+					for (auto & txt : arg)
+					{
+						ip.text(pos++, txt);
+						if (pos >= items)
+							break;
+					}
+				}
+
 				auto cat_proxy::columns() const -> size_type
 				{
 					return ess_->header.cont().size();
@@ -3144,6 +3169,14 @@ namespace nana
 			ess.update();
 
 			return cat_proxy{ &ess, new_cat_ptr };
+		}
+
+		void listbox::append(std::initializer_list<nana::string> args)
+		{
+			internal_scope_guard lock;
+			auto & ess = get_drawer_trigger().essence();
+			ess.lister.create_cat(args);
+			ess.update();
 		}
 
 		auto listbox::insert(cat_proxy cat, nana::string str) -> cat_proxy

@@ -18,6 +18,7 @@
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
 #include <functional>
+#include <initializer_list>
 
 namespace nana
 {
@@ -308,6 +309,8 @@ namespace nana
 					return item_proxy(ess_);
 				}
 
+				void append(std::initializer_list<nana::string>);
+
 				size_type columns() const;
 
 				cat_proxy& text(const nana::string&);
@@ -423,6 +426,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void append_header(const nana::string &header_txt, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
 
 		cat_proxy append(nana::string);          ///<Appends a new category at the end
+		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
 		listbox& ordered_categories(bool);
