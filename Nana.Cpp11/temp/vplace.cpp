@@ -1137,7 +1137,7 @@ namespace nana{
             }
             auto cells = get_collapses ();
             for ( int c = 0; c < columns; ++c )
-                for ( int r = 0; r < rows; ++c )
+                for ( int r = 0; r < rows; ++r )
                     cells.insert ( rectangle ( c, r, 1, 1 ) );
 
             auto cell = cells.begin () ;
@@ -1381,15 +1381,15 @@ namespace nana{
                         {
                             case token::number:
                                 c = tknizer.number ();
-                                r = tknizer.number ();                break;
+                                r = tknizer.number ();                  break;
                             case token::array:
-                                if ( array.size () > 0 ) c = array[0];
-                                if ( array.size () > 1 ) r = array[1];   break;
+                                if ( tknizer.array().size () > 0 ) c = tknizer.array()[0];
+                                if ( tknizer.array().size () > 1 ) r = tknizer.array()[1];   
+                                                                        break;
                             case token::reparray:
                                 c = tknizer.reparray ().at ( 0 );
-                                r = tknizer.reparray ().at ( 1 );        break;
-                            default:
-                                break;
+                                r = tknizer.reparray ().at ( 1 );       break;
+                            default:                                    break;
                         }
                         if ( c.kind_of () != number_t::kind::percent )
                             columns = c.integer ();
@@ -1488,8 +1488,8 @@ namespace nana{
                     case token::eof:
                     case token::horizontal: div.reset ( new Field<percent, div_h> ( perc, w ) );  break;
                     case token::vertical:   div.reset ( new Field<percent, div_v> ( perc, w ) );	 break;
-                    case token::grid:       div.reset ( new Field<percent, div_grid> ( gr_name, perc, rows,
-                        columns, w ) ); break;
+                    case token::grid:       div.reset ( new Field<percent, div_grid> ( gr_name,  rows,
+                        columns, perc,w ) ); break;
                     default:
                         throw std::runtime_error ( "nana.place: invalid division type." );
                 }
@@ -1502,8 +1502,8 @@ namespace nana{
                         case token::eof:
                         case token::horizontal:	 div.reset ( new Field<fixed, div_h> ( fix, w ) ); break;
                         case token::vertical:	 div.reset ( new Field<fixed, div_v> ( fix, w ) ); break;
-                        case token::grid:        div.reset ( new Field<fixed, div_grid> ( gr_name, fix,
-                            rows, columns, w ) );        break;
+                        case token::grid:        div.reset ( new Field<fixed, div_grid> ( gr_name, 
+                            rows, columns, fix, w ) );        break;
                         default:
                             throw std::runtime_error ( "nana.place: invalid division type." );
                 } else
@@ -1534,11 +1534,7 @@ namespace nana{
             pdiv->arrange_.swap ( arrange_ );
 
             if ( div_type == token::grid )
-            {
-                if ( gr_name.empty () )     gr_name = field_names_in_div.back ();
                 static_cast<div_grid*>(pdiv)->collapses_.swap ( collapses );
-                //static_cast<div_grid*>( pdiv )->add_collapses (std::move(collapses));
-            }
             if ( margin.size () )
             {
                 std::unique_ptr<division> vd, td, hd, ld, cd, rd, bd;
