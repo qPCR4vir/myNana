@@ -221,12 +221,13 @@ namespace nana
 		nana::paint::image image(std::size_t) const;
 		void image_pixels(unsigned);  ///<Sets the width of image area. Default is 16 pixels.
 	private:
-		//Override _m_caption for caption()
-		nana::string _m_caption() const;
-		void _m_caption(const nana::string&);
-		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 		item_proxy _m_at_key(std::shared_ptr<nana::detail::key_interface>&&);
 		void _m_erase(nana::detail::key_interface*);
+	private:
+		//Overrides widget's virtual functions
+		nana::string _m_caption() const override;
+		void _m_caption(nana::string&&) override;
+		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 }
 #endif

@@ -393,10 +393,10 @@ namespace nana
 					}
 				}
 
-				void text(const nana::string& str)
+				void text(nana::string&& str)
 				{
-					if(editor_)
-						editor_->text(str);
+					if (editor_)
+						editor_->text(std::move(str));
 				}
 
 				void image(std::size_t pos, const nana::paint::image& img)
@@ -654,7 +654,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if(false == editor->mouse_down(arg.left_button, arg.pos.x, arg.pos.y))
+						if(false == editor->mouse_down(arg.left_button, arg.pos))
 							if(drawer_impl::where_t::push_button == drawer_->get_where())
 								drawer_->open_lister();
 
@@ -672,7 +672,7 @@ namespace nana
 					{
 						if(false == drawer_->has_lister())
 						{
-							drawer_->editor()->mouse_up(arg.left_button, arg.pos.x, arg.pos.y);
+							drawer_->editor()->mouse_up(arg.left_button, arg.pos);
 							drawer_->set_mouse_press(false);
 							drawer_->draw();
 							API::lazy_refresh();
@@ -685,7 +685,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						bool redraw = drawer_->calc_where(graph, arg.pos.x, arg.pos.y);
-						redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos.x, arg.pos.y);
+						redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos);
 
 						if(redraw)
 						{
@@ -1052,10 +1052,10 @@ namespace nana
 			return (editor ? editor->text() : nana::string());
 		}
 
-		void combox::_m_caption(const nana::string& str)
+		void combox::_m_caption(nana::string&& str)
 		{
 			internal_scope_guard isg;
-			get_drawer_trigger().get_drawer_impl().text(str);
+			get_drawer_trigger().get_drawer_impl().text(std::move(str));
 			API::refresh_window(*this);
 		}
 

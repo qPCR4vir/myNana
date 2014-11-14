@@ -48,8 +48,7 @@ namespace API
 
 		void attach_drawer(widget&, drawer_trigger&);
 		nana::string window_caption(window);
-		void window_caption(window, const nana::string&);
-		void window_caption(window, nana::string&&);
+		void window_caption(window, nana::string);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);

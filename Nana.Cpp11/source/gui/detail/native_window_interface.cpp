@@ -1075,7 +1075,7 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				wchar_t * wstr = 0;
+				wchar_t * wstr;
 #if defined(NANA_UNICODE)
 				wstr = new wchar_t[title.length() + 1];
 				wcscpy(wstr, title.c_str());

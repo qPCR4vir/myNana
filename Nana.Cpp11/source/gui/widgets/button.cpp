@@ -476,16 +476,16 @@ namespace nana{	namespace drawerbase
 				});
 			}
 
-			void button::_m_caption(const nana::string& text)
+			void button::_m_caption(nana::string&& text)
 			{
 				API::unregister_shortkey(handle());
 
 				nana::char_t shortkey;
 				API::transform_shortkey_text(text, shortkey, 0);
-				if(shortkey)
+				if (shortkey)
 					API::register_shortkey(handle(), shortkey);
 
-				base_type::_m_caption(text);
+				base_type::_m_caption(std::move(text));
 			}
 		//end class button
 }//end namespace nana

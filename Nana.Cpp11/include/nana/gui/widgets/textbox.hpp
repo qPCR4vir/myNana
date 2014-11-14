@@ -129,7 +129,7 @@ namespace nana
 		void load(const nana::char_t* file);
 		void store(const nana::char_t* file);        ///< Writes the text to a file with multibytes encoding.
 		void store(const nana::char_t* file, nana::unicode encoding); ///< Writes the text to a file with unicode encoding in little-endian.
-		textbox& reset(const nana::string& newtext = STR("") );      ///< discard the old text and set a newtext
+		textbox& reset(nana::string = {});      ///< discard the old text and set a newtext
 
 		/// The file of last store operation.
 		nana::string filename() const;
@@ -180,9 +180,9 @@ namespace nana
 		textbox& from(int);
 		textbox& from(double);
 	protected:
-		 
+		//Overrides widget's virtual functions
 		::nana::string _m_caption() const override;
-		void _m_caption(const ::nana::string&) override;
+		void _m_caption(::nana::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
 }//end namespace nana

@@ -3212,24 +3212,7 @@ namespace nana
 			return at(pos.cat).at(pos.item);
 		}
 
-		void listbox::insert(const index_pair& pos, const nana::string& text)
-		{
-			internal_scope_guard lock;
-			auto & ess = get_drawer_trigger().essence();
-			if(ess.lister.insert(pos, text))
-			{
-				window wd = handle();
-				if(false == API::empty_window(wd))
-				{
-					auto & item = ess.lister.at(pos);
-					item.bgcolor = API::background(wd);
-					item.fgcolor = API::foreground(wd);
-					ess.update();
-				}
-			}
-		}
-
-		void listbox::insert(const index_pair& pos, nana::string&& text)
+		void listbox::insert(const index_pair& pos, nana::string text)
 		{
 			internal_scope_guard lock;
 			auto & ess = get_drawer_trigger().essence();

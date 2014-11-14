@@ -92,19 +92,19 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_down(arg.left_button, arg.pos.x, arg.pos.y))
+			if(editor_->mouse_down(arg.left_button, arg.pos))
 				API::lazy_refresh();
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_move(arg.left_button, arg.pos.x, arg.pos.y))
+			if(editor_->mouse_move(arg.left_button, arg.pos))
 				API::lazy_refresh();
 		}
 
 		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
-			if(editor_->mouse_up(arg.left_button, arg.pos.x, arg.pos.y))
+			if(editor_->mouse_up(arg.left_button, arg.pos))
 				API::lazy_refresh();
 		}
 
@@ -279,13 +279,13 @@ namespace nana{	namespace drawerbase {
 			}
 		}
 
-		textbox& textbox::reset(const nana::string& str)
+		textbox& textbox::reset(nana::string str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(str);
+				editor->text(std::move(str));
 				editor->textbase().reset();
 				API::update_window(this->handle());
 			}
@@ -530,13 +530,13 @@ namespace nana{	namespace drawerbase {
 			return (editor ? editor->text() : nana::string());
 		}
 
-		void textbox::_m_caption(const nana::string& str)
+		void textbox::_m_caption(nana::string&& str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor)
+			if (editor)
 			{
-				editor->text(str);
+				editor->text(std::move(str));
 				API::update_window(this->handle());
 			}
 		}

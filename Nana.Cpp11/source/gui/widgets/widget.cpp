@@ -22,13 +22,8 @@ namespace nana
 		{
 			return this->_m_caption();
 		}
-		
-		void widget::caption(const nana::string& str)
-		{
-			_m_caption(str);
-		}
 
-		void widget::caption(nana::string&& str)
+		void widget::caption(nana::string str)
 		{
 			_m_caption(std::move(str));
 		}
@@ -185,11 +180,6 @@ namespace nana
 		nana::string widget::_m_caption() const
 		{
 			return API::dev::window_caption(handle());
-		}
-		
-		void widget::_m_caption(const nana::string& str)
-		{
-			API::dev::window_caption(handle(), str);
 		}
 
 		void widget::_m_caption(nana::string&& str)

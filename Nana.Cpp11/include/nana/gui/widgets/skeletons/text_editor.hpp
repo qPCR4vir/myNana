@@ -1,6 +1,7 @@
 /*
  *	A text editor implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -49,7 +50,7 @@ namespace nana{	namespace widgets
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
 			bool line_wrapped(bool);
 
-			void border_renderer(std::function<void(nana::paint::graphics&, nana::color_t bgcolor)>);
+			void border_renderer(std::function<void(graph_reference, nana::color_t bgcolor)>);
 
 			bool load(const nana::char_t*);
 			void store(const nana::char_t* tfs) ;
@@ -89,13 +90,12 @@ namespace nana{	namespace widgets
 			unsigned screen_lines() const;
 
 			bool getline(std::size_t pos, nana::string&) const;
-			void setline(std::size_t pos, const nana::string&);
-			void text(const nana::string&);
+			void text(nana::string);
 			nana::string text() const;
 
 			//move_caret
 			//@brief: Set caret position through text coordinate
-			void move_caret(size_type x, size_type y);
+			void move_caret(const upoint&);
 			void move_caret_end();
 			void reset_caret_height() const;
 			void reset_caret();
@@ -105,7 +105,7 @@ namespace nana{	namespace widgets
 			bool select(bool);
 			//Set the end position of a selected string
 			void set_end_caret();
-			bool hit_text_area(int x, int y) const;
+			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
 			bool move_select();
 			bool mask(char_t);
@@ -116,7 +116,7 @@ namespace nana{	namespace widgets
 			void draw_scroll_rectangle();
 			void render(bool focused);
 		public:
-			void put(const nana::string&);
+			void put(nana::string);
 			void put(nana::char_t);
 			void copy() const;
 			void paste();
@@ -124,17 +124,16 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace();
 			bool move(nana::char_t);
-			void move_up();
-			void move_down();
+			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			nana::upoint mouse_caret(int screen_x, int screen_y);
+			nana::upoint mouse_caret(const point& screen_pos);
 			nana::upoint caret() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
-			bool mouse_down(bool left_button, int screen_x, int screen_y);
-			bool mouse_move(bool left_button, int screen_x, int screen_y);
-			bool mouse_up(bool left_button, int screen_x, int screen_y);
+			bool mouse_down(bool left_button, const point& screen_pos);
+			bool mouse_move(bool left_button, const point& screen_pos);
+			bool mouse_up(bool left_button, const point& screen_pos);
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
@@ -199,18 +198,16 @@ namespace nana{	namespace widgets
 
 			struct attributes
 			{
-				attributes();
-
 				nana::string tip_string;
 
-				bool line_wrapped;
-				bool multi_lines;
-				bool editable;
-				bool enable_background;
-				bool enable_counterpart;
+				bool line_wrapped{false};
+				bool multi_lines{true};
+				bool editable{true};
+				bool enable_background{true};
+				bool enable_counterpart{false};
 				nana::paint::graphics counterpart; //this is used to keep the background that painted by external part.
 
-				std::unique_ptr<nana::scroll<true>>	vscroll;
+				std::unique_ptr<nana::scroll<true>>		vscroll;
 				std::unique_ptr<nana::scroll<false>>	hscroll;
 			}attributes_;
 
@@ -237,10 +234,9 @@ namespace nana{	namespace widgets
 
 			struct coordinate
 			{
-				coordinate();
 				nana::point offset;	//x stands for pixels, y for lines
 				nana::upoint caret;	//position of caret by text, it specifies the position of a new character
-				unsigned long xpos;	//This data is used for move up/down
+				unsigned long xpos{0};	//This data is used for move up/down
 			}points_;
 		};
 	}//end namespace skeletons
