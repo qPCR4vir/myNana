@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <cassert>
 #include <memory>
+#include <numeric> 
 
 #include <map>
 #include <set>
@@ -430,10 +431,8 @@ namespace nana{
             /// add field names in the same order in with they are introduced in the div layout str
             virtual void collocate_field ( const rectangle& r ) override
             {
-                //std::cerr<< "\ncollocating div in: "<<r; // debugg
-                Ifield::collocate_field ( r );
+                Ifield::collocate_field ( r );       //std::cerr<< "\ncollocating div in: "<<r; // debugg
                 rectangle area ( r );
-                //split();
 
                 adj pre_adj, end_adj; auto t_w = weigth_s ( area );
                 for ( auto child: children )
@@ -447,8 +446,8 @@ namespace nana{
                     weigth_s ( child_area ) = child->weigth ( t_w, pre_adj, end_adj )   ;
                     weigth_c ( area ) += weigth_s ( child_area );
                     weigth_s ( area ) -= weigth_s ( child_area );
-                    //std::cerr<< "\ncollocating child in: "<<child_area; // debugg
-                    child->collocate ( child_area );
+                    
+                    child->collocate ( child_area ); //std::cerr<<"\ncollocating child in: "<<child_area; //debugg
                 }
                 for ( auto & fsn: fastened_in_div )
                 {
@@ -501,7 +500,6 @@ namespace nana{
         class  div_grid : public div_h
         {
         public:
-            //using division::division;
             div_grid ( const std::string& name_, size dim_ ) :name ( name_ ), rows ( dim_.height ), columns ( dim_.width ) {};
             div_grid ( const std::string& name_, unsigned rows_, unsigned columns_ ) :name ( name_ ), rows ( rows_ ), columns ( columns_ ) {};
 
@@ -509,7 +507,6 @@ namespace nana{
 
             std::string name; ///< field name to be refered in the field(name)<<room instr.
             unsigned rows, columns;      ///< w=rows and h=columns   dim; 
-            //std::vector<rectangle> collapses_;
             using Collapses = std::set<rectangle, comp_collapse> ;
             Collapses collapses_ ;
             Collapses get_collapses ();
@@ -519,30 +516,21 @@ namespace nana{
             {
                 Ifield::collocate_field ( r );
 
-                for ( auto & fsn: fastened_in_div )
-                    API::move_window ( fsn, r );
-
-                double block_w = /*weigth_s( area )*/  r.width / double ( columns );    /// \todo: adapt to vert
-                double block_h = /*fixed_s( area )*/   r.height/ double ( rows );
+                double block_w = r.width / double ( columns ); /*weigth_s( area )*/     /// \todo: adapt to vert???
+                double block_h = r.height/ double ( rows    ); /*fixed_s ( area )*/  
 
                 for (auto child : children)
                 {
                     rectangle area, cr=child->cells() ;
                     area.x = r.x + static_cast<int>(cr.x * block_w);
                     area.y = r.y + static_cast<int>(cr.y * block_h);
-                    area.height =  static_cast<int>(cr.height * block_h);
                     area.width  =  static_cast<int>(cr.width * block_w);
+                    area.height =  static_cast<int>(cr.height * block_h);
 
                     child->collocate ( area );
-                    }
-            }
-        private:
-            unsigned _m_number_of_cells () const
-            {
-                unsigned n = 0;
-                for ( auto & child : children )
-                    n += child->cells ().width * child->cells ().height ;
-                return n;
+                }
+                for ( auto & fsn: fastened_in_div )
+                    API::move_window ( fsn, r );
             }
         };//end class div_grid
 
@@ -671,8 +659,8 @@ namespace nana{
                     continue;
                 else
                 {
-                    if ( r.right () >= columns ) r.width = columns - r.x-1 ;
-                    if ( r.bottom () >= rows ) r.height = rows    - r.y -1 ;
+                    if ( r.right () > columns ) r.width  = columns - r.x  ;
+                    if ( r.bottom() > rows    ) r.height = rows    - r.y  ;
                     c.insert ( r );
                 }
             return c;
@@ -1150,29 +1138,17 @@ namespace nana{
 
             if ( !rows || !columns )
             {
-                unsigned min_n_of_cells = _m_number_of_cells ();  // revise !!!?
-                unsigned edge = 1;
-                while ( edge*edge <= min_n_of_cells )
-                    ++edge;
-                rows = columns = edge;
-            }
-
-            if ( columns <= 1 && rows <= 1 )   // implement that only the number of col or row is fix
-            {
-                auto n_of_fld = std::count_if ( r.first, r.second, [](decltype(*r.first)&) { return true; } ) ; //???
-                unsigned edge;
-                switch ( n_of_fld )
-                {
-                    case 0:
-                    case 1:
-                        edge = 1;	break;
-                    case 2: case 3: case 4:
-                        edge = 2;	break;
-                    default:
-                        edge = static_cast<unsigned>(std::sqrt ( n_of_fld ));
-                        if ( (edge * edge) < n_of_fld ) ++edge;
+                unsigned min_n_of_cells = std::accumulate( r.first, r.second, 0, 
+                                      [](unsigned mc, decltype(*r.first)& cell)
+                                        { return mc + cell.second->cells().width * cell.second->cells().width; } );
+                unsigned dc{},dr{};
+                if (!rows) dr=1; else dc=1;
+                while ( columns*rows <= min_n_of_cells )  
+                {    
+                    rows +=dr;
+                    if ( columns*rows > min_n_of_cells )  break;
+                    columns +=dc; 
                 }
-                columns=rows=edge;
             }
             auto cells = get_collapses ();
             for ( int c = 0; c < columns; ++c )
@@ -1185,9 +1161,8 @@ namespace nana{
                 auto field = fi->second.get ();      /// a ref to the unique_ptr<IField>, the field that come in this cell
 
                 auto  cell_field = new Field<adjustable, Cell> ( *cell ) ;
-                Cell* cell_div{ cell_field };    /// create a div where the gap will live
-                adjustable *adj;
-                cell_div = cell_field; adj = cell_field;
+                Cell  *cell_div{ cell_field };    /// create a div where the gap will live
+                adjustable *adj{ cell_field };
                 owned.emplace_back ( adj );
                 children.push_back ( adj );
                 if ( cell->x )                /// add posible horizontal gap betwen fields. And the vertical  ??????
@@ -1305,11 +1280,9 @@ namespace nana{
                             default:                                    break;
                         }
                         if ( c.kind_of () != number_t::kind::percent )
-                            columns = c.integer ();
+                            columns = c.is_negative() ? 0 : c.integer ();
                         if ( r.kind_of () != number_t::kind::percent )
-                            rows = r.integer ();
-                        if ( !rows )    		rows = 1;     // ??? =0
-                        if ( !columns )			columns = 1;   // ??? =0
+                            rows    = r.is_negative() ? 0 : r.integer ();
                     }                                                    break;
                     case token::collapse:
                         if ( tknizer.parameters ().size () == 4 )
