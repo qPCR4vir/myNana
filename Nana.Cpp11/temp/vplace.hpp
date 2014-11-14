@@ -44,17 +44,20 @@ namespace nana
             minmax   MinMax      (                 )  { return *this;};
             static const unsigned MIN=0,MAX=1000000;
         };
-		vplace&  operator<< (window              wd) ;    
-		vplace&  operator<< (unsigned            gap) ;
+
+        vplace&  operator<< (window        wd) ;    
+		vplace&  operator<< (unsigned     gap) ;
         vplace&  operator<< (std::wstring txt) ;
         vplace&  operator<< (std::string  txt) ;
-	    vplace&  fasten(window wd)	 ;
-        vplace&  operator<< (adjustable &fld) ;
-		vplace&  operator<< (minmax              Size_range) ;
+        vplace&  operator<< (adjustable  &fld) ;
+		vplace&  operator<< (minmax Size_range) ;
+
+        vplace&  fasten(window wd)	 ;
 
 		 vplace(window parent_widget);
 		 vplace();
-		/** @brief Bind to a window
+
+         /** @brief Bind to a window
 		 *	@param handle	A handle to a window which the place wants to attach.
 		 *	@remark	It will throw an exception if the place has already binded to a window.
 		 */
@@ -63,6 +66,7 @@ namespace nana
 
 		void               div      (const ::std::string & layout);
 		void               collocate();
+        vplace&   operator[]  (std::string name){set_target_field (std::move(name));return *this;};    /// \todo: Add min and max
         vplace&       field   (std::string name){set_target_field (std::move(name));return *this;};    /// \todo: Add min and max
         void set_target_field (std::string name); 
 

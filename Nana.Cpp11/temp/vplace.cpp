@@ -1637,35 +1637,3 @@ namespace nana{
         return *this;  
     };
 }//end namespace nana
-
-        //class field_impl 
-        //{
-        //    adjustable * create_field ( window handle_, unsigned weight_ )
-        //    {
-        //        //std::cout<< "\n field fix widg";
-        //        return  new  Field< fixed, Widget> ( handle_, weight_ )      ;
-        //    }
-        //    adjustable * create_field ( window handle_, double   percent_ )
-        //    {
-        //        //std::cout<< "\n field perc widg";
-        //        return new Field< percent, Widget> ( handle_, percent_ ) ;
-        //    }
-        //    adjustable * create_field ( window handle_, unsigned rows_, unsigned columns_ )
-        //    {
-        //        //std::cout<< "\n field adj rom";
-        //        return new Field< adjustable, Room> ( handle_, rows_, columns_ );
-        //    }
-        //private:
-        //    //field_t& operator<<(const Field<fixed, Widget>& fx) { return add ( new Field<fixed, Widget> ( fx ) ); }//fixed_widget
-        //    //field_t& operator<<(const Field<percent, Widget>& pcnt) { return add ( new Field<percent, Widget> ( pcnt ) ); }//percent_widget
-        //    //field_t& operator<<( Field<adjustable, Room>& r)
-        //    //{
-        //    //    if ( !r.sz.width )    r.sz.width = 1;
-        //    //    if ( !r.sz.height)    r.sz.height= 1;
-        //    //     
-        //    //    return add ( &r );//adj_room
-        //    //}
-
-        //};//end class field_impl
-
-
