@@ -320,9 +320,9 @@ namespace nana{
             Field ( window handle_, double percent_, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( percent_, MinMax ) {}
 
             // for Room
-            Field ( window handle_, unsigned row_, unsigned column_, minmax MinMax = minmax () ) : Fld ( handle_, row_, column_ ), Adj ( MinMax ) {}
-            Field ( window handle_, unsigned row_, unsigned column_, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_, row_, column_ ), Adj ( weight, MinMax ) {}
-            Field ( window handle_, unsigned row_, unsigned column_, double percent_, minmax MinMax = minmax () ) : Fld ( handle_, row_, column_ ), Adj ( percent_, MinMax ) {}
+            Field ( window handle_, nana::size sz, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( MinMax ) {}
+            Field ( window handle_, nana::size sz, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( weight, MinMax ) {}
+            Field ( window handle_, nana::size sz, double percent_, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( percent_, MinMax ) {}
 
             // for Cell
             Field ( rectangle r, minmax MinMax = minmax () ) : Fld ( r ), Adj ( MinMax ) {}
@@ -380,10 +380,15 @@ namespace nana{
         //};
         struct Room : Widget    ///  
         {
-            Room ( window handle_, unsigned rows_, unsigned columns_ ) :
-                Widget ( handle_ ), rows ( rows_ ), columns ( columns_ ) {}
-            unsigned   rows, columns;
-            rectangle  cells_ () const override { return rectangle ( -1, -1, columns, rows ); }
+            Room ( window handle_, nana::size sz ) :
+                Widget ( handle_ ), sz ( sz  ) 
+            {
+            }
+            nana::size sz;
+            rectangle  cells_ () const override 
+            { 
+                return rectangle ( point(-1, -1), sz ); 
+            }
         };
 
         struct Splitter;
@@ -1569,9 +1574,9 @@ namespace nana{
     void        vplace::div ( const std::string& s ) { impl_->div ( s.c_str () ); }
     void        vplace::collocate () { impl_->collocate (); }
 
-    adjustable*         vplace::fixed ( window wd, unsigned size )
+    adjustable&         vplace::fixed ( window wd, unsigned size )
     {
-        return new vplace_impl::Field<vplace_impl::fixed, vplace_impl::Widget> ( wd, size );//fixed_widget
+        return *new vplace_impl::Field<vplace_impl::fixed, vplace_impl::Widget> ( wd, size );//fixed_widget
     }
     adjustable&         vplace::percent ( window wd, double per, minmax w )
     {
