@@ -69,6 +69,14 @@ namespace nana
         vplace&   operator[]  (std::string name){set_target_field (std::move(name));return *this;};    /// \todo: Add min and max
         vplace&       field   (std::string name){set_target_field (std::move(name));return *this;};    /// \todo: Add min and max
         void set_target_field (std::string name); 
+        
+        void field_visible(std::string name, bool visible); ///<Shows/Hides an existing field.
+        bool field_visible(std::string name     ) const;    ///<Determines whether the specified field is visible.
+
+        void field_display(std::string name, bool display); ///<Displays/Discards an existing field.
+        bool field_display(std::string name     ) const;    ///<Determines whether the specified field is displayed.
+
+
 
 
 		static adjustable&     fixed   (window wd                    , unsigned size    );

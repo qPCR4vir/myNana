@@ -51,9 +51,6 @@ namespace nana{
 
             struct Number;
             using  num = std::unique_ptr<Number>;
-            //struct Integer ; 
-            //struct Real ; 
-            //struct Percent; 
             struct Number
             {
                 enum class Kind { none, integer, real, percent };
@@ -1636,4 +1633,18 @@ namespace nana{
         impl_->fasten ( wd );
         return *this;  
     };
+
+	void vplace::field_display(std::string name, bool dsp)
+	{
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		if (div)
+			div->set_display(dsp);
+	}
+	bool vplace::field_display(std::string name) const
+	{
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		return (div && div->display);
+	}
+
+
 }//end namespace nana
