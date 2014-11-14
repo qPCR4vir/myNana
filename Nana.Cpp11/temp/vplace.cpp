@@ -518,16 +518,6 @@ namespace nana{
                 for ( auto & fsn: fastened_in_div )
                     API::move_window ( fsn, r );
 
-                if ( children.empty () ) return;
-
-                if ( (rows<=1 && columns<=1) || !rows || !columns )
-                {
-                    unsigned min_n_of_cells = _m_number_of_cells ();  // revise !!!?
-                    unsigned edge = 1;
-                    while ( edge*edge <= min_n_of_cells )
-                        ++edge;
-                    rows = columns = edge;
-                }
                 double block_w = /*weigth_s( area )*/  r.width / double ( columns );    /// \todo: adapt to vert
                 double block_h = /*fixed_s( area )*/   r.height/ double ( rows );
 
@@ -1118,6 +1108,16 @@ namespace nana{
             int  arrange_index{ 0 };
             auto arr_it = arrange_.find ( name );
             auto r = place_impl_->find ( name );
+
+            if ( !rows || !columns )
+            {
+                unsigned min_n_of_cells = _m_number_of_cells ();  // revise !!!?
+                unsigned edge = 1;
+                while ( edge*edge <= min_n_of_cells )
+                    ++edge;
+                rows = columns = edge;
+            }
+
             if ( columns <= 1 && rows <= 1 )   // implement that only the number of col or row is fix
             {
                 auto n_of_fld = std::count_if ( r.first, r.second, [](decltype(*r.first)&) { return true; } ) ; //???
