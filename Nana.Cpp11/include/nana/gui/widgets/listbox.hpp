@@ -419,7 +419,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 	public:
 		listbox();
 		listbox(window, bool visible);
-		listbox(window, const rectangle& = rectangle(), bool visible = true);
+		listbox(window, const rectangle& = {}, bool visible = true);
 
 		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
 
@@ -457,8 +457,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 
 		item_proxy at(const index_pair&) const;
 
-		void insert(const index_pair&, const nana::string&);    ///<Insert a new item with a text in the first column.
-		void insert(const index_pair&, nana::string&&);         ///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, nana::string);         ///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
 		selection checked() const;                         ///<Returns the items which are checked.                       

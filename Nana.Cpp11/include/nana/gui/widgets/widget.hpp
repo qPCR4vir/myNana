@@ -38,8 +38,7 @@ namespace nana
 		window parent() const;
 
 		nana::string caption() const;
-		void caption(const nana::string&);
-		void caption(nana::string&&);
+		void caption(nana::string);
 
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
@@ -84,7 +83,6 @@ namespace nana
 
 		virtual general_events& _m_get_general_events() const = 0;
 		virtual nana::string _m_caption() const;
-		virtual void _m_caption(const nana::string&);
 		virtual void _m_caption(nana::string&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);

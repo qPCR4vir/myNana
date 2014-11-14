@@ -316,8 +316,8 @@ namespace skeletons
 			if(pos < text_cont_.size())
 				return text_cont_[pos];
 
-			if(nullptr == nullstr_)
-				nullstr_ = std::shared_ptr<string_type>(new string_type);
+			if (nullptr == nullstr_)
+				nullstr_ = std::make_shared<string_type>();
 			return *nullstr_;
 		}
 

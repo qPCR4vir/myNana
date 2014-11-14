@@ -877,12 +877,12 @@ namespace nana
 			return *this;
 		}
 
-		void label::_m_caption(const nana::string& s)
+		void label::_m_caption(nana::string&& str)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			window wd = *this;
-			get_drawer_trigger().impl()->renderer.parse(s);
-			API::dev::window_caption(wd, s);
+			get_drawer_trigger().impl()->renderer.parse(str);
+			API::dev::window_caption(wd, std::move(str));
 			API::refresh_window(wd);
 		}
 	//end class label

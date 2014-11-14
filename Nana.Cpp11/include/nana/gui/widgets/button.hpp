@@ -103,8 +103,10 @@ namespace nana{
 			button& edge_effects(bool enable);
 		private:
 			void _m_shortkey();
-			void _m_complete_creation();
-			void _m_caption(const nana::string&);
+		private:
+			//Overrides widget virtual functions
+			void _m_complete_creation() override;
+			void _m_caption(nana::string&&) override;
 		};
 }//end namespace nana
 #endif

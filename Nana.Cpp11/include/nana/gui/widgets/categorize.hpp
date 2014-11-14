@@ -235,7 +235,8 @@ namespace nana
 			return this->get_drawer_trigger().value();
 		}
 	private:
-		void _m_caption(const nana::string& str)
+		//Overrides widget's virtual functions
+		void _m_caption(nana::string&& str) override
 		{
 			this->get_drawer_trigger().path(str);
 			API::dev::window_caption(*this, this->get_drawer_trigger().path());

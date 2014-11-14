@@ -70,13 +70,12 @@ namespace nana{	namespace widgets
 			unsigned screen_lines() const;
 
 			bool getline(std::size_t pos, nana::string&) const;
-			void setline(std::size_t pos, const nana::string&);
-			void text(const nana::string&);
+			void text(nana::string);
 			nana::string text() const;
 
 			//move_caret
 			//@brief: Set caret position through text coordinate
-			void move_caret(size_type x, size_type y);
+			void move_caret(const upoint&);
 			void move_caret_end();
 			void reset_caret_height() const;
 			void reset_caret();
@@ -86,7 +85,7 @@ namespace nana{	namespace widgets
 			bool select(bool);
 			//Set the end position of a selected string
 			void set_end_caret();
-			bool hit_text_area(int x, int y) const;
+			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
 			bool move_select();
 			bool mask(char_t);
@@ -97,7 +96,7 @@ namespace nana{	namespace widgets
 			void draw_scroll_rectangle();
 			void render(bool focused);
 		public:
-			void put(const nana::string&);
+			void put(nana::string);
 			void put(nana::char_t);
 			void copy() const;
 			void paste();
@@ -109,13 +108,13 @@ namespace nana{	namespace widgets
 			void move_down();
 			void move_left();
 			void move_right();
-			nana::upoint mouse_caret(int screen_x, int screen_y);
+			nana::upoint mouse_caret(const point& screen_pos);
 			nana::upoint caret() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
-			bool mouse_down(bool left_button, int screen_x, int screen_y);
-			bool mouse_move(bool left_button, int screen_x, int screen_y);
-			bool mouse_up(bool left_button, int screen_x, int screen_y);
+			bool mouse_down(bool left_button, const point& screen_pos);
+			bool mouse_move(bool left_button, const point& screen_pos);
+			bool mouse_up(bool left_button, const point& screen_pos);
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
