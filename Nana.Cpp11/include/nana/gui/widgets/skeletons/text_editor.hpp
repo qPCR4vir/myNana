@@ -1,6 +1,7 @@
 /*
  *	A text editor implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -49,7 +50,7 @@ namespace nana{	namespace widgets
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
 			bool line_wrapped(bool);
 
-			void border_renderer(std::function<void(nana::paint::graphics&, nana::color_t bgcolor)>);
+			void border_renderer(std::function<void(graph_reference, nana::color_t bgcolor)>);
 
 			bool load(const nana::char_t*);
 
@@ -104,8 +105,7 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace();
 			bool move(nana::char_t);
-			void move_up();
-			void move_down();
+			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
 			nana::upoint mouse_caret(const point& screen_pos);
@@ -179,18 +179,16 @@ namespace nana{	namespace widgets
 
 			struct attributes
 			{
-				attributes();
-
 				nana::string tip_string;
 
-				bool line_wrapped;
-				bool multi_lines;
-				bool editable;
-				bool enable_background;
-				bool enable_counterpart;
+				bool line_wrapped{false};
+				bool multi_lines{true};
+				bool editable{true};
+				bool enable_background{true};
+				bool enable_counterpart{false};
 				nana::paint::graphics counterpart; //this is used to keep the background that painted by external part.
 
-				std::unique_ptr<nana::scroll<true>>	vscroll;
+				std::unique_ptr<nana::scroll<true>>		vscroll;
 				std::unique_ptr<nana::scroll<false>>	hscroll;
 			}attributes_;
 
@@ -217,10 +215,9 @@ namespace nana{	namespace widgets
 
 			struct coordinate
 			{
-				coordinate();
 				nana::point offset;	//x stands for pixels, y for lines
 				nana::upoint caret;	//position of caret by text, it specifies the position of a new character
-				unsigned long xpos;	//This data is used for move up/down
+				unsigned long xpos{0};	//This data is used for move up/down
 			}points_;
 		};
 	}//end namespace skeletons

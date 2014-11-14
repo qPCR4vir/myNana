@@ -340,7 +340,7 @@ namespace skeletons
 			_m_edited();
 		}
 
-		void insert(size_type line, size_type pos, const char_type* str)
+		void insert(size_type line, size_type pos, string_type && str)
 		{
 			if(line < text_cont_.size())
 			{
@@ -353,7 +353,7 @@ namespace skeletons
 			}
 			else
 			{
-				text_cont_.emplace_back(str);
+				text_cont_.emplace_back(std::move(str));
 				line = text_cont_.size() - 1;
 			}
 
@@ -382,45 +382,52 @@ namespace skeletons
 			_m_edited();
 		}
 
-		void insertln(size_type line, const string_type& str)
+		void insertln(size_type pos, string_type&& str)
 		{
-			if(line < text_cont_.size())
-				text_cont_.insert(text_cont_.begin() + line, str);
+			if(pos < text_cont_.size())
+				text_cont_.emplace(text_cont_.begin() + pos, std::move(str));
 			else
-				text_cont_.push_back(str);
+				text_cont_.emplace_back(std::move(str));
 
-			_m_make_max(line);
+			_m_make_max(pos);
 			_m_edited();
 		}
 
 		void erase(size_type line, size_type pos, size_type count)
 		{
-			if(line < text_cont_.size())
+			if (line < text_cont_.size())
 			{
 				string_type& lnstr = text_cont_[line];
-				if((pos == 0) && (count >= lnstr.size()))
+				if ((pos == 0) && (count >= lnstr.size()))
 					lnstr.clear();
 				else
 					lnstr.erase(pos, count);
 
-				if(attr_max_.line == line)
+				if (attr_max_.line == line)
 					_m_scan_for_max();
 
 				_m_edited();
 			}
 		}
 
-		void erase(size_type pos)
+		bool erase(size_type pos, std::size_t n)
 		{
-			if(pos < text_cont_.size())
-				text_cont_.erase(text_cont_.begin() + pos);
+			//Bounds checking
+			if ((pos >= text_cont_.size()) || (0 == n))
+				return false;
+			
+			if (pos + n > text_cont_.size())
+				n = text_cont_.size() - pos;
 
-			if(pos == attr_max_.line)
+			text_cont_.erase(text_cont_.begin() + pos, text_cont_.begin() + (pos + n));
+
+			if (pos <= attr_max_.line && attr_max_.line < pos + n)
 				_m_scan_for_max();
-			else if(pos < attr_max_.line)
-				attr_max_.line--;
+			else if (pos < attr_max_.line)
+				attr_max_.line -= n;
 
 			_m_edited();
+			return true;
 		}
 
 		void erase_all()

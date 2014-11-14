@@ -1,7 +1,20 @@
+/*
+*	A text editor implementation
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/widgets/skeletons/text_editor.cpp
+*	@description:
+*/
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/unicode_bidi.hpp>
+#include <numeric>
 
 namespace nana{	namespace widgets
 {
@@ -1038,12 +1051,8 @@ namespace nana{	namespace widgets
 			if((ml == false) && attributes_.multi_lines)
 			{
 				//retain the first line and remove the extra lines
-				if(textbase_.lines() > 1)
-				{
-					for(std::size_t i = textbase_.lines() - 1; i > 0; --i)
-						textbase_.erase(i);
+				if (textbase_.erase(1, textbase_.lines() - 1))
 					_m_reset();
-				}
 			}
 
 			if(attributes_.multi_lines != ml)
@@ -1516,13 +1525,16 @@ namespace nana{	namespace widgets
 
 			if(lnstr.size() > points_.caret.x)
 			{
-				textbase_.insertln(points_.caret.y, lnstr.c_str() + points_.caret.x);
-				textbase_.erase(points_.caret.y - 1, points_.caret.x, lnstr.size() - points_.caret.x);
+				//Breaks the line and moves the rest part to a new line
+				auto rest_part_len = lnstr.size() - points_.caret.x;	//Firstly get the length of rest part, because lnstr may be invalid after insertln
+				textbase_.insertln(points_.caret.y, lnstr.substr(points_.caret.x));
+				textbase_.erase(points_.caret.y - 1, points_.caret.x, rest_part_len);
 			}
 			else
 			{
-				if(textbase_.lines() == 0) textbase_.insertln(0, STR(""));
-				textbase_.insertln(points_.caret.y, STR(""));
+				if (textbase_.lines() == 0)
+					textbase_.insertln(0, nana::string{});
+				textbase_.insertln(points_.caret.y, nana::string{});
 			}
 
 			const auto width_px = width_pixels();
@@ -1622,8 +1634,8 @@ namespace nana{	namespace widgets
 			{
 			case keyboard::os_arrow_left:	move_left();	break;
 			case keyboard::os_arrow_right:	move_right();	break;
-			case keyboard::os_arrow_up:		move_up();		break;
-			case keyboard::os_arrow_down:	move_down();	break;
+			case keyboard::os_arrow_up:		move_ns(true);	break;
+			case keyboard::os_arrow_down:	move_ns(false);	break;
 			case keyboard::os_del:
 				if (this->attr().editable)
 					del();
@@ -1634,18 +1646,11 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		void text_editor::move_up()
-		{
-			const bool redraw_required = _m_cancel_select(0);
-			if (behavior_->move_caret_ns(true) || redraw_required)
-				render(true);
-			_m_scrollbar();
-		}
 
-		void text_editor::move_down()
+		void text_editor::move_ns(bool to_north)
 		{
 			const bool redraw_required = _m_cancel_select(0);
-			if(behavior_->move_caret_ns(false) || redraw_required)
+			if (behavior_->move_caret_ns(to_north) || redraw_required)
 				render(true);
 			_m_scrollbar();
 		}
@@ -1946,7 +1951,7 @@ namespace nana{	namespace widgets
 				if(attributes_.multi_lines)
 				{
 					if(orig_str.size() == orig_x)
-						textbase_.insert(caret.y, caret.x, text.substr(beg, end - beg).c_str());
+						textbase_.insert(caret.y, caret.x, text.substr(beg, end - beg));
 					else
 						textbase_.replace(caret.y, (orig_str.substr(0, orig_x) + text.substr(beg, end - beg)).c_str());
 
@@ -1959,7 +1964,7 @@ namespace nana{	namespace widgets
 					while(end != nana::string::npos)
 					{
 						if(n != lines)
-							textbase_.insertln(caret.y, text.substr(beg, end - beg).c_str());
+							textbase_.insertln(caret.y, text.substr(beg, end - beg));
 
 						beg = end + 1;
 						caret.y++;
@@ -1968,14 +1973,15 @@ namespace nana{	namespace widgets
 						end = text.find('\n', beg);
 					}
 
-					textbase_.insertln(caret.y, (text.substr(beg) + orig_str.substr(orig_x)).c_str());
+					textbase_.insertln(caret.y, text.substr(beg) + orig_str.substr(orig_x));
 					caret.x = static_cast<unsigned>(text.size() - beg);
 				}
 				else
 				{
 					nana::string newstr = text.substr(beg, end);
-					textbase_.insert(caret.y, caret.x, newstr.c_str());
+					auto xpos = caret.x;
 					caret.x += static_cast<unsigned>(newstr.size());
+					textbase_.insert(caret.y, xpos, std::move(newstr));
 				}
 
 				const auto width_px = width_pixels();
@@ -1986,8 +1992,9 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
-				textbase_.insert(caret.y, caret.x, text.c_str());
+				auto xpos = caret.x;
 				caret.x += static_cast<unsigned>(text.size());
+				textbase_.insert(caret.y, xpos, std::move(text));
 				behavior_->pre_calc_line(caret.y, width_pixels());
 			}
 			return caret;
@@ -2003,8 +2010,7 @@ namespace nana{	namespace widgets
 				{
 					textbase_.erase(a.y, a.x, nana::string::npos);
 
-					for(unsigned ln = a.y + 1; ln < b.y; ++ln)
-						textbase_.erase(a.y + 1);
+					textbase_.erase(a.y + 1, b.y - a.y - 1);
 
 					textbase_.erase(a.y + 1, 0, b.x);
 					textbase_.merge(a.y);
@@ -2128,7 +2134,7 @@ namespace nana{	namespace widgets
 				else
 					return graph_.text_extent_size(str, static_cast<unsigned>(n));
 			}
-			return nana::size();
+			return{};
 		}
 
 		//_m_move_offset_x_while_over_border
@@ -2503,7 +2509,7 @@ namespace nana{	namespace widgets
 			std::vector<unicode_bidi::entity> reordered;
 			bidi.linestr(lnstr.c_str(), lnstr.size(), reordered);
 
-			const nana::char_t * ch = (pos <= lnstr.size() ? lnstr.c_str() + pos : 0);
+			const nana::char_t * ch = (pos <= lnstr.size() ? lnstr.c_str() + pos : nullptr);
 
 			std::size_t pxbuf_size = 0;
 			std::unique_ptr<unsigned[]> pxbuf;
@@ -2524,9 +2530,7 @@ namespace nana{	namespace widgets
 						}
 
 						graph_.glyph_pixels(ent.begin, len, pxbuf.get());
-						unsigned * end = pxbuf.get() + len;
-						for (unsigned * u = pxbuf.get() + (ch - ent.begin); u != end; ++u)
-							text_w += *u;
+						text_w = std::accumulate(pxbuf.get() + (ch - ent.begin), pxbuf.get() + len, text_w);
 					}
 					else
 					{
@@ -2548,19 +2552,6 @@ namespace nana{	namespace widgets
 			return (e.level & 1);
 		}
 
-		//struct attributes
-			text_editor::attributes::attributes()
-				:	line_wrapped(false),
-					multi_lines(true),
-					editable(true),
-					enable_background(true),
-					enable_counterpart(false)
-			{}
-		//end struct attributes
-
-		//struct coordinate
-			text_editor::coordinate::coordinate():xpos(0){}
-		//end struct coordinate
 		//end class text_editor
 	}//end namespace skeletons
 }//end namespace widgets
