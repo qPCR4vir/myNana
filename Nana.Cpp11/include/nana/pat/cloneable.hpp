@@ -1,5 +1,17 @@
-#ifndef NANA_PAT_PROTOTYPE_HPP
-#define NANA_PAT_PROTOTYPE_HPP
+/*
+*	A Generic Cloneable Pattern Implementation
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/pat/cloneable.hpp
+*	@description: A generic easy-to-use cloneable pattern implementation
+*/
+#ifndef NANA_PAT_CLONEABLE_HPP
+#define NANA_PAT_CLONEABLE_HPP
 
 #include <cstddef>
 #include <type_traits>
@@ -15,7 +27,7 @@ namespace nana{ namespace pat{
 		public:
 			typedef T interface_t;
 			typedef cloneable_interface cloneable_t;
-			virtual ~cloneable_interface(){}
+			virtual ~cloneable_interface() = default;
 			virtual interface_t& refer() = 0;
 			virtual const interface_t& refer() const = 0;
 			virtual cloneable_t* clone() const = 0;
@@ -52,22 +64,22 @@ namespace nana{ namespace pat{
 				:object_(u)
 			{}
 
-			virtual interface_t& refer()
+			virtual interface_t& refer() override
 			{
 				return object_;
 			}
 
-			virtual const interface_t& refer() const
+			virtual const interface_t& refer() const override
 			{
 				return object_;
 			}
 
-			virtual cloneable_interface<interface_t>* clone() const
+			virtual cloneable_interface<interface_t>* clone() const override
 			{
 				return (new cloneable_wrapper(object_));
 			}
 
-			virtual void self_delete() const
+			virtual void self_delete() const override
 			{
 				(delete this);
 			}
@@ -77,11 +89,14 @@ namespace nana{ namespace pat{
 
 	}//end namespace detail
 
-	template<typename Base>
+	template<typename Base, bool Mutable = false>
 	class cloneable
 	{
-		typedef Base base_t;
-		typedef detail::cloneable_interface<base_t> interface_t;
+		using base_t = Base;
+		using interface_t = detail::cloneable_interface < base_t > ;
+
+		using const_base_ptr = typename std::conditional<Mutable, base_t*, const base_t*>::type;
+		using const_base_ref = typename std::conditional<Mutable, base_t&, const base_t&>::type;
 
 		struct deleter
 		{
@@ -112,8 +127,10 @@ namespace nana{ namespace pat{
 			: fast_ptr_(nullptr)
 		{}
 
-		template<typename T>
-		cloneable(T&& t, typename member_enabled<T>::type = 0)
+		//template<typename T>
+		//cloneable(T&& t, typename member_enabled<T>::type = 0)	//deprecated
+		template<typename T, typename member_enabled<T>::type* = nullptr>
+		cloneable(T&& t)
 			:	cwrapper_(new detail::cloneable_wrapper<typename std::remove_cv<typename std::remove_reference<T>::type>::type, base_t>(std::forward<T>(t)), deleter()),
 				fast_ptr_(&(cwrapper_->refer()))
 		{}
@@ -164,7 +181,8 @@ namespace nana{ namespace pat{
 			return *fast_ptr_;
 		}
 
-		const base_t& operator*() const
+		//const base_t& operator*() const	//deprecated
+		const_base_ref operator*() const
 		{
 			return *fast_ptr_;
 		}
@@ -174,7 +192,8 @@ namespace nana{ namespace pat{
 			return fast_ptr_;
 		}
 
-		const base_t * operator->() const
+		//const base_t * operator->() const	//deprecated
+		const_base_ptr operator->() const
 		{
 			return fast_ptr_;
 		}
@@ -199,118 +218,8 @@ namespace nana{ namespace pat{
 		base_t * fast_ptr_;
 	};
 
-	template<typename Base>
-	class mutable_cloneable
-	{
-		typedef Base base_t;
-		typedef detail::cloneable_interface<base_t> interface_t;
-
-		struct deleter
-		{
-			void operator()(interface_t * p)
-			{
-				if(p)
-					p->self_delete();
-			}
-		};
-
-		struct inner_bool
-		{
-			int true_stand;
-		};
-
-		typedef int inner_bool::* operator_bool_t;
-
-		template<typename U>
-		struct member_enabled
-			: public std::enable_if<std::is_base_of<base_t, typename std::remove_reference<U>::type>::value && (!std::is_base_of<mutable_cloneable, typename std::remove_reference<U>::type>::value), int>
-		{};
-	public:
-		mutable_cloneable()
-			: fast_ptr_(nullptr)
-		{}
-
-		mutable_cloneable(std::nullptr_t)
-			: fast_ptr_(nullptr)
-		{}
-
-		template<typename T>
-		mutable_cloneable(T&& t, typename member_enabled<T>::type = 0)
-			: cwrapper_(new detail::cloneable_wrapper<typename std::remove_cv<typename std::remove_reference<T>::type>::type, base_t>(std::forward<T>(t)), deleter()),
-			fast_ptr_(&(cwrapper_->refer()))
-		{
-		}
-
-		mutable_cloneable(const mutable_cloneable& r)
-			:	cwrapper_(nullptr),
-				fast_ptr_(nullptr)
-		{
-			if(r.cwrapper_)
-			{
-				cwrapper_ = std::shared_ptr<interface_t>(r.cwrapper_->clone(), deleter());
-				fast_ptr_ = &(cwrapper_->refer());
-			}
-		}
-
-		mutable_cloneable(mutable_cloneable && r)
-			:	cwrapper_(std::move(r.cwrapper_)),
-				fast_ptr_(r.fast_ptr_)
-		{
-			r.fast_ptr_ = nullptr;
-		}
-
-		mutable_cloneable & operator=(const mutable_cloneable& r)
-		{
-			if((this != &r) && r.cwrapper_)
-			{
-				cwrapper_ = std::shared_ptr<interface_t>(r.cwrapper_->clone(), deleter());
-				fast_ptr_ = &(cwrapper_->refer());
-			}
-			return *this;
-		}
-
-		mutable_cloneable & operator=(mutable_cloneable&& r)
-		{
-			if(this != &r)
-			{
-				cwrapper_ = r.cwrapper_;
-				fast_ptr_ = r.fast_ptr_;
-
-				r.cwrapper_.reset();
-				r.fast_ptr_ = nullptr;
-			}
-			return *this;
-		}
-
-		base_t& operator*() const
-		{
-			return *fast_ptr_;
-		}
-
-		base_t * operator->() const
-		{
-			return fast_ptr_;
-		}
-
-		base_t * get() const
-		{
-			return fast_ptr_;
-		}
-
-		void reset()
-		{
-			fast_ptr_ = nullptr;
-			cwrapper_.reset();
-		}
-
-		operator operator_bool_t() const volatile
-		{
-			return (fast_ptr_ ? &inner_bool::true_stand : nullptr);
-		}
-	private:
-		std::shared_ptr<interface_t> cwrapper_;
-		base_t * fast_ptr_;
-	};
+	template<typename T>
+	using mutable_cloneable = cloneable < T, true > ;
 }//end namespace pat
 }//end namespace nana
 
