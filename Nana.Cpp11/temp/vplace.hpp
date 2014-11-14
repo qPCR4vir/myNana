@@ -44,19 +44,13 @@ namespace nana
             minmax   MinMax      (                 )  { return *this;};
             static const unsigned MIN=0,MAX=1000000;
         };
-		struct field_t
-		{
-			virtual field_t& operator<<(window              wd)		= 0;    
-			virtual field_t& operator<<(unsigned            gap)  	= 0;
-            virtual field_t& operator<<(const std::wstring& txt)		= 0;
-            virtual field_t& operator<<(const std::string&  txt)		= 0;
-			virtual field_t& fasten(window wd)	    = 0;
-			virtual ~field_t()                      = 0;
-            virtual field_t& operator<<(adjustable *            fld)		= 0;
-			virtual field_t& operator<<(minmax              Size_range)	= 0;
-		};
-
-		typedef field_t &             field_reference;
+		vplace&  operator<< (window              wd) ;    
+		vplace&  operator<< (unsigned            gap) ;
+        vplace&  operator<< (std::wstring txt) ;
+        vplace&  operator<< (std::string  txt) ;
+	    vplace&  fasten(window wd)	 ;
+        vplace&  operator<< (adjustable &fld) ;
+		vplace&  operator<< (minmax              Size_range) ;
 
 		 vplace(window parent_widget);
 		 vplace();
@@ -69,16 +63,16 @@ namespace nana
 
 		void               div      (const ::std::string & layout);
 		void               collocate();
-		field_reference    field   (const ::std::string & name);    /// \todo: Add min and max
+        vplace&       field   (std::string name){set_target_field (std::move(name));return *this;};    /// \todo: Add min and max
+        void set_target_field (std::string name); 
 
 
-
-		static adjustable*     fixed   (window wd                    , unsigned size    );
-		static adjustable*     fixed   (const std::wstring& txt      , unsigned size    );
-		static adjustable*     fixed   (const std::string&  txt      , unsigned size    );
-		static adjustable*     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
+		static adjustable&     fixed   (window wd                    , unsigned size    );
+		static adjustable&     fixed   (const std::wstring& txt      , unsigned size    );
+		static adjustable&     fixed   (const std::string&  txt      , unsigned size    );
+		static adjustable&     percent (window wd, double   percent_ , minmax MinMax=minmax()    );
         /// Use room (wd,w,h) in combination with a <Table grid=[W,H]>
-		static adjustable*     room    (window wd, unsigned width, unsigned height);/// \todo: Add min and max
+		static adjustable&     room    (window wd, nana::size sz);/// \todo: Add min and max
 
 	  private:
 		implement * impl_;
@@ -88,18 +82,3 @@ namespace nana
 
 #endif //#ifndef NANA_GUI_PLACE_HPP
 
-
-
-  //      struct element{};
-  //      vplace& operator ()  (const ::std::string & name){ Set_def_field(name); return *this; }
-		//vplace& operator<<(minmax              Size_range)	;
-  //      vplace& operator<<(const std::wstring& txt)	;
-  //      vplace& operator<<(const std::string&  txt)	;
-		//vplace& operator<<(window              wd)	;    
-		//vplace& operator<<(unsigned            gap) ;
-		//vplace& fasten(window wd)	    ;
-  //      vplace& operator<<(element             e )	;
-		//element    Fixed   (window wd, unsigned size         );
-		//element    Percent (window wd, double   percent_ , minmax MinMax=minmax()    );
-		//element    Room    (window wd, unsigned width, unsigned height);/// \todo: Add min and max
-                                                        /// Use room (wd,w,h) in combination with a <Table grid=[W,H]>

@@ -213,7 +213,6 @@ namespace nana{
         };
 
         typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
-        typedef vplace::field_t field_t;
         struct adj { unsigned weigth, min, count_adj; adj () :weigth ( 0 ), min ( 0 ), count_adj ( 0 ) {} };
 
 
@@ -913,7 +912,8 @@ namespace nana{
 
         struct implement           //struct implement
         {
-            std::unique_ptr<field_t>        temp_field_t;
+            std::string                     curr_field;
+            minmax                          curr_minmax;
             window                          parent_window_handle{ nullptr };
             event_handle                    event_size_handle{ nullptr };
             std::unique_ptr<adjustable>     root_division;
@@ -954,6 +954,42 @@ namespace nana{
                 fields_.emplace ( name, std::move ( adj ) );
                 recollocate = true;
             }
+            
+            void add_label ( const nana::string& txt )
+            {
+                nana::label*lab = std::addressof ( nana::form_loader <nana::label> ()(parent_window_handle, txt) );
+                labels.push_back ( lab );
+                add ( new Field< adjustable, Widget> (*lab) );
+            }            
+            void add ( adjustable * fld )
+            {
+                fld->MinMax ( curr_minmax );      //std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
+                _m_make_destroy ( fld );
+                registre ( curr_field, std::unique_ptr<adjustable> ( fld ) );
+                recollocate = true;                //return *this;
+            }
+            void fasten ( window wd )              
+            {
+                fastened.emplace ( curr_field, wd );
+                recollocate = true;
+                //Listen to destroy of a window. The deleting a fastened window
+                //does not change the layout.
+                auto dtr = API::events ( wd ).destroy.connect ( [this]( const arg_destroy& ei )
+                {
+                    for ( auto f = fastened.begin (), end = fastened.end (); f!=end; ++f )
+                        if ( f->second ==  ei.window_handle )
+                        {
+                        fastened.erase ( f );    // delete ???
+                        recollocate = true;
+                        return;
+                        }
+                } );
+                //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
+                //{
+                //    API::umake_event(dtr); 
+                //});	
+            }
+
 
         private:
             /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
@@ -989,8 +1025,6 @@ namespace nana{
                             }
                 } );
             }
-
-
         };	      //struct implement
 
         bool division::insert_gap ( int gap_index )
@@ -1187,134 +1221,8 @@ namespace nana{
                     recollocate = false;
 
                 }
-                //			                                //rectangle r; // debugg
-                //root_division->collocate(r/*=API::window_size(parent_window_handle)*/);
-                ////std::cerr<< "\ncollocating root div  [ "<<this->parent_window_handle<<" ]) with area: "<<r; // debugg
             }
         }
-
-        class field_impl : public field_t, public minmax
-        {
-            implement * place_impl_;
-        public:
-            std::string name;
-
-            field_impl ( implement * p, const std::string& name_ ) : place_impl_ ( p ), name ( name_ ) {}
-
-        public:
-            adjustable * create_field ( window    wd )
-            {
-                //std::cout<< "\n field window";
-                return  new Field< adjustable, Widget> ( wd ) ;
-            }
-            adjustable * create_field ( unsigned gap )
-            {
-                //std::cout<< "\n field gap";
-                return  new Field<fixed, Gap> ( gap ) ;
-            }
-            adjustable * create_field ( window handle_, unsigned weight_ )
-            {
-                //std::cout<< "\n field fix widg";
-                return  new  Field< fixed, Widget> ( handle_, weight_ )      ;
-            }
-            adjustable * create_field ( window handle_, double   percent_ )
-            {
-                //std::cout<< "\n field perc widg";
-                return new Field< percent, Widget> ( handle_, percent_ ) ;
-            }
-            adjustable * create_field ( window handle_, unsigned rows_, unsigned columns_ )
-            {
-                //std::cout<< "\n field adj rom";
-                return new Field< adjustable, Room> ( handle_, rows_, columns_ );
-            }
-        private:
-            field_t& add ( adjustable * fld )
-            {
-                //std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
-                fld->MinMax ( *this );
-                place_impl_->_m_make_destroy ( fld );
-                place_impl_->registre ( name, std::unique_ptr<adjustable> ( fld ) );
-                place_impl_->recollocate = true;
-                return *this;
-            }
-
-            field_t& operator<<(const std::string&  txt)	override
-            {
-                //return *this;  //  ttttttttttttttttttttttttttttttttttttttttttt
-                return add_label ( nana::charset ( txt ) );
-            };
-            field_t& operator<<(const std::wstring&  txt)	override
-            {
-                //return *this;    //  ttttttttttttttttttttttttttttttttttttttttttt
-                return add_label ( nana::charset ( txt ) );
-            };
-            field_t&  add_label ( const nana::string& txt )
-            {
-                //std::unique_ptr <nana::label> lab(new nana::label(place_impl_->parent_window_handle, txt  ));
-                //API::
-                nana::label*lab = std::addressof ( nana::form_loader <nana::label> ()(place_impl_->parent_window_handle, txt) );
-                place_impl_->labels.push_back ( lab );/*newstd::addressof (nana::form_loader <nana::label>()(place_impl_->parent_window_handle, txt  ))*/
-                //place_impl_->labels.emplace_back (new nana::label(place_impl_->parent_window_handle, txt  ));
-                add ( create_field ( *place_impl_->labels.back () ) );
-                //auto pi = place_impl_;
-                //auto dtr = API::events(*lab).destroy ( [pi](const arg_destroy& ei)
-                //{
-                //	for (auto f=pi->labels.begin(); f!=pi->labels.end(); ++f)
-                //                 if (/*->get()*/(*f)->handle() ==  ei.window_handle )
-                //                 {
-                //                     pi->labels.erase(f);    // delete ???
-                //	        pi->recollocate = true;
-                //	        pi->collocate();
-                //                     break;
-                //                 }
-                //});
-                //API::make_event<events::destroy>(*lab, [dtr](const eventinfo& ei)
-                //{
-                //    API::umake_event(dtr); 
-                //});	
-
-                return *this;
-            }
-            field_t& operator<<(minmax Size_range)	override { MinMax ( Size_range ) ; return *this; };
-            field_t& operator<<(adjustable * fld)   override { return add ( fld ); }
-            field_t& operator<<(window   wd)        override { return add ( create_field ( wd ) ); }
-            field_t& operator<<(unsigned gap)       override { return add ( create_field ( gap ) ); }
-            field_t& fasten ( window wd )              override
-            {
-                place_impl_->fastened.emplace ( name, wd );
-                place_impl_->recollocate = true;
-                //Listen to destroy of a window. The deleting a fastened window
-                //does not change the layout.
-                auto pi = place_impl_;
-                auto dtr = API::events ( wd ).destroy.connect ( [pi]( const arg_destroy& ei )
-                {
-                    for ( auto f = pi->fastened.begin (), end = pi->fastened.end (); f!=end; ++f )
-                        if ( f->second ==  ei.window_handle )
-                        {
-                        pi->fastened.erase ( f );    // delete ???
-                        pi->recollocate = true;
-                        return;
-                        }
-                } );
-                //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
-                //{
-                //    API::umake_event(dtr); 
-                //});	
-                return *this;
-            }
-            field_t& operator<<(const Field<fixed, Widget>& fx) { return add ( new Field<fixed, Widget> ( fx ) ); }//fixed_widget
-            field_t& operator<<(const Field<percent, Widget>& pcnt) { return add ( new Field<percent, Widget> ( pcnt ) ); }//percent_widget
-            field_t& operator<<(const Field<adjustable, Room>& r)
-            {
-                Field<adjustable, Room> x = r;
-                if ( x.rows == 0 )   //  sure ????
-                    x.rows = 1;
-                if ( x.columns == 0 )
-                    x.columns = 1;
-                return add ( new Field<adjustable, Room> ( x ) );//adj_room
-            }
-
-        };//end class field_impl
 
         std::unique_ptr<adjustable> implement::scan_div ( tokenizer& tknizer )
         {
@@ -1660,26 +1568,30 @@ namespace nana{
     vplace::~vplace () { delete impl_; }
     void        vplace::div ( const std::string& s ) { impl_->div ( s.c_str () ); }
     void        vplace::collocate () { impl_->collocate (); }
-    vplace::field_reference vplace::field ( const std::string& name )
-    {
-        impl_->temp_field_t.reset ( new vplace_impl::field_impl ( this->impl_, name ) );
-        return  *impl_->temp_field_t;
-    }
 
     adjustable*         vplace::fixed ( window wd, unsigned size )
     {
         return new vplace_impl::Field<vplace_impl::fixed, vplace_impl::Widget> ( wd, size );//fixed_widget
     }
-    adjustable*         vplace::percent ( window wd, double per, minmax w )
+    adjustable&         vplace::percent ( window wd, double per, minmax w )
     {
-        return new vplace_impl::Field<vplace_impl::percent, vplace_impl::Widget> ( wd, per, w );//percent_widget
+        return *new vplace_impl::Field<vplace_impl::percent, vplace_impl::Widget> ( wd, per, w );//percent_widget
     }
-    adjustable*         vplace::room ( window wd, unsigned width, unsigned height )
+    adjustable&         vplace::room ( window wd, nana::size sz)
     {
-        return new vplace_impl::Field<vplace_impl::adjustable, vplace_impl::Room > ( wd, height, width );//adj_room
+        return *new vplace_impl::Field<vplace_impl::adjustable, vplace_impl::Room > ( wd, sz );//adj_room
     }
     vplace::minmax::minmax ( unsigned Min, unsigned Max ) : min ( Min ), max ( Max ) {}
-    vplace::field_t::~field_t () {}
+    void vplace::set_target_field (std::string name)
+    {
+        impl_->curr_field = name;
+    }
+    //vplace& vplace::field ( std::string name )
+    //{
+    //    impl_->curr_field = name;
+    //    //impl_->temp_field_t.reset ( new vplace_impl::field_impl ( this->impl_, name ) );
+    //    return *this; // *impl_->temp_field_t;
+    //}
 
     void vplace::bind ( window wd )
     {
@@ -1711,6 +1623,71 @@ namespace nana{
         return false;
     }
 
+    vplace& vplace::operator<<(std::string txt)	 
+    {
+        impl_->add_label ( nana::charset ( txt ) );      
+        return *this;  
+    };
+    vplace& vplace::operator<<(std::wstring txt)	 
+    {
+        impl_->add_label ( nana::charset ( txt ) );      
+        return *this;  
+    };
+    vplace& vplace::operator<<(minmax Size_range)	 
+    {
+        impl_->curr_minmax = Size_range;      
+        return *this;  
+    };
+    vplace& vplace::operator<<(adjustable& fld) 
+    {
+        impl_->add ( &fld );   
+        return *this;  
+    };
+    vplace& vplace::operator<<(window   wd)  
+    {
+        impl_->add ( new vplace_impl::Field< adjustable, vplace_impl::Widget> (wd) );
+        return *this;  
+    };
+    vplace& vplace::operator<<(unsigned gap) 
+    {
+        impl_->add ( new vplace_impl::Field<vplace_impl::fixed, vplace_impl::Gap> ( gap )) ;
+        return *this;  
+    };
+    vplace& vplace::fasten ( window wd )    
+    {
+        impl_->fasten ( wd );
+        return *this;  
+    };
 }//end namespace nana
+
+        //class field_impl 
+        //{
+        //    adjustable * create_field ( window handle_, unsigned weight_ )
+        //    {
+        //        //std::cout<< "\n field fix widg";
+        //        return  new  Field< fixed, Widget> ( handle_, weight_ )      ;
+        //    }
+        //    adjustable * create_field ( window handle_, double   percent_ )
+        //    {
+        //        //std::cout<< "\n field perc widg";
+        //        return new Field< percent, Widget> ( handle_, percent_ ) ;
+        //    }
+        //    adjustable * create_field ( window handle_, unsigned rows_, unsigned columns_ )
+        //    {
+        //        //std::cout<< "\n field adj rom";
+        //        return new Field< adjustable, Room> ( handle_, rows_, columns_ );
+        //    }
+        //private:
+        //    //field_t& operator<<(const Field<fixed, Widget>& fx) { return add ( new Field<fixed, Widget> ( fx ) ); }//fixed_widget
+        //    //field_t& operator<<(const Field<percent, Widget>& pcnt) { return add ( new Field<percent, Widget> ( pcnt ) ); }//percent_widget
+        //    //field_t& operator<<( Field<adjustable, Room>& r)
+        //    //{
+        //    //    if ( !r.sz.width )    r.sz.width = 1;
+        //    //    if ( !r.sz.height)    r.sz.height= 1;
+        //    //     
+        //    //    return add ( &r );//adj_room
+        //    //}
+
+        //};//end class field_impl
 
 
