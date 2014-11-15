@@ -209,460 +209,6 @@ namespace nana{
                 return !repeated_ || pos>=values_.size () ;
             }
         };
-
-        typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
-        struct adj { unsigned weigth, min, count_adj; adj () :weigth ( 0 ), min ( 0 ), count_adj ( 0 ) {} };
-
-
-        struct adjustable :minmax
-        {
-            adjustable ( minmax MinMax = minmax () ) : minmax ( MinMax ) {}
-            virtual ~adjustable () {}
-            virtual void        collocate ( const rectangle& r ) = 0;
-            virtual rectangle   cells ()   const = 0;
-            virtual void        populate_children ( implement*   place_impl_ ) = 0;
-
-            virtual adj   pre_place ( unsigned t_w, adj& fixed = adj () )
-            {
-                ++fixed.count_adj;
-                fixed.min += min;
-                return  fixed;
-            }
-            virtual adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () )
-            {
-                if ( t_w      <   fixed.weigth + fixed.min )
-                { adj_min.weigth += min; return adj_min; }
-                if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                { adj_min.weigth += min; return adj_min; }
-                if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                { adj_min.weigth += max; return adj_min; }
-
-                adj_min.min += min;
-                ++adj_min.count_adj;   return  adj_min;
-            }
-            virtual unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )
-            {
-                if ( t_w      <   fixed.weigth + fixed.min )
-                { return min; }
-                if ( t_w <    min * fixed.count_adj   + fixed.weigth )
-                { return min; }
-                if ( t_w >    max * fixed.count_adj   + fixed.weigth )
-                { return max; }
-                if ( t_w <    min * adj_min.count_adj + adj_min.weigth )
-                { return min; }
-                if ( t_w >    max * adj_min.count_adj + adj_min.weigth )
-                { return max; }
-
-                return  (t_w - adj_min.weigth) / adj_min.count_adj  ;
-            }
-        };
-        struct fixed : adjustable
-        {
-            fixed ( unsigned weight, minmax MinMax = minmax () ) : weight_ ( weight ), adjustable ( MinMax ) {}
-
-            unsigned weight_;
-
-            void        setWeigth ( unsigned w ) { weight_ = w; }
-            unsigned    getWeigth () { return weight_; }
-
-
-            adj   pre_place ( unsigned t_w, adj&   fixed = adj () ) override
-            { fixed.weigth += weigth_adj ( t_w ) ;   return  fixed; }
-
-            adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () ) override
-            { adj_min.weigth += weigth_adj ( t_w ) ;   return  adj_min; }
-
-            unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )  override
-            { return weigth_adj ( t_w ); }
-
-            virtual unsigned weigth_adj ( unsigned t_w )
-            {
-                if ( weight_  < min ) { return min; }
-                if ( weight_  > max ) { return max; }
-
-                return  weight_;
-            }
-        };
-        struct percent : fixed
-        {
-            percent ( double percent_, minmax MinMax = minmax () ) :fixed ( static_cast<unsigned>(fx*percent_), MinMax ) {}
-
-            const static unsigned fx = 10000;
-
-            void        setPercent ( double p ) { weight_ = p*fx; }
-            double      getPercent () { return double ( weight_ )/fx; }
-
-            unsigned weigth_adj ( unsigned t_w )override
-            {
-                if ( (t_w * weight_) /fx  < min ) { return min; }
-                if ( (t_w * weight_) /fx  > max ) { return max; }
-
-                return  (t_w * weight_) /fx;
-            }
-        };
-        template <class Adj = adjustable, class Fld = Widget>
-        struct Field : Fld, Adj
-        {
-            void      Adj::collocate ( const rectangle& r ) override { Fld::collocate_field ( r ); }
-            rectangle  cells () const override { return cells_ (); }
-            void       populate_children ( implement*   place_impl_ )override { Fld::populate_children ( place_impl_ ); }
-
-            // for Gap
-            Field ( minmax MinMax = minmax () ) : Adj ( MinMax ) {}
-            Field ( unsigned weight, minmax MinMax = minmax () ) : Adj ( weight, MinMax ) {}
-            Field ( double percent_, minmax MinMax = minmax () ) : Adj ( percent_, MinMax ) {}
-
-            // for Widget
-            Field ( window handle_, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( MinMax ) {}
-            Field ( window handle_, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( weight, MinMax ) {}
-            Field ( window handle_, double percent_, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( percent_, MinMax ) {}
-
-            // for Room
-            Field ( window handle_, nana::size sz, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( MinMax ) {}
-            Field ( window handle_, nana::size sz, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( weight, MinMax ) {}
-            Field ( window handle_, nana::size sz, double percent_, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( percent_, MinMax ) {}
-
-            // for Cell
-            Field ( rectangle r, minmax MinMax = minmax () ) : Fld ( r ), Adj ( MinMax ) {}
-            Field ( rectangle r, unsigned weight, minmax MinMax = minmax () ) : Fld ( r ), Adj ( weight, MinMax ) {}
-            Field ( rectangle r, double percent_, minmax MinMax = minmax () ) : Fld ( r ), Adj ( percent_, MinMax ) {}
-
-            // for div_grid
-            Field ( const std::string& name_, size dim_, minmax MinMax = minmax () ) : Adj ( MinMax ), Fld ( name_, dim_ ) {}
-            Field ( const std::string& name_, size dim_, unsigned weight, minmax MinMax = minmax () ) : Adj ( weight, MinMax ), Fld ( name_, dim_ ) {}
-            Field ( const std::string& name_, size dim_, double percent_, minmax MinMax = minmax () ) : Fld ( name_, dim_ ), Adj ( static_cast<unsigned>(fx*percent_), MinMax ) {}
-            Field ( const std::string& name_, unsigned rows_, unsigned columns_, minmax MinMax = minmax () ) : Adj ( MinMax ), Fld ( name_, rows_, columns_ ) {}
-            Field ( const std::string& name_, unsigned rows_, unsigned columns_, unsigned weight, minmax MinMax = minmax () ) : Fld ( name_, rows_, columns_ ), Adj ( weight, MinMax ) {}
-            Field ( const std::string& name_, unsigned rows_, unsigned columns_, double   percent_, minmax MinMax = minmax () ) : Fld ( name_, rows_, columns_ ), Adj ( static_cast<unsigned>(fx*percent_), MinMax ) {}
-        };
-        struct Ifield
-        {
-            rectangle           last ;
-            virtual            ~Ifield () {}
-            virtual void        collocate_field ( const rectangle& r ) { last = r; }
-            virtual void        populate_children ( implement*   place_impl_ ) {}
-            virtual rectangle   cells_ ()   const = 0;
-        };
-
-
-        struct Gap : Ifield
-        {
-            rectangle      cells_ () const override { return rectangle ( -1, -1, 0, 0 ); }
-        };
-        struct Widget : Gap
-        {
-            Widget ( window handle_ ) :handle ( handle_ ) {}
-            ~Widget ()override { API::umake_event ( destroy_evh ); }
-
-            window          handle{ nullptr };
-            event_handle    destroy_evh{ nullptr };
-
-            window          window_handle () const { return handle; }
-            rectangle       cells_ () const override { return rectangle ( -1, -1, 1, 1 ); }
-            void            collocate_field ( const rectangle& r )override
-            {
-                Ifield::collocate_field ( r );
-                API::move_window ( handle, r );
-            }
-        };
-        //struct Label_field: Widget_field
-        //{
-        //
-        //};
-        //struct Cell:  Widget   
-        //{ 
-        //    Cell(window handle_,unsigned row_,unsigned column_)  :                           
-        //            Widget(handle_), row(row_), column (column_){}
-        //    unsigned   row,column;
-        //    rectangle  cells_         () const override          {return rectangle(column,row,1,1);}             
-        //};
-        struct Room : Widget    ///  
-        {
-            Room ( window handle_, nana::size sz ) :
-                Widget ( handle_ ), sz ( sz  ) 
-            {
-            }
-            nana::size sz;
-            rectangle  cells_ () const override 
-            { 
-                return rectangle ( point(-1, -1), sz ); 
-            }
-        };
-
-        struct Splitter;
-
-        class  division : public Ifield
-        {
-        protected:
-            using Owned = std::vector<std::unique_ptr< adjustable>> ;
-        public:
-            std::vector<window>       fastened_in_div;
-            std::vector <std::string> field_names;     ///< names used to find the fields in the global multimap of place fields to built the children
-            repeated_array                                  gap, margin;
-            std::unordered_map<std::string, repeated_array> arrange_;
-
-            using Children = std::vector< adjustable*>;
-            Children                  children;        ///< contain the fiels with are directly collocated
-            Owned   owned;           ///< betwen fields
-
-            bool set_arrange ( const repeated_array& arranges, int gap_index, adjustable* field );      ///< betwen fields
-            bool insert_gap ( int gap_index );
-
-
-
-            Splitter                  *splitter{ nullptr }; ///< this division have an splitter?
-        public:
-            virtual int&      weigth_c ( rectangle& r ) = 0;
-            virtual unsigned& weigth_s ( rectangle& r ) = 0;
-            virtual int&       fixed_c ( rectangle& r ) = 0;
-            virtual unsigned&  fixed_s ( rectangle& r ) = 0;
-            int&      weigth_c () { return weigth_c ( last ); }
-            unsigned& weigth_s () { return weigth_s ( last ); }
-            int&       fixed_c () { return fixed_c ( last ); }
-            unsigned&  fixed_s () { return fixed_s ( last ); }
-
-            rectangle cells_ () const  override { return rectangle ( -1, -1, 1, 1 ); }
-            /// populate childen in the same order in with they were introduced in the div layout str,
-            /// and then in the order in with they were added to the field
-            void populate_children ( implement*   place_impl_ ) override;
-            /// add field names in the same order in with they are introduced in the div layout str
-            virtual void collocate_field ( const rectangle& r ) override
-            {
-                Ifield::collocate_field ( r );       //std::cerr<< "\ncollocating div in: "<<r; // debugg
-                rectangle area ( r );
-
-                adj pre_adj, end_adj; auto t_w = weigth_s ( area );
-                for ( auto child: children )
-                    child->pre_place ( t_w, pre_adj );
-                for ( auto child: children )
-                    child->end_place ( t_w, pre_adj, end_adj );
-
-                for ( auto child : children )
-                {
-                    rectangle child_area ( area );
-                    weigth_s ( child_area ) = child->weigth ( t_w, pre_adj, end_adj )   ;
-                    weigth_c ( area ) += weigth_s ( child_area );
-                    weigth_s ( area ) -= weigth_s ( child_area );
-                    
-                    child->collocate ( child_area ); //std::cerr<<"\ncollocating child in: "<<child_area; //debugg
-                }
-                for ( auto & fsn: fastened_in_div )
-                {
-                    API::move_window ( fsn, r );   // si alguien habia cerrado la w fsn despues del populate children, tendremos problemas? make unload fastened erase?
-                    API::show_window ( fsn, API::visible ( fsn ) );
-                }
-
-                split ();
-            }
-            void split ();
-
-            virtual Splitter* create_splitter () = 0;
-        };
-        class  div_h : public division
-        {
-        public:
-            int&      weigth_c ( rectangle& r )override { return r.x; }
-            unsigned& weigth_s ( rectangle& r )override { return r.width; }
-            int&       fixed_c ( rectangle& r )override { return r.y; }
-            unsigned&  fixed_s ( rectangle& r )override { return r.height; }
-            Splitter* create_splitter ()override;// temp
-        };
-        class  div_v : public division
-        {
-        public:
-            int&      weigth_c ( rectangle& r )override { return r.y; }
-            unsigned& weigth_s ( rectangle& r )override { return r.height; }
-            int&       fixed_c ( rectangle& r )override { return r.x; }
-            unsigned&  fixed_s ( rectangle& r )override { return r.width; }
-            Splitter* create_splitter ()override;// temp
-        };
-        struct comp_collapse
-        {
-            bool operator()( const rectangle&a, const rectangle& b )
-            {
-                if ( a.overlap ( b ) ) return false;
-                if ( a.y < b.y )    return true;
-                if ( a.y > b.y )    return false;
-                if ( a.x < b.x )    return true;
-                //if (a.x > b.x)    return false;
-                return false;
-            };
-        };
-        struct Cell : div_h  ///\todo:  
-        {
-            Cell ( const rectangle& r ) : cell ( r ) {}
-            rectangle  cells_ () const override { return cell; }
-            rectangle  cell;
-        };
-        class  div_grid : public div_h
-        {
-        public:
-            div_grid ( const std::string& name_, size dim_ ) :name ( name_ ), rows ( dim_.height ), columns ( dim_.width ) {};
-            div_grid ( const std::string& name_, unsigned rows_, unsigned columns_ ) :name ( name_ ), rows ( rows_ ), columns ( columns_ ) {};
-
-            Splitter* create_splitter ()override { return nullptr; }// temp
-
-            std::string name; ///< field name to be refered in the field(name)<<room instr.
-            unsigned rows, columns;      ///< w=rows and h=columns   dim; 
-            using Collapses = std::set<rectangle, comp_collapse> ;
-            Collapses collapses_ ;
-            Collapses get_collapses ();
-            void populate_children ( implement*   place_impl_ ) override;
-
-            void collocate_field ( const rectangle& r ) override
-            {
-                Ifield::collocate_field ( r );
-
-                double block_w = r.width / double ( columns ); /*weigth_s( area )*/     /// \todo: adapt to vert???
-                double block_h = r.height/ double ( rows    ); /*fixed_s ( area )*/  
-
-                for (auto child : children)
-                {
-                    rectangle area, cr=child->cells() ;
-                    area.x = r.x + static_cast<int>(cr.x * block_w);
-                    area.y = r.y + static_cast<int>(cr.y * block_h);
-                    area.width  =  static_cast<int>(cr.width * block_w);
-                    area.height =  static_cast<int>(cr.height * block_h);
-
-                    child->collocate ( area );
-                }
-                for ( auto & fsn: fastened_in_div )
-                    API::move_window ( fsn, r );
-            }
-        };//end class div_grid
-
-
-        struct Splitter : public Field<fixed, Widget> //fixed_widget
-        {
-            nana::cursor	            splitter_cursor_{ cursor::arrow };
-            place_parts::splitter<true>	splitter_;
-            nana::point	                begin_point_;
-
-            percent                     *leaf_left_a;
-            adjustable                  *leaf_right_a;
-            division                    *parent;
-            std::unique_ptr<division>   leaf_left_, leaf_right_;
-            dragger	                    dragger_;
-            //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
-            bool                        splitted{ false };
-            double                      init_perc{ 30 };
-            nana::arrange               arrange_;
-
-            Splitter ( window wd, double  init_perc = 0.3 ) :
-                Field<fixed, Widget> ( nullptr, unsigned ( 4 ) ), init_perc ( init_perc ? init_perc : 0.3 )
-            {
-                splitter_.create ( wd );
-                dragger_.trigger ( splitter_ );
-                handle = splitter_.handle ();
-
-                splitter_.events ().mouse_move.connect ( [this]( const arg_mouse& arg )
-                {
-                    if ( false == arg.left_button )	return;
-                    last = rectangle ( splitter_.pos (), splitter_.size () );
-                    leaf_left_->weigth_s () = parent->weigth_c ( last ) - parent->weigth_c () ;
-                    leaf_left_->collocate_field ( leaf_left_->last );
-
-                    leaf_right_->weigth_c () = parent->weigth_c ( last ) + parent->weigth_s ( last )+1 ;
-                    leaf_right_->weigth_s () = parent->weigth_s () - (leaf_right_->weigth_c () -  parent->weigth_c ());
-                    leaf_right_->collocate_field ( leaf_right_->last );
-
-                    //API::lazy_refresh();      //API::refresh_window_tree(parent_window_handle);
-                    leaf_left_a->setPercent ( double ( leaf_left_->weigth_s () )/parent->weigth_s () );
-                } );
-            }
-            void populate_children ( implement*   place_impl_ )  // ???????????????????
-            {
-                splitted = false;
-            }
-            void restrict ( const rectangle &r, nana::arrange   arrange )
-            {
-                arrange_ = arrange;
-                restrict ( r );
-            }
-                void restrict ( rectangle  r )
-            {
-                dragger_.target ( splitter_, r.pare_off ( 1 ), arrange_ );
-            }
-
-                void  collocate_field ( const rectangle& r )override
-            {
-                Field<fixed, Widget>::collocate ( r );
-            }
-        };
-
-        void division::split ()
-        {
-            if ( !splitter || !create_splitter () ) return;
-
-            auto cb = children.begin ();
-            auto ce = children.end ();
-            auto spl = std::find ( cb, ce, splitter );
-            assert ( spl!=ce );
-            auto &l = *splitter->leaf_left_;
-            auto &r = *splitter->leaf_right_;
-
-            l.children = Children ( cb, spl ) ;
-            r.children = Children ( spl+1, ce ) ;
-            children = Children{ splitter->leaf_left_a, splitter, splitter->leaf_right_a };
-            splitter->splitted = true;
-        }
-        Splitter * division::create_splitter ()
-        {
-            return nullptr;
-        }
-        Splitter * div_h::create_splitter ()
-        {
-            splitter->restrict ( last, nana::arrange::horizontal );
-
-            if ( splitter->splitted ) return nullptr;
-            splitter->splitter_.cursor ( cursor::size_we );
-
-            auto div_l = std::make_unique<Field<percent, div_h>> ( splitter->init_perc );
-
-            splitter->leaf_left_a = div_l.get ();
-            splitter->leaf_left_.reset ( div_l.release () );
-
-            auto div_r = std::make_unique<Field<adjustable, div_h>> () ;
-
-            splitter->leaf_right_a = div_r.get ();
-            splitter->leaf_right_.reset ( div_r.release () );
-
-            return splitter ;
-        }
-        Splitter * div_v::create_splitter ()
-        {
-            splitter->restrict ( last, nana::arrange::vertical );
-
-            if ( splitter->splitted ) return nullptr;
-            splitter->splitter_.cursor ( cursor::size_ns );
-
-            auto div_l = std::make_unique<Field<percent, div_h>> ( splitter->init_perc );
-
-            splitter->leaf_left_a = div_l.get ();
-            splitter->leaf_left_.reset ( div_l.release () );
-
-            auto div_r = std::make_unique<Field<adjustable, div_v>> () ;
-
-            splitter->leaf_right_a = div_r.get ();
-            splitter->leaf_right_.reset ( div_r.release () );
-
-            return splitter ;
-        }
-        div_grid::Collapses div_grid::get_collapses ()
-        {
-            Collapses c;
-            for ( rectangle r : collapses_ )
-                if ( r.x >= columns || r.y >= rows )  // >=   ?????
-                    continue;
-                else
-                {
-                    if ( r.right () > columns ) r.width  = columns - r.x  ;
-                    if ( r.bottom() > rows    ) r.height = rows    - r.y  ;
-                    c.insert ( r );
-                }
-            return c;
-        }
-
         class tokenizer
         {
             std::string     div_str;   // for the future. kip a copy of the layout
@@ -900,6 +446,385 @@ namespace nana{
         private:
         };	//end class tokenizer
 
+
+        typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
+        struct adj { unsigned weigth, min, count_adj; adj () :weigth ( 0 ), min ( 0 ), count_adj ( 0 ) {} };
+
+        struct adjustable :minmax
+        {
+            adjustable ( minmax MinMax = minmax () ) : minmax ( MinMax ) {}
+            virtual ~adjustable () {}
+            virtual void        collocate ( const rectangle& r ) = 0;
+            virtual rectangle   cells ()   const = 0;
+            virtual void        populate_children ( implement*   place_impl_ ) = 0;
+
+            virtual adj   pre_place ( unsigned t_w, adj& fixed = adj () )
+            {
+                ++fixed.count_adj;
+                fixed.min += min;
+                return  fixed;
+            }
+            virtual adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () )
+            {
+                if ( t_w      <   fixed.weigth + fixed.min )
+                { adj_min.weigth += min; return adj_min; }
+                if ( t_w <    min * fixed.count_adj + fixed.weigth )
+                { adj_min.weigth += min; return adj_min; }
+                if ( t_w >    max * fixed.count_adj + fixed.weigth )
+                { adj_min.weigth += max; return adj_min; }
+
+                adj_min.min += min;
+                ++adj_min.count_adj;   return  adj_min;
+            }
+            virtual unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )
+            {
+                if ( t_w      <   fixed.weigth + fixed.min )
+                { return min; }
+                if ( t_w <    min * fixed.count_adj   + fixed.weigth )
+                { return min; }
+                if ( t_w >    max * fixed.count_adj   + fixed.weigth )
+                { return max; }
+                if ( t_w <    min * adj_min.count_adj + adj_min.weigth )
+                { return min; }
+                if ( t_w >    max * adj_min.count_adj + adj_min.weigth )
+                { return max; }
+
+                return  (t_w - adj_min.weigth) / adj_min.count_adj  ;
+            }
+        };
+        struct fixed : adjustable
+        {
+            fixed ( unsigned weight, minmax MinMax = minmax () ) : weight_ ( weight ), adjustable ( MinMax ) {}
+
+            unsigned weight_;
+
+            void        setWeigth ( unsigned w ) { weight_ = w; }
+            unsigned    getWeigth () { return weight_; }
+
+
+            adj   pre_place ( unsigned t_w, adj&   fixed = adj () ) override
+            { fixed.weigth += weigth_adj ( t_w ) ;   return  fixed; }
+
+            adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () ) override
+            { adj_min.weigth += weigth_adj ( t_w ) ;   return  adj_min; }
+
+            unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )  override
+            { return weigth_adj ( t_w ); }
+
+            virtual unsigned weigth_adj ( unsigned t_w )
+            {
+                if ( weight_  < min ) { return min; }
+                if ( weight_  > max ) { return max; }
+
+                return  weight_;
+            }
+        };
+        struct percent : fixed
+        {
+            percent ( double percent_, minmax MinMax = minmax () ) :fixed ( static_cast<unsigned>(fx*percent_), MinMax ) {}
+
+            const static unsigned fx = 10000;
+
+            void        setPercent ( double p ) { weight_ = p*fx; }
+            double      getPercent () { return double ( weight_ )/fx; }
+
+            unsigned weigth_adj ( unsigned t_w )override
+            {
+                if ( (t_w * weight_) /fx  < min ) { return min; }
+                if ( (t_w * weight_) /fx  > max ) { return max; }
+
+                return  (t_w * weight_) /fx;
+            }
+        };
+
+
+        struct Ifield
+        {
+            rectangle           last ;
+            virtual            ~Ifield () {}
+            virtual void        collocate_field ( const rectangle& r ) { last = r; }
+            virtual void        populate_children ( implement*   place_impl_ ) {}
+            virtual rectangle   cells_ ()   const = 0;
+        };
+        struct Gap : Ifield
+        {
+            rectangle      cells_ () const override { return rectangle ( -1, -1, 0, 0 ); }
+        };
+        struct Widget : Gap
+        {
+            Widget ( window handle_ ) :handle ( handle_ ) {}
+            ~Widget ()override { API::umake_event ( destroy_evh ); }
+
+            window          handle{ nullptr };
+            event_handle    destroy_evh{ nullptr };
+
+            window          window_handle () const { return handle; }
+            rectangle       cells_ () const override { return rectangle ( -1, -1, 1, 1 ); }
+            void            collocate_field ( const rectangle& r )override
+            {
+                Ifield::collocate_field ( r );
+                API::move_window ( handle, r );
+            }
+        };
+        struct Room : Widget    ///  
+        {
+            Room ( window handle_, nana::size sz ) :
+                Widget ( handle_ ), sz ( sz  ) 
+            {
+            }
+            nana::size sz;
+            rectangle  cells_ () const override 
+            { 
+                return rectangle ( point(-1, -1), sz ); 
+            }
+        };
+        //struct Label_field: Widget_field
+        //{
+        //
+        //};
+        //struct Cell:  Widget   
+        //{ 
+        //    Cell(window handle_,unsigned row_,unsigned column_)  :                           
+        //            Widget(handle_), row(row_), column (column_){}
+        //    unsigned   row,column;
+        //    rectangle  cells_         () const override          {return rectangle(column,row,1,1);}             
+        //};
+
+        struct Splitter;
+        class  division : public Ifield
+        {
+        protected:
+            using Owned = std::vector<std::unique_ptr< adjustable>> ;
+        public:
+            std::vector<window>       fastened_in_div;
+            std::vector <std::string> field_names;     ///< names used to find the fields in the global multimap of place fields to built the children
+            repeated_array                                  gap, margin;
+            std::unordered_map<std::string, repeated_array> arrange_;
+
+            using Children = std::vector< adjustable*>;
+            Children                  children;        ///< contain the fiels with are directly collocated
+            Owned   owned;           ///< betwen fields
+
+            bool set_arrange ( const repeated_array& arranges, int gap_index, adjustable* field );      ///< betwen fields
+            bool insert_gap ( int gap_index );
+
+
+
+            Splitter                  *splitter{ nullptr }; ///< this division have an splitter?
+        public:
+            virtual int&      weigth_c ( rectangle& r ) = 0;
+            virtual unsigned& weigth_s ( rectangle& r ) = 0;
+            virtual int&       fixed_c ( rectangle& r ) = 0;
+            virtual unsigned&  fixed_s ( rectangle& r ) = 0;
+            int&      weigth_c () { return weigth_c ( last ); }
+            unsigned& weigth_s () { return weigth_s ( last ); }
+            int&       fixed_c () { return fixed_c ( last ); }
+            unsigned&  fixed_s () { return fixed_s ( last ); }
+
+            rectangle cells_ () const  override { return rectangle ( -1, -1, 1, 1 ); }
+            /// populate childen in the same order in with they were introduced in the div layout str,
+            /// and then in the order in with they were added to the field
+            void populate_children ( implement*   place_impl_ ) override;
+            /// add field names in the same order in with they are introduced in the div layout str
+            virtual void collocate_field ( const rectangle& r ) override
+            {
+                Ifield::collocate_field ( r );       //std::cerr<< "\ncollocating div in: "<<r; // debugg
+                rectangle area ( r );
+
+                adj pre_adj, end_adj; auto t_w = weigth_s ( area );
+                for ( auto child: children )
+                    child->pre_place ( t_w, pre_adj );
+                for ( auto child: children )
+                    child->end_place ( t_w, pre_adj, end_adj );
+
+                for ( auto child : children )
+                {
+                    rectangle child_area ( area );
+                    weigth_s ( child_area ) = child->weigth ( t_w, pre_adj, end_adj )   ;
+                    weigth_c ( area ) += weigth_s ( child_area );
+                    weigth_s ( area ) -= weigth_s ( child_area );
+                    
+                    child->collocate ( child_area ); //std::cerr<<"\ncollocating child in: "<<child_area; //debugg
+                }
+                for ( auto & fsn: fastened_in_div )
+                {
+                    API::move_window ( fsn, r );   // si alguien habia cerrado la w fsn despues del populate children, tendremos problemas? make unload fastened erase?
+                    API::show_window ( fsn, API::visible ( fsn ) );
+                }
+
+                split ();
+            }
+            void split ();
+
+            virtual Splitter* create_splitter () = 0;
+        };
+        class  div_h : public division
+        {
+        public:
+            int&      weigth_c ( rectangle& r )override { return r.x; }
+            unsigned& weigth_s ( rectangle& r )override { return r.width; }
+            int&       fixed_c ( rectangle& r )override { return r.y; }
+            unsigned&  fixed_s ( rectangle& r )override { return r.height; }
+            Splitter* create_splitter ()override;// temp
+        };
+        class  div_v : public division
+        {
+        public:
+            int&      weigth_c ( rectangle& r )override { return r.y; }
+            unsigned& weigth_s ( rectangle& r )override { return r.height; }
+            int&       fixed_c ( rectangle& r )override { return r.x; }
+            unsigned&  fixed_s ( rectangle& r )override { return r.width; }
+            Splitter* create_splitter ()override;// temp
+        };
+        struct comp_collapse
+        {
+            bool operator()( const rectangle&a, const rectangle& b )
+            {
+                if ( a.overlap ( b ) ) return false;
+                if ( a.y < b.y )    return true;
+                if ( a.y > b.y )    return false;
+                if ( a.x < b.x )    return true;
+                //if (a.x > b.x)    return false;
+                return false;
+            };
+        };
+        struct Cell : div_h  ///\todo:  
+        {
+            Cell ( const rectangle& r ) : cell ( r ) {}
+            rectangle  cells_ () const override { return cell; }
+            rectangle  cell;
+        };
+        class  div_grid : public div_h
+        {
+        public:
+            div_grid ( const std::string& name_, size dim_ ) :name ( name_ ), rows ( dim_.height ), columns ( dim_.width ) {};
+            div_grid ( const std::string& name_, unsigned rows_, unsigned columns_ ) :name ( name_ ), rows ( rows_ ), columns ( columns_ ) {};
+
+            Splitter* create_splitter ()override { return nullptr; }// temp
+
+            std::string name; ///< field name to be refered in the field(name)<<room instr.
+            unsigned rows, columns;      ///< w=rows and h=columns   dim; 
+            using Collapses = std::set<rectangle, comp_collapse> ;
+            Collapses collapses_ ;
+            Collapses get_collapses ();
+            void populate_children ( implement*   place_impl_ ) override;
+
+            void collocate_field ( const rectangle& r ) override
+            {
+                Ifield::collocate_field ( r );
+
+                double block_w = r.width / double ( columns ); /*weigth_s( area )*/     /// \todo: adapt to vert???
+                double block_h = r.height/ double ( rows    ); /*fixed_s ( area )*/  
+
+                for (auto child : children)
+                {
+                    rectangle area, cr=child->cells() ;
+                    area.x = r.x + static_cast<int>(cr.x * block_w);
+                    area.y = r.y + static_cast<int>(cr.y * block_h);
+                    area.width  =  static_cast<int>(cr.width * block_w);
+                    area.height =  static_cast<int>(cr.height * block_h);
+
+                    child->collocate ( area );
+                }
+                for ( auto & fsn: fastened_in_div )
+                    API::move_window ( fsn, r );
+            }
+        };//end class div_grid
+
+        template <class Adj = adjustable, class Fld = Widget>
+        struct Field : Fld, Adj
+        {
+            void      Adj::collocate ( const rectangle& r ) override { Fld::collocate_field ( r ); }
+            rectangle  cells () const override { return cells_ (); }
+            void       populate_children ( implement*   place_impl_ )override { Fld::populate_children ( place_impl_ ); }
+
+            // for Gap
+            Field ( minmax MinMax = minmax () ) : Adj ( MinMax ) {}
+            Field ( unsigned weight, minmax MinMax = minmax () ) : Adj ( weight, MinMax ) {}
+            Field ( double percent_, minmax MinMax = minmax () ) : Adj ( percent_, MinMax ) {}
+
+            // for Widget
+            Field ( window handle_, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( MinMax ) {}
+            Field ( window handle_, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( weight, MinMax ) {}
+            Field ( window handle_, double percent_, minmax MinMax = minmax () ) : Fld ( handle_ ), Adj ( percent_, MinMax ) {}
+
+            // for Room
+            Field ( window handle_, nana::size sz, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( MinMax ) {}
+            Field ( window handle_, nana::size sz, unsigned weight, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( weight, MinMax ) {}
+            Field ( window handle_, nana::size sz, double percent_, minmax MinMax = minmax () ) : Fld ( handle_, sz ), Adj ( percent_, MinMax ) {}
+
+            // for Cell
+            Field ( rectangle r, minmax MinMax = minmax () ) : Fld ( r ), Adj ( MinMax ) {}
+            Field ( rectangle r, unsigned weight, minmax MinMax = minmax () ) : Fld ( r ), Adj ( weight, MinMax ) {}
+            Field ( rectangle r, double percent_, minmax MinMax = minmax () ) : Fld ( r ), Adj ( percent_, MinMax ) {}
+
+            // for div_grid
+            Field ( const std::string& name_, size dim_, minmax MinMax = minmax () ) : Adj ( MinMax ), Fld ( name_, dim_ ) {}
+            Field ( const std::string& name_, size dim_, unsigned weight, minmax MinMax = minmax () ) : Adj ( weight, MinMax ), Fld ( name_, dim_ ) {}
+            Field ( const std::string& name_, size dim_, double percent_, minmax MinMax = minmax () ) : Fld ( name_, dim_ ), Adj ( static_cast<unsigned>(fx*percent_), MinMax ) {}
+            Field ( const std::string& name_, unsigned rows_, unsigned columns_, minmax MinMax = minmax () ) : Adj ( MinMax ), Fld ( name_, rows_, columns_ ) {}
+            Field ( const std::string& name_, unsigned rows_, unsigned columns_, unsigned weight, minmax MinMax = minmax () ) : Fld ( name_, rows_, columns_ ), Adj ( weight, MinMax ) {}
+            Field ( const std::string& name_, unsigned rows_, unsigned columns_, double   percent_, minmax MinMax = minmax () ) : Fld ( name_, rows_, columns_ ), Adj ( static_cast<unsigned>(fx*percent_), MinMax ) {}
+        };
+
+        struct Splitter : public Field<fixed, Widget> //fixed_widget
+        {
+            nana::cursor	            splitter_cursor_{ cursor::arrow };
+            place_parts::splitter<true>	splitter_;
+            nana::point	                begin_point_;
+
+            percent                     *leaf_left_a;
+            adjustable                  *leaf_right_a;
+            division                    *parent;
+            std::unique_ptr<division>   leaf_left_, leaf_right_;
+            dragger	                    dragger_;
+            //bool	                    pause_move_collocate_ {false};	//A flag represents whether do move when collocating.
+            bool                        splitted{ false };
+            double                      init_perc{ 30 };
+            nana::arrange               arrange_;
+
+            Splitter ( window wd, double  init_perc = 0.3 ) :
+                Field<fixed, Widget> ( nullptr, unsigned ( 4 ) ), init_perc ( init_perc ? init_perc : 0.3 )
+            {
+                splitter_.create ( wd );
+                dragger_.trigger ( splitter_ );
+                handle = splitter_.handle ();
+
+                splitter_.events ().mouse_move.connect ( [this]( const arg_mouse& arg )
+                {
+                    if ( false == arg.left_button )	return;
+                    last = rectangle ( splitter_.pos (), splitter_.size () );
+                    leaf_left_->weigth_s () = parent->weigth_c ( last ) - parent->weigth_c () ;
+                    leaf_left_->collocate_field ( leaf_left_->last );
+
+                    leaf_right_->weigth_c () = parent->weigth_c ( last ) + parent->weigth_s ( last )+1 ;
+                    leaf_right_->weigth_s () = parent->weigth_s () - (leaf_right_->weigth_c () -  parent->weigth_c ());
+                    leaf_right_->collocate_field ( leaf_right_->last );
+
+                    //API::lazy_refresh();      //API::refresh_window_tree(parent_window_handle);
+                    leaf_left_a->setPercent ( double ( leaf_left_->weigth_s () )/parent->weigth_s () );
+                } );
+            }
+            void populate_children ( implement*   place_impl_ )  // ???????????????????
+            {
+                splitted = false;
+            }
+            void restrict ( const rectangle &r, nana::arrange   arrange )
+            {
+                arrange_ = arrange;
+                restrict ( r );
+            }
+                void restrict ( rectangle  r )
+            {
+                dragger_.target ( splitter_, r.pare_off ( 1 ), arrange_ );
+            }
+
+                void  collocate_field ( const rectangle& r )override
+            {
+                Field<fixed, Widget>::collocate ( r );
+            }
+        };
+
         struct implement           //struct implement
         {
             std::string                     curr_field;
@@ -1017,6 +942,75 @@ namespace nana{
             }
         };	      //struct implement
 
+
+        void division::split ()
+        {
+            if ( !splitter || !create_splitter () ) return;
+
+            auto cb = children.begin ();
+            auto ce = children.end ();
+            auto spl = std::find ( cb, ce, splitter );
+            assert ( spl!=ce );
+            auto &l = *splitter->leaf_left_;
+            auto &r = *splitter->leaf_right_;
+
+            l.children = Children ( cb, spl ) ;
+            r.children = Children ( spl+1, ce ) ;
+            children = Children{ splitter->leaf_left_a, splitter, splitter->leaf_right_a };
+            splitter->splitted = true;
+        }
+        Splitter * div_h::create_splitter ()
+        {
+            splitter->restrict ( last, nana::arrange::horizontal );
+
+            if ( splitter->splitted ) return nullptr;
+            splitter->splitter_.cursor ( cursor::size_we );
+
+            auto div_l = std::make_unique<Field<percent, div_h>> ( splitter->init_perc );
+
+            splitter->leaf_left_a = div_l.get ();
+            splitter->leaf_left_.reset ( div_l.release () );
+
+            auto div_r = std::make_unique<Field<adjustable, div_h>> () ;
+
+            splitter->leaf_right_a = div_r.get ();
+            splitter->leaf_right_.reset ( div_r.release () );
+
+            return splitter ;
+        }
+        Splitter * div_v::create_splitter ()
+        {
+            splitter->restrict ( last, nana::arrange::vertical );
+
+            if ( splitter->splitted ) return nullptr;
+            splitter->splitter_.cursor ( cursor::size_ns );
+
+            auto div_l = std::make_unique<Field<percent, div_h>> ( splitter->init_perc );
+
+            splitter->leaf_left_a = div_l.get ();
+            splitter->leaf_left_.reset ( div_l.release () );
+
+            auto div_r = std::make_unique<Field<adjustable, div_v>> () ;
+
+            splitter->leaf_right_a = div_r.get ();
+            splitter->leaf_right_.reset ( div_r.release () );
+
+            return splitter ;
+        }
+        div_grid::Collapses div_grid::get_collapses ()
+        {
+            Collapses c;
+            for ( rectangle r : collapses_ )
+                if ( r.x >= columns || r.y >= rows )  // >=   ?????
+                    continue;
+                else
+                {
+                    if ( r.right () > columns ) r.width  = columns - r.x  ;
+                    if ( r.bottom() > rows    ) r.height = rows    - r.y  ;
+                    c.insert ( r );
+                }
+            return c;
+        }
         bool division::insert_gap ( int gap_index )
         {
             if ( gap.empty () ) return false;
@@ -1178,29 +1172,19 @@ namespace nana{
             split (); /// check if this division have an split and implement it  ????????????
         }
 
-        void implement::collocate ()
-        {
-            if ( root_division && parent_window_handle )
+        void implement::div ( const char* s )
             {
-                rectangle r ( API::window_size ( this->parent_window_handle ) );  //debugg
-                if ( r.width && r.height )
-                {
-                    //auto re=recollocate;
-                    if ( recollocate )
-                        root_division->populate_children ( this );
-                    root_division->collocate ( r );  /* r=API::window_size(this->parent_window_handle)*/
-                    //if (re)       
-                    //{    
-                    //    API::lazy_refresh();
-                    //    API::refresh_window_tree(parent_window_handle);
-                    //    API::update_window(parent_window_handle);
-                    //}
-                    recollocate = false;
+            names.clear ();
+            while ( div_numer )
+                fields_.erase ( std::to_string ( --div_numer ) );
 
-                }
-            }
+
+            tokenizer tknizer ( s );
+            root_division = scan_div ( tknizer ) ;//  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
+            for ( auto &f: fields_ )
+                //std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
+                recollocate = true;
         }
-
         std::unique_ptr<adjustable> implement::scan_div ( tokenizer& tknizer )
         {
             typedef tokenizer::token token;
@@ -1521,21 +1505,28 @@ namespace nana{
 
             return div;
         } // scan_div
-
-        void implement::div ( const char* s )
+        void implement::collocate ()
         {
-            names.clear ();
-            while ( div_numer )
-                fields_.erase ( std::to_string ( --div_numer ) );
+            if ( root_division && parent_window_handle )
+            {
+                rectangle r ( API::window_size ( this->parent_window_handle ) );  //debugg
+                if ( r.width && r.height )
+                {
+                    //auto re=recollocate;
+                    if ( recollocate )
+                        root_division->populate_children ( this );
+                    root_division->collocate ( r );  /* r=API::window_size(this->parent_window_handle)*/
+                    //if (re)       
+                    //{    
+                    //    API::lazy_refresh();
+                    //    API::refresh_window_tree(parent_window_handle);
+                    //    API::update_window(parent_window_handle);
+                    //}
+                    recollocate = false;
 
-
-            tokenizer tknizer ( s );
-            root_division = scan_div ( tknizer ) ;//  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
-            for ( auto &f: fields_ )
-                //std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
-                recollocate = true;
         }
-
+            }
+        }
     } // namespace place_impl
 
     vplace::vplace ( window wd ) : impl_ ( new implement ) { bind ( wd ); }
