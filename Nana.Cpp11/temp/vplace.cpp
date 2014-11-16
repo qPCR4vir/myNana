@@ -622,10 +622,10 @@ namespace nana{
             unsigned&  fixed_s () { return fixed_s ( last ); }
 
             rectangle cells_ () const  override { return rectangle ( -1, -1, 1, 1 ); }
-            /// populate childen in the same order in with they were introduced in the div layout str,
+            /// populate childen adding field names in the same order in with they were introduced in the div layout str,
             /// and then in the order in with they were added to the field
             void populate_children ( implement*   place_impl_ ) override;
-            /// add field names in the same order in with they are introduced in the div layout str
+            /// Run:  in the same order in with they are introduced in the div layout str
             virtual void collocate_field ( const rectangle& r ) override
             {
                 Ifield::collocate_field ( r );       //std::cerr<< "\ncollocating div in: "<<r; // debugg
@@ -656,7 +656,7 @@ namespace nana{
             }
             void split ();
 
-            virtual Splitter* create_splitter () = 0;
+            virtual Splitter* create_splitter () = 0  { return nullptr; };
         };
         class  div_h : public division
         {
@@ -707,8 +707,9 @@ namespace nana{
             using Collapses = std::set<rectangle, comp_collapse> ;
             Collapses collapses_ ;
             Collapses get_collapses ();
+            /// Link a grid
             void populate_children ( implement*   place_impl_ ) override;
-
+            /// Run: collacate a grid
             void collocate_field ( const rectangle& r ) override
             {
                 Ifield::collocate_field ( r );
@@ -918,7 +919,7 @@ namespace nana{
 
         public:
             /// return all the fields associated whit this name (a par of iterators)
-            auto find ( std::string name )-> decltype(fields_.equal_range ( name ))
+            auto find (const std::string& name )-> decltype(fields_.equal_range ( name ))
             {
                 return fields_.equal_range ( name );
             }
@@ -1085,7 +1086,7 @@ namespace nana{
             }
             return div;
         }
-        /// \brief Completely (re)built the division, constructing the children (vector of adjustable fields) 
+        /// \brief Link: completely (re)built the division, constructing the children (vector of adjustable fields) 
         /// only from the (vector) field names in division and the place global multimap name/field
         void division::populate_children ( implement*   place_impl_ )
         {
@@ -1125,7 +1126,7 @@ namespace nana{
             int gap_index{ 0 } ;
             int  arrange_index{ 0 };
             auto arr_it = arrange_.find ( name );
-            auto r = place_impl_->find ( name );
+            auto r = place_impl_->find ( name ); /// Any other name in field_names of a grid div will be ignore
 
             if ( !rows || !columns )
             {
@@ -1172,19 +1173,21 @@ namespace nana{
             split (); /// check if this division have an split and implement it  ????????????
         }
 
+        /// Pre-compile: prepare the "compilation" of the "suorce" div() layout text.
         void implement::div ( const char* s )
             {
-            names.clear ();
-            while ( div_numer )
+            names.clear ();  /// Clear the set of field names just in case this is not the first "div()" call
+            while ( div_numer )  /// and clear all the automatic fields which will be (re)compiled now.
                 fields_.erase ( std::to_string ( --div_numer ) );
 
-
             tokenizer tknizer ( s );
-            root_division = scan_div ( tknizer ) ;//  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
-            for ( auto &f: fields_ )
+            //  .reset(dynamic_cast<division*>(scan_div(tknizer).get()));
+            root_division = scan_div ( tknizer ) ; /// scan_div make the recursive compilation
+                //for ( auto &f: fields_ )
                 //std::cout<< "\n Added ------------ "<<f.first <<" adj :------ Min="<< f.second->min;// <<ld.get()->min;
-                recollocate = true;
+            recollocate = true;   /// After this and before run a collocate we will need to link the names with the fields
         }
+         /// Recursive compilation
         std::unique_ptr<adjustable> implement::scan_div ( tokenizer& tknizer )
         {
             typedef tokenizer::token token;
@@ -1212,10 +1215,15 @@ namespace nana{
                 switch ( tk )
                 {
                     case token::div_start:
+                        /// All the division are named with a "synthetic" name,  
+                        /// which is temporal betwen vplace.div("") calls: scan_div return a Field<adj,div>. 
+                        /// Registre gives it an automatic name and save they as a pair in fields_ 
+                        /// a vplace-global-multimap<name,Fiel>. The name is also saved with the names 
+                        /// for fields to be allocated within this "parent" division
                         field_names_in_div.push_back ( registre ( scan_div ( tknizer ) ) );
                         break;
                     case token::splitter:
-                    {       // Use only the first splitter. with some fields at the left??
+                    {       /// Use only the first splitter. with some fields at the left??
                         if ( !splitter ) // && (  field_names_in_div.size())
                         {
                             double p = 0 ;
@@ -1244,7 +1252,13 @@ namespace nana{
                     case token::vertical:    	div_type = tk;		   		        break;
                     case token::grid:			div_type = tk;
                     {
+                        if (field_names_in_div.empty())
+                            gr_name.clear();  /// \todo: throw that we need a field name just before grid=[] ???
+                        else
+                        {
                         gr_name = field_names_in_div.back ();  /// \todo Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
+                            field_names_in_div.pop_back();
+                        }
                         number_t c, r;
                         switch ( tknizer.read () )
                         {
@@ -1264,6 +1278,7 @@ namespace nana{
                             columns = c.is_negative() ? 0 : c.integer ();
                         if ( r.kind_of () != number_t::kind::percent )
                             rows    = r.is_negative() ? 0 : r.integer ();
+
                     }                                                    break;
                     case token::collapse:
                         if ( tknizer.parameters ().size () == 4 )
@@ -1344,7 +1359,12 @@ namespace nana{
             }   // token::div_end
 
             if ( div_type == token::grid )
-                if ( gr_name.empty () )     gr_name = field_names_in_div.back ();
+                if ( gr_name.empty () )     
+                {
+                    /// Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
+                    gr_name = field_names_in_div.back ();  
+                    field_names_in_div.pop_back();
+                }
 
             std::unique_ptr<adjustable> div;
             if ( weight.kind_of () == number_t::kind::percent && weight.real () > 0 )
@@ -1505,6 +1525,7 @@ namespace nana{
 
             return div;
         } // scan_div
+        /// run entry point
         void implement::collocate ()
         {
             if ( root_division && parent_window_handle )
