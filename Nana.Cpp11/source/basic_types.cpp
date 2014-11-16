@@ -223,12 +223,12 @@ namespace nana
 
 		int rectangle::right() const
 		{
-			return static_cast<int>(x + width);
+			return x + static_cast<int>(width);  // ??
 		}
 
 		int rectangle::bottom() const
 		{
-			return static_cast<int>(y + height);
+			return y + static_cast<int>(height);  // ??
 		}
 
 		bool rectangle::is_hit(int pos_x, int pos_y) const
@@ -253,7 +253,7 @@ namespace nana
 		}
         bool rectangle::not_overlap(const rectangle& r) const
 		{
-			return	x > r.right() || r.x > right()  || y > r.bottom() || r.bottom() > y;
+			return	x >= r.right() || r.x >= right()  || y >= r.bottom() || r.y >= bottom();
 		}
 		bool rectangle::contain(const rectangle& r) const
 		{
