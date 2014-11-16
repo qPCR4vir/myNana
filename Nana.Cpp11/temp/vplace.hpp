@@ -40,6 +40,7 @@ namespace nana
 		vplace();  ///< First create the vplace.
              /// Optionally simultaneously attach it to a widget whose children you need to layout.
 		vplace(window parent_widget); 
+        window     window_handle  () const; ///< You can get the handle to that widget anytime.
              /// Divide (format) the attached widget into fields, some of then with a name.
 		void         div      (const ::std::string & layout);     
              /// Select one of the named field to direct to it the next actions 
@@ -80,6 +81,7 @@ namespace nana
 		static adjustable&     room    (window wd, nana::size sz);/// \todo: Add min and max
 
         vplace&  fasten(window wd)	  ;
+        void     erase (window handle);                ///< Erases a window from field.
 
          /// Attach this vplace to a widget
 		 /// \remark It will throw an exception if the place has already binded to a window.

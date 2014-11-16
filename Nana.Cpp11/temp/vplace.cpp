@@ -906,6 +906,16 @@ namespace nana{
                 //});	
             }
 
+            void set_visible(std::string name, bool vsb)
+            {
+                auto r = find ( name );
+                for ( auto fi = r.first ; fi != r.second ; ++fi )   /// fi iterator that point to unique_ptr<IField>   
+                {
+                     auto field = fi->second.get ();      /// a ref to the unique_ptr<IField> 
+                    auto fd = dynamic_cast<Widget *>(field);
+                    if ( !fd || !fd->handle ) return;
+                }
+            }
 
         private:
             /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
@@ -1654,8 +1664,27 @@ namespace nana{
 	}
 	bool vplace::field_display(std::string name) const
 	{
+		//auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		//return (div && div->display);
+        return true;
+	}
+
+	void vplace::field_visible(std::string name, bool vsb)
+	{
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
-		return (div && div->display);
+		if (div)
+			div->set_visible(vsb);
+	}
+	bool vplace::field_visible(std::string name) const
+	{
+		auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		return (div && div->visible);
+	}
+
+
+    window vplace::window_handle() const
+	{
+		return impl_->parent_window_handle;
 	}
 
 
