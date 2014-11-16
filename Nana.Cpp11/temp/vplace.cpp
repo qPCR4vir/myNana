@@ -828,11 +828,12 @@ namespace nana{
 
         struct implement           //struct implement
         {
+            using         pAdj=  std::unique_ptr<adjustable>;
             std::string                     curr_field;
             minmax                          curr_minmax;
             window                          parent_window_handle{ nullptr };
             event_handle                    event_size_handle{ nullptr };
-            std::unique_ptr<adjustable>     root_division;
+            pAdj                            root_division;
             std::unordered_set<std::string> names;          ///<  All the names defines. Garant no repited name.
             unsigned                        div_numer{ 0 }; ///<  Used to generate unique div name.
             bool                            recollocate{ false }; /// we need to rebuilt the children of each division??
@@ -845,26 +846,25 @@ namespace nana{
 
             ~implement () { API::umake_event ( event_size_handle ); }
 
-            void                       collocate ();
-            void                       div ( const char* s );
-            bool                       bind ( window parent_widget );
-            std::unique_ptr<adjustable>  scan_div ( tokenizer& );
+            void     collocate();
+            void     div      ( const char* s );
+            bool     bind     ( window parent_widget );
+            pAdj     scan_div ( tokenizer& );
 
             /// Generate and registre in the set a new unique div name from the current layout
-            bool          add_field_name ( const std::string& n )  /// is unique? (registre it)
+            bool    add_field_name ( const std::string& n )  /// is unique? (registre it)
             {
                 if ( names.insert ( n ).second )
                     return true;
                 else return false;//trow name repit;
             }
-            std::string   registre ( std::unique_ptr<adjustable> adj )
+            std::string   registre ( pAdj adj )
             {
                 auto n = add_div_name_ ();
                 registre ( n, std::move ( adj ) );
                 return n;
             }
-
-            void registre ( std::string name, std::unique_ptr<adjustable> adj )
+            void          registre ( std::string name, pAdj adj )
             {
                 //std::cout << "\nRegistering: " << name<< "(Min=" << adj->min<<", Max="<<adj->max<<"). Type: "<< std::type_index(typeid(*adj)).name();
                 fields_.emplace ( name, std::move ( adj ) );
@@ -877,14 +877,14 @@ namespace nana{
                 labels.push_back ( lab );
                 add ( new Field< adjustable, Widget> (*lab) );
             }            
-            void add ( adjustable * fld )
+            void       add ( adjustable * fld )
             {
                 fld->MinMax ( curr_minmax );      //std::cout<< "\n Add "<<name<<" adjustable to : Min=" <<fld->min;
                 _m_make_destroy ( fld );
                 registre ( curr_field, std::unique_ptr<adjustable> ( fld ) );
                 recollocate = true;                //return *this;
             }
-            void fasten ( window wd )              
+            void    fasten ( window wd )              
             {
                 fastened.emplace ( curr_field, wd );
                 recollocate = true;
@@ -906,6 +906,11 @@ namespace nana{
                 //});	
             }
 
+            /// return all the fields associated whit this name (a par of iterators)
+            auto      find  (const std::string& name )-> decltype(fields_.equal_range ( name ))
+            {
+                return fields_.equal_range ( name );
+            }
             void set_visible(std::string name, bool vsb)
             {
                 auto r = find ( name );
@@ -919,19 +924,12 @@ namespace nana{
 
         private:
             /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
-            std::multimap<std::string, std::unique_ptr< adjustable>> fields_;
+            std::multimap<std::string, pAdj> fields_;
             std::string   add_div_name_ ()
             {
                 std::string name = std::to_string ( div_numer++ );
                 assert ( names.insert ( name ).second );
                 return name;
-            }
-
-        public:
-            /// return all the fields associated whit this name (a par of iterators)
-            auto find (const std::string& name )-> decltype(fields_.equal_range ( name ))
-            {
-                return fields_.equal_range ( name );
             }
             /// Listen to destroy of a window. It will delete the element and recollocate when the window is destroyed.
             void _m_make_destroy ( adjustable *fld )
@@ -939,17 +937,17 @@ namespace nana{
                 auto fd = dynamic_cast<Widget *>(fld);
                 if ( !fd || !fd->handle ) return;
                 fd->destroy_evh = API::events ( fd->handle ).destroy.connect ( [this]( const arg_destroy& ei )
-                {
-                    for ( auto f = fields_.begin (), end = fields_.end (); f!=end; ++f )
-                        if ( Widget *fd = dynamic_cast<Widget *>(f->second.get ()) )
-                            if ( fd->window_handle () ==  ei.window_handle )
-                            {
-                        fields_.erase ( f );    // delete ???
-                        recollocate = true;
-                        collocate ();
-                        return;
-                            }
-                } );
+                                    {
+                                        for ( auto f = fields_.begin (), end = fields_.end (); f!=end; ++f )
+                                            if ( Widget *fd = dynamic_cast<Widget *>(f->second.get ()) )
+                                                if ( fd->window_handle () ==  ei.window_handle )
+                                                {
+                                                    fields_.erase ( f );     
+                                                    recollocate = true;
+                                                    collocate ();
+                                                    return;
+                                                }
+                                    } );
             }
         };	      //struct implement
 
@@ -1185,7 +1183,7 @@ namespace nana{
 
         /// Pre-compile: prepare the "compilation" of the "suorce" div() layout text.
         void implement::div ( const char* s )
-            {
+        {
             names.clear ();  /// Clear the set of field names just in case this is not the first "div()" call
             while ( div_numer )  /// and clear all the automatic fields which will be (re)compiled now.
                 fields_.erase ( std::to_string ( --div_numer ) );
@@ -1246,8 +1244,8 @@ namespace nana{
                             field_names_in_div.push_back ( registre ( std::move ( spl ) ) );
                             /// we can move spl because splitter is only used as a bool, and not dereferenced
                         }
-                    }                                                           break;
-                    case token::array:		    tknizer.array ().swap ( array );   		break;
+                    }                                                                       break;
+                    case token::array:		    tknizer.array ().swap ( array );   		    break;
                     case token::identifier:
                     {
                         std::string field_name ( tknizer.idstr () );
@@ -1256,17 +1254,17 @@ namespace nana{
                         else
                             throw std::runtime_error ( "place, the name '"
                             + field_name + "' is redefined." );
-                        /* throw repeated name in layout !!!!!!! */        break;
+                        /* throw repeated name in layout !!!!!!! */                         break;
                     }
                     case token::horizontal:
-                    case token::vertical:    	div_type = tk;		   		        break;
+                    case token::vertical:    	div_type = tk;		   		                break;
                     case token::grid:			div_type = tk;
                     {
                         if (field_names_in_div.empty())
                             gr_name.clear();  /// \todo: throw that we need a field name just before grid=[] ???
                         else
                         {
-                        gr_name = field_names_in_div.back ();  /// \todo Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
+                            gr_name = field_names_in_div.back ();  /// \todo Find the last user defined name !!! if not exist wait until end of division and take the name of the div??                  
                             field_names_in_div.pop_back();
                         }
                         number_t c, r;
@@ -1289,7 +1287,7 @@ namespace nana{
                         if ( r.kind_of () != number_t::kind::percent )
                             rows    = r.is_negative() ? 0 : r.integer ();
 
-                    }                                                    break;
+                    }                                                                       break;
                     case token::collapse:
                         if ( tknizer.parameters ().size () == 4 )
                         {
@@ -1376,7 +1374,7 @@ namespace nana{
                     field_names_in_div.pop_back();
                 }
 
-            std::unique_ptr<adjustable> div;
+            pAdj div;
             if ( weight.kind_of () == number_t::kind::percent && weight.real () > 0 )
             {
                 double perc = weight.real () ;
@@ -1432,7 +1430,12 @@ namespace nana{
 
             if ( div_type == token::grid )
                 static_cast<div_grid*>(pdiv)->collapses_.swap ( collapses );
-            if ( margin.size () )
+
+
+            /// make_margin(division *pDiv, std::vector<number_t>& margin, token div_type = none )
+            ///     the external have to be Field<original adj, div_h       >
+            /// and the internal have to be Field<adjustable  , original div>
+            if ( margin.size () ) /// \todo Revise this !!!!!!!!!!!!!!!!!!!!! grid ?? 
             {
                 std::unique_ptr<division> vd, td, hd, ld, cd, rd, bd;
 
@@ -1447,11 +1450,11 @@ namespace nana{
                     td.reset ( new Field<fixed, div_h> ( unsigned ( margin[0].integer () ) ) );
 
                 //std::cout<< "\n Add top margin:";// <<ld.get()->min;
-                vd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(td.release ()) ) ) );
+                vd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(td.release ()) ) ) );
 
 
                 // central div
-                switch ( div_type )
+                switch ( div_type ) // !!!!!
                 {
                     case token::eof:
                     case token::horizontal:	 cd.reset ( new Field<adjustable, div_h> );	                    break;
@@ -1460,8 +1463,8 @@ namespace nana{
                     default:
                         throw std::runtime_error ( "nana.place: invalid division type." );
                 }
-                cd->field_names.swap ( pdiv->field_names );
-                std::swap ( cd->splitter, pdiv->splitter );
+                cd->field_names.swap ( pdiv->field_names ); // !!!!!!!
+                std::swap ( cd->splitter, pdiv->splitter ); // !!!!!!!
 
                 int lm, rm, bm;
 
@@ -1489,12 +1492,12 @@ namespace nana{
                             ld.reset ( new Field<fixed, div_h> ( unsigned ( margin[lm].integer () ) ) );
 
                         //std::cout<< "\n Add left margin:"; 
-                        hd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(ld.release ()) ) ) );
+                        hd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(ld.release ()) ) ) );
                     }
 
                     // central  
                     //std::cout<< "\n Add central, real div betwen margins:"; 
-                    hd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(cd.release ()) ) ) );
+                    hd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(cd.release ()) ) ) );
 
                     if ( rm )
                     {
@@ -1505,17 +1508,17 @@ namespace nana{
                             rd.reset ( new Field<fixed, div_h> ( unsigned ( margin[rm].integer () ) ) );
 
                         //std::cout<< "\n Add rigth margin:"; 
-                        hd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(rd.release ()) ) ) );
+                        hd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(rd.release ()) ) ) );
                     }
 
 
                     //std::cout<< "\n Add horizontal central row: left margin + central + rigth margin:"; 
-                    vd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(hd.release ()) ) ) );
+                    vd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(hd.release ()) ) ) );
                 } else
                 {
                     // only central  
                     //std::cout<< "\n Add only central row: no left margin or rigth margin:"; 
-                    vd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(cd.release ()) ) ) );
+                    vd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(cd.release ()) ) ) );
                 }
 
                 if ( bm )
@@ -1527,10 +1530,10 @@ namespace nana{
                         bd.reset ( new Field<fixed, div_h> ( unsigned ( margin[bm].integer () ) ) );
 
                     //std::cout<< "\n Add botton margin:"; 
-                    vd->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(bd.release ()) ) ) );
+                    vd->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(bd.release ()) ) ) );
                 }
                 //std::cout<< "\n Add vertical div for margin:"; 
-                pdiv->field_names.push_back ( registre ( std::unique_ptr<adjustable> ( dynamic_cast<adjustable*>(vd.release ()) ) ) );
+                pdiv->field_names.push_back ( registre ( pAdj ( dynamic_cast<adjustable*>(vd.release ()) ) ) );
             }
 
             return div;
@@ -1555,7 +1558,7 @@ namespace nana{
                     //}
                     recollocate = false;
 
-        }
+                }
             }
         }
     } // namespace place_impl
@@ -1642,6 +1645,9 @@ namespace nana{
     };
     vplace& vplace::operator<<(window   wd)  
     {
+              //if (API::empty_window(wd))
+              //  throw std::invalid_argument("Place: An invalid window handle.");
+              
         impl_->add ( new vplace_impl::Field< adjustable, vplace_impl::Widget> (wd) );
         return *this;  
     };
