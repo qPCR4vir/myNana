@@ -117,11 +117,12 @@ class EditableWidget: public EnablingEditing
     }
     bool Validate(bool _validate_only=false)
     {
-        if (validate_only() && !_validate_only)
+        bool validate{false};
+        if (validate=(validate_only() && !_validate_only))
               Validated();    /// return ?????
-        return true;
+        return validate;
     }
-    void add_validate(const std::function<bool(void)>& v)
+virtual    void add_validate(const std::function<bool(void)>& v)
     {
         _validate.push_back (v); 
     }

@@ -96,10 +96,9 @@ class NumerUpDown : public  CompoWidget
         if ( _val != val )
         {
             _val=val; 
-            if (! Validated())
+            try{changed=Validate();} catch(...){}
+            if (!changed )
                    _val=old_v;
-            else 
-             changed=true;
         }
         display () ;  
         return _val;
@@ -260,9 +259,14 @@ public:
         
         //_num.add_validated ( [&](){Validated ();}        );
     }
-    virtual    void add_validated(const std::function<bool(void)>& v)
+    virtual    void add_validated(const std::function<bool(void)>& v) override
     {
         _num.add_validated (v); 
+        //_validated.push_back (v); 
+    }
+    virtual    void add_validate(const std::function<bool(void)>& v) override
+    {
+        _num.add_validate (v); 
         //_validated.push_back (v); 
     }
 
