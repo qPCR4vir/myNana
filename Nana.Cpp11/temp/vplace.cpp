@@ -912,9 +912,11 @@ namespace nana{
                 } );
                 fastened.emplace ( curr_field, std::make_tuple(wd,dtr) );
             }
+            
+            std::multimap<std::string, pAdj> fields_;
 
             /// return all the fields associated whit this name (a par of iterators)
-            auto      find  (const std::string& name )-> decltype(fields_.equal_range ( name ))
+            auto      find  (const std::string& name )-> decltype(implement::fields_.equal_range ( name ))
             {
                 return fields_.equal_range ( name );
             }
@@ -972,7 +974,6 @@ namespace nana{
 
         private:
             /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
-            std::multimap<std::string, pAdj> fields_;
             std::string   add_div_name_ ()
             {
                 std::string name = std::to_string ( div_numer++ );
@@ -1712,7 +1713,7 @@ namespace nana{
 
 	void vplace::field_display(std::string name, bool dsp)
 	{
-		impl_->display(  name, vsb);
+		impl_->display(  name, dsp);
         /// \todo if we want to set all the children we will need to def a new virtual function in adjustable
         /// that make the job and pass to all children recursively
 	}
