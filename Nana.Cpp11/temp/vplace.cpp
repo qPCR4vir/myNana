@@ -19,6 +19,7 @@
 
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 #include <stdexcept>
 #include <cstring>
@@ -839,12 +840,17 @@ namespace nana{
             bool                            recollocate{ false }; /// we need to rebuilt the children of each division??
 
             //std::multimap<std::string,std::unique_ptr< adjustable>> fields;    
-            std::multimap<std::string, window    >  fastened;
+            std::multimap<std::string, std::tuple<window, event_handle> >  fastened;
 
             ///  labels automaticaly created "on the fly" by field(name)<<"myLabel";
             std::vector<nana::label*>   labels;
 
-            ~implement () { API::umake_event ( event_size_handle ); }
+            ~implement () 
+            { 
+                API::umake_event ( event_size_handle ); 
+                for ( auto &f : fastened )
+                    API::umake_event(std::get<1>(f.second));
+            }
 
             void     collocate();
             void     div      ( const char* s );
@@ -886,24 +892,22 @@ namespace nana{
             }
             void    fasten ( window wd )              
             {
-                fastened.emplace ( curr_field, wd );
                 recollocate = true;
                 //Listen to destroy of a window. The deleting a fastened window
                 //does not change the layout.
+                /// oops !! we need an srtucture to save the event to unmake it!! API::umake_event(evt_destroy);
                 auto dtr = API::events ( wd ).destroy.connect ( [this]( const arg_destroy& ei )
                 {
                     for ( auto f = fastened.begin (), end = fastened.end (); f!=end; ++f )
-                        if ( f->second ==  ei.window_handle )
+                        if ( (std::get<0>(f->second)) ==  ei.window_handle )
                         {
-                        fastened.erase ( f );    // delete ???
-                        recollocate = true;
-                        return;
+                            API::umake_event(std::get<1>(f->second));
+                            fastened.erase ( f );    
+                            recollocate = true;
+                            return;
                         }
                 } );
-                //API::make_event<events::destroy>(wd, [dtr](const eventinfo& ei)
-                //{
-                //    API::umake_event(dtr); 
-                //});	
+                fastened.emplace ( curr_field, std::make_tuple(wd,dtr) );
             }
 
             /// return all the fields associated whit this name (a par of iterators)
@@ -921,6 +925,29 @@ namespace nana{
                     if ( !fd || !fd->handle ) return;
                 }
             }
+	        void erase(window handle)
+	        {
+		        for (auto fld=fields_.begin(); fld!=fields_.end(); ++fld )
+		        {
+			        auto field = fld->second.get () ;  /// a ref to the unique_ptr<IField> 
+                    auto fd = dynamic_cast<Widget *>(field);
+                    if ( fd && fd->handle == handle ) 
+                    {
+				        fields_.erase(fld);
+		                recollocate = false;
+			            collocate();
+                        return;
+                    }
+		        }
+                for ( auto f = fastened.begin (), end = fastened.end (); f!=end; ++f )
+                    if ( (std::get<0>(f->second)) == handle )
+                    {
+                        API::umake_event(std::get<1>(f->second));
+                        fastened.erase ( f );    
+                        recollocate = true;
+                        return;
+                    }
+	        }
 
         private:
             /// All the named fields defined by user with field(name)<<IField, plus the automatic division finded from the layot in div()
@@ -1122,7 +1149,7 @@ namespace nana{
                 }
                 auto f = place_impl_->fastened.equal_range ( name );
                 for ( auto fi = f.first ; fi != f.second ; ++fi )
-                    fastened_in_div.push_back ( fi->second );
+                    fastened_in_div.push_back ( std::get<0>(fi->second) );
             }
             split (); /// check if this division have an split and implement it
         }
@@ -1177,7 +1204,7 @@ namespace nana{
             }
             auto f = place_impl_->fastened.equal_range ( name );
             for ( auto fi = f.first ; fi != f.second ; ++fi )
-                fastened_in_div.push_back ( fi->second );
+                fastened_in_div.push_back (  std::get<0>(fi->second) );
             split (); /// check if this division have an split and implement it  ????????????
         }
 
@@ -1685,6 +1712,10 @@ namespace nana{
 	{
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		return (div && div->visible);
+	}
+	void vplace::erase(window handle)
+	{
+        impl_->erase(handle);
 	}
 
 
