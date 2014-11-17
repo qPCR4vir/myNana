@@ -33,7 +33,9 @@ namespace nana
     using  vplace_impl::adjustable ;
     using  vplace_impl::implement ;
 
-    ///  Layout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
+    ///  \briefLayout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
+    /// The orignal place have only one (optional) name per field, making it almost the same as a division.
+    /// But vplace allow multiple names in one field (except in grid by now). This can be not a good idea !?
     class vplace		: noncopyable
 	{
 	  public:

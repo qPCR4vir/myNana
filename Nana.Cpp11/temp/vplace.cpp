@@ -558,13 +558,16 @@ namespace nana{
 
             window          handle{ nullptr };
             event_handle    destroy_evh{ nullptr };
+            bool            visible{true}, display{true};
 
             window          window_handle () const { return handle; }
             rectangle       cells_ () const override { return rectangle ( -1, -1, 1, 1 ); }
             void            collocate_field ( const rectangle& r )override
             {
                 Ifield::collocate_field ( r );
-                API::move_window ( handle, r );
+                //if (visible && display)
+                    API::move_window ( handle, r );
+                    API::show_window ( handle, visible && display );
             }
         };
         struct Room : Widget    ///  
@@ -915,14 +918,32 @@ namespace nana{
             {
                 return fields_.equal_range ( name );
             }
-            void set_visible(std::string name, bool vsb)
+            void visible(std::string name, bool vsb)
             {
                 auto r = find ( name );
                 for ( auto fi = r.first ; fi != r.second ; ++fi )   /// fi iterator that point to unique_ptr<IField>   
                 {
-                     auto field = fi->second.get ();      /// a ref to the unique_ptr<IField> 
+                    auto field = fi->second.get ();      /// a ref to the unique_ptr<IField> 
                     auto fd = dynamic_cast<Widget *>(field);
-                    if ( !fd || !fd->handle ) return;
+                    if ( fd && fd->handle ) 
+                    {
+                        fd->visible = vsb;
+                        API::show_window(fd->handle, vsb);
+                    }
+                }
+            }
+            void display(std::string name, bool vsb) // ????
+            {
+                auto r = find ( name );
+                for ( auto fi = r.first ; fi != r.second ; ++fi )   /// fi iterator that point to unique_ptr<IField>   
+                {
+                    auto field = fi->second.get ();      /// a ref to the unique_ptr<IField> 
+                    auto fd = dynamic_cast<Widget *>(field);
+                    if ( fd && fd->handle ) 
+                    {
+                        fd->display = vsb;
+                        API::show_window(fd->handle, vsb);
+                    }
                 }
             }
 	        void erase(window handle)
@@ -1691,27 +1712,28 @@ namespace nana{
 
 	void vplace::field_display(std::string name, bool dsp)
 	{
-		auto div = impl_->search_div_name(impl_->root_division.get(), name);
-		if (div)
-			div->set_display(dsp);
+		impl_->display(  name, vsb);
+        /// \todo if we want to set all the children we will need to def a new virtual function in adjustable
+        /// that make the job and pass to all children recursively
 	}
 	bool vplace::field_display(std::string name) const
 	{
 		//auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		//return (div && div->display);
-        return true;
+        return true; /// dummy implementation: it is undefine if the widgets have diferent set, which can be changed directly by the user
 	}
 
 	void vplace::field_visible(std::string name, bool vsb)
 	{
-		auto div = impl_->search_div_name(impl_->root_division.get(), name);
-		if (div)
-			div->set_visible(vsb);
+		impl_->visible(  name, vsb);
+        /// \todo if we want to set all the children we will need to def a new virtual function in adjustable
+        /// that make the job and pass to all children recursively
 	}
 	bool vplace::field_visible(std::string name) const
 	{
-		auto div = impl_->search_div_name(impl_->root_division.get(), name);
-		return (div && div->visible);
+		//auto div = impl_->search_div_name(impl_->root_division.get(), name);
+		//return (div && div->visible);
+        return true; /// dummy implementation: it is undefine if the widgets have diferent set, which can be changed directly by the user
 	}
 	void vplace::erase(window handle)
 	{
