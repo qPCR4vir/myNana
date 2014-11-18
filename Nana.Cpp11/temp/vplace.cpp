@@ -403,7 +403,7 @@ namespace nana{
             {
                 std::stringstream ss;
                 ss  <<"NANA::vplace layout syntax error:\n\t"      <<  err
-                    <<" at "<<static_cast<unsigned>(sp_ - divstr_)
+                    <<" at position "<<static_cast<unsigned>(sp_ - divstr_)
                     <<" of:\n" << std::string(div_str).insert(static_cast<unsigned>(sp_ - divstr_-1),"XXX ") ;
                 std::cerr<< ss.str ();
                 throw std::runtime_error ( ss.str () );

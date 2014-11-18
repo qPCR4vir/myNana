@@ -139,14 +139,16 @@ virtual    void add_validated(const std::function<bool(void)>& v)
 	        void InitMyLayout       ()
 	{   
         SetDefLayout   ();
-        readLayout( _DefLayoutFileName, _myLayout ="");
-        if (_myLayout.empty() )
-            _myLayout= _DefLayout;
+        _myLayout= _DefLayout;
+        std::string lay_from_file;
+        readLayout( _DefLayoutFileName, lay_from_file);
+        if (lay_from_file.empty() )
+            lay_from_file=_DefLayout;
 
         AsignWidgetToFields();
         //_place.div(_myLayout.c_str ());     
 
-        ReCollocate( );
+        ReCollocate( lay_from_file );
 	}
             void InitMenu   (nana::menu& menuProgram)
     {
@@ -189,8 +191,27 @@ virtual    void add_validated(const std::function<bool(void)>& v)
     void ReCollocate( std::string  Layout)
     {
         _myLayout.swap(Layout);
-        ReCollocate( );
-   }
+        try 
+        {
+            ReCollocate( );
+        }
+        catch(std::exception& e)
+        {
+             (nana::msgbox(*_EdWd_owner, STR("std::exception during EditableWidget ReCollocation: "))
+                    .icon(nana::msgbox::icon_error)
+                                 <<STR("\n   in form: ") << nana::API::window_caption(*_EdWd_owner)
+                                 <<STR("\n   exception : ") << e.what() 
+             ).show();
+        }
+		catch(...)
+		{
+             (nana::msgbox(*_EdWd_owner, STR("An uncaptured exception during EditableWidget ReCollocation: "))
+                    .icon(nana::msgbox::icon_error)
+                                 <<STR("\n   in form: ") << nana::API::window_caption(*_EdWd_owner)
+             ).show();
+	    }
+        _myLayout.swap(Layout); /// call ReCollocate again???
+	}
     void ReCollocate( )
     {
         _place.div(_myLayout );     
