@@ -7,7 +7,7 @@ NumerUpDown::NumerUpDown (  widget &parent_,      const string &label,
                             const nana::string   &DefFileName/*=STR("NumUpDown.VertCenter.lay.txt")*/, 
                             double step/*=1*/,    unsigned width/*=6*/,    unsigned decimals/*=2*/  ) 
         :	CompoWidget( parent_, label, DefFileName),
-			_num(*this), _up(*this, STR("^") ), _down(*this, STR("v") ), _label(*this,label),
+			 _label(*this,label),
             _val(val), _min(min), _max(max), _step(step), _decimals(decimals), _width(width)
     {
         _num.multi_lines(false);

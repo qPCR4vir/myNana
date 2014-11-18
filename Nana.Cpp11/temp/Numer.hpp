@@ -74,18 +74,25 @@ void display()
 
 class NumerUpDown : public  CompoWidget
 {
-  public:
-    NumerUpDown (   widget &parent_,      const string &label, 
+    button      _up{*this, STR("^")},   _down{*this, STR("v")};  
+    label       _label;
+    double      _val, _min, _max, _step;
+    unsigned    _decimals, _width;
+ public:
+    textbox     _num{*this};
+
+   NumerUpDown (   widget &parent_,      const string &label, 
                     double val,           double min, double max, 
                     const string         &DefFileName=STR("NumUpDown.VertCenter.lay.txt"), 
                     double step=1,       unsigned width=6,    unsigned decimals=2  );
-    double  Value    (          )const{                        return _val;}
-    double  Min      (          )const{                        return _min;}
-    double  Max      (          )const{                        return _max;}
-    double  Step     (          )const{                        return _step;}
-    unsigned Width    (          )const{                        return _width;}
-    unsigned Decimals (          )const{                        return _decimals;}
-    double  Value    (double val)     
+
+    double   Value    (         )const{              return _val;  }
+    double   Min      (         )const{              return _min;  }
+    double   Max      (         )const{              return _max;  }
+    double   Step     (         )const{              return _step; }
+    unsigned Width    (         )const{              return _width;}
+    unsigned Decimals (         )const{              return _decimals;}
+    double   Value    (double val)     
     { 
         auto old_v = _val;
         changed=false;
@@ -103,63 +110,33 @@ class NumerUpDown : public  CompoWidget
         display () ;  
         return _val;
     }
-    double  Min      (double val)     {_min=val; /*validate();*/ return _min;}
-    double  Max      (double val)     {_max=val; /*validate(); */return _max;}
-    double  Step     (double val)     {_step=val; /* ();*/return _step;}
-    unsigned Width    (unsigned val)  {_width=val;/* display ();*/return _width;}
-    unsigned Decimals (unsigned val)  {_decimals=val;/* display();*/return _decimals;}
+    double   Min      (double val)    { _min=val;  /*validate();*/   return _min;  }
+    double   Max      (double val)    { _max=val;  /*validate(); */  return _max;  }
+    double   Step     (double val)    { _step=val; /* ();*/          return _step; }
+    unsigned Width    (unsigned val)  { _width=val;/* display ();*/  return _width;}
+    unsigned Decimals (unsigned val)  { _decimals=val;/* display();*/return _decimals;}
 
-    textbox _num;
-  private:
-    button  _up, _down;
-    label   _label;
-    double  _val, _min, _max, _step;
-    unsigned _decimals, _width;
-double read()
-{
-    try    
-    {  
-        return std::stod (_num.caption()  );
-     }
-    catch (...)     
-    { 
-        return _val;     
+    double read  ()
+        {
+            try{  return std::stod (_num.caption()  ); }
+            catch (...)  {  return _val; }
+        }
+    void validate()
+    {
+        if     (_val < _min)   _val = _min;
+        else if(_val > _max)   _val = _max;
+        display();
     }
-}
-void validate()
-{
-    if     (_val < _min)   _val = _min;
-    else if(_val > _max)   _val = _max;
-    //else return;
-    display();
-}
-void validate_edit()
-{
-    Value (read());
+    void validate_edit()        {      Value (read());       }
+    void add     (double step)  {      Value (step+Value()); }
+    void display ()
+    {
+        string val(50,0);
+        swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
+        _num.caption (val.c_str());
+    }
 
-    //double v=_val;
-    //_val=read();
-    //validate();
-    //if (_val!=v) 
-    //{
-    //    changed=true;
-    //    Validated();
-    //}else
-    //    changed=false;
-}
-void add(double step)
-{
-    Value(step+Value());
-}
-void display()
-{
-    string val(50,0);
-    swprintf(&val[0],val.size(), STR(" %*.*f"), _width, _decimals, _val );
-    _num.caption (val.c_str());
-
-}
-
-     void SetDefLayout       () override
+    void SetDefLayout       () override
     {
         _DefLayout= "  <       <vertical weight=60 <><label weight=15 gap=1><> >      \n"
                     "          <vertical weight=50 <><Num weight=19><> >   \n"
@@ -172,17 +149,16 @@ void display()
 	    _place.field("UpDown" ) << _up << _down ;
 	    _place.field("label"  ) << _label;
     }
-
 };
 
 class UnitPicker : public combox
 {
-          CUnit::unit_name      _defUnitName;
-          CUnit                 _defUnit{_defUnitName};
-          const CUnit::magnitude_name  magnitude=CUnit::magnitude_name{_defUnit.magnitude};
+    CUnit::unit_name             _defUnitName;
+    CUnit                        _defUnit{_defUnitName};
+    const CUnit::magnitude_name  magnitude=CUnit::magnitude_name{_defUnit.magnitude};
   public: 
     UnitPicker(widget &wd, const CUnit::unit_name& def)
-          :combox(wd), _defUnitName(def) 
+                :combox(wd), _defUnitName(def) 
     {
         editable(false);
         for(const CUnit::unit_name& un : CUnit::MagnitudesDic().at(magnitude) )
