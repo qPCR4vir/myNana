@@ -166,34 +166,28 @@ namespace nana{
         };//end class number_t
         class repeated_array
         {
-            bool repeated_ = false;
+            bool                  repeated_ {false};
             std::vector<number_t> values_;
         public:
-            repeated_array () {}
-
-            repeated_array ( repeated_array&& rhs )
-                : repeated_ ( rhs.repeated_ ), values_ ( std::move ( rhs.values_ ) ) {}
-
-            repeated_array& operator=(const repeated_array& rhs)
-            {
-                if ( this != &rhs )
-                {
-                    repeated_ = rhs.repeated_;
-                    values_ = rhs.values_;
-                }
-                return *this;
-            }
-            void assign ( std::vector<number_t>&& c ) { values_ = std::move ( c ); }
-            bool empty () const { return values_.empty (); }
-            std::size_t size ()const { return size (); }
-            void reset ()
-            {
-                repeated_ = false;
-                values_.clear ();
-            }
-            void repeated () { repeated_ = true; }
-            void push ( const number_t& n ) { values_.emplace_back ( n ); }
-            number_t at ( std::size_t pos ) const
+            //repeated_array () {}
+            //repeated_array ( repeated_array&& rhs )
+            //    : repeated_ ( rhs.repeated_ ), values_ ( std::move ( rhs.values_ ) ) {}
+            //repeated_array& operator=(const repeated_array& rhs)
+            //{
+            //    if ( this != &rhs )
+            //    {
+            //        repeated_ = rhs.repeated_;
+            //        values_ = rhs.values_;
+            //    }
+            //    return *this;
+            //}
+            void        assign ( std::vector<number_t>&& c ) { values_ = std::move ( c ); }
+            bool        empty  () const { return values_.empty (); }
+            std::size_t size   () const { return size (); }
+            void        reset  ()  { repeated_ = false;   values_.clear ();           }
+            void        repeated() { repeated_ = true; }
+            void        push   ( const number_t& n ) { values_.emplace_back ( n ); }
+            number_t    at     ( std::size_t pos ) const
             {
                 if ( values_.empty () )
                     return{};
@@ -205,9 +199,9 @@ namespace nana{
 
                 return values_[pos];
             }
-            bool pass_end ( std::size_t pos ) const
+            bool        pass_end( std::size_t pos ) const
             {
-                return !repeated_ || pos>=values_.size () ;
+                return !repeated_ && pos>=values_.size () ;///// ???????? &&
             }
         };
         class tokenizer
@@ -232,11 +226,11 @@ namespace nana{
 
             tokenizer ( const char* p ) : div_str ( p ), divstr_ ( div_str.c_str () ), sp_ ( div_str.c_str () ) {}
 
-            const std::string&      idstr () const { return idstr_; }
-            number_t                number () const { return number_; }
-            std::vector<number_t>&  array () { return array_; }
-            repeated_array&         reparray () { return reparray_; }
-            std::vector<number_t>&  parameters () { return parameters_; }
+            const std::string&      idstr   () const { return idstr_;    }
+            number_t                number  () const { return number_;   }
+            std::vector<number_t>&  array   ()       { return array_;    }
+            repeated_array&         reparray()       { return reparray_; }
+            std::vector<number_t>&  parameters ()    { return parameters_; }
 
             token read ()
             {
@@ -271,7 +265,7 @@ namespace nana{
                                 switch ( tk )
                                 {
                                     case token::number:	  array_.push_back ( number_ );			break;
-                                    case token::variable: array_.push_back ( {} );					break;/// token::variable is translated into number_t::none
+                                    case token::variable: array_.push_back ( {} );				break;/// token::variable is translated into number_t::none
                                     default:
                                         repeated = true;
                                         reparray_.repeated ();
@@ -327,27 +321,28 @@ namespace nana{
 
                     idstr_.assign ( idstart, sp_ );
 
-                    if ( idstr_ == "weight" ) { _m_attr_number_value ();	return token::weight; } else if ( idstr_ == "gap" ) { _m_attr_number_value ();	return token::gap; } else if ( idstr_ == "min" ) { _m_attr_number_value (); return token::min; } else if ( idstr_ == "max" ) { _m_attr_number_value ();	return token::max; } else if ( idstr_ == "vertical" || idstr_  == "vert" ) 	return token::vertical;
-                    else if ( idstr_ == "horizontal" ) 		   	 	 	return token::horizontal;
-                    else if ( idstr_ == "variable" )                       return token::variable;
-                    else if ( idstr_ == "arrange" )                        return token::arrange;
-                    else if ( idstr_ == "repeated" )                       return token::repeated;
+                    if      ( idstr_ == "weight"){ _m_attr_number_value ();     return token::weight; } 
+                    else if ( idstr_ == "min" )  { _m_attr_number_value ();     return token::min;    } 
+                    else if ( idstr_ == "max" )  { _m_attr_number_value ();     return token::max;    } 
+                    else if ( idstr_ == "vertical" || idstr_  == "vert" )       return token::vertical;
+                    else if ( idstr_ == "horizontal" )                          return token::horizontal;
+                    else if ( idstr_ == "variable" )                            return token::variable;
+                    else if ( idstr_ == "repeated" )                            return token::repeated;
+                    else if ( idstr_ == "gap"    ){ 
+                                                    _m_attr_reparray ();        return token::gap;    } 
+                    else if ( idstr_ == "arrange"){ _m_attr_reparray ();        return token::arrange;} 
                     else if ( idstr_ == "grid" )
-                    {
-                        if ( token::equal != read () )
-                            _m_throw_error ( "an equal sign is required after \'" + idstr_ + "\'" );
-                        return token::grid;
-                    } else if ( idstr_ == "margin" )
-                    {
-                        if ( token::equal != read () )
-                            _m_throw_error ( "an equal sign is required after \'" + idstr_ + "\'" );
-                        return token::margin;
-                    } else if ( idstr_ =="collapse" )
-                    {
-                        if ( token::parameters != read () )
-                            _m_throw_error ( "a parameter list is required after 'collapse'" );
-                        return token::collapse;
-                    }
+                            {      if ( token::equal != read () )
+                                      _m_throw_error ( "an equal sign is required after \'" + idstr_ + "\'" );
+                                                                            return token::grid;        } 
+                    else if ( idstr_ == "margin" )
+                            {      if ( token::equal != read () )
+                                     _m_throw_error ( "an equal sign is required after \'" + idstr_ + "\'" );
+                                                                            return token::margin;       } 
+                    else if ( idstr_ =="collapse" )
+                            {     if ( token::parameters != read () )
+                                    _m_throw_error ( "a parameter list is required after 'collapse'" );
+                                                                            return token::collapse;    }
                     return token::identifier;
                 }
                 _m_throw_error ( std::string ( "an invalid character '" ) + *sp_ + "'" );
@@ -360,29 +355,50 @@ namespace nana{
                 ss<<"place: invalid character '"<<err_char<<"' at "<<static_cast<unsigned>(sp_ - divstr_);
                 throw std::runtime_error ( ss.str () );
             }
+		    void _m_attr_number_value() ///\todo REVISE! 
+		    {
+			    if (token::equal != read())
+				    _m_throw_error("an equal sign is required after '" + idstr_ + "'");
 
-            void _m_attr_number_value ()
-            {
-                if ( token::equal != read () )
-                    _m_throw_error ( "an equal sign is required after \'"+ idstr_ +"\'" );
+			    const char* p = sp_;
+			    for (; *p == ' '; ++p);
 
-                const char* p = sp_;
-                for ( ; *p == ' '; ++p );
+			    auto neg_ptr = p;
+			    if ('-' == *p)
+				    ++p;
 
-                std::size_t len = 0;
-                if ( *p == '-' )
-                {
-                    len = _m_number ( p + 1, true );
-                    if ( len )	++len;
-                } else
-                    len = _m_number ( p, false );
+			    auto len = _m_number(p, neg_ptr != p);
+			    if (0 == len)
+				    _m_throw_error("the '" + idstr_ + "' requires a number(integer or real or percent)");
 
-                if ( 0 == len )
-                    _m_throw_error ( "the \'" + idstr_ + "\' requires a number(integer or real or percent)" );
+			    sp_ += len + (p - sp_);
+		    }
+		    void _m_attr_reparray() ///\todo REVISE! 
+		    {
+			    auto idstr = idstr_;
+			    if (token::equal != read())
+				    _m_throw_error("an equal sign is required after '" + idstr + "'");
 
-                sp_ += len + (p - sp_);
-            }
+			    const char* p = sp_;
+			    for (; *p == ' ' || *p == '\t'; ++p);
 
+			    reparray_.reset();
+			    auto tk = read();
+			    switch (tk)
+			    {
+			    case token::number:
+				    reparray_.push(number());
+				    reparray_.repeated();
+				    break;
+			    case token::array:
+				    reparray_.assign(std::move(array_));
+				    break;
+			    case token::reparray:
+				    break;
+			    default:
+				    _m_throw_error("a (repeated) array is required after '" + idstr + "'");
+			    }
+		    }
             void _m_throw_error ( const std::string& err )
             {
                 std::stringstream ss;
@@ -392,14 +408,12 @@ namespace nana{
                 std::cerr<< ss.str ();
                 throw std::runtime_error ( ss.str () );
             }
-
             const char* _m_eat_whitespace ( const char* sp )
             {
                 while ( *sp && !isgraph ( *sp ) )	++sp;
                 return sp;
             }
-
-            std::size_t _m_number ( const char* sp, bool negative )
+            std::size_t _m_number ( const char* sp, bool negative ) ///\todo REVISE! use stoi, etc
             {
                 const char* allstart = sp;
                 sp = _m_eat_whitespace ( sp );
@@ -434,14 +448,16 @@ namespace nana{
 
                 if ( gotcha )
                 {
-                    for ( ; *sp == ' '; ++sp );
+                    for (; *sp == ' ' || *sp == '\t'; ++sp);
                     if ( '%' == *sp )
                     {
-                        number_.assign_percent ( number_.real () );
+                        if (number_t::kind::integer == number_.kind_of())
+						number_.assign_percent(number_.integer());
                         return sp - allstart + 1;
                     }
                     return sp - allstart;
                 }
+			    number_.reset();
                 return 0;
             }
         private:
@@ -1373,7 +1389,8 @@ namespace nana{
 
                     case token::weight:	weight = tknizer.number (); have_weight = true; break;
                         //case token::gap:	   gap = tknizer.number();have_gap=true;    break;
-                    case token::gap:	    gap = tknizer.reparray (); have_gap = true; break;   // ???????
+                    case token::gap:	    
+                                        gap = tknizer.reparray (); have_gap = true; break;   // ???????
                     case token::min:
                     {
                         if ( tknizer.number ().kind_of () != number_t::kind::percent )
@@ -1465,7 +1482,8 @@ namespace nana{
             auto pdiv = dynamic_cast<division*>(div.get ());
             assert ( pdiv );
 
-            if ( have_gap ) { pdiv->gap = gap; }
+            if ( have_gap ) { 
+                                pdiv->gap = gap; }
 
             pdiv->field_names.swap ( field_names_in_div );
 
