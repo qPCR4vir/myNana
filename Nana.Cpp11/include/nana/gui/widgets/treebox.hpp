@@ -190,7 +190,7 @@ namespace nana
 				item_proxy append(const nana::string& key, nana::string name, const T&t)
 				{
 					item_proxy ip = append(key, std::move(name));
-					if(false == ip.empty())
+					if( ! ip.empty() )
 						ip.value(t);
 					return ip;
 				}

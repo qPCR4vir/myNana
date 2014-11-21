@@ -681,7 +681,7 @@ namespace nana{	namespace widgets
 			{
 				if (take_lines(textline) == secondary_before)
 				{
-					int top = caret_to_screen(upoint{ 0, textline }).y;
+					int top = caret_to_screen(upoint( 0, textline )).y;
 
 					const unsigned pixels = editor_.line_height();
 					editor_.graph_.rectangle(editor_.text_area_.area.x, top, editor_.width_pixels(), pixels * secondary_before, API::background(editor_.window_), true);

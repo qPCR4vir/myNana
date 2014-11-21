@@ -722,8 +722,7 @@ namespace nana
 
 				item_proxy item_proxy::append(const nana::string& key, nana::string name)
 				{
-					if(nullptr == trigger_ || nullptr == node_)
-						return item_proxy();
+					if( empty() ) return item_proxy();
 					return item_proxy(trigger_, trigger_->insert(node_, key, std::move(name)));
 				}
 
