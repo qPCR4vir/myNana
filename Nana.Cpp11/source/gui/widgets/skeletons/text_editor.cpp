@@ -198,6 +198,40 @@ namespace nana{	namespace widgets
 			nana::string text_;
 		};
 
+		class text_editor::undo_move_text
+			: public basic_undoable <command>
+		{
+		public:
+			undo_move_text(text_editor& editor)
+				:	basic_undoable<command>(editor, command::move_text)
+			{}
+
+			void execute(bool redo) override
+			{
+				if (redo)
+				{
+					editor_.select_.a = sel_a_;
+					editor_.select_.b = sel_b_;
+					editor_.points_.caret = pos_;
+					editor_._m_move_select(false);
+					return;
+				}
+				
+				editor_.select_.a = dest_a_;
+				editor_.select_.b = dest_b_;
+				editor_.points_.caret = sel_a_;
+				editor_._m_move_select(false);
+			}
+
+			void set_destination(const nana::upoint& dest_a, const nana::upoint& dest_b)
+			{
+				dest_a_ = dest_a;
+				dest_b_ = dest_b;
+			}
+		private:
+			nana::upoint dest_a_, dest_b_;
+		};
+
 		class text_editor::editor_behavior_interface
 		{
 		public:
@@ -1293,6 +1327,26 @@ namespace nana{	namespace widgets
 				attributes_.counterpart.release();
 		}
 
+		void text_editor::undo_enabled(bool enb)
+		{
+			undo_.enable(enb);
+		}
+		
+		bool text_editor::undo_enabled() const
+		{
+			return undo_.enabled();
+		}
+
+		void text_editor::undo_max_steps(std::size_t maxs)
+		{
+			undo_.max_steps(maxs);
+		}
+
+		std::size_t text_editor::undo_max_steps() const
+		{
+			return undo_.max_steps();
+		}
+
 		text_editor::ext_renderer_tag& text_editor::ext_renderer() const
 		{
 			return ext_renderer_;
@@ -1563,35 +1617,8 @@ namespace nana{	namespace widgets
 				return true;
 			}
 
-			nana::upoint caret = points_.caret;
-
-			nana::string text;
-			if(_m_make_select_string(text))
+			if (_m_move_select(true))
 			{
-				nana::upoint a, b;
-				_m_get_sort_select_points(a, b);
-				if(caret.y < a.y || (caret.y == a.y && caret.x < a.x))
-				{//forward
-					_m_erase_select();
-					_m_put(text);
-
-					select_.a = caret;
-					select_.b.y = b.y + (caret.y - a.y);
-				}
-				else if(b.y < caret.y || (caret.y == b.y && b.x < caret.x))
-				{
-					_m_put(text);
-					_m_erase_select();
-
-					select_.b.y = caret.y;
-					select_.a.y = caret.y - (b.y - a.y);
-					select_.a.x = caret.x - (caret.y == b.y ? (b.x - a.x) : 0);
-				}
-				select_.b.x = b.x + (a.y == b.y ? (select_.a.x - a.x) : 0);
-
-				points_.caret = select_.a;
-				reset_caret();
-
 				behavior_->adjust_caret_into_screen();
 				render(true);
 				return true;
@@ -2397,6 +2424,52 @@ namespace nana{	namespace widgets
 					points_.offset.x += static_cast<int>(_m_text_extent_size(lnstr.c_str() + points_.caret.x, (rest_size >= static_cast<unsigned>(many) ? static_cast<unsigned>(many) : rest_size)).width);
 					return true;
 				}
+			}
+			return false;
+		}
+
+		bool text_editor::_m_move_select(bool record_undo)
+		{
+			nana::upoint caret = points_.caret;
+			nana::string text;
+			if (_m_make_select_string(text))
+			{
+				auto undo_ptr = std::unique_ptr<undo_move_text>(new undo_move_text(*this));
+				undo_ptr->set_selected_text();
+
+				nana::upoint a, b;
+				_m_get_sort_select_points(a, b);
+				if (caret.y < a.y || (caret.y == a.y && caret.x < a.x))
+				{//forward
+					_m_erase_select();
+
+					undo_ptr->set_caret_pos();
+					_m_put(text);
+
+					select_.a = caret;
+					select_.b.y = b.y + (caret.y - a.y);
+				}
+				else if (b.y < caret.y || (caret.y == b.y && b.x < caret.x))
+				{
+					undo_ptr->set_caret_pos();
+					_m_put(text);
+					_m_erase_select();
+
+					select_.b.y = caret.y;
+					select_.a.y = caret.y - (b.y - a.y);
+					select_.a.x = caret.x - (caret.y == b.y ? (b.x - a.x) : 0);
+				}
+				select_.b.x = b.x + (a.y == b.y ? (select_.a.x - a.x) : 0);
+
+				if (record_undo)
+				{
+					undo_ptr->set_destination(select_.a, select_.b);
+					undo_.push(std::move(undo_ptr));
+				}
+
+				points_.caret = select_.a;
+				reset_caret();
+				return true;
 			}
 			return false;
 		}

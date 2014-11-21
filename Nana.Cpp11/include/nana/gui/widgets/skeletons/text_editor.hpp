@@ -40,13 +40,39 @@ namespace nana{	namespace widgets
 			using command = EnumCommand;
 			using container = std::deque < std::unique_ptr<undoable_command_interface<command>> >;
 
+			void max_steps(std::size_t maxs)
+			{
+				max_steps_ = maxs;
+				if (maxs && (commands_.size() >= maxs))
+					commands_.erase(commands_.begin(), commands_.begin() + (commands_.size() - maxs + 1));
+			}
+
+			std::size_t max_steps() const
+			{
+				return max_steps_;
+			}
+
+			void enable(bool enb)
+			{
+				enabled_ = enb;
+				if (!enb)
+					commands_.clear();
+			}
+
+			bool enabled() const
+			{
+				return enabled_;
+			}
+
 			void push(std::unique_ptr<undoable_command_interface<command>> && ptr)
 			{
-				if (!ptr)
+				if (!ptr || !enabled_)
 					return;
 
 				if (pos_ < commands_.size())
 					commands_.erase(commands_.begin() + pos_, commands_.end());
+				else if (max_steps_ && (commands_.size() >= max_steps_))
+					commands_.erase(commands_.begin(), commands_.begin() + (commands_.size() - max_steps_ + 1));
 
 				pos_ = commands_.size();
 				if (!commands_.empty())
@@ -81,6 +107,8 @@ namespace nana{	namespace widgets
 
 		private:
 			container commands_;
+			bool		enabled_{ true };
+			std::size_t max_steps_{ 30 };
 			std::size_t pos_{ 0 };
 		};
 
@@ -92,12 +120,13 @@ namespace nana{	namespace widgets
 			class behavior_linewrapped;
 
 			enum class command{
-				backspace, input_text,
+				backspace, input_text, move_text,
 			};
 			//Commands for undoable
 			template<typename EnumCommand> class basic_undoable;
 			class undo_backspace;
 			class undo_input_text;
+			class undo_move_text;
 		public:
 			typedef nana::char_t	char_type;
 			typedef textbase<char_type>::size_type size_type;
@@ -136,6 +165,11 @@ namespace nana{	namespace widgets
 			void editable(bool);
 			void enable_background(bool);
 			void enable_background_counterpart(bool);
+
+			void undo_enabled(bool);
+			bool undo_enabled() const;
+			void undo_max_steps(std::size_t);
+			std::size_t undo_max_steps() const;
 
 			ext_renderer_tag& ext_renderer() const;
 
@@ -214,6 +248,7 @@ namespace nana{	namespace widgets
 			//_m_move_offset_x_while_over_border
 			//@brief: Moves the view window
 			bool _m_move_offset_x_while_over_border(int many);
+			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;
 			//_m_endx
