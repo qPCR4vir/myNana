@@ -16,7 +16,7 @@
 #include <cstring>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
-#include <nana/gui/widgets/widget.hpp>
+#include <nana/gui/widgets/label.hpp>
 #include <nana/gui/dragger.hpp>
 
 #include <memory>
@@ -778,6 +778,16 @@ namespace nana
 			});
 		}
 
+		field_interface& operator<<(const nana::char_t* label_text) override
+		{
+			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text ? label_text : L""));
+		}
+
+		virtual field_interface& operator<<(nana::string label_text) override
+		{
+			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text));
+		}
+
 		field_interface& operator<<(window wd) override
 		{
 			if (API::empty_window(wd))
@@ -815,8 +825,15 @@ namespace nana
 			fastened.emplace_back(wd, evt);
 			return *this;
 		}
+
+		void _m_add_agent(const detail::place_agent& ag) override
+		{
+			widgets_.emplace_back(ag.create(place_ptr_->window_handle()));
+			this->operator<<(widgets_.back()->handle());
+		}
 	public:
 		division* attached{ nullptr };
+		std::vector<std::unique_ptr<nana::widget>> widgets_;
 		std::vector<element_t>	elements;
 		std::vector<element_t>	fastened;
 	private:
@@ -2181,6 +2198,11 @@ namespace nana
 
 		if (recollocate)
 			collocate();
+	}
+
+	place::field_reference place::operator[](const char* name)
+	{
+		return field(name);
 	}
 	//end class place
 }//end namespace nana
