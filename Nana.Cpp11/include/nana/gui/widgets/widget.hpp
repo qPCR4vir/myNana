@@ -17,7 +17,6 @@
 #include "../programming_interface.hpp"
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/layout_utility.hpp>
-#include <nana/functor.hpp>
 #include <functional>
 
 namespace nana

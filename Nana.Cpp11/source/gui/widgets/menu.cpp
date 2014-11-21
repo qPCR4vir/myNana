@@ -74,15 +74,14 @@ namespace nana
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type::menu_item_type()
-					:sub_menu(nullptr), style(checks::none), hotkey(0)
 				{
 					flags.enabled = true;
 					flags.splitter = true;
 					flags.checked = false;
 				}
 
-				menu_item_type::menu_item_type(const nana::string& text, const event_fn_t& f)
-					:sub_menu(nullptr), text(text), functor(f), style(checks::none), hotkey(0)
+				menu_item_type::menu_item_type(nana::string text, const event_fn_t& f)
+					: text(std::move(text)), functor(f)
 				{
 					flags.enabled = true;
 					flags.splitter = false;
@@ -240,13 +239,12 @@ namespace nana
 					return root_;
 				}
 
-				void insert(std::size_t pos, const nana::string& text, const event_fn_t& f)
+				void insert(std::size_t pos, nana::string&& text, const event_fn_t& fn)
 				{
-					menu_item_type m(text, f);
 					if(pos < root_.items.size())
-						root_.items.insert(root_.items.begin() + pos, m);
+						root_.items.emplace(root_.items.begin() + pos, std::move(text), std::ref(fn));
 					else
-						root_.items.push_back(m);
+						root_.items.emplace_back(std::move(text), std::ref(fn));
 				}
 
 				bool set_sub_menu(std::size_t pos, menu_type &sub)
@@ -309,7 +307,6 @@ namespace nana
 				renderer_interface * renderer;
 
 				menu_drawer()
-					:widget_(nullptr), graph_(nullptr), menu_(nullptr)
 				{
 					state_.active = npos;
 					state_.sub_window = false;
@@ -672,9 +669,9 @@ namespace nana
 					widget_->move(pos.x, pos.y);
 				}
 			private:
-				widget		*widget_;
-				paint::graphics	*graph_;
-				menu_type	*menu_;
+				widget		*widget_{nullptr};
+				paint::graphics	*graph_{nullptr};
+				menu_type	*menu_{nullptr};
 
 				std::function<void()> fn_close_tree_;
 

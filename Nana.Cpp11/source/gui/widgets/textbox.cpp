@@ -59,7 +59,9 @@ namespace nana{	namespace drawerbase {
 
 			editor_ = new text_editor(wd, graph);
 			editor_->textbase().set_event_agent(evt_agent_.get());
-			editor_->border_renderer(nana::make_fun(*this, &drawer::_m_draw_border));
+			editor_->border_renderer([this](graph_reference graph, nana::color_t color){
+				this->_m_draw_border(graph, color);
+			});
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -140,41 +142,9 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if(editor_->attr().editable)
-			{
-				if (pred_acceptive_ && !pred_acceptive_(arg.key))
-					return;
-
-				switch(arg.key)
-				{
-				case '\b':
-					editor_->backspace();	break;
-				case '\n': case '\r':
-					editor_->enter();	break;
-				case keyboard::copy:
-					editor_->copy();	break;
-				case keyboard::paste:
-					editor_->paste();	break;
-				case keyboard::tab:
-					editor_->put(static_cast<char_t>(keyboard::tab)); break;
-				case keyboard::cut:
-					editor_->copy();
-					editor_->del();
-					break;
-				default:
-					if(arg.key >= 0xFF || (32 <= arg.key && arg.key <= 126))
-						editor_->put(arg.key);
-					else if(sizeof(nana::char_t) == sizeof(char))
-					{	//Non-Unicode Version for Non-English characters
-						if(arg.key & (1<<(sizeof(nana::char_t)*8 - 1)))
-							editor_->put(arg.key);
-					}
-				}
-				editor_->reset_caret();
+			bool enterable = widget_->enabled() && (!pred_acceptive_ || pred_acceptive_(arg.key));
+			if (editor_->respone_keyboard(arg.key, enterable))
 				API::lazy_refresh();
-			}
-			else if(arg.key == static_cast<char_t>(keyboard::copy))
-				editor_->copy();
 		}
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
@@ -246,37 +216,28 @@ namespace nana{	namespace drawerbase {
 			create(wd, r, visible);
 		}
 
-		void textbox::load(const nana::char_t* file)
+		void textbox::load(nana::string file)
 		{
-			if (file)
-			{
-				internal_scope_guard lock;
-				auto editor = get_drawer_trigger().editor();
-				if (editor && editor->load(file))
-					API::update_window(handle());
-			}
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor && editor->load(file.data()))
+				API::update_window(handle());
 		}
 
-		void textbox::store(const nana::char_t* file)
+		void textbox::store(nana::string file)
 		{
-			if (file)
-			{
-				internal_scope_guard lock;
-				auto editor = get_drawer_trigger().editor();
-				if (editor)
-					editor->textbase().store(file);
-			}
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->textbase().store(std::move(file));
 		}
 
-		void textbox::store(const nana::char_t* file, nana::unicode encoding)
+		void textbox::store(nana::string file, nana::unicode encoding)
 		{
-			if (file)
-			{
-				internal_scope_guard lock;
-				auto editor = get_drawer_trigger().editor();
-				if (editor)
-					editor->textbase().store(file, encoding);
-			}
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->textbase().store(std::move(file), encoding);
 		}
 
 		textbox& textbox::reset(nana::string str)
@@ -403,11 +364,11 @@ namespace nana{	namespace drawerbase {
 			get_drawer_trigger().set_accept(std::move(fn));
 		}
 
-		textbox& textbox::tip_string(const nana::string& str)
+		textbox& textbox::tip_string(nana::string str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->tip_string(str))
+			if(editor && editor->tip_string(std::move(str)))
 				API::refresh_window(handle());
 			return *this;
 		}

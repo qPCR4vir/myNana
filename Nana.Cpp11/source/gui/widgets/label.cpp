@@ -444,9 +444,9 @@ namespace nana
 
 					for(auto i = rs.pixels.begin(), end = rs.pixels.end(); i != end; ++i)
 					{
-						for(auto u = i->values.begin(), uend = i->values.end(); u != uend; ++u)
+						for (auto & render_iterator : i->values)
 						{
-							auto & value = *(*u);
+							auto & value = *render_iterator;
 							if(false == value.data_ptr->is_text())
 							{
 								if(text.size())
@@ -481,7 +481,7 @@ namespace nana
 								//hold the block while the text is empty,
 								//it stands for the first block
 								if(text.empty())
-									block_start = *u;
+									block_start = render_iterator;
 
 								text += value.data_ptr->text();
 							}
@@ -595,7 +595,7 @@ namespace nana
 						n = (++i)->data_ptr->text().length();
 					}
 
-					return std::pair<std::size_t, std::size_t>(pos, n - pos);
+					return{ pos, n - pos };
 				}
 			private:
 				dstream dstream_;
@@ -617,10 +617,10 @@ namespace nana
 			//@brief: Draw the label
 				struct trigger::impl_t
 				{
-					widget * wd;
-					paint::graphics * graph;
+					widget * wd{nullptr};
+					paint::graphics * graph{nullptr};
 
-					align	text_align;
+					align	text_align{align::left};
 					align_v	text_align_v;
 
 					class renderer renderer;
@@ -628,29 +628,18 @@ namespace nana
 					nana::string target;	//It indicates which target is tracing.
 					nana::string url;
 
-					impl_t()
-						:	wd(nullptr),
-							graph(nullptr),
-							text_align(align::left)
+					void add_listener(std::function<void(command, const nana::string&)>&& fn)
 					{
-					}
-
-					void add_listener(const std::function<void(command, const nana::string&)> & f)
-					{
-						listener_ += f;
-					}
-
-					void add_listener(std::function<void(command, const nana::string&)> && f)
-					{
-						listener_ += std::move(f);
+						listener_.emplace_back(std::move(fn));
 					}
 
 					void call_listener(command cmd, const nana::string& tar)
 					{
-						listener_(cmd, tar);
+						for (auto & fn : listener_)
+							fn(cmd, tar);
 					}
 				private:
-					nana::fn_group<void(command, const nana::string&)> listener_;
+					std::vector<std::function<void(command, const nana::string&)>> listener_;
 				};
 
 				trigger::trigger()
@@ -822,13 +811,7 @@ namespace nana
 			return *this;
 		}
 
-		label& label::add_format_listener(const std::function<void(command, const nana::string&)> & f)
-		{
-			get_drawer_trigger().impl()->add_listener(f);
-			return *this;
-		}
-
-		label& label::add_format_listener(std::function<void(command, const nana::string&)> && f)
+		label& label::add_format_listener(std::function<void(command, const nana::string&)> f)
 		{
 			get_drawer_trigger().impl()->add_listener(std::move(f));
 			return *this;

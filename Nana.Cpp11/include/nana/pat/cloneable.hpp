@@ -119,16 +119,10 @@ namespace nana{ namespace pat{
 			: public std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>
 		{};
 	public:
-		cloneable()
-			: fast_ptr_(nullptr)
-		{}
+		cloneable() = default;
 
-		cloneable(std::nullptr_t)
-			: fast_ptr_(nullptr)
-		{}
+		cloneable(std::nullptr_t){}
 
-		//template<typename T>
-		//cloneable(T&& t, typename member_enabled<T>::type = 0)	//deprecated
 		template<typename T, typename member_enabled<T>::type* = nullptr>
 		cloneable(T&& t)
 			:	cwrapper_(new detail::cloneable_wrapper<typename std::remove_cv<typename std::remove_reference<T>::type>::type, base_t>(std::forward<T>(t)), deleter()),
@@ -136,8 +130,6 @@ namespace nana{ namespace pat{
 		{}
 
 		cloneable(const cloneable& r)
-			:	cwrapper_(nullptr),
-				fast_ptr_(nullptr)
 		{
 			if(r.cwrapper_)
 			{
@@ -181,7 +173,6 @@ namespace nana{ namespace pat{
 			return *fast_ptr_;
 		}
 
-		//const base_t& operator*() const	//deprecated
 		const_base_ref operator*() const
 		{
 			return *fast_ptr_;
@@ -192,7 +183,6 @@ namespace nana{ namespace pat{
 			return fast_ptr_;
 		}
 
-		//const base_t * operator->() const	//deprecated
 		const_base_ptr operator->() const
 		{
 			return fast_ptr_;
@@ -215,7 +205,7 @@ namespace nana{ namespace pat{
 		}
 	private:
 		std::shared_ptr<interface_t> cwrapper_;
-		base_t * fast_ptr_;
+		base_t * fast_ptr_{nullptr};
 	};
 
 	template<typename T>

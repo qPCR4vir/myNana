@@ -205,8 +205,8 @@ namespace checkbox
 			element_tag el;
 
 			el.uiobj = &uiobj;
-			el.eh_checked = uiobj.events().click.connect_front(nana::make_fun(*this, &radio_group::_m_checked));
-			el.eh_destroy = uiobj.events().destroy.connect(nana::make_fun(*this, &radio_group::_m_destroy));
+			el.eh_checked = uiobj.events().click.connect_front(std::bind(&radio_group::_m_checked, this, std::placeholders::_1));
+			el.eh_destroy = uiobj.events().destroy.connect(std::bind(&radio_group::_m_destroy, this, std::placeholders::_1));
 			ui_container_.push_back(el);
 		}
 

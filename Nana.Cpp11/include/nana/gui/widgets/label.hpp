@@ -59,12 +59,11 @@ namespace nana
 		label(window, bool visible);
 		label(window, const nana::string& text, bool visible = true);
 		label(window, const nana::char_t* text, bool visible = true);
-		label(window, const rectangle& = rectangle(), bool visible = true);
+		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const;
 		label& format(bool);		///< Switches the format mode of the widget.
-		label& add_format_listener(const std::function<void(command, const nana::string&)> &);
-		label& add_format_listener(std::function<void(command, const nana::string&)> &&);
+		label& add_format_listener(std::function<void(command, const nana::string&)>);
 
 		/// \briefReturn the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
 		/// "corrected" size that changes lines to fit the text into the specified width

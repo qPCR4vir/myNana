@@ -56,7 +56,7 @@ namespace nana
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type();
-				menu_item_type(const nana::string& text, const event_fn_t& f);
+				menu_item_type(nana::string, const event_fn_t&);
 
 				struct
 				{
@@ -65,12 +65,12 @@ namespace nana
 					bool checked:1;
 				}flags;
 
-				menu_type		*sub_menu;
+				menu_type		*sub_menu{nullptr};
 				nana::string	text;
 				event_fn_t	functor;
-				checks			style;
+				checks			style{checks::none};
 				paint::image	image;
-				mutable nana::char_t	hotkey;
+				mutable nana::char_t	hotkey{0};
 			};
 
 			struct menu_type

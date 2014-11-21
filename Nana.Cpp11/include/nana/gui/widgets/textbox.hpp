@@ -126,9 +126,9 @@ namespace nana
 		textbox(window, const rectangle& = rectangle(), bool visible = true);
 
         ///  \brief Loads a text file. When attempt to load a unicode encoded text file, be sure the file have a BOM header.
-		void load(const nana::char_t* file);
-		void store(const nana::char_t* file);        ///< Writes the text to a file with multibytes encoding.
-		void store(const nana::char_t* file, nana::unicode encoding); ///< Writes the text to a file with unicode encoding in little-endian.
+		void load(nana::string file);
+		void store(nana::string file);                         ///< Writes the text to a file with multibytes encoding.
+		void store(nana::string file, nana::unicode encoding); ///< Writes the text to a file with unicode encoding in little-endian.
 		textbox& reset(nana::string = {});      ///< discard the old text and set a newtext
 
 		/// The file of last store operation.
@@ -160,7 +160,7 @@ namespace nana
 		textbox& editable(bool);
 		void set_accept(std::function<bool(nana::char_t)>);
 
-		textbox& tip_string(const nana::string&);
+		textbox& tip_string(nana::string);
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
 		textbox& mask(nana::char_t);

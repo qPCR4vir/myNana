@@ -15,11 +15,55 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
-#include <utility>
 #include <nana/gui/basis.hpp>
+#include <utility>
+#include <memory>
+#include <functional>
 
 namespace nana
 {
+	class widget;
+	namespace detail
+	{
+		class place_agent
+		{
+		public:
+			virtual ~place_agent() = default;
+			virtual std::unique_ptr<nana::widget> create(nana::window) const = 0;
+		};
+	}
+
+	template<typename Widget>
+	class agent
+		: public detail::place_agent
+	{
+	public:
+		agent(std::function<void(Widget&)> initializer)
+			: init_(std::move(initializer))
+		{}
+
+		agent(const nana::char_t* text)
+			: text_(text)
+		{}
+
+		agent(nana::string text, std::function<void(Widget&)> initializer = {})
+			: text_(std::move(text)), init_(std::move(initializer))
+		{}
+
+	private:
+		std::unique_ptr<nana::widget> create(nana::window handle) const override
+		{
+			std::unique_ptr<Widget> ptr(new Widget(handle));
+			ptr->caption(text_);
+			if (init_)
+				init_(*ptr);
+			return std::move(ptr);
+		}
+	private:
+		nana::string text_;
+		std::function<void(Widget&)> init_;
+	};
+
     ///  Layout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
 	class place
 		: ::nana::noncopyable
@@ -35,8 +79,19 @@ namespace nana
 		public:
 			field_interface() = default;
 			virtual ~field_interface() = default;
+			virtual field_interface& operator<<(const nana::char_t* label) = 0;
+			virtual field_interface& operator<<(nana::string label) = 0;
 			virtual field_interface& operator<<(window) = 0;
 			virtual field_interface& fasten(window) = 0;
+			
+			template<typename Widget>
+			field_interface& operator<<(const agent<Widget>& ag)
+			{
+				_m_add_agent(ag);
+				return *this;
+			}
+		private:
+			virtual void _m_add_agent(const detail::place_agent&) = 0;
 		};
 	public:
         ///  reference to a field manipulator which refers to a field object created by place 
@@ -65,6 +120,8 @@ namespace nana
 		void collocate();                     ///< Layouts the widgets.
 
  		void erase(window handle);				///< Erases a window from field.
+
+		field_reference operator[](const char* name); ///< Returns a field with the specified name. Equal to field();
 	private:
 		implement * impl_;
 	};
