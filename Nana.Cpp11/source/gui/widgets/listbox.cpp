@@ -34,7 +34,7 @@ namespace nana
 
 				struct column_t
 				{
-					nana::string text;  //< "text" header of the column number "index" with weigth "pixels"
+					nana::string text;  //< "text" header of the column number "index" with weight "pixels"
 					unsigned pixels;
 					bool visible;
 					size_type index;

@@ -465,7 +465,7 @@ namespace nana{
 
 
         typedef vplace::minmax  minmax;//     minmax(unsigned Min=MIN, unsigned Max=MAX);
-        struct adj { unsigned weigth, min, count_adj; adj () :weigth ( 0 ), min ( 0 ), count_adj ( 0 ) {} };
+        struct adj { unsigned weight, min, count_adj; adj () :weight ( 0 ), min ( 0 ), count_adj ( 0 ) {} };
 
         struct adjustable :minmax
         {
@@ -483,30 +483,30 @@ namespace nana{
             }
             virtual adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () )
             {
-                if ( t_w      <   fixed.weigth + fixed.min )
-                { adj_min.weigth += min; return adj_min; }
-                if ( t_w <    min * fixed.count_adj + fixed.weigth )
-                { adj_min.weigth += min; return adj_min; }
-                if ( t_w >    max * fixed.count_adj + fixed.weigth )
-                { adj_min.weigth += max; return adj_min; }
+                if ( t_w      <   fixed.weight + fixed.min )
+                { adj_min.weight += min; return adj_min; }
+                if ( t_w <    min * fixed.count_adj + fixed.weight )
+                { adj_min.weight += min; return adj_min; }
+                if ( t_w >    max * fixed.count_adj + fixed.weight )
+                { adj_min.weight += max; return adj_min; }
 
                 adj_min.min += min;
                 ++adj_min.count_adj;   return  adj_min;
             }
-            virtual unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )
+            virtual unsigned weight ( unsigned t_w, const adj& fixed, const adj& adj_min )
             {
-                if ( t_w      <   fixed.weigth + fixed.min )
+                if ( t_w      <   fixed.weight + fixed.min )
                 { return min; }
-                if ( t_w <    min * fixed.count_adj   + fixed.weigth )
+                if ( t_w <    min * fixed.count_adj   + fixed.weight )
                 { return min; }
-                if ( t_w >    max * fixed.count_adj   + fixed.weigth )
+                if ( t_w >    max * fixed.count_adj   + fixed.weight )
                 { return max; }
-                if ( t_w <    min * adj_min.count_adj + adj_min.weigth )
+                if ( t_w <    min * adj_min.count_adj + adj_min.weight )
                 { return min; }
-                if ( t_w >    max * adj_min.count_adj + adj_min.weigth )
+                if ( t_w >    max * adj_min.count_adj + adj_min.weight )
                 { return max; }
 
-                return  (t_w - adj_min.weigth) / adj_min.count_adj  ;
+                return  (t_w - adj_min.weight) / adj_min.count_adj  ;
             }
         };
         struct fixed : adjustable
@@ -520,12 +520,12 @@ namespace nana{
 
 
             adj   pre_place ( unsigned t_w, adj&   fixed = adj () ) override
-            { fixed.weigth += weigth_adj ( t_w ) ;   return  fixed; }
+            { fixed.weight += weigth_adj ( t_w ) ;   return  fixed; }
 
             adj   end_place ( unsigned t_w, const adj& fixed = adj (), adj& adj_min = adj () ) override
-            { adj_min.weigth += weigth_adj ( t_w ) ;   return  adj_min; }
+            { adj_min.weight += weigth_adj ( t_w ) ;   return  adj_min; }
 
-            unsigned weigth ( unsigned t_w, const adj& fixed, const adj& adj_min )  override
+            unsigned weight ( unsigned t_w, const adj& fixed, const adj& adj_min )  override
             { return weigth_adj ( t_w ); }
 
             virtual unsigned weigth_adj ( unsigned t_w )
@@ -660,7 +660,7 @@ namespace nana{
                 for ( auto child : children )
                 {
                     rectangle child_area ( area );
-                    weigth_s ( child_area ) = child->weigth ( t_w, pre_adj, end_adj )   ;
+                    weigth_s ( child_area ) = child->weight ( t_w, pre_adj, end_adj )   ;
                     weigth_c ( area ) += weigth_s ( child_area );
                     weigth_s ( area ) -= weigth_s ( child_area );
                     
