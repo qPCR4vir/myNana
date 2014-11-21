@@ -748,50 +748,9 @@ namespace nana
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
-					auto editor = drawer_->editor();
-					if(drawer_->widget_ptr()->enabled() && editor->attr().editable)
-					{
-						if (pred_acceptive_ && !pred_acceptive_(arg.key))
-							return;
-
-						switch(arg.key)
-						{
-						case '\b':
-							editor->backspace();	break;
-						case '\n': case '\r':
-							editor->enter();	break;
-						case keyboard::copy:
-							editor->copy();	break;
-						case keyboard::cut:
-							editor->copy();
-							editor->del();
-							break;
-						case keyboard::paste:
-							editor->paste();	break;
-						case keyboard::tab:
-							editor->put(static_cast<char_t>(keyboard::tab)); break;
-						default:
-							if(arg.key >= 0xFF || (32 <= arg.key && arg.key <= 126))
-								editor->put(arg.key);
-							else if(sizeof(nana::char_t) == sizeof(char))
-							{	//Non-Unicode Version for Non-English characters
-								if(arg.key & (1<<(sizeof(nana::char_t)*8 - 1)))
-									editor->put(arg.key);
-							}
-						}
-						editor->reset_caret();
+					bool enterable = drawer_->widget_ptr()->enabled() && (!pred_acceptive_ || pred_acceptive_(arg.key));
+					if (drawer_->editor()->respone_keyboard(arg.key, enterable))
 						API::lazy_refresh();
-					}
-					else
-					{
-						switch(arg.key)
-						{
-						case keyboard::copy:
-							editor->copy();	break;
-						case keyboard::paste:
-							editor->paste();	break;
-						}
-					}
 				}
 			//end class trigger
 

@@ -15,7 +15,7 @@
 #define NANA_GUI_WIDGET_DETAIL_TEXTBASE_HPP
 
 #include <nana/charset.hpp>
-#include <nana/deploy.hpp>
+#include <nana/basic_types.hpp>
 #include <nana/traits.hpp>
 #include "textbase_export_interface.hpp"
 
@@ -53,8 +53,8 @@ namespace skeletons
 
 		bool empty() const
 		{
-			return (text_cont_.size() == 0 ||
-					((text_cont_.size() == 1) && (text_cont_[0].size() == 0)));
+			return (text_cont_.empty() ||
+					((text_cont_.size() == 1) && (text_cont_[0].empty())));
 		}
 
 		bool load(const nana::char_t* fs)
@@ -249,7 +249,7 @@ namespace skeletons
 			return true;
 		}
 
-		void store(const nana::char_t* fs) const
+		void store(nana::string fs) const
 		{
 			std::string fs_mbs = nana::charset(fs);
 			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
@@ -266,11 +266,11 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back());
 				ofs.write(mbs.c_str(), mbs.size());
-				_m_saved(fs);
+				_m_saved(std::move(fs));
 			}
 		}
 
-		void store(const nana::char_t* fs, nana::unicode encoding) const
+		void store(nana::string fs, nana::unicode encoding) const
 		{
 			std::string fs_mbs = nana::charset(fs);
 			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
@@ -303,7 +303,7 @@ namespace skeletons
 				}
 				std::string mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
 				ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
-				_m_saved(fs);
+				_m_saved(std::move(fs));
 			}
 		}
 
@@ -317,9 +317,7 @@ namespace skeletons
 			if(pos < text_cont_.size())
 				return text_cont_[pos];
 
-			if (nullptr == nullstr_)
-				nullstr_ = std::make_shared<string_type>();
-			return *nullstr_;
+			return nullstr_;
 		}
 
 		std::pair<size_t, size_t> max_line() const
@@ -327,59 +325,38 @@ namespace skeletons
 			return std::make_pair(attr_max_.line, attr_max_.size);
 		}
 	public:
-		void replace(size_type pos, const char_type* text)
+		void replace(size_type pos, string_type && text)
 		{
 			if(text_cont_.size() <= pos)
 			{
-				text_cont_.emplace_back(text);
+				text_cont_.emplace_back(std::move(text));
 				pos = text_cont_.size() - 1;
 			}
 			else
-				text_cont_[pos] = text;
+				text_cont_[pos].swap(text);
 
 			_m_make_max(pos);
 			_m_edited();
 		}
 
-		void insert(size_type line, size_type pos, string_type && str)
+		void insert(upoint pos, string_type && str)
 		{
-			if(line < text_cont_.size())
+			if(pos.y < text_cont_.size())
 			{
-				string_type& lnstr = text_cont_[line];
+				string_type& lnstr = text_cont_[pos.y];
 
-				if(pos < lnstr.size())
-					lnstr.insert(pos, str);
+				if(pos.x < lnstr.size())
+					lnstr.insert(pos.x, str);
 				else
 					lnstr += str;
 			}
 			else
 			{
 				text_cont_.emplace_back(std::move(str));
-				line = text_cont_.size() - 1;
+				pos.y = text_cont_.size() - 1;
 			}
 
-			_m_make_max(line);
-			_m_edited();
-		}
-
-		void insert(size_type line, size_type pos, char_type ch)
-		{
-			if(line < text_cont_.size())
-			{
-				string_type& lnstr = text_cont_[line];
-
-				if(pos < lnstr.size())
-					lnstr.insert(pos, 1, ch);
-				else
-					lnstr += ch;
-			}
-			else
-			{
-				text_cont_.emplace_back(1, ch);
-				line = text_cont_.size() - 1;
-			}
-
-			_m_make_max(line);
+			_m_make_max(pos.y);
 			_m_edited();
 		}
 
@@ -440,7 +417,7 @@ namespace skeletons
 
 		void merge(size_type pos)
 		{
-			if(text_cont_.size() && (pos < text_cont_.size() - 1))
+			if(pos + 1 < text_cont_.size())
 			{
 				text_cont_[pos] += text_cont_[pos + 1];
 				text_cont_.erase(text_cont_.begin() + (pos + 1));
@@ -537,11 +514,11 @@ namespace skeletons
 		}
 	private:
 		std::deque<string_type>	text_cont_;
-		textbase_event_agent_interface* evt_agent_ = nullptr;
+		textbase_event_agent_interface* evt_agent_{ nullptr };
 
-		mutable bool			changed_ = false;
+		mutable bool			changed_{ false };
 		mutable nana::string	filename_;	//A string for the saved filename.
-		mutable std::shared_ptr<string_type> nullstr_;
+		const string_type nullstr_;
 
 		struct attr_max
 		{

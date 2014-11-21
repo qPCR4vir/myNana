@@ -389,7 +389,7 @@ namespace paint
 		nana::size graphics::glyph_extent_size(const nana::char_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			if(len < end) end = len;
-			if(nullptr == handle_ || nullptr == str || 0 == len || begin >= end) return nana::size();
+			if (nullptr == handle_ || nullptr == str || 0 == len || begin >= end) return{};
 
 			nana::size sz;
 #if defined(NANA_WINDOWS)

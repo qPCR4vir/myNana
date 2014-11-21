@@ -22,12 +22,82 @@ namespace nana{	namespace widgets
 {
 	namespace skeletons
 	{
+		template<typename EnumCommand>
+		class undoable_command_interface
+		{
+		public:
+			virtual ~undoable_command_interface() = default;
+
+			virtual EnumCommand get() const = 0;
+			virtual bool merge(const undoable_command_interface&) = 0;
+			virtual void execute(bool redo) = 0;
+		};
+
+		template<typename EnumCommand>
+		class undoable
+		{
+		public:
+			using command = EnumCommand;
+			using container = std::deque < std::unique_ptr<undoable_command_interface<command>> >;
+
+			void push(std::unique_ptr<undoable_command_interface<command>> && ptr)
+			{
+				if (!ptr)
+					return;
+
+				if (pos_ < commands_.size())
+					commands_.erase(commands_.begin() + pos_, commands_.end());
+
+				pos_ = commands_.size();
+				if (!commands_.empty())
+				{
+					if (commands_.back().get()->merge(*ptr))
+						return;
+				}
+
+				commands_.emplace_back(std::move(ptr));
+				++pos_;
+			}
+
+			std::size_t count(bool is_undo) const
+			{
+				return (is_undo ? pos_ : commands_.size() - pos_);
+			}
+
+			void undo()
+			{
+				if (pos_ > 0)
+				{
+					--pos_;
+					commands_[pos_].get()->execute(false);
+				}
+			}
+
+			void redo()
+			{
+				if (pos_ != commands_.size())
+					commands_[pos_++].get()->execute(true);
+			}
+
+		private:
+			container commands_;
+			std::size_t pos_{ 0 };
+		};
+
 		class text_editor
 		{
 			struct attributes;
 			class editor_behavior_interface;
 			class behavior_normal;
 			class behavior_linewrapped;
+
+			enum class command{
+				backspace, input_text,
+			};
+			//Commands for undoable
+			template<typename EnumCommand> class basic_undoable;
+			class undo_backspace;
+			class undo_input_text;
 		public:
 			typedef nana::char_t	char_type;
 			typedef textbase<char_type>::size_type size_type;
@@ -43,6 +113,8 @@ namespace nana{	namespace widgets
 			text_editor(window, graph_reference);
 			~text_editor();
 
+			bool respone_keyboard(nana::char_t, bool enterable);
+
 			void typeface_changed();
 
 			/// Determine whether the text_editor is line wrapped.
@@ -57,7 +129,7 @@ namespace nana{	namespace widgets
 			//text_area
 			//@return: Returns true if the area of text is changed.
 			bool text_area(const nana::rectangle&);
-			bool tip_string(const nana::string&);
+			bool tip_string(nana::string&&);
 
 			const attributes & attr() const;
 			bool multi_lines(bool);
@@ -100,10 +172,12 @@ namespace nana{	namespace widgets
 			void put(nana::string);
 			void put(nana::char_t);
 			void copy() const;
+			void cut();
 			void paste();
-			void enter();
+			void enter(bool record_undo = true);
 			void del();
-			void backspace();
+			void backspace(bool record_undo = true);
+			void undo(bool reverse);
 			bool move(nana::char_t);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
@@ -130,10 +204,7 @@ namespace nana{	namespace widgets
 			nana::upoint _m_erase_select();
 
 			bool _m_make_select_string(nana::string&) const;
-
-			//_m_make_simple_nl
-			//@brief: Transfers a string if it contains "0xD\0xA" or "0xA\0xD"
-			static std::size_t _m_make_simple_nl(nana::string&);
+			static bool _m_resolve_text(const nana::string&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);
 			unsigned _m_tabs_pixels(size_type tabs) const;
@@ -161,7 +232,7 @@ namespace nana{	namespace widgets
 			//@brief: Draw a character at a position specified by caret pos. 
 			//@return: true if beyond the border
 			bool _m_draw(nana::char_t, std::size_t secondary_before);
-			void _m_get_sort_select_points(nana::upoint& a, nana::upoint& b) const;
+			bool _m_get_sort_select_points(nana::upoint&, nana::upoint&) const;
 
 			void _m_offset_y(int y);
 
@@ -170,10 +241,11 @@ namespace nana{	namespace widgets
 			static bool _m_is_right_text(const unicode_bidi::entity&);
 		private:
 			std::unique_ptr<editor_behavior_interface> behavior_;
+			undoable<command>	undo_;
 			nana::window window_;
 			graph_reference graph_;
 			skeletons::textbase<nana::char_t> textbase_;
-			nana::char_t mask_char_;
+			nana::char_t mask_char_{0};
 
 			mutable ext_renderer_tag ext_renderer_;
 

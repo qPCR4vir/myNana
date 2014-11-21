@@ -177,8 +177,8 @@ namespace nana
 				index_pair pos() const;
 
 				size_type columns() const;
-				item_proxy & text(size_type col, const nana::string&);
-				item_proxy & text(size_type col, nana::string&&);
+
+				item_proxy & text(size_type col, nana::string);
 				nana::string text(size_type col) const;
 				void icon(const nana::paint::image&);
 
@@ -278,15 +278,15 @@ namespace nana
 				const nana::any * _m_value() const;
 			private:
 				essence_t * ess_;
-				category_t*	cat_;
+				category_t*	cat_{nullptr};
 				index_pair	pos_;
 			};
 
 			class cat_proxy
-				: public std::iterator<std::input_iterator_tag, cat_proxy>
+				: public std::iterator < std::input_iterator_tag, cat_proxy >
 			{
 			public:
-				cat_proxy();
+				cat_proxy() = default;
 				cat_proxy(essence_t*, size_type pos);
 				cat_proxy(essence_t*, category_t*);
 
@@ -295,14 +295,14 @@ namespace nana
 				item_proxy append(const T& t)
 				{
 					auto proxy = _m_resolver().get<resolver_proxy<T> >();
-					if(proxy)
+					if (proxy)
 					{
 						auto & res = proxy->res;
 						push_back(res->decode(0, t));
 
 						item_proxy ip(ess_, index_pair(pos_, size() - 1));
 						auto headers = columns();
-						for(size_type i = 1; i < headers; ++i)
+						for (size_type i = 1; i < headers; ++i)
 							ip.text(i, res->decode(i, t));
 						return ip;
 					}
@@ -313,12 +313,11 @@ namespace nana
 
 				size_type columns() const;
 
-				cat_proxy& text(const nana::string&);
+				cat_proxy& text(nana::string);
 				nana::string text() const;
 
 				/// Behavior of a container
-				void push_back(const nana::string&);
-				void push_back(nana::string&&);
+				void push_back(nana::string);
 
 				item_proxy begin() const;
 				item_proxy end() const;
@@ -366,9 +365,9 @@ namespace nana
 				const nana::any & _m_resolver() const;
 				void _m_cat_by_pos();
 			private:
-				essence_t*	ess_;
-				category_t*	cat_;
-				size_type	pos_;
+				essence_t*	ess_{nullptr};
+				category_t*	cat_{nullptr};
+				size_type	pos_{0};
 			};
 		}
 	}//end namespace drawerbase
@@ -417,13 +416,13 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		{
 		};
 	public:
-		listbox();
+		listbox() = default;
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
 		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
 
-		void append_header(const nana::string &header_txt, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
+		void append_header(nana::string, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
 
 		cat_proxy append(nana::string);          ///<Appends a new category at the end
 		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
@@ -440,7 +439,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 				delete p;
 			});
 
-			return cat_proxy(&get_drawer_trigger().essence(), _m_at_key(p));
+			return cat_proxy(&_m_ess(), _m_at_key(p));
 		}
 
 		template<typename Key>
@@ -452,7 +451,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 				delete p;
 			});
 
-			return cat_proxy(&get_drawer_trigger().essence(), _m_at_key(p));
+			return cat_proxy(&_m_ess(), _m_at_key(p));
 		}
 
 		item_proxy at(const index_pair&) const;
@@ -511,6 +510,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
 	private:
+		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
 		void _m_resolver(const nana::any&);
 		const nana::any & _m_resolver() const;

@@ -516,7 +516,7 @@ namespace nana
 
 				std::size_t visual_item_size() const
 				{
-					return attr.tree_cont.child_size_if(STR(""), pred_allow_child());
+					return attr.tree_cont.child_size_if(nana::string{}, pred_allow_child{});
 				}
 
 				int visible_w_pixels() const
@@ -639,7 +639,9 @@ namespace nana
 							this->mouse_move_tooltip_window();
 						});
 
-						auto fn = nana::make_fun(*this, &basic_implement::click_tooltip_window);
+						auto fn = [this](const arg_mouse& arg){
+							this->click_tooltip_window(arg);
+						};
 						events.mouse_down.connect(fn);
 						events.mouse_up.connect(fn);
 						events.dbl_click.connect(fn);
@@ -707,10 +709,6 @@ namespace nana
 			}; //end struct trigger::implement;
 
 			//class item_proxy
-				item_proxy::item_proxy()
-					: trigger_(nullptr), node_(nullptr)
-				{}
-
 				item_proxy::item_proxy(trigger* trg, trigger::node_type* node)
 					: trigger_(trg), node_(node)
 				{
@@ -722,11 +720,11 @@ namespace nana
 					}
 				}
 
-				item_proxy item_proxy::append(const nana::string& key, const nana::string& name)
+				item_proxy item_proxy::append(const nana::string& key, nana::string name)
 				{
 					if(nullptr == trigger_ || nullptr == node_)
 						return item_proxy();
-					return item_proxy(trigger_, trigger_->insert(node_, key, name));
+					return item_proxy(trigger_, trigger_->insert(node_, key, std::move(name)));
 				}
 
 				bool item_proxy::empty() const
@@ -736,15 +734,15 @@ namespace nana
 
 				std::size_t item_proxy::level() const
 				{
-					if (nullptr == trigger_ || nullptr == node_)
-						return 0;
-
 					std::size_t n = 0;
-					auto owner = node_->owner;
-					while (owner)
+					if (trigger_ && node_)
 					{
-						++n;
-						owner = owner->owner;
+						auto owner = node_->owner;
+						while (owner)
+						{
+							++n;
+							owner = owner->owner;
+						}
 					}
 					return n;
 				}
@@ -830,7 +828,7 @@ namespace nana
 				std::size_t item_proxy::size() const
 				{
 					std::size_t n = 0;
-					for(trigger::node_type * child = node_->child; child; child = child->child)
+					for(auto child = node_->child; child; child = child->child)
 						++n;
 
 					return n;
@@ -838,27 +836,27 @@ namespace nana
 
 				item_proxy item_proxy::child() const
 				{
-					return item_proxy(trigger_, node_->child);
+					return{ trigger_, node_->child};
 				}
 
 				item_proxy item_proxy::owner() const
 				{
-					return item_proxy(trigger_, node_->owner);
+					return{ trigger_, node_->owner };
 				}
 
 				item_proxy item_proxy::sibling() const
 				{
-					return item_proxy(trigger_, node_->next);
+					return{ trigger_, node_->next };
 				}
 
 				item_proxy item_proxy::begin() const
 				{
-					return item_proxy(trigger_, node_->child);
+					return{ trigger_, node_->child };
 				}
 
 				item_proxy item_proxy::end() const
 				{
-					return item_proxy(nullptr, nullptr);
+					return{};
 				}
 
 				item_proxy item_proxy::visit_recursively(std::function<bool(item_proxy)> action)
@@ -982,11 +980,6 @@ namespace nana
 			{
 				static const unsigned item_offset = 16;
 				static const unsigned text_offset = 4;
-			public:
-				internal_placer()
-					:	pixels_crook_(0),
-						pixels_icon_(0)
-				{}
 			private:
 				//Implement the compset_locator_interface
 
@@ -1078,8 +1071,8 @@ namespace nana
 					return false;
 				}
 			private:
-				unsigned pixels_crook_;
-				unsigned pixels_icon_;
+				unsigned pixels_crook_{0};
+				unsigned pixels_icon_{0};
 			};
 
 			class internal_renderer
@@ -1410,7 +1403,6 @@ namespace nana
 				void attached(widget_reference wd, graph_reference graph) override
 				{
 					widget_ = &wd;
-
 					graph_ = &graph;
 					graph.typeface(widget_->typeface());
 				}
@@ -1424,10 +1416,7 @@ namespace nana
 				virtual bool comp_attribute(component_t comp, comp_attribute_t& comp_attr) const override
 				{
 					comp_attr.area = item_r_;
-					if(placer_->locate(comp, item_attr_, &comp_attr.area))
-						return true;
-
-					return false;
+					return placer_->locate(comp, item_attr_, &comp_attr.area);
 				}
 			private:
 				::nana::paint::graphics * graph_;
@@ -1461,8 +1450,8 @@ namespace nana
 						:expanded(false), checked(checkstate::unchecked)
 					{}
 
-					trigger::treebox_node_type::treebox_node_type(const nana::string& text)
-						:text(text), expanded(false), checked(checkstate::unchecked)
+					trigger::treebox_node_type::treebox_node_type(nana::string text)
+						:text(std::move(text)), expanded(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
@@ -1512,7 +1501,6 @@ namespace nana
 				void trigger::checkable(bool enable)
 				{
 					auto & comp_placer = impl_->data.comp_placer;
-
 					if(comp_placer->enabled(component::crook) != enable)
 					{
 						comp_placer->enable(component::crook, enable);
@@ -1557,8 +1545,9 @@ namespace nana
 					//Then, change the parent node check state
 					node_type * owner = node->owner;
 
-					while(owner->owner)   /// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
-					                      /// Make sure that the owner is not the ROOT node.
+					/// SUPER NODE, have no value. Keep independent "user-Roots" added with insert
+					/// Make sure that the owner is not the ROOT node.
+					while(owner->owner)
 					{
 						std::size_t len_checked = 0;
 						std::size_t size = 0;
@@ -1642,22 +1631,22 @@ namespace nana
 					return node->value.second.value;
 				}
 
-				trigger::node_type* trigger::insert(node_type* node, const nana::string& key, const nana::string& title)
+				trigger::node_type* trigger::insert(node_type* node, const nana::string& key, nana::string&& title)
 				{
 					node_type * p = impl_->attr.tree_cont.node(node, key);
 					if(p)
-						p->value.second.text = title;
+						p->value.second.text.swap(title);
 					else
-						p = impl_->attr.tree_cont.insert(node, key, treebox_node_type(title));
+						p = impl_->attr.tree_cont.insert(node, key, treebox_node_type(std::move(title)));
 
 					if(p && impl_->attr.auto_draw && impl_->draw(true))
 						API::update_window(impl_->data.widget_ptr->handle());
 					return p;
 				}
 
-				trigger::node_type* trigger::insert(const nana::string& path, const nana::string& title)
+				trigger::node_type* trigger::insert(const nana::string& path, nana::string&& title)
 				{
-					auto x = impl_->attr.tree_cont.insert(path, treebox_node_type(title));
+					auto x = impl_->attr.tree_cont.insert(path, treebox_node_type(std::move(title)));
 					if(x && impl_->attr.auto_draw && impl_->draw(true))
 						API::update_window(impl_->data.widget_ptr->handle());
 					return x;
@@ -2204,14 +2193,14 @@ namespace nana
 			return item_proxy(trg, trg->tree().find(keypath));
 		}
 
-		treebox::item_proxy treebox::insert(const nana::string& path_key, const nana::string& title)
+		treebox::item_proxy treebox::insert(const nana::string& path_key, nana::string title)
 		{
-			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(path_key, title));
+			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(path_key, std::move(title)));
 		}
 
-		treebox::item_proxy treebox::insert(item_proxy i, const nana::string& key, const nana::string& title)
+		treebox::item_proxy treebox::insert(item_proxy i, const nana::string& key, nana::string title)
 		{
-			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(i._m_node(), key, title));
+			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(i._m_node(), key, std::move(title)));
 		}
 
 		treebox::item_proxy treebox::erase(item_proxy i)

@@ -961,7 +961,7 @@ namespace detail
 							case XK_Return:
 								keychar = keyboard::enter;		break;
 							case XK_Cancel:
-								keychar = keyboard::copy;		break;	//Ctrl+C
+								keychar = keyboard::end_of_text;break;	//Ctrl+C
 							case XK_Page_Up:
 								keychar = keyboard::os_pageup;	break;
 							case XK_Page_Down:

@@ -97,7 +97,7 @@ namespace nana
 				struct treebox_node_type
 				{
 					treebox_node_type();
-					treebox_node_type(const nana::string& text);
+					treebox_node_type(nana::string);
 					treebox_node_type& operator=(const treebox_node_type&);
 
 					nana::string text;
@@ -132,8 +132,8 @@ namespace nana
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				nana::any & value(node_type*) const;
-				node_type* insert(node_type*, const nana::string& key, const nana::string& title);
-				node_type* insert(const nana::string& path, const nana::string& title);
+				node_type* insert(node_type*, const nana::string& key, nana::string&&);
+				node_type* insert(const nana::string& path, nana::string&&);
 
 				bool verify(const void*) const;
 				bool verify_kinship(node_type* parent, node_type* child) const;
@@ -177,19 +177,19 @@ namespace nana
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
-				item_proxy();           ///< The default constructor creates an end iterator.
+				item_proxy() = default;           ///< The default constructor creates an end iterator.
 
 				//Undocumented constructor.
 				item_proxy(trigger*, trigger::node_type*);
 
 				/// Append a child.
-				item_proxy append(const nana::string& key, const nana::string& name);
+				item_proxy append(const nana::string& key, nana::string name);
 
 				/// Append a child with a specified value (user object.).
 				template<typename T>
-				item_proxy append(const nana::string& key, const nana::string& name, const T&t)
+				item_proxy append(const nana::string& key, nana::string name, const T&t)
 				{
-					item_proxy ip = append(key, name);
+					item_proxy ip = append(key, std::move(name));
 					if(false == ip.empty())
 						ip.value(t);
 					return ip;
@@ -324,8 +324,8 @@ namespace nana
 				nana::any& _m_value();
 				const nana::any& _m_value() const;
 			private:
-				trigger * trigger_;
-				trigger::node_type * node_;
+				trigger * trigger_{nullptr};
+				trigger::node_type * node_{nullptr};
 			};//end class item_proxy
 		}//end namespace treebox
 	}//end namespace drawerbase
@@ -421,13 +421,13 @@ namespace nana
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
 		item_proxy insert(const nana::string& path_key,   ///< specifies the node hierarchical
-                           const nana::string& title      ///< used for displaying
+                           nana::string title      ///< used for displaying
                            ); 
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
 		item_proxy insert( item_proxy pos,             ///< the parent item node
                            const nana::string& key,    ///< specifies the new node
-                           const nana::string& title   ///< used for displaying.
+                           nana::string title   ///< used for displaying.
                            );
 		item_proxy erase(item_proxy i);
 
