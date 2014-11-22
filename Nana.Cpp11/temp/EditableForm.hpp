@@ -68,6 +68,7 @@ class EditableWidget: public EnablingEditing
     static  void Click(nana::window w)
 		{
 			nana::arg_mouse ei;
+            ei.evt_code = nana::event_code::click;
 			ei.pos.x= 0, ei.pos.y = 0;
 			ei.left_button = true;
 			ei.ctrl = ei.shift = false;
