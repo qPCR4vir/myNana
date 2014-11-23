@@ -2055,6 +2055,7 @@ namespace nana
 	void place::div(const char* s)
 	{
 		tokenizer tknizer(s);
+        impl_->root_division.reset();
 		impl_->scan_div(tknizer).swap(impl_->root_division);
 	}
 

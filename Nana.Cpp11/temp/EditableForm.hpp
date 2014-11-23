@@ -3,7 +3,8 @@
 
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/widgets/menubar.hpp>
-#include <../temp/vplace.hpp>
+#include <nana/gui/place.hpp>
+//#include <../temp/vplace.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 
 //#include <../temp/CompoWidget.hpp>
@@ -81,7 +82,7 @@ class EditableWidget: public EnablingEditing
     std::string     _myLayout, _DefLayout;
     nana::string    _DefLayoutFileName;	
 	nana::menu	    _menuProgram;
-    nana::vplace	_place;
+    nana::place	_place;   //     nana::vplace	_place;
 	EditLayout_Form*    _myEdLayForm{nullptr};    	//std::unique_ptr <EditLayout_Form> _myEdLayForm;
 
     std::vector<std::function<bool(void)>> _validate, _validated;
@@ -131,8 +132,6 @@ virtual    void add_validated(const std::function<bool(void)>& v)
     {
         _validated.push_back (v); 
     }
-
-
 
     virtual     ~EditableWidget     ();
     virtual void SetDefLayout       ()=0;
@@ -200,22 +199,27 @@ virtual    void add_validated(const std::function<bool(void)>& v)
         {
              (nana::msgbox(*_EdWd_owner, STR("std::exception during EditableWidget ReCollocation: "))
                     .icon(nana::msgbox::icon_error)
-                                 <<STR("\n   in form: ") << nana::API::window_caption(*_EdWd_owner)
-                                 <<STR("\n   exception : ") << e.what() 
+                                 <<STR("\n   in widget: ")  << nana::API::window_caption( _thisEdWd)
+                                 <<STR("\n   owned by: "  ) << nana::API::window_caption(*_EdWd_owner)
+                                 <<STR("\n   trying to layout: \n "  ) << _myLayout
+                                 <<STR("\n   ocurred exception: ") << e.what() 
              ).show();
         }
 		catch(...)
 		{
              (nana::msgbox(*_EdWd_owner, STR("An uncaptured exception during EditableWidget ReCollocation: "))
                     .icon(nana::msgbox::icon_error)
-                                 <<STR("\n   in form: ") << nana::API::window_caption(*_EdWd_owner)
+                                 <<STR("\n   in widget: ")  << nana::API::window_caption( _thisEdWd)
+                                 <<STR("\n   owned by: "  ) << nana::API::window_caption(*_EdWd_owner)
+                                 <<STR("\n   trying to layout: \n "  ) << _myLayout
              ).show();
 	    }
         _myLayout.swap(Layout); /// call ReCollocate again???
 	}
     void ReCollocate( )
     {
-        _place.div(_myLayout );     
+        _place.div(_myLayout.c_str() );     
+        //_place.div(_myLayout );     
 	    _place.collocate ();
 
     }
@@ -257,7 +261,7 @@ class CompoWidget : public  nana::panel<false> , public EditableWidget
 };
 
 class FilePickBox : public  CompoWidget
-{	nana::label	_label   {*this};
+{	nana::label	    _label   {*this};
 	nana::combox	_fileName{*this};    //   Only temporal public   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 	nana::button	 Pick    {*this, STR("...")};
 

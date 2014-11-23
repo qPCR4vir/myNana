@@ -50,7 +50,7 @@ FilePickBox::FilePickBox (nana::widget &fm,
     std::stringstream lay;
     lay<<
         "vertical   <weight=1>    \n"
-        "           <weight=20 <weight=3><   vertical weight="<<lab<<" <><label weight=15><>     ><weight=1>     \n"
+        "           <weight=20 <weight=3><weight="<<lab<<"   vertical  <><weight=15 label><>     ><weight=1>     \n"
         "					   <cbFL >       \n"
         "					   <pick weight=30>  \n"
         "					   <weight=3> 	>" 
@@ -61,7 +61,7 @@ FilePickBox::FilePickBox (nana::widget &fm,
 
     void FilePickBox::AsignWidgetToFields() 
 {
-	_place.field("cbFL"        ) <<  _fileName ;
+	_place.field("cbFL"        ) << _fileName ;
 	_place.field("label"       ) << _label;
 	_place.field("pick"        ) << Pick;
 }
@@ -107,10 +107,12 @@ OpenSaveBox::OpenSaveBox (nana::widget &fm,
 {
     _DefLayout= 
         "vertical   <weight=1>    \n"
-        "           <weight=20 <weight=3><   vertical weight=49 <><label weight=15><>     ><weight=1>     \n"
-        "		               <proj_buttons weight=74 gap=1>     \n"
+        "           <weight=20 <weight=3><weight=49    vertical <>                                       \n"
+        "                                                       <weight=15 label >                       \n"
+        "                                                       <>               ><weight=1>      \n"
+        "		               <weight=74 proj_buttons gap=1>                                     \n"
         "					   <cbFL >       \n"
-        "					   <pick weight=30>  \n"
+        "					   <weight=30 pick >  \n"
         "					   <weight=3> 	>" 
         "            <weight=2>    \n"          ;  
 }
