@@ -231,7 +231,7 @@ namespace nana
 		arg.pos.x = pos.x;
 		arg.pos.y = pos.y;
 
-		notifications::instance().emit(reinterpret_cast<native_window_type>(wd), wparam, arg);
+		notifications::instance().emit(reinterpret_cast<native_window_type>(wd), static_cast<unsigned short>(wparam), arg);
 	}
 #endif
 
@@ -338,7 +338,7 @@ namespace nana
 #if defined(NANA_WINDOWS)
 		if (ms && impl_->icons.size())
 		{
-			ms /= impl_->icons.size();
+			ms /= static_cast<unsigned>(impl_->icons.size());
 			impl_->ani_timer.interval(ms < 16 ? 16 : ms);
 			impl_->ani_timer.start();
 		}

@@ -353,7 +353,7 @@ namespace skeletons
 			else
 			{
 				text_cont_.emplace_back(std::move(str));
-				pos.y = text_cont_.size() - 1;
+				pos.y = static_cast<unsigned>(text_cont_.size() - 1);
 			}
 
 			_m_make_max(pos.y);

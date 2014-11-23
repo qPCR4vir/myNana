@@ -175,7 +175,7 @@ namespace nana{	namespace widgets
 						if (editor_._m_resolve_text(text_, lines))
 						{
 							editor_.select_.a = pos_;
-							editor_.select_.b = upoint(lines.back().second - lines.back().first, pos_.y + lines.size() - 1);
+							editor_.select_.b = upoint(static_cast<unsigned>(lines.back().second - lines.back().first), static_cast<unsigned>(pos_.y + lines.size() - 1));
 							editor_.backspace(false);
 							editor_.select_.a = editor_.select_.b;
 						}
@@ -307,7 +307,8 @@ namespace nana{	namespace widgets
 			nana::point	caret_to_screen(nana::upoint pos) override
 			{
 				auto & textbase = editor_.textbase_;
-				if (pos.y > textbase.lines())	pos.y = textbase.lines();
+				if (pos.y > static_cast<unsigned>(textbase.lines()))
+					pos.y = static_cast<unsigned>(textbase.lines());
 
 				pos.x = editor_._m_pixels_by_char(textbase.getline(pos.y), pos.x) + editor_.text_area_.area.x;
 
@@ -665,7 +666,7 @@ namespace nana{	namespace widgets
 
 			std::size_t take_lines() const
 			{
-				auto lines = 0;
+				std::size_t lines = 0;
 				for (auto & mtr : linemtr_)
 					lines += mtr.take_lines;
 
@@ -681,10 +682,10 @@ namespace nana{	namespace widgets
 			{
 				if (take_lines(textline) == secondary_before)
 				{
-					int top = caret_to_screen(upoint( 0, textline )).y;
+					int top = caret_to_screen(upoint{ 0, static_cast<unsigned>(textline) }).y;
 
 					const unsigned pixels = editor_.line_height();
-					editor_.graph_.rectangle(editor_.text_area_.area.x, top, editor_.width_pixels(), pixels * secondary_before, API::background(editor_.window_), true);
+					editor_.graph_.rectangle(editor_.text_area_.area.x, top, editor_.width_pixels(), static_cast<unsigned>(pixels * secondary_before), API::background(editor_.window_), true);
 
 					auto fgcolor = API::foreground(editor_.window_);
 					auto text_ptr = editor_.textbase_.getline(textline).data();
@@ -793,7 +794,7 @@ namespace nana{	namespace widgets
 
 				auto & mtr = linemtr_[primary];
 				if (mtr.line_sections.empty())
-					return{ 0, primary };
+					return{ 0, static_cast<unsigned>(primary) };
 
 				//First of all, find the text of secondary.
 				auto str = mtr.line_sections[secondary];
@@ -828,7 +829,7 @@ namespace nana{	namespace widgets
 					}
 					xbeg += static_cast<int>(str_w);
 				}
-				res.x = editor_.textbase_.getline(res.y).size();
+				res.x = static_cast<unsigned>(editor_.textbase_.getline(res.y).size());
 				return res;
 			}
 
@@ -2263,7 +2264,7 @@ namespace nana{	namespace widgets
 
 				auto length = text.size();
 				textbase_.insert(crtpos, std::move(text));
-				crtpos.x += length;
+				crtpos.x += static_cast<unsigned>(length);
 				behavior_->pre_calc_line(crtpos.y, width_pixels());
 			}
 			return crtpos;
