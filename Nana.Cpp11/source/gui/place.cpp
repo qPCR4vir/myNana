@@ -2141,6 +2141,7 @@ namespace nana
 		if (impl_->root_division && impl_->window_handle)
 		{
 			impl_->root_division->field_area = API::window_size(impl_->window_handle);
+            if (impl_->root_division->field_area.empty())  return;
 			impl_->root_division->collocate(impl_->window_handle);
 
 			for (auto & field : impl_->fields)
