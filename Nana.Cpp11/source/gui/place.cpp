@@ -2055,6 +2055,7 @@ namespace nana
 	void place::div(const char* s)
 	{
 		tokenizer tknizer(s);
+		impl_->root_division.reset();	//clear atachments div-fields
 		impl_->scan_div(tknizer).swap(impl_->root_division);
 	}
 
@@ -2072,7 +2073,7 @@ namespace nana
 		if (nullptr == p)
 			p = new implement::field_impl(this);
 
-		if ((false == p->attached) && impl_->root_division)
+		if ((!p->attached) && impl_->root_division)
 		{
 			//search the division with the specified name,
 			//and attached the division to the field
