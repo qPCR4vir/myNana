@@ -300,7 +300,7 @@ namespace nana
 				{
 					if(this->right_area(graph, x, y))
 					{
-						const unsigned n = (y - 2) / state_.renderer->item_pixels(graph) + state_.offset_y;
+						const unsigned n = (y - 2) / state_.renderer->item_pixels(graph) + static_cast<unsigned>(state_.offset_y);
 						if(n != state_.index)
 						{
 							state_.index = n;

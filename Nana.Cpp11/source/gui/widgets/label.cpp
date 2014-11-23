@@ -115,9 +115,9 @@ namespace nana
 					if((tv != align_v::top) && extent_v_pixels < graph.height())
 					{
 						if(align_v::center == tv)
-							rs.pos.y = (graph.height() - extent_v_pixels) >> 1;
+							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels) >> 1;
 						else if(align_v::bottom == tv)
-							rs.pos.y = graph.height() - extent_v_pixels;
+							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels);
 					}
 					else
 						rs.pos.y = 0;

@@ -1434,7 +1434,7 @@ namespace nana
 
 						std::pair<unsigned, unsigned> room{ 1, 1 };
 
-						_m_find_collapse(l, c, room);
+						_m_find_collapse(static_cast<int>(l), static_cast<int>(c), room);
 
 						int pos_x = area.x + static_cast<int>(l * (block_w + gap_size));
 						int pos_y = area.y + static_cast<int>(c * (block_h + gap_size));
