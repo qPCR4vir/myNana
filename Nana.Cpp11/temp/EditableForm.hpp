@@ -200,6 +200,7 @@ virtual    void add_validated(const std::function<bool(void)>& v)
              (nana::msgbox(*_EdWd_owner, STR("std::exception during EditableWidget ReCollocation: "))
                     .icon(nana::msgbox::icon_error)
                                  <<STR("\n   in widget: ")  << nana::API::window_caption( _thisEdWd)
+                                 <<STR("\n   Title: "    )  << _Titel
                                  <<STR("\n   owned by: "  ) << nana::API::window_caption(*_EdWd_owner)
                                  <<STR("\n   trying to layout: \n "  ) << _myLayout
                                  <<STR("\n   ocurred exception: ") << e.what() 
@@ -210,6 +211,7 @@ virtual    void add_validated(const std::function<bool(void)>& v)
              (nana::msgbox(*_EdWd_owner, STR("An uncaptured exception during EditableWidget ReCollocation: "))
                     .icon(nana::msgbox::icon_error)
                                  <<STR("\n   in widget: ")  << nana::API::window_caption( _thisEdWd)
+                                 <<STR("\n   Title: "    )  << _Titel
                                  <<STR("\n   owned by: "  ) << nana::API::window_caption(*_EdWd_owner)
                                  <<STR("\n   trying to layout: \n "  ) << _myLayout
              ).show();
