@@ -120,6 +120,54 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
+            struct cell
+            {
+                struct format{color_t bgcolor{0xFF000000}, fgcolor{0xFF000000};/*font, font_size*/ };
+                using pformat=std::unique_ptr<format>;
+                nana::string txt;
+                pformat      coustom_format; 
+
+                cell (nana::string text={}, pformat coustom_format={})
+                    :  txt(std::move(text)), 
+                       coustom_format(std::move(coustom_format))
+                    {}
+
+                cell (nana::string text, const format& format_)
+                    :  txt(std::move(text)), 
+                       coustom_format(std::make_unique<format>(format_))
+                    {}
+
+                cell (const cell& c)
+                    :  txt(c.txt), 
+                       coustom_format(/*new*/std::make_unique<format>(*(c.coustom_format.get())))
+                    {}
+
+                cell (cell&& c)//=default;  ??
+                    :  txt(std::move(c.txt)), 
+                       coustom_format(std::move(c.coustom_format))
+                    {}
+
+                operator nana::string()const{return txt;}
+
+                nana::string& operator =(nana::string text){txt=std::move(text);return txt;}
+
+                cell& operator =(const cell& c)
+                    { 
+                        txt=c.txt;
+                        coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
+                        return *this;
+                    }
+                cell& operator =( cell&& c)
+                    { 
+                        txt=c.txt;
+                        coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
+                        return *this;
+                    }
+                bool operator <(const cell&c){return txt<c.txt;}
+                bool operator >(const cell&c){return txt>c.txt;}
+            };
+
+
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
 			template<typename T>
 			class resolver_interface
@@ -408,6 +456,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		typedef drawerbase::listbox::cat_proxy	cat_proxy;
 		typedef drawerbase::listbox::item_proxy	item_proxy;
 		typedef drawerbase::listbox::selection	selection;    ///<A container type for items.
+        using cell=drawerbase::listbox::cell;
 
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
 		template<typename T>

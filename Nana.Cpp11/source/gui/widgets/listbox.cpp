@@ -231,52 +231,6 @@ namespace nana
 
 			struct essence_t;
 
-            struct cell_format{color_t bgcolor{0xFF000000}, fgcolor{0xFF000000};/*font, font_size*/ };
-            struct cell
-            {
-                nana::string txt;
-                std::unique_ptr<cell_format>coustom_format{}; 
-
-                cell (nana::string text={}, std::unique_ptr<cell_format>coustom_format={})
-                    :  txt(std::move(text)), 
-                       coustom_format(std::move(coustom_format))
-                    {}
-
-                cell (nana::string text, const cell_format& format)
-                    :  txt(std::move(text)), 
-                       coustom_format(std::make_unique<cell_format>(format))
-                    {}
-
-                cell (const cell& c)
-                    :  txt(c.txt), 
-                       coustom_format(/*new*/std::make_unique<cell_format>(*(c.coustom_format.get())))
-                    {}
-
-                cell (cell&& c)//=default;  ??
-                    :  txt(std::move(c.txt)), 
-                       coustom_format(std::move(c.coustom_format))
-                    {}
-
-                operator nana::string()const{return txt;}
-
-                nana::string& operator =(nana::string text){txt=std::move(text);return txt;}
-
-                cell& operator =(const cell& c)
-                    { 
-                        txt=c.txt;
-                        coustom_format=std::make_unique<cell_format>(*(c.coustom_format.get()));
-                        return *this;
-                    }
-                cell& operator =( cell&& c)
-                    { 
-                        txt=c.txt;
-                        coustom_format=std::make_unique<cell_format>(*(c.coustom_format.get()));
-                        return *this;
-                    }
-                bool operator <(const cell&c){return txt<c.txt;}
-                bool operator >(const cell&c){return txt>c.txt;}
-            };
-
 			struct item_t
 			{
 				//typedef std::vector<nana::string> container;
