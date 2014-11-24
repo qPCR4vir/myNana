@@ -179,7 +179,7 @@ namespace nana
 				/// The destructor
 				virtual ~resolver_interface(){}
 
-				virtual nana::string decode(size_type, const target&) const = 0;   ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
+				virtual cell decode(size_type, const target&) const = 0;   ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 				virtual void encode(target&, size_type, const nana::string&) const = 0;
 			};
 
