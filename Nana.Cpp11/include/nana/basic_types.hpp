@@ -97,8 +97,8 @@ namespace nana
 	typedef unsigned scalar_t;
 	typedef unsigned char	uint8_t;
 	typedef unsigned long	uint32_t;
-	typedef unsigned		uint_t;
-	typedef unsigned		color_t;
+	typedef unsigned		uint_t; // sizeof(uint_t) == 4 char == 32 bits ?
+	typedef unsigned		color_t;// using color_tt = char32_t;  ?
 	typedef long long long_long_t;
 
 	const color_t null_color = 0xFFFFFFFF;
@@ -115,7 +115,7 @@ namespace nana
 				unsigned int alpha_channel:8;
 			}element;
 
-			color_t color;
+			color_t color;   // color_t is 0x: ac.rd.gr.bl
 		}u;
 	};
 

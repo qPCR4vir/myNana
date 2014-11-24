@@ -100,6 +100,10 @@ namespace nana
 		enum
 		{
 			white = 0xFFFFFF,
+            blue = 0xFF0000,
+            green = 0x00FF00,
+            red = 0x0000FF,
+            black = 0x000000,
 			button_face_shadow_start = 0xF5F4F2,
 			button_face_shadow_end = 0xD5D2CA,
 			button_face = 0xD4D0C8,
@@ -119,16 +123,50 @@ namespace nana
 			    highlight,
                 end
 		    };
-            std::array<color_t,end> sys;
+            using color_schema=  std::array<color_t,schema::end> ;
+            color_schema sys=color_schema{{
+                color::button_face_shadow_start,  //sys
+			    color::button_face_shadow_end,
+			    color::button_face,
+			    color::dark_border,
+			    color::gray_border,
+			    color::highlight
+            }};
         };
-        const static schema def_schema={
-                button_face_shadow_start,  //sys
-			    button_face_shadow_end,
-			    button_face,
-			    dark_border,
-			    gray_border,
-			    highlight
-                                        };
+        using color_schema=  schema::color_schema;
+        const static color_schema def_schema = schema{}.sys ;
+		inline color_t mix(color_t a, color_t b, double fade_rate)  // implementation go to *.cpp
+		{
+			pixel_rgb_t pa, pb, ret;
+			ret.u.color = 0;
+			pa.u.color = a;
+			pb.u.color = b;
+
+			ret.u.element.red   = static_cast<unsigned char>(pa.u.element.red   * fade_rate + pb.u.element.red   * (1 - fade_rate));
+			ret.u.element.green = static_cast<unsigned char>(pa.u.element.green * fade_rate + pb.u.element.green * (1 - fade_rate));
+			ret.u.element.blue  = static_cast<unsigned char>(pa.u.element.blue  * fade_rate + pb.u.element.blue  * (1 - fade_rate));
+
+			return ret.u.color;
+		}
+
+        // use:                                             color_t myButtonColor      = color::def_schema[color::schema::button_face];
+        // or abreviate for defoult color scheme only:      color_t myOtherBottonColor = color::button_face_shadow_end;
+        // normal use of color:                             color_t myPreferedColor    = color::blue;
+
+
+        //nana::color::color_schema mySchema;                           // now it is like default
+        //mySchema[nana::color::schema::button_face]=nana::color::blue; // now it is different
+        //nana::color_t myColor    = mySchema[nana::color::schema::button_face];
+
+        //nana::color::schema customSchema;                            // now it is like default
+        //customSchema.sys[customSchema.button_face]=nana::color::blue; // now it is different
+        //nana::color_t yourColor    = customSchema.sys[customSchema.button_face];
+
+        //bool defaultcolors= false;
+        //nana::color::schema current_Schema = defaultcolors ? nana::color::schema{} : customSchema ; // now it is like default
+        //nana::color_t useColor    = current_Schema.sys[current_Schema.button_face];
+
+
 	};
 
 
