@@ -131,7 +131,7 @@ namespace nana
 				/// The destructor
 				virtual ~resolver_interface(){}
 
-				virtual nana::string decode(size_type, const target&) const = 0;
+				virtual nana::string decode(size_type, const target&) const = 0;   ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 				virtual void encode(target&, size_type, const nana::string&) const = 0;
 			};
 
@@ -154,7 +154,7 @@ namespace nana
 
 
 			class item_proxy
-				: public std::iterator<std::input_iterator_tag, item_proxy>
+				: public ::std::iterator<::std::input_iterator_tag, item_proxy>
 			{
 			public:
 				item_proxy(essence_t*);
@@ -168,18 +168,18 @@ namespace nana
 				item_proxy & select(bool);
 				bool selected() const;
 
-				item_proxy & bgcolor(nana::color_t);
-				nana::color_t bgcolor() const;
+				item_proxy & bgcolor(::nana::color_t);
+				::nana::color_t bgcolor() const;
 
-				item_proxy& fgcolor(nana::color_t);
-				nana::color_t fgcolor() const;
+				item_proxy& fgcolor(::nana::color_t);
+				::nana::color_t fgcolor() const;
 
 				index_pair pos() const;
 
 				size_type columns() const;
 
-				item_proxy & text(size_type col, nana::string);
-				nana::string text(size_type col) const;
+				item_proxy & text(size_type col, ::nana::string);
+				::nana::string text(size_type col) const;
 				void icon(const nana::paint::image&);
 
 				template<typename T>
@@ -193,7 +193,7 @@ namespace nana
 					auto headers = columns();
 
 					for(size_type i = 0; i < headers; ++i)
-						text(i, res->decode(i, t));
+						text(i, res->decode(i, t));  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 					
 					return *this;
 				}

@@ -231,10 +231,56 @@ namespace nana
 
 			struct essence_t;
 
+            struct cell_format{color_t bgcolor{0xFF000000}, fgcolor{0xFF000000};/*font, font_size*/ };
+            struct cell
+            {
+                nana::string txt;
+                std::unique_ptr<cell_format>coustom_format{}; 
+
+                cell (nana::string text={}, std::unique_ptr<cell_format>coustom_format={})
+                    :  txt(std::move(text)), 
+                       coustom_format(std::move(coustom_format))
+                    {}
+
+                cell (nana::string text, const cell_format& format)
+                    :  txt(std::move(text)), 
+                       coustom_format(std::make_unique<cell_format>(format))
+                    {}
+
+                cell (const cell& c)
+                    :  txt(c.txt), 
+                       coustom_format(/*new*/std::make_unique<cell_format>(*(c.coustom_format.get())))
+                    {}
+
+                cell (cell&& c)//=default;  ??
+                    :  txt(std::move(c.txt)), 
+                       coustom_format(std::move(c.coustom_format))
+                    {}
+
+                operator nana::string()const{return txt;}
+
+                nana::string& operator =(nana::string text){txt=std::move(text);return txt;}
+
+                cell& operator =(const cell& c)
+                    { 
+                        txt=c.txt;
+                        coustom_format=std::make_unique<cell_format>(*(c.coustom_format.get()));
+                        return *this;
+                    }
+                cell& operator =( cell&& c)
+                    { 
+                        txt=c.txt;
+                        coustom_format=std::make_unique<cell_format>(*(c.coustom_format.get()));
+                        return *this;
+                    }
+                bool operator <(const cell&c){return txt<c.txt;}
+                bool operator >(const cell&c){return txt>c.txt;}
+            };
+
 			struct item_t
 			{
-				typedef std::vector<nana::string> container;
-
+				//typedef std::vector<nana::string> container;
+                using container=std::vector<cell>;
 				container texts;
 				color_t bgcolor{0xFF000000};
 				color_t fgcolor{0xFF000000};
@@ -732,7 +778,7 @@ namespace nana
 				}
 
 				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type header_size)
-				{
+				{  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 					if ((col < header_size) && (pos < cat->items.size()))
 					{
 						auto & cont = cat->items[pos].texts;
@@ -2680,7 +2726,7 @@ namespace nana
 					return ess_->header.cont().size();
 				}
 
-				item_proxy & item_proxy::text(size_type col, nana::string str)
+				item_proxy & item_proxy::text(size_type col, nana::string str)  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 				{
 					ess_->lister.text(cat_, pos_.item, col, std::move(str), ess_->header.cont().size());
 					ess_->update();
