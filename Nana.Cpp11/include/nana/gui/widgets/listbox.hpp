@@ -122,7 +122,14 @@ namespace nana
 
             struct cell
             {
-                struct format{color_t bgcolor{0xFF000000}, fgcolor{0xFF000000};/*font, font_size*/ };
+                struct format{
+                               color_t bgcolor{0xFF000000}, 
+                                       fgcolor{0xFF000000};    
+                               /*font, font_size, nana::aling al*/
+
+                               format (color_t bgcolor=0xFF000000,color_t  fgcolor=0xFF000000): 
+                                  bgcolor(bgcolor), fgcolor(fgcolor){};
+                             };
                 using pformat=std::unique_ptr<format>;
                 nana::string txt;
                 pformat      coustom_format; 
@@ -135,6 +142,10 @@ namespace nana
                 cell (nana::string text, const format& format_)
                     :  txt(std::move(text)), 
                        coustom_format(std::make_unique<format>(format_))
+                    {}
+                cell (nana::string text, color_t bg,  color_t fg)
+                    :  txt(std::move(text)), 
+                    coustom_format(new format{bg,fg})//std::make_unique<format>{bg,fg})
                     {}
 
                 cell (const cell& c)
@@ -226,7 +237,7 @@ namespace nana
 
 				size_type columns() const;
 
-				item_proxy & text(size_type col, ::nana::string);
+				item_proxy & text(size_type col, cell&&);
 				::nana::string text(size_type col) const;
 				void icon(const nana::paint::image&);
 

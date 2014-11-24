@@ -731,7 +731,7 @@ namespace nana
 					return{};
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type header_size)
+				void text(category_t* cat, size_type pos, size_type col, cell&& str, size_type header_size)
 				{  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 					if ((col < header_size) && (pos < cat->items.size()))
 					{
@@ -2203,7 +2203,10 @@ namespace nana
 								}
 								ext_w += 18;
 							}
-							graph->string(item_xpos + ext_w, y + txtoff, txtcolor, item.texts[index]);
+                            auto& c=item.texts[index];
+					        if (c.coustom_format) 
+                                graph->rectangle(item_xpos, y, header.pixels, essence_->item_size, c.coustom_format->bgcolor, true);
+							graph->string(item_xpos + ext_w, y + txtoff, c.coustom_format? c.coustom_format->fgcolor: txtcolor, c.txt);
 
 							if(ts.width + ext_w > header.pixels)
 							{
@@ -2680,7 +2683,7 @@ namespace nana
 					return ess_->header.cont().size();
 				}
 
-				item_proxy & item_proxy::text(size_type col, nana::string str)  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
+				item_proxy & item_proxy::text(size_type col, cell&& str)  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
 				{
 					ess_->lister.text(cat_, pos_.item, col, std::move(str), ess_->header.cont().size());
 					ess_->update();
