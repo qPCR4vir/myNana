@@ -17,6 +17,7 @@
 
 #include "../basic_types.hpp"
 #include "../traits.hpp"	//metacomp::fixed_type_set
+#include <array>
 
 namespace nana
 {
@@ -104,9 +105,33 @@ namespace nana
 			button_face = 0xD4D0C8,
 			dark_border	= 0x404040,
 			gray_border	= 0x808080,
-			highlight = 0x1CC4F7
+			highlight = 0x1CC4F7,
 		};
+        struct schema
+        {
+		    enum
+		    {
+			    button_face_shadow_start,
+			    button_face_shadow_end,
+			    button_face,
+			    dark_border,
+			    gray_border,
+			    highlight,
+                end
+		    };
+            std::array<color_t,end> sys;
+        };
+        const static schema def_schema={
+                button_face_shadow_start,  //sys
+			    button_face_shadow_end,
+			    button_face,
+			    dark_border,
+			    gray_border,
+			    highlight
+                                        };
 	};
+
+
 
 	enum class cursor
 	{
