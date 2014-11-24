@@ -504,7 +504,11 @@ namespace API
 		if(restrict::window_manager.move(iwd, x, y, false))
 		{
 			if(category::flags::root != iwd->other.category)
-				iwd = reinterpret_cast<restrict::core_window_t*>(API::get_parent_window(wd));
+			{
+				do{
+					iwd = iwd->parent;
+				} while (category::flags::lite_widget == iwd->other.category);
+			}
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -515,8 +519,12 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.move(iwd, r))
 		{
-			if(category::flags::root != iwd->other.category)
-				iwd = reinterpret_cast<restrict::core_window_t*>(API::get_parent_window(wd));
+			if (category::flags::root != iwd->other.category)
+			{
+				do{
+					iwd = iwd->parent;
+				} while (category::flags::lite_widget == iwd->other.category);
+			}
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -529,23 +537,23 @@ namespace API
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		native_window_type native_after = nullptr;
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd) && (category::flags::root == iwd->other.category))
 		{
 			if(wd_after)
 			{
 				auto iwd_after = reinterpret_cast<restrict::core_window_t*>(wd_after);
-				if(restrict::window_manager.available(iwd_after) && (iwd_after->other.category == category::flags::root))
+				if (restrict::window_manager.available(iwd_after) && (iwd_after->other.category == category::flags::root))
 				{
-					restrict::interface_type::set_window_z_order(iwd->root, iwd_after->root, z_order_action::none);
-					return true;
+					native_after = iwd_after->root;
+					action_if_no_wd_after = z_order_action::none;
 				}
+				else
+					return false;
 			}
-			else
-			{
-				restrict::interface_type::set_window_z_order(iwd->root, nullptr, action_if_no_wd_after);
-				return true;
-			}
+			restrict::interface_type::set_window_z_order(iwd->root, native_after, action_if_no_wd_after);
+			return true;
 		}
 		return false;
 	}
@@ -554,7 +562,7 @@ namespace API
 	{
 		nana::rectangle r;
 		API::window_rectangle(wd, r);
-		return nana::size(r.width, r.height);
+		return{ r.width, r.height };
 	}
 
 	void window_size(window wd, const size& sz)
@@ -563,8 +571,12 @@ namespace API
 		internal_scope_guard isg;
 		if(restrict::window_manager.size(iwd, sz, false, false))
 		{
-			if(category::flags::root != iwd->other.category)
-				iwd = reinterpret_cast<restrict::core_window_t*>(API::get_parent_window(wd));
+			if (category::flags::root != iwd->other.category)
+			{
+				do{
+					iwd = iwd->parent;
+				} while (category::flags::lite_widget == iwd->other.category);
+			}
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
