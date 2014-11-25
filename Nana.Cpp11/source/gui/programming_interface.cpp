@@ -419,7 +419,7 @@ namespace API
 	bool visible(window wd)
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
 			if(iwd->other.category == category::flags::root)
@@ -568,7 +568,7 @@ namespace API
 	void window_size(window wd, const size& sz)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.size(iwd, sz, false, false))
 		{
 			if (category::flags::root != iwd->other.category)
@@ -596,7 +596,7 @@ namespace API
 	bool track_window_size(window wd, const nana::size& sz, bool true_for_max)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) == false)
 			return false;
 
@@ -626,7 +626,7 @@ namespace API
 	void window_enabled(window wd, bool enabled)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) && (iwd->flags.enabled != enabled))
 		{
 			iwd->flags.enabled = enabled;
@@ -684,7 +684,7 @@ namespace API
 		if(restrict::window_manager.available(iwd))
 			return restrict::window_manager.signal_fire_caption(iwd);
 
-		return nana::string{};
+		return{};
 	}
 
 	void window_cursor(window wd, cursor cur)
@@ -889,7 +889,7 @@ namespace API
 	void caret_pos(window wd, int x, int y)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) && iwd->together.caret)
 			iwd->together.caret->position(x, y);
 	}
@@ -998,15 +998,17 @@ namespace API
 	void take_active(window wd, bool active, window take_if_active_false)
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
-		if (restrict::window_manager.available(iwd) == false) return;
-
 		auto take_if_false = reinterpret_cast<restrict::core_window_t*>(take_if_active_false);
-		if(active || (take_if_false && (restrict::window_manager.available(take_if_false) == false)))
-			take_if_false = 0;
 
-		iwd->flags.take_active = active;
-		iwd->other.active_window = take_if_false;
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			if (active || (take_if_false && (restrict::window_manager.available(take_if_false) == false)))
+				take_if_false = 0;
+
+			iwd->flags.take_active = active;
+			iwd->other.active_window = take_if_false;
+		}
 	}
 
 	bool window_graphics(window wd, nana::paint::graphics& graph)
@@ -1016,15 +1018,12 @@ namespace API
 
 	bool root_graphics(window wd, nana::paint::graphics& graph)
 	{
-		if(wd)
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if(restrict::window_manager.available(iwd))
 		{
-			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-			internal_scope_guard isg;
-			if(restrict::window_manager.available(iwd))
-			{
-				graph = *(iwd->root_graph);
-				return true;
-			}
+			graph = *(iwd->root_graph);
+			return true;
 		}
 		return false;
 	}
@@ -1037,7 +1036,7 @@ namespace API
 	void typeface(window wd, const nana::paint::font& font)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
 			iwd->drawer.graphics.typeface(font);
@@ -1049,7 +1048,7 @@ namespace API
 	nana::paint::font typeface(window wd)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 			return iwd->drawer.graphics.typeface();
 
@@ -1058,8 +1057,8 @@ namespace API
 
 	bool calc_screen_point(window wd, nana::point& pos)
 	{
-		restrict::core_window_t* iwd = reinterpret_cast<restrict::core_window_t*>(wd);
-		internal_scope_guard isg;
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
 			pos += iwd->pos_root;
@@ -1075,7 +1074,7 @@ namespace API
 
 	window find_window(const nana::point& pos)
 	{
-		native_window_type wd = restrict::interface_type::find_window(pos.x, pos.y);
+		auto wd = restrict::interface_type::find_window(pos.x, pos.y);
 		if(wd)
 		{
 			nana::point clipos(pos.x, pos.y);
@@ -1088,7 +1087,7 @@ namespace API
 
 	void register_menu_window(window wd, bool has_keyboard)
 	{
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
 			restrict::bedrock.set_menu(reinterpret_cast<restrict::core_window_t*>(wd)->root, has_keyboard);
 	}
@@ -1096,7 +1095,7 @@ namespace API
 	bool attach_menubar(window menubar)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(menubar);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) && (nullptr == iwd->root_widget->other.attribute.root->menubar))
 		{
 			iwd->root_widget->other.attribute.root->menubar = iwd;
@@ -1108,11 +1107,11 @@ namespace API
 	void detach_menubar(window menubar)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(menubar);
-		internal_scope_guard isg;
+		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
 			if (iwd->root_widget->other.attribute.root->menubar == iwd)
-				iwd->root_widget->other.attribute.root->menubar = 0;
+				iwd->root_widget->other.attribute.root->menubar = nullptr;
 		}
 	}
 
@@ -1121,7 +1120,7 @@ namespace API
 		auto wd = restrict::bedrock.get_menubar_taken();
 		if(wd)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			restrict::window_manager.set_focus(wd, false);
 			restrict::window_manager.update(wd, true, false);
 		}
@@ -1165,8 +1164,8 @@ namespace API
 
 	nana::mouse_action mouse_action(window wd)
 	{
-		internal_scope_guard isg;
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 			return iwd->flags.action;
 		return nana::mouse_action::normal;
@@ -1174,8 +1173,8 @@ namespace API
 
 	nana::element_state element_state(window wd)
 	{
-		internal_scope_guard isg;
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
 			const bool is_focused = (iwd->root_widget->other.attribute.root->focus == iwd);

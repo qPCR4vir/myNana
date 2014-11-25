@@ -265,7 +265,7 @@ namespace nana
 						}
 						break;
 					}
-					return std::string();
+					return{};
 				}
 
 				std::wstring wcstr;
@@ -291,7 +291,7 @@ namespace nana
 	#endif
 					}
 				}
-				return std::string();
+				return{};
 			}
 
 			virtual std::wstring wstr() const
@@ -307,7 +307,7 @@ namespace nana
 					case unicode::utf32:
 						return std::wstring(reinterpret_cast<const wchar_t*>(data_.c_str()), data_.size() * sizeof(wchar_t));
 					}
-					return std::wstring();
+					return{};
 				}
 
 				std::wstring wcstr;
@@ -352,7 +352,7 @@ namespace nana
 					wc2mb(mbstr, data_.c_str());
 					return mbstr;
 				}
-				return std::string();
+				return{};
 			}
 
 			virtual std::string&& str_move()

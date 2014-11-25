@@ -337,79 +337,81 @@ namespace nana
 	typedef place_parts::number_t number_t;
 	typedef place_parts::repeated_array repeated_array;
 
-	class tokenizer
+	namespace place_parts
 	{
-	public:
-		enum class token
+		class tokenizer
 		{
-			div_start, div_end, splitter,
-			identifier, vert, grid, number, array, reparray,
-			weight, gap, margin, arrange, variable, repeated, min_px, max_px,
-			collapse, parameters,
-			equal,
-			eof, error
-		};
-
-		tokenizer(const char* p)
-			: divstr_(p), sp_(p)
-		{}
-
-		const std::string& idstr() const
-		{
-			return idstr_;
-		}
-
-		number_t number() const
-		{
-			return number_;
-		}
-
-		std::vector<number_t>& array()
-		{
-			return array_;
-		}
-
-		repeated_array& reparray()
-		{
-			return reparray_;
-		}
-
-		std::vector<number_t>& parameters()
-		{
-			return parameters_;
-		}
-
-		token read()
-		{
-			sp_ = _m_eat_whitespace(sp_);
-
-			std::size_t readbytes = 0;
-			switch (*sp_)
+		public:
+			enum class token
 			{
-			case '\0':
-				return token::eof;
-			case '|':
-				++sp_;
-				readbytes = _m_number(sp_, false);
-				sp_ += readbytes;
-				return token::splitter;
-			case '=':
-				++sp_;
-				return token::equal;
-			case '<':
-				++sp_;
-				return token::div_start;
-			case '>':
-				++sp_;
-				return token::div_end;
-			case '[':
-				array_.clear();
-				sp_ = _m_eat_whitespace(sp_ + 1);
-				if (*sp_ == ']')
+				div_start, div_end, splitter,
+				identifier, vert, grid, number, array, reparray,
+				weight, gap, margin, arrange, variable, repeated, min_px, max_px,
+				collapse, parameters,
+				equal,
+				eof, error
+			};
+
+			tokenizer(const char* p)
+				: divstr_(p), sp_(p)
+			{}
+
+			const std::string& idstr() const
+			{
+				return idstr_;
+			}
+
+			number_t number() const
+			{
+				return number_;
+			}
+
+			std::vector<number_t>& array()
+			{
+				return array_;
+			}
+
+			repeated_array& reparray()
+			{
+				return reparray_;
+			}
+
+			std::vector<number_t>& parameters()
+			{
+				return parameters_;
+			}
+
+			token read()
+			{
+				sp_ = _m_eat_whitespace(sp_);
+
+				std::size_t readbytes = 0;
+				switch (*sp_)
 				{
+				case '\0':
+					return token::eof;
+				case '|':
 					++sp_;
-					return token::array;
-				}
+					readbytes = _m_number(sp_, false);
+					sp_ += readbytes;
+					return token::splitter;
+				case '=':
+					++sp_;
+					return token::equal;
+				case '<':
+					++sp_;
+					return token::div_start;
+				case '>':
+					++sp_;
+					return token::div_end;
+				case '[':
+					array_.clear();
+					sp_ = _m_eat_whitespace(sp_ + 1);
+					if (*sp_ == ']')
+					{
+						++sp_;
+						return token::array;
+					}
 
 				{
 					//When search the repeated.
@@ -450,250 +452,251 @@ namespace nana
 					}
 				}
 				break;
-			case '(':
-				parameters_.clear();
-				sp_ = _m_eat_whitespace(sp_ + 1);
-				if (*sp_ == ')')
-				{
-					++sp_;
-					return token::parameters;
-				}
-
-				while (true)
-				{
-					if (token::number == read())
-						parameters_.push_back(number_);
-					else
-						_m_throw_error("invalid parameter.");
-
-					sp_ = _m_eat_whitespace(sp_);
-					char ch = *sp_++;
-
-					if (ch == ')')
+				case '(':
+					parameters_.clear();
+					sp_ = _m_eat_whitespace(sp_ + 1);
+					if (*sp_ == ')')
+					{
+						++sp_;
 						return token::parameters;
+					}
 
-					if (ch != ',')
-						_m_throw_error("invalid parameter.");
-				}
-				break;
-			case '.': case '-':
-				if (*sp_ == '-')
-				{
-					readbytes = _m_number(sp_ + 1, true);
-					if (readbytes)
-						++readbytes;
-				}
-				else
-					readbytes = _m_number(sp_, false);
+					while (true)
+					{
+						if (token::number == read())
+							parameters_.push_back(number_);
+						else
+							_m_throw_error("invalid parameter.");
 
-				if (readbytes)
-				{
-					sp_ += readbytes;
-					return token::number;
-				}
-				else
-					_m_throw_error(*sp_);
-				break;
-			default:
-				if ('0' <= *sp_ && *sp_ <= '9')
-				{
-					readbytes = _m_number(sp_, false);
+						sp_ = _m_eat_whitespace(sp_);
+						char ch = *sp_++;
+
+						if (ch == ')')
+							return token::parameters;
+
+						if (ch != ',')
+							_m_throw_error("invalid parameter.");
+					}
+					break;
+				case '.': case '-':
+					if (*sp_ == '-')
+					{
+						readbytes = _m_number(sp_ + 1, true);
+						if (readbytes)
+							++readbytes;
+					}
+					else
+						readbytes = _m_number(sp_, false);
+
 					if (readbytes)
 					{
 						sp_ += readbytes;
 						return token::number;
 					}
-				}
-				break;
-			}
-
-			if ('_' == *sp_ || isalpha(*sp_))
-			{
-				const char * idstart = sp_++;
-
-				while ('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_))
-					++sp_;
-
-				idstr_.assign(idstart, sp_);
-
-				if ("weight" == idstr_ || "min" == idstr_ || "max" == idstr_)
-				{
-					auto ch = idstr_[1];
-					_m_attr_number_value();
-					switch (ch)
+					else
+						_m_throw_error(*sp_);
+					break;
+				default:
+					if ('0' <= *sp_ && *sp_ <= '9')
 					{
-					case 'e': return token::weight;
-					case 'i': return token::min_px;
-					case 'a': return token::max_px;
+						readbytes = _m_number(sp_, false);
+						if (readbytes)
+						{
+							sp_ += readbytes;
+							return token::number;
+						}
 					}
+					break;
 				}
-				else if ("vertical" == idstr_ || "vert" == idstr_)
-					return token::vert;
-				else if ("variable" == idstr_ || "repeated" == idstr_)
-					return ('v' == idstr_[0] ? token::variable : token::repeated);
-				else if ("arrange" == idstr_ || "gap" == idstr_)
-				{
-					auto ch = idstr_[0];
-					_m_attr_reparray();
-					return ('a' == ch ? token::arrange : token::gap);
-				}
-				else if ("grid" == idstr_ || "margin" == idstr_)
-				{
-					auto idstr = idstr_;
-					if (token::equal != read())
-						_m_throw_error("an equal sign is required after '" + idstr + "'");
 
-					return ('g'==idstr[0] ? token::grid : token::margin);
-				}
-				else if ("collapse" == idstr_)
+				if ('_' == *sp_ || isalpha(*sp_))
 				{
-					if (token::parameters != read())
-						_m_throw_error("a parameter list is required after 'collapse'");
-					return token::collapse;
+					const char * idstart = sp_++;
+
+					while ('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_))
+						++sp_;
+
+					idstr_.assign(idstart, sp_);
+
+					if ("weight" == idstr_ || "min" == idstr_ || "max" == idstr_)
+					{
+						auto ch = idstr_[1];
+						_m_attr_number_value();
+						switch (ch)
+						{
+						case 'e': return token::weight;
+						case 'i': return token::min_px;
+						case 'a': return token::max_px;
+						}
+					}
+					else if ("vertical" == idstr_ || "vert" == idstr_)
+						return token::vert;
+					else if ("variable" == idstr_ || "repeated" == idstr_)
+						return ('v' == idstr_[0] ? token::variable : token::repeated);
+					else if ("arrange" == idstr_ || "gap" == idstr_)
+					{
+						auto ch = idstr_[0];
+						_m_attr_reparray();
+						return ('a' == ch ? token::arrange : token::gap);
+					}
+					else if ("grid" == idstr_ || "margin" == idstr_)
+					{
+						auto idstr = idstr_;
+						if (token::equal != read())
+							_m_throw_error("an equal sign is required after '" + idstr + "'");
+
+						return ('g' == idstr[0] ? token::grid : token::margin);
+					}
+					else if ("collapse" == idstr_)
+					{
+						if (token::parameters != read())
+							_m_throw_error("a parameter list is required after 'collapse'");
+						return token::collapse;
+					}
+					return token::identifier;
 				}
-				return token::identifier;
+
+				std::string err = "an invalid character '";
+				err += *sp_;
+				err += "'";
+
+				_m_throw_error(err);
+				return token::error;	//Useless, just for syntax correction.
+			}
+		private:
+			void _m_throw_error(char err_char)
+			{
+				std::stringstream ss;
+				ss << "place: invalid character '" << err_char << "' at " << static_cast<unsigned>(sp_ - divstr_);
+				throw std::runtime_error(ss.str());
 			}
 
-			std::string err = "an invalid character '";
-			err += *sp_;
-			err += "'";
-
-			_m_throw_error(err);
-			return token::error;	//Useless, just for syntax correction.
-		}
-	private:
-		void _m_throw_error(char err_char)
-		{
-			std::stringstream ss;
-			ss << "place: invalid character '" << err_char << "' at " << static_cast<unsigned>(sp_ - divstr_);
-			throw std::runtime_error(ss.str());
-		}
-
-		void _m_attr_number_value()
-		{
-			if (token::equal != read())
-				_m_throw_error("an equal sign is required after '" + idstr_ + "'");
-
-			const char* p = sp_;
-			for (; *p == ' '; ++p);
-
-			auto neg_ptr = p;
-			if ('-' == *p)
-				++p;
-
-			auto len = _m_number(p, neg_ptr != p);
-			if (0 == len)
-				_m_throw_error("the '" + idstr_ + "' requires a number(integer or real or percent)");
-
-			sp_ += len + (p - sp_);
-		}
-
-		void _m_attr_reparray()
-		{
-			auto idstr = idstr_;
-			if (token::equal != read())
-				_m_throw_error("an equal sign is required after '" + idstr + "'");
-
-			const char* p = sp_;
-			for (; *p == ' ' || *p == '\t'; ++p);
-
-			reparray_.reset();
-			auto tk = read();
-			switch (tk)
+			void _m_attr_number_value()
 			{
-			case token::number:
-				reparray_.push(number());
-				reparray_.repeated();
-				break;
-			case token::array:
-				reparray_.assign(std::move(array_));
-				break;
-			case token::reparray:
-				break;
-			default:
-				_m_throw_error("a (repeated) array is required after '" + idstr + "'");
+				if (token::equal != read())
+					_m_throw_error("an equal sign is required after '" + idstr_ + "'");
+
+				const char* p = sp_;
+				for (; *p == ' '; ++p);
+
+				auto neg_ptr = p;
+				if ('-' == *p)
+					++p;
+
+				auto len = _m_number(p, neg_ptr != p);
+				if (0 == len)
+					_m_throw_error("the '" + idstr_ + "' requires a number(integer or real or percent)");
+
+				sp_ += len + (p - sp_);
 			}
-		}
 
-		void _m_throw_error(const std::string& err)
-		{
-			std::stringstream ss;
-			ss << "place: " << err << " at " << static_cast<unsigned>(sp_ - divstr_);
-			throw std::runtime_error(ss.str());
-		}
-
-		const char* _m_eat_whitespace(const char* sp)
-		{
-			while (*sp && !isgraph(*sp))
-				++sp;
-			return sp;
-		}
-
-		std::size_t _m_number(const char* sp, bool negative)
-		{
-			const char* allstart = sp;
-			sp = _m_eat_whitespace(sp);
-
-			number_.assign(0);
-
-			bool gotcha = false;
-			int integer = 0;
-			double real = 0;
-			//read the integral part.
-			const char* istart = sp;
-			while ('0' <= *sp && *sp <= '9')
+			void _m_attr_reparray()
 			{
-				integer = integer * 10 + (*sp - '0');
-				++sp;
+				auto idstr = idstr_;
+				if (token::equal != read())
+					_m_throw_error("an equal sign is required after '" + idstr + "'");
+
+				const char* p = sp_;
+				for (; *p == ' ' || *p == '\t'; ++p);
+
+				reparray_.reset();
+				auto tk = read();
+				switch (tk)
+				{
+				case token::number:
+					reparray_.push(number());
+					reparray_.repeated();
+					break;
+				case token::array:
+					reparray_.assign(std::move(array_));
+					break;
+				case token::reparray:
+					break;
+				default:
+					_m_throw_error("a (repeated) array is required after '" + idstr + "'");
+				}
 			}
-			const char* iend = sp;
 
-			if ('.' == *sp)
+			void _m_throw_error(const std::string& err)
 			{
-				double div = 1;
-				const char* rstart = ++sp;
+				std::stringstream ss;
+				ss << "place: " << err << " at " << static_cast<unsigned>(sp_ - divstr_);
+				throw std::runtime_error(ss.str());
+			}
+
+			const char* _m_eat_whitespace(const char* sp)
+			{
+				while (*sp && !isgraph(*sp))
+					++sp;
+				return sp;
+			}
+
+			std::size_t _m_number(const char* sp, bool negative)
+			{
+				const char* allstart = sp;
+				sp = _m_eat_whitespace(sp);
+
+				number_.assign(0);
+
+				bool gotcha = false;
+				int integer = 0;
+				double real = 0;
+				//read the integral part.
+				const char* istart = sp;
 				while ('0' <= *sp && *sp <= '9')
 				{
-					real += (*sp - '0') / (div *= 10);
+					integer = integer * 10 + (*sp - '0');
 					++sp;
 				}
+				const char* iend = sp;
 
-				if (rstart != sp)
+				if ('.' == *sp)
 				{
-					real += integer;
-					number_.assign(negative ? -real : real);
+					double div = 1;
+					const char* rstart = ++sp;
+					while ('0' <= *sp && *sp <= '9')
+					{
+						real += (*sp - '0') / (div *= 10);
+						++sp;
+					}
+
+					if (rstart != sp)
+					{
+						real += integer;
+						number_.assign(negative ? -real : real);
+						gotcha = true;
+					}
+				}
+				else if (istart != iend)
+				{
+					number_.assign(negative ? -integer : integer);
 					gotcha = true;
 				}
-			}
-			else if (istart != iend)
-			{
-				number_.assign(negative ? -integer : integer);
-				gotcha = true;
-			}
 
-			if (gotcha)
-			{
-				for (; *sp == ' ' || *sp == '\t'; ++sp);
-				if ('%' == *sp)
+				if (gotcha)
 				{
-					if (number_t::kind::integer == number_.kind_of())
-						number_.assign_percent(number_.integer());
-					return sp - allstart + 1;
+					for (; *sp == ' ' || *sp == '\t'; ++sp);
+					if ('%' == *sp)
+					{
+						if (number_t::kind::integer == number_.kind_of())
+							number_.assign_percent(number_.integer());
+						return sp - allstart + 1;
+					}
+					return sp - allstart;
 				}
-				return sp - allstart;
+				number_.reset();
+				return 0;
 			}
-			number_.reset();
-			return 0;
-		}
-	private:
-		const char* divstr_;
-		const char* sp_;
-		std::string idstr_;
-		number_t number_;
-		std::vector<number_t> array_;
-		repeated_array		reparray_;
-		std::vector<number_t> parameters_;
-	};	//end class tokenizer
+		private:
+			const char* divstr_;
+			const char* sp_;
+			std::string idstr_;
+			number_t number_;
+			std::vector<number_t> array_;
+			repeated_array		reparray_;
+			std::vector<number_t> parameters_;
+		};	//end class tokenizer
+	}
 
 
 	//struct implement
@@ -714,7 +717,7 @@ namespace nana
 		//because the class division here is an incomplete type.
 		~implement();
 		static division * search_div_name(division* start, const std::string&);
-		std::unique_ptr<division> scan_div(tokenizer&);
+		std::unique_ptr<division> scan_div(place_parts::tokenizer&);
 	};	//end struct implement
 
 	class place::implement::field_impl
@@ -1749,9 +1752,9 @@ namespace nana
 		return nullptr;
 	}
 
-	auto place::implement::scan_div(tokenizer& tknizer) -> std::unique_ptr<division>
+	auto place::implement::scan_div(place_parts::tokenizer& tknizer) -> std::unique_ptr<division>
 	{
-		typedef tokenizer::token token;
+		typedef place_parts::tokenizer::token token;
 
 		std::unique_ptr<division> div;
 		token div_type = token::eof;
@@ -2054,7 +2057,7 @@ namespace nana
 
 	void place::div(const char* s)
 	{
-		tokenizer tknizer(s);
+		place_parts::tokenizer tknizer(s);
 		impl_->root_division.reset();	//clear atachments div-fields
 		impl_->scan_div(tknizer).swap(impl_->root_division);
 	}
