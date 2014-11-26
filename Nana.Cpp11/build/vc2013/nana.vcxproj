@@ -143,6 +143,7 @@
     <ClCompile Include="..\..\source\gui\widgets\treebox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\widget.cpp" />
     <ClCompile Include="..\..\source\gui\wvl.cpp" />
+    <ClCompile Include="..\..\source\internationalization.cpp" />
     <ClCompile Include="..\..\source\paint\detail\image_process_provider.cpp" />
     <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp" />
     <ClCompile Include="..\..\source\paint\gadget.cpp" />

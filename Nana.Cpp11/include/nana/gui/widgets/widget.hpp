@@ -15,6 +15,7 @@
 #include <nana/traits.hpp>
 #include "../basis.hpp"
 #include "../programming_interface.hpp"
+#include <nana/internationalization.hpp>
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <functional>
@@ -38,6 +39,12 @@ namespace nana
 
 		nana::string caption() const;
 		void caption(nana::string);
+
+		template<typename ...Args>
+		void i18n(std::string msgid, Args&&... args)
+		{
+			_m_caption(nana::internationalization().get(msgid, std::forward<Args>(args)...));
+		}
 
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
