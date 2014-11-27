@@ -95,7 +95,7 @@ namespace nana
 					if(!cancel_.empty())
 						field<<cancel_;
 				}
-				this->size(width_pixel, height_pixel);
+				this->size(nana::size{width_pixel, height_pixel});
 				_m_icon(ico);
 			}
 
@@ -115,14 +115,14 @@ namespace nana
 					if(ts.height <= 32)
 						text_.move(12 + ico_pixels, 25 + (32 - ts.height) / 2);
 
-					text_.size(ts.width, ts.height);
+					text_.size(ts);
 
 					nana::size sz = this->size();
 					if(sz.width < 48 + ts.width + ico_pixels)
 						sz.width = 48 + ts.width + ico_pixels;
 
 					nana::rectangle r = API::make_center(owner_, sz.width, sz.height + ts.height);
-					this->move(r.x, r.y, r.width, r.height);
+					this->move(r);
 				}
 
 				API::modal_window(*this);

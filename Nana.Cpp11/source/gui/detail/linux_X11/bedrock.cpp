@@ -659,7 +659,7 @@ namespace detail
 				if(msgwnd->dimension.width != static_cast<unsigned>(xevent.xconfigure.width) || msgwnd->dimension.height != static_cast<unsigned>(xevent.xconfigure.height))
 				{
 					auto & cf = xevent.xconfigure;
-					brock.wd_manager.size(msgwnd, cf.width, cf.height, true, true);
+					brock.wd_manager.size(msgwnd, nana::size{static_cast<unsigned>(cf.width), static_cast<unsigned>(cf.height)}, true, true);
 				}
 				
 				if(msgwnd->pos_native.x != xevent.xconfigure.x || msgwnd->pos_native.y != xevent.xconfigure.y)
