@@ -46,6 +46,8 @@ namespace nana
 			_m_caption(nana::internationalization().get(msgid, std::forward<Args>(args)...));
 		}
 
+		void i18n(i18n_eval);
+
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
 
