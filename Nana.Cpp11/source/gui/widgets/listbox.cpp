@@ -1923,7 +1923,7 @@ namespace nana
 					}
 
 					if(x - rect.x < static_cast<int>(rect.width))
-						graph.rectangle(x, rect.y, rect.width - x + rect.x, height, 0xF1F2F4, true);  ///\todo: use codigo
+						graph.rectangle(x, rect.y, rect.width - x + rect.x, height, color::current_schema[color::schema::list_header_bg], true);  ///0xF1F2F4\todo: use codigo
 				}
 
 				template<typename Item>
@@ -1933,11 +1933,11 @@ namespace nana
 					typedef essence_t::state_t state_t;
 					switch(state)
 					{
-					case state_t::normal:		bgcolor = 0xF1F2F4; break;  ///\todo: use codigo
-					case state_t::highlighted:	bgcolor = 0xFFFFFF; break;  ///\todo: use codigo
-					case state_t::pressed:
-					case state_t::grabed:		bgcolor = 0x8BD6F6; break;  ///\todo: use codigo
-					case state_t::floated:		bgcolor = 0xBABBBC;	break;  ///\todo: use codigo
+                    case state_t::normal:	    bgcolor = color::current_schema[color::schema::list_header_bg]; break;  ///0xF1F2F4\todo: use codigo
+                    case state_t::highlighted:	bgcolor = color::current_schema[color::schema::list_header_highlighted_bg]; break;  ///0xFFFFFF\todo: use codigo
+					case state_t::pressed:      bgcolor = color::current_schema[color::schema::list_header_pressed_bg]; break; 
+					case state_t::grabed:		bgcolor = color::current_schema[color::schema::list_header_grabed_bg]; break;  ///0x8BD6F6\todo: use codigo
+					case state_t::floated:		bgcolor = color::current_schema[color::schema::list_header_floated_bg];	break;  ///0xBABBBC\todo: use codigo
 					}
 
 					graph.rectangle(x, y, item.pixels, height, bgcolor, true);

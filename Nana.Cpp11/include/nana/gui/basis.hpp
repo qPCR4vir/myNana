@@ -439,12 +439,8 @@ namespace nana
             SeaShell	=	0xFFF5EE	,
             Milk_White	=	0xFEFCFF	,
             White	    =	0xFFFFFF	,
-
+            Blue        =   0x0000FF   ,
             white   = 0xFFFFFF,
-            blue    = 0xFF0000,
-            green   = 0x00FF00,
-            red     = 0x0000FF,
-            black   = 0x000000,
 
 			button_face_shadow_start = 0xF5F4F2,
 			button_face_shadow_end = 0xD5D2CA,
@@ -452,7 +448,19 @@ namespace nana
 			dark_border	= 0x404040,
 			gray_border	= 0x808080,
 			highlight = 0x1CC4F7,
-			list_header_border = 0xDEDFE1
+			header_border = 0xDEDFE1,
+			list_header_border = header_border,
+            header_bg = 0xF1F2F4,
+            list_header_bg = header_bg,
+            header_highlighted_bg = White,
+            list_header_highlighted_bg = header_highlighted_bg,
+            header_grabed_bg = 0x8BD6F6,
+            list_header_grabed_bg = header_grabed_bg,
+            header_pressed_bg = header_grabed_bg,
+            list_header_pressed_bg = header_pressed_bg,
+            header_floated_bg = 0xBABBBC,
+            list_header_floated_bg = header_floated_bg,
+
 		};
         struct schema
         {
@@ -464,22 +472,47 @@ namespace nana
 			    dark_border,
 			    gray_border,
 			    highlight,
+                header_border,
                 list_header_border,
+                header_bg  ,
+                list_header_bg  ,
+                header_highlighted_bg  ,
+                list_header_highlighted_bg  ,
+                header_grabed_bg  ,
+                list_header_grabed_bg  ,
+                header_pressed_bg  ,
+                list_header_pressed_bg  ,
+                header_floated_bg  ,
+                list_header_floated_bg  ,
                 end
 		    };
             using color_schema=  std::array<color_t,schema::end> ;
-            color_schema sys=color_schema{{
-                color::button_face_shadow_start,  //sys
-			    color::button_face_shadow_end,
-			    color::button_face,
-			    color::dark_border,
-			    color::gray_border,
-			    color::highlight,
-			    color::list_header_border
-            }};
+            color_schema sys ; // ??
+            schema();
         };
         using color_schema=  schema::color_schema;
-        const static color_schema def_schema = schema{}.sys ;
+        const static color_schema def_schema = color_schema{
+		    {
+			    button_face_shadow_start,
+			    button_face_shadow_end,
+			    button_face,
+			    dark_border,
+			    gray_border,
+			    highlight,
+                header_border,
+                list_header_border,
+                header_bg  ,
+                list_header_bg  ,
+                header_highlighted_bg  ,
+                list_header_highlighted_bg  ,
+                header_grabed_bg  ,
+                list_header_grabed_bg  ,
+                header_pressed_bg  ,
+                list_header_pressed_bg  ,
+                header_floated_bg  ,
+                list_header_floated_bg  ,
+            }
+		    };
         extern color_schema current_schema; /// \todo need thread protection
 		color_t mix(color_t a, color_t b, double fade_rate)  ;
 

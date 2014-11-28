@@ -43,6 +43,7 @@ namespace nana
 
 			    return ret.u.color;
 		    }
+            schema::schema():sys(def_schema)    { }
             color_schema current_schema= def_schema;
 
         }
