@@ -756,12 +756,9 @@ namespace nana
 				API::show_window(e.handle, vsb);
 		}
 	private:
+		//The defintion is moved after the definition of class division
 		template<typename Function>
-		void _m_for_each(division * div, Function fn)
-		{
-			for (auto & up : div->children)	//The element of children is unique_ptr
-				fn(up.get());
-		}
+		void _m_for_each(division*, Function);
 
 		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
@@ -962,7 +959,15 @@ namespace nana
 		place_parts::repeated_array gap;
 		field_impl * field;
 		division * div_next, *div_owner;
-	};
+	};//end class division
+
+	template<typename Function>
+	void place::implement::field_impl::_m_for_each(division * div, Function fn)
+	{
+		for (auto & up : div->children)	//The element of children is unique_ptr
+			fn(up.get());
+	}
+
 
 	class place::implement::div_arrange
 		: public division

@@ -11,6 +11,7 @@
 */
 
 #include <nana/internationalization.hpp>
+#include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
 #include <fstream>
 #include <memory>
@@ -23,6 +24,9 @@ namespace nana
 		{
 			msgid, msgstr, string, eof
 		};
+
+		//Forward declaration
+		void use_eval();
 
 		class tokenizer
 		{
@@ -129,7 +133,7 @@ namespace nana
 			const char * read_ptr_{ nullptr };
 			const char * end_ptr_{ nullptr };
 			std::string str_;
-		};
+		};//end class tokenizer
 
 		struct data
 		{
@@ -204,6 +208,60 @@ namespace nana
 			}
 
 			get_data_ptr().swap(impl);
+			use_eval();
+		}
+
+
+		struct eval_window
+		{
+			nana::event_handle destroy{nullptr};
+			i18n_eval eval;
+
+			eval_window() = default;
+			
+			eval_window(i18n_eval&& arg)
+				: eval(std::move(arg))
+			{}
+		};
+
+		struct eval_manager
+		{
+			std::recursive_mutex mutex;
+			std::map<window, eval_window> table;
+		};
+
+		eval_manager& get_eval_manager()
+		{
+			static eval_manager evals;
+			return evals;
+		}
+
+		void set_eval(nana::window wd, i18n_eval&& eval)
+		{
+			auto & mgr = get_eval_manager();
+			std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
+			auto i = mgr.table.find(wd);
+			if (i == mgr.table.end())
+			{
+				auto result = mgr.table.emplace(wd, std::move(eval));
+				result.first->second.destroy = nana::API::events(wd).destroy([wd]{
+					auto & mgr = get_eval_manager();
+					std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
+					mgr.table.erase(wd);
+				});
+			}
+			else
+				i->second.eval = std::move(eval);
+		}
+
+		void use_eval()
+		{
+			auto & mgr = get_eval_manager();
+			std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
+			for (auto & eval : mgr.table)
+			{
+				nana::API::window_caption(eval.first, eval.second.eval());
+			}
 		}
 	}//end namespace internationalization_parts
 
@@ -281,4 +339,150 @@ namespace nana
 				offset += 4;
 		}
 	}
+	//end class internationalization
+
+
+	class i18n_eval::arg_string
+		: public eval_arg
+	{
+	public:
+		arg_string(nana::string str)
+			: str_(std::move(str))
+		{}
+
+		nana::string eval() const override
+		{
+			return str_;
+		}
+
+		std::unique_ptr<eval_arg> clone() const override
+		{
+			return std::unique_ptr<eval_arg>(new arg_string(str_));
+		}
+	private:
+		nana::string str_;
+	};
+
+	class i18n_eval::arg_eval
+		: public eval_arg
+	{
+	public:
+		arg_eval(const i18n_eval& eval)
+			: eval_{ eval }
+		{}
+
+		arg_eval(i18n_eval&& eval)
+			: eval_{ std::move(eval) }
+		{}
+
+		nana::string eval() const override
+		{
+			return eval_();
+		}
+
+		std::unique_ptr<eval_arg> clone() const override
+		{
+			return std::unique_ptr<eval_arg>(new arg_eval(eval_));
+		}
+	private:
+		i18n_eval eval_;
+	};
+
+	//class i18n_eval
+	i18n_eval::i18n_eval(const i18n_eval& rhs)
+		: msgid_(rhs.msgid_)
+	{
+		for (auto & arg : rhs.args_)
+			args_.emplace_back(arg->clone());
+	}
+
+	i18n_eval::i18n_eval(i18n_eval&& rhs)
+		: msgid_(std::move(rhs.msgid_)),
+		args_(std::move(rhs.args_))
+	{
+	}
+
+	i18n_eval& i18n_eval::operator=(const i18n_eval& rhs)
+	{
+		if (this != &rhs)
+		{
+			msgid_ = rhs.msgid_;
+			for (auto & arg : rhs.args_)
+				args_.emplace_back(arg->clone());
+		}
+		return *this;
+	}
+
+	i18n_eval& i18n_eval::operator=(i18n_eval&& rhs)
+	{
+		if (this != &rhs)
+		{
+			msgid_ = std::move(rhs.msgid_);
+			args_ = std::move(rhs.args_);
+		}
+		return *this;
+	}
+
+	nana::string i18n_eval::operator()() const
+	{
+		if (msgid_.empty())
+			return{};
+
+		std::vector<nana::string> arg_strs;
+		for (auto & arg : args_)
+			arg_strs.emplace_back(arg->eval());
+
+		internationalization i18n;
+		std::string msgid = msgid_;	//msgid is required to be movable by i18n._m_get
+		nana::string msgstr;
+		if (i18n._m_get(msgid, msgstr))
+			i18n._m_replace_args(msgstr, &arg_strs);
+		return msgstr;
+	}
+
+	void i18n_eval::_m_add_args(i18n_eval& eval)
+	{
+		args_.emplace_back(new arg_eval(eval));
+	}
+
+	void i18n_eval::_m_add_args(const i18n_eval& eval)
+	{
+		args_.emplace_back(new arg_eval(eval));
+	}
+
+	void i18n_eval::_m_add_args(i18n_eval&& eval)
+	{
+		args_.emplace_back(new arg_eval(std::move(eval)));
+	}
+
+	void i18n_eval::_m_add_args(std::string& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(str)));
+	}
+
+	void i18n_eval::_m_add_args(const std::string& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(str)));
+	}
+
+	void i18n_eval::_m_add_args(std::string&& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(std::move(str))));
+	}
+
+	void i18n_eval::_m_add_args(std::wstring& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(str)));
+	}
+
+	void i18n_eval::_m_add_args(const std::wstring& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(str)));
+	}
+
+	void i18n_eval::_m_add_args(std::wstring&& str)
+	{
+		args_.emplace_back(new arg_string(nana::charset(std::move(str))));
+	}
+	//end class i18n_eval
 }

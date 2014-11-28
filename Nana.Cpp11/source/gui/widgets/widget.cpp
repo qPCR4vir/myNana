@@ -14,6 +14,10 @@
 
 namespace nana
 {
+	namespace internationalization_parts
+	{
+		void set_eval(window, i18n_eval&&);
+	}
 	//class widget
 	//@brief:The definition of class widget
 		widget::~widget(){}
@@ -26,6 +30,15 @@ namespace nana
 		void widget::caption(nana::string str)
 		{
 			_m_caption(std::move(str));
+		}
+
+		void widget::i18n(i18n_eval eval)
+		{
+			if (handle())
+			{
+				_m_caption(eval());
+				internationalization_parts::set_eval(handle(), std::move(eval));
+			}
 		}
 
 		nana::cursor widget::cursor() const
