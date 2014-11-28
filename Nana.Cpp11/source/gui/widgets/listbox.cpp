@@ -1854,7 +1854,7 @@ namespace nana
 					_m_draw(essence_->header.cont(), r);
 
 					const int y = r.y + r.height - 1;
-					essence_->graph->line(r.x, y, r.x + r.width, y, 0xDEDFE1);  ///\todo: use codigo
+					essence_->graph->line(r.x, y, r.x + r.width, y, color::current_schema[color::schema::list_header_border]);  /// 0xDEDFE1\todo: use codigo
 				}
 			private:
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
@@ -1915,7 +1915,7 @@ namespace nana
 							if(next_x > rect.x)
 							{
 								_m_draw_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : essence_t::state_t::normal));
-								graph.line(next_x - 1, rect.y, next_x - 1, bottom_y, 0xDEDFE1);  ///\todo: use codigo
+								graph.line(next_x - 1, rect.y, next_x - 1, bottom_y, color::current_schema[color::schema::list_header_border]);  /// 0xDEDFE1\todo: use codigo
 							}
 							x = next_x;
 							if(x - rect.x > static_cast<int>(rect.width)) break;

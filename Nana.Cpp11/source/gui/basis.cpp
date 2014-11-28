@@ -28,6 +28,25 @@ namespace nana
 				minimize(min), maximize(max), sizable(sizable),
 				decoration(has_decorate)
 		{}
+        namespace color
+        {
+		    color_t mix(color_t a, color_t b, double fade_rate)  
+		    {
+			    pixel_rgb_t pa, pb, ret;
+			    ret.u.color = 0;
+			    pa.u.color = a;
+			    pb.u.color = b;
+
+			    ret.u.element.red   = static_cast<unsigned char>(pa.u.element.red   * fade_rate + pb.u.element.red   * (1 - fade_rate));
+			    ret.u.element.green = static_cast<unsigned char>(pa.u.element.green * fade_rate + pb.u.element.green * (1 - fade_rate));
+			    ret.u.element.blue  = static_cast<unsigned char>(pa.u.element.blue  * fade_rate + pb.u.element.blue  * (1 - fade_rate));
+
+			    return ret.u.color;
+		    }
+            color_schema current_schema= def_schema;
+
+        }
+
 	//end struct appearance
 }//end namespace nana
 
