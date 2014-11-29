@@ -78,7 +78,7 @@ namespace nana{	namespace paint
 					auto size = ifs.tellg();
 					ifs.seekg(0, std::ios::beg);
 
-					if(size <= sizeof(bitmap_file_header))
+					if(size <= static_cast<int>(sizeof(bitmap_file_header)))
 						return false;
 
 					std::unique_ptr<char[]> buffer(new char[static_cast<int>(size)]);
