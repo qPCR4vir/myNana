@@ -1,10 +1,10 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2012 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://nanapro.sourceforge.net/LICENSE_1_0.txt)
+ *	http://nanapro.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/linux_X11/platform_spec.cpp
  *
@@ -27,7 +27,6 @@
 #include <nana/system/platform.hpp>
 #include <errno.h>
 #include <sstream>
-
 
 namespace nana
 {
@@ -156,7 +155,7 @@ namespace detail
 			: window(wd), has_input_method_focus(false), visible(false), input_method(0), input_context(0), input_font(0), input_context_event_mask(0)
 		{}
 	};
-
+	
 	class timer_runner
 	{
 		typedef void (*timer_proc_t)(std::size_t id);
@@ -168,6 +167,23 @@ namespace detail
 			std::size_t interval;
 			std::size_t timestamp;
 			timer_proc_t proc;
+		};
+
+		//timer_group
+		//It owns a set of timers' identifier, and a container for the delay deletion
+		//The delay delection is used for storing a timer id when the timer is deleted in a timer's
+		//event handler function. If the timer is deleted directly in timer's event handler function,
+		//it will cause a crash because the deletion operation invalidates iterator.
+		//According to ISO C++ 2011, 23.2.4 9 the erase members shall invalidate only iterators and
+		//references to the erased elements(timer_group::timers is an associative container),
+		//although the iterator can be moved to next before calling the timer handler function, the delay
+		//deletion is still required. Becuase a timer which is erased in another timer's handler function
+		//happens to be refereneced by the "next" iterator.
+		struct timer_group
+		{
+			bool proc_entered{false};	//This flag indicates whether the timers are going to do event.
+			std::set<std::size_t> timers;
+			std::vector<std::size_t> delay_deleted;
 		};
 	public:
 		timer_runner()
@@ -184,7 +200,8 @@ namespace detail
 				return;
 			}
 			unsigned tid = nana::system::this_thread_id();
-			threadmap_[tid].insert(id);
+			threadmap_[tid].timers.insert(id);
+
 			timer_tag & tag = holder_[id];
 			tag.id = id;
 			tag.tid = tid;
@@ -203,12 +220,20 @@ namespace detail
 			auto i = holder_.find(id);
 			if(i != holder_.end())
 			{
-				unsigned tid = i->second.tid;
-				std::set<std::size_t> & set = threadmap_[tid];
-				set.erase(id);
-				if(set.size() == 0)
+				auto tid = i->second.tid;
+				
+				auto ig = threadmap_.find(tid);
+				if(ig != threadmap_.end())	//Generally, the ig should not be the end of threadmap_
 				{
-					threadmap_.erase(tid);
+					auto & group = ig->second;
+					if(!group.proc_entered)
+					{
+						group.timers.erase(id);
+						if(group.timers.empty())
+							threadmap_.erase(ig);
+					}
+					else
+						group.delay_deleted.push_back(id);
 				}
 				holder_.erase(i);
 			}
@@ -216,7 +241,7 @@ namespace detail
 
 		bool empty() const
 		{
-			return (holder_.size() == 0);
+			return (holder_.empty());
 		}
 
 		void timer_proc(unsigned tid)
@@ -225,30 +250,35 @@ namespace detail
 			auto i = threadmap_.find(tid);
 			if(i != threadmap_.end())
 			{
+				auto & group = i->second;
+				group.proc_entered = true;
 				unsigned ticks = nana::system::timestamp();
-				for(auto timer_id : i->second)
+				for(auto timer_id : group.timers)
 				{
-					timer_tag & tag = holder_[timer_id];
+					auto & tag = holder_[timer_id];
 					if(tag.timestamp)
 					{
 						if(ticks >= tag.timestamp + tag.interval)
 						{
 							tag.timestamp = ticks;
-							//The timer may be killed in the callback,
-							//therefore, the iterator should be move to the next
-							//before the callback.
-							tag.proc(tag.id);
+							try
+							{
+								tag.proc(tag.id);
+							}catch(...){}	//nothrow
 						}
 					}
 					else
 						tag.timestamp = ticks;
 				}
+				group.proc_entered = false;
+				for(auto tmr: group.delay_deleted)
+					group.timers.erase(tmr);
 			}
 			is_proc_handling_ = false;
 		}
 	private:
 		bool is_proc_handling_;
-		std::map<unsigned, std::set<std::size_t> > threadmap_;
+		std::map<unsigned, timer_group> threadmap_;
 		std::map<std::size_t, timer_tag> holder_;
 	};
 

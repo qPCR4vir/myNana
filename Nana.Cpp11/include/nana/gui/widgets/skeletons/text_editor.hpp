@@ -322,11 +322,11 @@ namespace nana{	namespace widgets
 			{
 				nana::rectangle	area;
 
-				bool captured;
-				unsigned long tab_space;
-				unsigned long scroll_pixels;
-				unsigned long vscroll;
-				unsigned long hscroll;
+				bool		captured;
+				unsigned	tab_space;
+				unsigned	scroll_pixels;
+				unsigned	vscroll;
+				unsigned	hscroll;
 				std::function<void(nana::paint::graphics&, nana::color_t)> border_renderer;
 			}text_area_;
 
@@ -341,9 +341,9 @@ namespace nana{	namespace widgets
 
 			struct coordinate
 			{
-				nana::point offset;	//x stands for pixels, y for lines
-				nana::upoint caret;	//position of caret by text, it specifies the position of a new character
-				unsigned long xpos{0};	//This data is used for move up/down
+				nana::point		offset;	//x stands for pixels, y for lines
+				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
+				unsigned		xpos{0};	//This data is used for move up/down
 			}points_;
 		};
 	}//end namespace skeletons
