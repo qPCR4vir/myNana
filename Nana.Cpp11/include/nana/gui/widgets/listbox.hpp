@@ -171,7 +171,10 @@ namespace nana
                 cell& operator =( cell&& c)
                     { 
                         txt=c.txt;
-                        coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
+                        if (c.coustom_format) 
+                            coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
+                        else
+                            coustom_format.reset();
                         return *this;
                     }
                 bool operator <(const cell&c){return txt<c.txt;}

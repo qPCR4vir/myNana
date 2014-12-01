@@ -464,7 +464,7 @@ namespace nana
 		};
         struct schema
         {
-		    enum
+		    enum // after any change here, actualize def_schema
 		    {
 			    button_face_shadow_start,
 			    button_face_shadow_end,
@@ -491,7 +491,7 @@ namespace nana
             schema();
         };
         using color_schema=  schema::color_schema;
-        const static color_schema def_schema = color_schema{
+        const static color_schema def_schema = color_schema{// please, copy and paste from the schema::enum (no end !)
 		    {
 			    button_face_shadow_start,
 			    button_face_shadow_end,
