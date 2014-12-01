@@ -460,6 +460,8 @@ namespace nana
             list_header_pressed_bg = header_pressed_bg,
             header_floated_bg = 0xBABBBC,
             list_header_floated_bg = header_floated_bg,
+            header_floated_fg = White,
+            list_header_floated_fg = header_floated_fg,
 
 		};
         struct schema
@@ -484,6 +486,8 @@ namespace nana
                 list_header_pressed_bg  ,
                 header_floated_bg  ,
                 list_header_floated_bg  ,
+                header_floated_fg ,
+                list_header_floated_fg ,
                 end
 		    };
             using color_schema=  std::array<color_t,schema::end> ;
@@ -511,6 +515,8 @@ namespace nana
                 list_header_pressed_bg  ,
                 header_floated_bg  ,
                 list_header_floated_bg  ,
+                header_floated_fg ,
+                list_header_floated_fg ,
             }
 		    };
         extern color_schema current_schema; /// \todo need thread protection

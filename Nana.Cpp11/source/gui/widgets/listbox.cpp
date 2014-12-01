@@ -1958,7 +1958,8 @@ namespace nana
 					ext_graph.typeface(essence_->graph->typeface());
 
 					int txtop = (essence_->header_size - essence_->text_height) / 2;
-					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, 0xFFFFFF, item, essence_t::state_t::floated);  ///\todo: use codigo
+					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, 
+                                 color::current_schema[color::schema::list_header_floated_fg], item, essence_t::state_t::floated);  ///\todo: use codigo
 
 					int xpos = essence_->header.xpos(item.index) + pos.x - ref_xpos_;
 					ext_graph.blend(ext_graph.size(), *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
