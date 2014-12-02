@@ -84,6 +84,13 @@ namespace nana
 			substitute		= 0x1A,	//Ctrl+Z
 			escape		= 0x1B,
 
+			//The following names are intuitive name of ASCII control codes
+			copy	= 0x3,	//end_of_text
+			paste	= 0x16,	//sync_idel
+			cut		= 0x18,	//cancel
+			redo	= 0x19,	//end_of_medium
+			undo	= 0x1A,	//substitue
+
 			//System Code for OS
 			os_pageup		= 0x21,	os_pagedown,
 			os_arrow_left	= 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
@@ -95,7 +102,11 @@ namespace nana
 	{
 		enum
 		{
-			white = 0xFFFFFF,
+			white	= 0xFFFFFF,
+			blue	= 0x0000FF,
+			green	= 0x00FF00,
+			red		= 0xFF0000,
+
 			button_face_shadow_start = 0xF5F4F2,
 			button_face_shadow_end = 0xD5D2CA,
 			button_face = 0xD4D0C8,

@@ -271,25 +271,6 @@ namespace nana
 		class repeated_array
 		{
 		public:
-			repeated_array()
-			{}
-
-			repeated_array(repeated_array&& rhs)
-				: repeated_(rhs.repeated_),
-				values_(std::move(rhs.values_))
-			{
-			}
-
-			repeated_array& operator=(const repeated_array& rhs)
-			{
-                if(this != &rhs)
-                {
-                    repeated_ = rhs.repeated_;
-                    values_ = rhs.values_;
-                }
-                return *this;
-			}
-
 			void assign(std::vector<number_t>&& c)
 			{
 				values_ = std::move(c);

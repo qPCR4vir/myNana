@@ -27,6 +27,292 @@ namespace nana
 	{
 		namespace listbox
 		{
+			//struct cell
+				cell::format::format(color_t bgcolor, color_t fgcolor)
+					: bgcolor{ bgcolor }, fgcolor{ fgcolor }
+				{}
+
+				cell::cell(const cell& rhs)
+					:	text(rhs.text),
+						custom_format(rhs.custom_format ? new format(*rhs.custom_format) : nullptr)
+				{}
+
+				cell::cell(nana::string text)
+					: text(std::move(text))
+				{}
+
+				cell::cell(nana::string text, const format& fmt)
+					: text(std::move(text)),
+					custom_format(new format{ fmt })	//make_unique
+				{}
+
+				cell::cell(nana::string text, color_t bgcolor, color_t fgcolor)
+					: text(std::move(text)),
+					custom_format(new format{ bgcolor, fgcolor })	//make_unique
+				{}
+
+				cell& cell::operator=(const cell& rhs)
+				{
+					if (this != &rhs)
+					{
+						text = rhs.text;
+						custom_format.reset(rhs.custom_format ? new format{*rhs.custom_format} : nullptr);
+					}
+					return *this;
+				
+				}
+			//end struct cell
+
+			//definition of iresolver/oresolver
+			oresolver& oresolver::operator<<(bool n)
+			{
+				cells_.emplace_back(n ? L"true" : L"false");
+				return *this;
+			}
+			oresolver& oresolver::operator<<(short n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned short n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(int n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned int n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+			oresolver& oresolver::operator<<(long long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned long long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(float f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(double f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(long double f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(const char* text)
+			{
+				cells_.emplace_back(std::wstring(charset(text)));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(const wchar_t* text)
+			{
+				cells_.emplace_back(text);
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::string text)
+			{
+				cells_.emplace_back(std::wstring(charset(text)));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::wstring text)
+			{
+				cells_.emplace_back(std::move(text));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(cell cl)
+			{
+				cells_.emplace_back(std::move(cl));
+				return *this;
+			}
+
+			std::vector<cell>&& oresolver::move_cells()
+			{
+				return std::move(cells_);
+			}
+
+			iresolver& iresolver::operator>>(bool& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(short& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(unsigned short& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(int& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(unsigned int& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(unsigned long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(unsigned long long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(float& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(double& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long double& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(std::string& text)
+			{
+				if (pos_ < cells_.size())
+					text = charset(cells_[pos_++].text);
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(std::wstring& text)
+			{
+				if (pos_ < cells_.size())
+					text = cells_[pos_++].text;
+
+				return *this;
+			}
+			
+			iresolver::iresolver(const std::vector<cell>& cl)
+				: cells_(cl)
+			{}
+
+			iresolver& iresolver::operator>>(cell& cl)
+			{
+				if (pos_ < cells_.size())
+					cl = cells_[pos_++];
+				return *this;
+			}
+			//end class iresolver/oresolver
+
 			class es_header   /// Essence of the columns Header
 			{
 			public:
@@ -233,12 +519,12 @@ namespace nana
 
 			struct item_t
 			{
-				typedef std::vector<nana::string> container;
+				typedef std::vector<cell> container;
 
-				container texts;
+				container cells;
 				color_t bgcolor{0xFF000000};
 				color_t fgcolor{0xFF000000};
-				nana::paint::image img;
+				paint::image img;
 				nana::size img_show_size;
 
 				struct flags_tag
@@ -247,7 +533,7 @@ namespace nana
 					bool checked	:1;
 				}flags;
 
-				mutable nana::any * anyobj{nullptr};
+				mutable std::unique_ptr<nana::any> anyobj;
 
 				item_t()
 				{
@@ -255,7 +541,7 @@ namespace nana
 				}
 
 				item_t(const item_t& r)
-					:	texts(r.texts),
+					:	cells(r.cells),
 						bgcolor(r.bgcolor),
 						fgcolor(r.fgcolor),
 						img(r.img),
@@ -263,26 +549,16 @@ namespace nana
 						anyobj(r.anyobj ? new nana::any(*r.anyobj) : nullptr)
 				{}
 
-				item_t(item_t&& r)
-					:	texts(std::move(r.texts)),
-						bgcolor(r.bgcolor), fgcolor(r.fgcolor),
-						img(std::move(r.img)),
-						flags(r.flags),
-						anyobj(r.anyobj)
+				item_t(container&& cont)
+					: cells(std::move(cont))
 				{
-					r.anyobj = nullptr;
+					flags.selected = flags.checked = false;
 				}
 
 				item_t(nana::string&& s)
 				{
 					flags.selected = flags.checked = false;
-					texts.emplace_back(std::move(s));
-				}
-
-				item_t(container&& texts)
-					:	texts(std::move(texts))
-				{
-					flags.selected = flags.checked = false;
+					cells.emplace_back(std::move(s));
 				}
 
 				item_t(nana::string&& s, color_t bg, color_t fg)
@@ -290,20 +566,16 @@ namespace nana
 						fgcolor(fg)
 				{
 					flags.selected = flags.checked = false;
-				}
-
-				~item_t()
-				{
-					delete anyobj;
+					cells.emplace_back(std::move(s));
 				}
 
 				item_t& operator=(const item_t& r)
 				{
 					if (this != &r)
 					{
-						texts = r.texts;
+						cells = r.cells;
 						flags = r.flags;
-						anyobj = (r.anyobj ? new nana::any(*r.anyobj) : nullptr);
+						anyobj.reset(r.anyobj ? new nana::any(*r.anyobj) : nullptr);
 						bgcolor = r.bgcolor;
 						fgcolor = r.fgcolor;
 						img = r.img;
@@ -372,23 +644,23 @@ namespace nana
 					return widget_;
 				}
 
-				nana::any * anyobj(size_type cat, size_type index, bool allocate_if_empty) const
-				{
-					auto& catobj = *_m_at(cat);
-					if(index < catobj.items.size())
-					{
-						const item_t & item = catobj.items[index];
-						if(item.anyobj)
-							return item.anyobj;
-						if(allocate_if_empty)
-							return (item.anyobj = new nana::any);
-					}
-					return nullptr;
-				}
-
 				nana::any * anyobj(const index_pair& id, bool allocate_if_empty) const
 				{
-					return anyobj(id.cat, id.item, allocate_if_empty);
+					auto& catobj = *_m_at(id.cat);
+					if(id.item < catobj.items.size())
+					{
+						auto& item = catobj.items[id.item];
+
+						if(item.anyobj)
+							return item.anyobj.get();
+
+						if (allocate_if_empty)
+						{
+							item.anyobj.reset(new nana::any); //make_unique
+							return item.anyobj.get();
+						}
+					}
+					return nullptr;
 				}
 
 				void sort()
@@ -408,20 +680,20 @@ namespace nana
 									//!comp(x, y) != comp(x, y)
 									auto & mx = cat.items[x];
 									auto & my = cat.items[y];
-									if (mx.texts.size() <= sorted_index_ || my.texts.size() <= sorted_index_)
+									if (mx.cells.size() <= sorted_index_ || my.cells.size() <= sorted_index_)
 									{
 										nana::string a;
-										if (mx.texts.size() > sorted_index_)
-											a = mx.texts[sorted_index_];
+										if (mx.cells.size() > sorted_index_)
+											a = mx.cells[sorted_index_].text;
 
 										nana::string b;
-										if (my.texts.size() > sorted_index_)
-											b = my.texts[sorted_index_];
+										if (my.cells.size() > sorted_index_)
+											b = my.cells[sorted_index_].text;
 
-										return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
+										return weak_ordering_comp(a, mx.anyobj.get(), b, my.anyobj.get(), sorted_reverse_);
 									}
 
-									return weak_ordering_comp(mx.texts[sorted_index_], mx.anyobj, my.texts[sorted_index_], my.anyobj, sorted_reverse_);
+									return weak_ordering_comp(mx.cells[sorted_index_].text, mx.anyobj.get(), my.cells[sorted_index_].text, my.anyobj.get(), sorted_reverse_);
 								});
 						}
 					}
@@ -433,21 +705,21 @@ namespace nana
 									auto & item_x = cat.items[x];
 									auto & item_y = cat.items[y];
 
-									if (item_x.texts.size() <= sorted_index_ || item_y.texts.size() <= sorted_index_)
+									if (item_x.cells.size() <= sorted_index_ || item_y.cells.size() <= sorted_index_)
 									{
 										nana::string a;
-										if (item_x.texts.size() > sorted_index_)
-											a = item_x.texts[sorted_index_];
+										if (item_x.cells.size() > sorted_index_)
+											a = item_x.cells[sorted_index_].text;
 
 										nana::string b;
-										if (item_y.texts.size() > sorted_index_)
-											b = item_y.texts[sorted_index_];
+										if (item_y.cells.size() > sorted_index_)
+											b = item_y.cells[sorted_index_].text;
 
 										return (sorted_reverse_ ? a > b : a < b);
 									}
 
-									auto & a = item_x.texts[sorted_index_];
-									auto & b = item_y.texts[sorted_index_];
+									auto & a = item_x.cells[sorted_index_].text;
+									auto & b = item_y.cells[sorted_index_].text;
 									return (sorted_reverse_ ? a > b : a < b);
 								});
 						}
@@ -724,21 +996,49 @@ namespace nana
 					return n;
 				}
 
+				std::vector<cell>& get_cells(category_t * cat, size_type pos) const
+				{
+					if (!cat || pos >= cat->items.size())
+						throw std::out_of_range("nana::listbox: bad item position");
+
+					return cat->items[pos].cells;
+				}
+
 				nana::string text(category_t* cat, size_type pos, size_type col) const
 				{
-					if (pos < cat->items.size() && (col < cat->items[pos].texts.size()))
-						return cat->items[pos].texts[col];
+					if (pos < cat->items.size() && (col < cat->items[pos].cells.size()))
+						return cat->items[pos].cells[col].text;
 					return{};
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type header_size)
+				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
 				{
-					if ((col < header_size) && (pos < cat->items.size()))
+					if ((col < columns) && (pos < cat->items.size()))
 					{
-						auto & cont = cat->items[pos].texts;
+						auto & cont = cat->items[pos].cells;
 						if (col < cont.size())
 						{
-							cont[col] = std::move(str);
+							cont[col] = std::move(cl);
+							if (sorted_index_ == col)
+								sort();
+						}
+						else
+						{	//If the index of specified sub item is over the number of sub items that item contained,
+							//it fills the non-exist items.
+							cont.resize(col);
+							cont.emplace_back(std::move(cl));
+						}
+					}
+				}
+
+				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type columns)
+				{
+					if ((col < columns) && (pos < cat->items.size()))
+					{
+						auto & cont = cat->items[pos].cells;
+						if (col < cont.size())
+						{
+							cont[col].text = std::move(str);
 							if (sorted_index_ == col)
 								sort();
 						}
@@ -1352,10 +1652,8 @@ namespace nana
 
 				es_header header;
 				es_lister lister;  // we have at least one emty cat. the #0
-				nana::any resolver;
 
 				state_t ptr_state{ state_t::normal };
-
 				std::pair<where_t, std::size_t> pointer_where;	//The 'first' stands for which object, such as header and lister, 'second' stands for item
 																//if where == header, 'second' indicates the item
 																//if where == lister || where == checker, 'second' indicates the offset to the scroll offset_y which stands for the first item displayed in lister.
@@ -2149,7 +2447,7 @@ namespace nana
 						txtcolor = item.fgcolor;
 
 					auto graph = essence_->graph;
-					if(state == essence_t::state_t::highlighted)
+					if(essence_t::state_t::highlighted == state)
 						bgcolor = graph->mix(bgcolor, 0x99DEFD, 0.8);
 
 					unsigned show_w = width - essence_->scroll.offset_x;
@@ -2165,7 +2463,7 @@ namespace nana
 					{
 						const auto & header = essence_->header.column(index);
 
-						if((item.texts.size() > index) && (header.pixels > 5))
+						if ((item.cells.size() > index) && (header.pixels > 5))
 						{
 							int ext_w = 5;
 							if(first && essence_->checkable)
@@ -2190,7 +2488,9 @@ namespace nana
 								crook_renderer_.check(item.flags.checked ?  state::checked : state::unchecked);
 								crook_renderer_.draw(*graph, bgcolor, txtcolor, essence_->checkarea(item_xpos, y), estate);
 							}
-							nana::size ts = graph->text_extent_size(item.texts[index]);
+
+							auto & m_cell = item.cells[index];
+							nana::size ts = graph->text_extent_size(m_cell.text);
 
 							if ((0 == index) && essence_->if_image)
 							{
@@ -2203,7 +2503,22 @@ namespace nana
 								}
 								ext_w += 18;
 							}
-							graph->string(item_xpos + ext_w, y + txtoff, txtcolor, item.texts[index]);
+
+							auto cell_txtcolor = txtcolor;
+							if (m_cell.custom_format)
+							{
+								if (!item.flags.selected && !(m_cell.custom_format->bgcolor & 0xFF000000))
+								{
+									auto cell_bgcolor = m_cell.custom_format->bgcolor;
+									if (essence_t::state_t::highlighted == state)
+										cell_bgcolor = graph->mix(cell_bgcolor, 0x99DEFD, 0.8);
+									graph->rectangle(item_xpos, y, header.pixels, essence_->item_size, cell_bgcolor, true);
+								}
+
+								if (!(m_cell.custom_format->bgcolor & 0xFF000000))
+									cell_txtcolor = m_cell.custom_format->fgcolor;
+							}
+							graph->string(item_xpos + ext_w, y + txtoff, cell_txtcolor, m_cell.text);
 
 							if(ts.width + ext_w > header.pixels)
 							{
@@ -2680,9 +2995,16 @@ namespace nana
 					return ess_->header.cont().size();
 				}
 
-				item_proxy & item_proxy::text(size_type col, nana::string str)
+				item_proxy& item_proxy::text(size_type col, cell cl)
 				{
-					ess_->lister.text(cat_, pos_.item, col, std::move(str), ess_->header.cont().size());
+					ess_->lister.text(cat_, pos_.item, col, std::move(cl), columns());
+					ess_->update();
+					return *this;
+				}
+
+				item_proxy& item_proxy::text(size_type col, nana::string str)
+				{
+					ess_->lister.text(cat_, pos_.item, col, std::move(str), columns());
 					ess_->update();
 					return *this;
 				}
@@ -2804,19 +3126,26 @@ namespace nana
 					return pos_;
 				}
 
-				const nana::any & item_proxy::_m_resolver() const
+				/*
+				const nana::any & item_proxy::_m_resolver() const	//deperecated
 				{
 					return ess_->resolver;
+				}
+				*/
+
+				auto item_proxy::_m_cells() const -> std::vector<cell>&
+				{
+					return ess_->lister.get_cells(cat_, pos_.item);
 				}
 
 				nana::any * item_proxy::_m_value(bool alloc_if_empty)
 				{
-					return ess_->lister.anyobj(pos_.cat, pos_.item, alloc_if_empty);
+					return ess_->lister.anyobj(pos_, alloc_if_empty);
 				}
 
 				const nana::any * item_proxy::_m_value() const
 				{
-					return ess_->lister.anyobj(pos_.cat, pos_.item, false);
+					return ess_->lister.anyobj(pos_, false);
 				}
 			//end class item_proxy
 
@@ -3026,9 +3355,22 @@ namespace nana
 					return ! this->operator==(r);
 				}
 
-				const nana::any & cat_proxy::_m_resolver() const
+				void cat_proxy::_m_append(std::vector<cell> && cells)
 				{
-					return ess_->resolver;
+					internal_scope_guard lock;
+
+					cat_->sorted.push_back(cat_->items.size());
+					cells.resize(columns());
+					cat_->items.emplace_back(std::move(cells));
+
+					auto wd = ess_->lister.wd_ptr();
+					if (wd && !(API::empty_window(wd->handle())))
+					{
+						auto & m = cat_->items.back();
+						m.bgcolor = wd->background();
+						m.fgcolor = wd->foreground();
+						ess_->update();
+					}
 				}
 
 				void cat_proxy::_m_cat_by_pos()
@@ -3308,17 +3650,7 @@ namespace nana
 
 		nana::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const
 		{
-			return _m_ess().lister.anyobj(cat, index, allocate_if_empty);
-		}
-
-		void listbox::_m_resolver(const nana::any& res)
-		{
-			_m_ess().resolver = res;
-		}
-
-		const nana::any & listbox::_m_resolver() const
-		{
-			return _m_ess().resolver;
+			return _m_ess().lister.anyobj(index_pair{cat, index}, allocate_if_empty);
 		}
 
 		auto listbox::_m_headers() const -> size_type
