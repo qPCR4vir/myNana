@@ -14,7 +14,6 @@
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
 #include "widget.hpp"
-#include <nana/pat/cloneable.hpp>
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
 #include <functional>
@@ -35,11 +34,7 @@ namespace nana
 				size_type cat;	//The pos of category
 				size_type item;	//the pos of item in a category.
 
-				index_pair()
-					:	cat(0), item(0)
-				{}
-
-				index_pair(size_type cat_pos, size_type item_pos)
+				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
 					:	cat(cat_pos),
 						item(item_pos)
 				{}
@@ -465,11 +460,6 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
-		typedef drawerbase::listbox::size_type	size_type;
-		typedef drawerbase::listbox::index_pair	index_pair;
-		typedef drawerbase::listbox::cat_proxy	cat_proxy;
-		typedef drawerbase::listbox::item_proxy	item_proxy;
-		typedef drawerbase::listbox::selection	selection;    ///<A container type for items.
         using cell=drawerbase::listbox::cell;
 
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
@@ -478,6 +468,11 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			: public drawerbase::listbox::resolver_interface<T>
 		{
 		};
+		using size_type		= drawerbase::listbox::size_type;
+		using index_pair	= drawerbase::listbox::index_pair;
+		using cat_proxy		= drawerbase::listbox::cat_proxy;
+		using item_proxy	= drawerbase::listbox::item_proxy;
+		using selection = drawerbase::listbox::selection;    ///<A container type for items.
 	public:
 		listbox() = default;
 		listbox(window, bool visible);

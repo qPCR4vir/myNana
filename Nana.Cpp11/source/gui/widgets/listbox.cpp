@@ -238,7 +238,7 @@ namespace nana
 				container texts;
 				color_t bgcolor{0xFF000000};
 				color_t fgcolor{0xFF000000};
-				nana::paint::image img;
+				paint::image img;
 				nana::size img_show_size;
 
 				struct flags_tag
@@ -372,23 +372,19 @@ namespace nana
 					return widget_;
 				}
 
-				nana::any * anyobj(size_type cat, size_type index, bool allocate_if_empty) const
+				nana::any * anyobj(const index_pair& id, bool allocate_if_empty) const
 				{
-					auto& catobj = *_m_at(cat);
-					if(index < catobj.items.size())
+					auto& catobj = *_m_at(id.cat);
+					if(id.item < catobj.items.size())
 					{
-						const item_t & item = catobj.items[index];
+						auto& item = catobj.items[id.item];
+
 						if(item.anyobj)
 							return item.anyobj;
 						if(allocate_if_empty)
 							return (item.anyobj = new nana::any);
 					}
 					return nullptr;
-				}
-
-				nana::any * anyobj(const index_pair& id, bool allocate_if_empty) const
-				{
-					return anyobj(id.cat, id.item, allocate_if_empty);
 				}
 
 				void sort()
