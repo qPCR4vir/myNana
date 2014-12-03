@@ -231,8 +231,8 @@ namespace nana
 					auto && cells = ores.move_cells();
 					auto cols = columns();
 					cells.resize(cols);
-					for (auto pos = 0; pos < cols; ++i)
-						text(i, std::move(cells[pos]));
+					for (auto pos = 0; pos < cols; ++pos)
+						text(pos, std::move(cells[pos]));
 					
 					return *this;
 				}
