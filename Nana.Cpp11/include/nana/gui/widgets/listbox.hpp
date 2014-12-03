@@ -53,6 +53,59 @@ namespace nana
 				cell& operator=(const cell&);
 			};
 
+			class oresolver
+			{
+			public:
+				oresolver& operator<<(bool);
+				oresolver& operator<<(short);
+				oresolver& operator<<(unsigned short);
+				oresolver& operator<<(int);
+				oresolver& operator<<(unsigned int);
+				oresolver& operator<<(long);
+				oresolver& operator<<(unsigned long);
+				oresolver& operator<<(long long);
+				oresolver& operator<<(unsigned long long);
+				oresolver& operator<<(float);
+				oresolver& operator<<(double);
+				oresolver& operator<<(long double);
+
+				oresolver& operator<<(const char*);
+				oresolver& operator<<(const wchar_t*);
+				oresolver& operator<<(std::string);
+				oresolver& operator<<(std::wstring);
+				oresolver& operator<<(cell);
+
+				std::vector<cell> && move_cells();
+			private:
+				std::vector<cell> cells_;
+			};
+
+			class iresolver
+			{
+			public:
+				iresolver(const std::vector<cell>&);
+
+				iresolver& operator>>(bool&);
+				iresolver& operator>>(short&);
+				iresolver& operator>>(unsigned short&);
+				iresolver& operator>>(int&);
+				iresolver& operator>>(unsigned int&);
+				iresolver& operator>>(long&);
+				iresolver& operator>>(unsigned long&);
+				iresolver& operator>>(long long&);
+				iresolver& operator>>(unsigned long long&);
+				iresolver& operator>>(float&);
+				iresolver& operator>>(double&);
+				iresolver& operator>>(long double&);
+
+				iresolver& operator>>(std::string&);
+				iresolver& operator>>(std::wstring&);
+				iresolver& operator>>(cell&);
+			private:
+				const std::vector<cell>& cells_;
+				std::size_t pos_{0};
+			};
+
 			struct index_pair
 			{
 				size_type cat;	//The pos of category
@@ -139,40 +192,6 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-
-		      /// An interface that performs a translation between an object of type T and an item of listbox.
-			template<typename T>
-			class resolver_interface
-			{
-			public:
-				/// The type that will be resolved.
-				typedef T target;
-
-				/// The destructor
-				virtual ~resolver_interface(){}
-
-				virtual cell decode(size_type, const target&) const = 0;   ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
-				virtual void encode(target&, size_type, const nana::string&) const = 0;
-			};
-
-			template<typename T>
-			struct resolver_proxy
-			{
-				pat::cloneable<resolver_interface<T>> res;
-
-				resolver_proxy()
-				{}
-
-				resolver_proxy(const resolver_proxy& rhs)
-					: res(rhs.res)
-				{}
-
-				~resolver_proxy()
-				{
-				}
-			};
-
-
 			class item_proxy
 				: public ::std::iterator<::std::input_iterator_tag, item_proxy>
 			{
@@ -207,15 +226,13 @@ namespace nana
 				template<typename T>
 				item_proxy & resolve_from(const T& t)
 				{
-					auto proxy = _m_resolver().template get<resolver_proxy<T> >();
-					if(nullptr == proxy)
-						throw std::invalid_argument("Nana.Listbox.ItemProxy: the type passed to value() does not match the resolver.");
-					
-					auto * res = proxy->res.get();
-					auto headers = columns();
-
-					for(size_type i = 0; i < headers; ++i)
-						text(i, res->decode(i, t));  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
+					oresolver ores;
+					ores << t;
+					auto && cells = ores.move_cells();
+					auto cols = columns();
+					cells.resize(cols);
+					for (auto pos = 0; pos < cols; ++i)
+						text(i, std::move(cells[pos]));
 					
 					return *this;
 				}
@@ -223,14 +240,8 @@ namespace nana
 				template<typename T>
 				void resolve_to(T& t) const
 				{
-					auto proxy = _m_resolver().get<resolver_proxy<T> >();
-					if(nullptr == proxy)
-						throw std::invalid_argument("Nana.Listbox.ItemProxy: the type passed to value() does not match the resolver.");
-					
-					auto * res = proxy->res.get();
-					auto headers = columns();
-					for(size_type i = 0; i < headers; ++i)
-						res->encode(t, i, text(i));
+					iresolver ires(_m_cells());
+					ires >> t;
 				}
 
 				template<typename T>
@@ -295,7 +306,7 @@ namespace nana
 				//Undocumented method
 				essence_t * _m_ess() const;
 			private:
-				const nana::any & _m_resolver() const;
+				//const nana::any & _m_resolver() const;
 				std::vector<cell> & _m_cells() const;
 				nana::any * _m_value(bool alloc_if_empty);
 				const nana::any * _m_value() const;
@@ -317,19 +328,11 @@ namespace nana
 				template<typename T>
 				item_proxy append(const T& t)
 				{
-					auto proxy = _m_resolver().get<resolver_proxy<T> >();
-					if (proxy)
-					{
-						auto & res = proxy->res;
-						push_back(res->decode(0, t));
+					oresolver ores;
+					ores << t;
+					_m_append(ores.move_cells());
 
-						item_proxy ip(ess_, index_pair(pos_, size() - 1));
-						auto headers = columns();
-						for (size_type i = 1; i < headers; ++i)
-							ip.text(i, res->decode(i, t));
-						return ip;
-					}
-					return item_proxy(ess_);
+					return{ ess_, index_pair(pos_, size() - 1) };
 				}
 
 				void append(std::initializer_list<nana::string>);
@@ -385,7 +388,6 @@ namespace nana
 				/// Behavior of Iterator
 				bool operator!=(const cat_proxy&) const;
 			private:
-				const nana::any & _m_resolver() const;
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
 			private:
@@ -427,18 +429,13 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
-
-		      /// An interface that performs a translation between an object of type T and an item of listbox.
-		template<typename T>
-		class resolver_interface
-			: public drawerbase::listbox::resolver_interface<T>
-		{
-		};
 		using size_type		= drawerbase::listbox::size_type;
 		using index_pair	= drawerbase::listbox::index_pair;
 		using cat_proxy		= drawerbase::listbox::cat_proxy;
 		using item_proxy	= drawerbase::listbox::item_proxy;
 		using selection = drawerbase::listbox::selection;    ///<A container type for items.
+		using iresolver = drawerbase::listbox::iresolver;
+		using oresolver = drawerbase::listbox::oresolver;
 		using cell = drawerbase::listbox::cell;
 	public:
 		listbox() = default;
@@ -508,14 +505,6 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			_m_ease_key(&key);
 		}
 
-		template<typename Resolver>
-		void resolver(const Resolver & res)
-		{
-			drawerbase::listbox::resolver_proxy<typename Resolver::target> proxy;
-			proxy.res = pat::cloneable<drawerbase::listbox::resolver_interface<typename Resolver::target> >(res);
-			_m_resolver(nana::any(proxy));
-		}
-
 		            ///Sets a strick weak ordering comparer for a column
 		void set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*,
 				                                        const nana::string&, nana::any*, bool reverse)> strick_ordering);
@@ -537,8 +526,6 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
-		void _m_resolver(const nana::any&);
-		const nana::any & _m_resolver() const;
 		size_type _m_headers() const;
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
 		void _m_ease_key(nana::detail::key_interface*);

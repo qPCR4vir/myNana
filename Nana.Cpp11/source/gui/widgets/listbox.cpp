@@ -62,6 +62,257 @@ namespace nana
 				
 				}
 			//end struct cell
+
+			//definition of iresolver/oresolver
+			oresolver& oresolver::operator<<(bool n)
+			{
+				cells_.emplace_back(n ? L"true" : L"false");
+				return *this;
+			}
+			oresolver& oresolver::operator<<(short n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned short n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(int n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned int n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+			oresolver& oresolver::operator<<(long long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(unsigned long long n)
+			{
+				cells_.emplace_back(std::to_wstring(n));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(float f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(double f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(long double f)
+			{
+				cells_.emplace_back(std::to_wstring(f));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(const char* text)
+			{
+				cells_.emplace_back(std::wstring(charset(text)));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(const wchar_t* text)
+			{
+				cells_.emplace_back(text);
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::string text)
+			{
+				cells_.emplace_back(std::wstring(charset(text)));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::wstring text)
+			{
+				cells_.emplace_back(std::move(text));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(cell cl)
+			{
+				cells_.emplace_back(std::move(cl));
+				return *this;
+			}
+
+			std::vector<cell>&& oresolver::move_cells()
+			{
+				return std::move(cells_);
+			}
+
+			iresolver& iresolver::operator>>(bool& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(short& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(unsigned short& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(int& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(unsigned int& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(unsigned long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(unsigned long long& n)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> n;
+				}
+				return *this;
+			}
+			iresolver& iresolver::operator>>(float& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(double& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(long double& f)
+			{
+				if (pos_ < cells_.size())
+				{
+					std::wstringstream ss(cells_[pos_++].text);
+					ss >> f;
+				}
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(std::string& text)
+			{
+				if (pos_ < cells_.size())
+					text = charset(cells_[pos_++].text);
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(std::wstring& text)
+			{
+				if (pos_ < cells_.size())
+					text = cells_[pos_++].text;
+
+				return *this;
+			}
+			
+			iresolver::iresolver(const std::vector<cell>& cl)
+				: cells_(cl)
+			{}
+
+			iresolver& iresolver::operator>>(cell& cl)
+			{
+				if (pos_ < cells_.size())
+					cl = cells_[pos_++];
+				return *this;
+			}
+			//end class iresolver/oresolver
+
 			class es_header   /// Essence of the columns Header
 			{
 			public:
@@ -1400,10 +1651,8 @@ namespace nana
 
 				es_header header;
 				es_lister lister;  // we have at least one emty cat. the #0
-				nana::any resolver;
 
 				state_t ptr_state{ state_t::normal };
-
 				std::pair<where_t, std::size_t> pointer_where;	//The 'first' stands for which object, such as header and lister, 'second' stands for item
 																//if where == header, 'second' indicates the item
 																//if where == lister || where == checker, 'second' indicates the offset to the scroll offset_y which stands for the first item displayed in lister.
@@ -2877,10 +3126,13 @@ namespace nana
 					return pos_;
 				}
 
-				const nana::any & item_proxy::_m_resolver() const
+				/*
+				const nana::any & item_proxy::_m_resolver() const	//deperecated
 				{
 					return ess_->resolver;
 				}
+				*/
+
 				auto item_proxy::_m_cells() const -> std::vector<cell>&
 				{
 					return ess_->lister.get_cells(cat_, pos_.item);
@@ -3103,9 +3355,22 @@ namespace nana
 					return ! this->operator==(r);
 				}
 
-				const nana::any & cat_proxy::_m_resolver() const
+				void cat_proxy::_m_append(std::vector<cell> && cells)
 				{
-					return ess_->resolver;
+					internal_scope_guard lock;
+
+					cat_->sorted.push_back(cat_->items.size());
+					cells.resize(columns());
+					cat_->items.emplace_back(std::move(cells));
+
+					auto wd = ess_->lister.wd_ptr();
+					if (wd && !(API::empty_window(wd->handle())))
+					{
+						auto & m = cat_->items.back();
+						m.bgcolor = wd->background();
+						m.fgcolor = wd->foreground();
+						ess_->update();
+					}
 				}
 
 				void cat_proxy::_m_cat_by_pos()
@@ -3385,17 +3650,7 @@ namespace nana
 
 		nana::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const
 		{
-			return _m_ess().lister.anyobj(cat, index, allocate_if_empty);
-		}
-
-		void listbox::_m_resolver(const nana::any& res)
-		{
-			_m_ess().resolver = res;
-		}
-
-		const nana::any & listbox::_m_resolver() const
-		{
-			return _m_ess().resolver;
+			return _m_ess().lister.anyobj(index_pair{cat, index}, allocate_if_empty);
 		}
 
 		auto listbox::_m_headers() const -> size_type
