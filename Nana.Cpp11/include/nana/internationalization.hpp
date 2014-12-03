@@ -159,7 +159,9 @@ namespace nana
 		}
 
 		i18n_eval(const i18n_eval&);
-		i18n_eval(i18n_eval&&);
+
+		//Workaround for VC2013, becuase it can't specified a default explicit move-constructor
+		i18n_eval(i18n_eval&&); //= default
 
 		i18n_eval& operator=(const i18n_eval&);
 		i18n_eval& operator=(i18n_eval&& rhs);
