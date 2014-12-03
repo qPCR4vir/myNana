@@ -75,18 +75,22 @@ namespace nana
 		enum t{
 			//Control Code for ASCII
 			select_all	= 0x1,
-			copy		= 0x3,		//Ctrl+C
 			end_of_text		= 0x3,	//Ctrl+C
 			backspace	= 0x8,	tab		= 0x9,
 			enter_n		= 0xA,	enter	= 0xD,	enter_r = 0xD,
 			alt			= 0x12,
-			paste		= 0x16,		//Ctrl+V
-			cut			= 0x18,		//Ctrl+X
 			sync_idel		= 0x16,	//Ctrl+V
 			cancel			= 0x18,	//Ctrl+X
 			end_of_medium	= 0x19,	//Ctrl+Y
 			substitute		= 0x1A,	//Ctrl+Z
 			escape		= 0x1B,
+
+			//The following names are intuitive name of ASCII control codes
+			copy	= 0x3,	//end_of_text
+			paste	= 0x16,	//sync_idel
+			cut		= 0x18,	//cancel
+			redo	= 0x19,	//end_of_medium
+			undo	= 0x1A,	//substitue
 
 			//System Code for OS
 			os_pageup		= 0x21,	os_pagedown,
