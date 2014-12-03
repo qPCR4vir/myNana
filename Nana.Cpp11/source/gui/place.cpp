@@ -277,7 +277,7 @@ namespace nana
 
 			repeated_array(repeated_array && other)
 				:	repeated_{other.repeated_},
-					values_{std::move(other.values_)}
+					values_(std::move(other.values_))
 			{
 			}
 
