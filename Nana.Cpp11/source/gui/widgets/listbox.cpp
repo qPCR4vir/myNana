@@ -247,7 +247,7 @@ namespace nana
 					bool checked	:1;
 				}flags;
 
-				mutable nana::any * anyobj{nullptr};
+				mutable std::unique_ptr<nana::any> anyobj;
 
 				item_t()
 				{
@@ -263,15 +263,6 @@ namespace nana
 						anyobj(r.anyobj ? new nana::any(*r.anyobj) : nullptr)
 				{}
 
-				item_t(item_t&& r)
-					:	texts(std::move(r.texts)),
-						bgcolor(r.bgcolor), fgcolor(r.fgcolor),
-						img(std::move(r.img)),
-						flags(r.flags),
-						anyobj(r.anyobj)
-				{
-					r.anyobj = nullptr;
-				}
 
 				item_t(nana::string&& s)
 				{
@@ -292,18 +283,13 @@ namespace nana
 					flags.selected = flags.checked = false;
 				}
 
-				~item_t()
-				{
-					delete anyobj;
-				}
-
 				item_t& operator=(const item_t& r)
 				{
 					if (this != &r)
 					{
 						texts = r.texts;
 						flags = r.flags;
-						anyobj = (r.anyobj ? new nana::any(*r.anyobj) : nullptr);
+						anyobj.reset(r.anyobj ? new nana::any(*r.anyobj) : nullptr);
 						bgcolor = r.bgcolor;
 						fgcolor = r.fgcolor;
 						img = r.img;
@@ -380,9 +366,13 @@ namespace nana
 						auto& item = catobj.items[id.item];
 
 						if(item.anyobj)
-							return item.anyobj;
-						if(allocate_if_empty)
-							return (item.anyobj = new nana::any);
+							return item.anyobj.get();
+
+						if (allocate_if_empty)
+						{
+							item.anyobj.reset(new nana::any); //make_unique
+							return item.anyobj.get();
+						}
 					}
 					return nullptr;
 				}
