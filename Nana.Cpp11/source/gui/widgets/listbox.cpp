@@ -27,6 +27,41 @@ namespace nana
 	{
 		namespace listbox
 		{
+			//struct cell
+				cell::format::format(color_t bgcolor, color_t fgcolor)
+					: bgcolor{ bgcolor }, fgcolor{ fgcolor }
+				{}
+
+				cell::cell(const cell& rhs)
+					:	text(rhs.text),
+						custom_format(rhs.custom_format ? new format(*rhs.custom_format) : nullptr)
+				{}
+
+				cell::cell(nana::string text)
+					: text(std::move(text))
+				{}
+
+				cell::cell(nana::string text, const format& fmt)
+					: text(std::move(text)),
+					custom_format(new format{ fmt })	//make_unique
+				{}
+
+				cell::cell(nana::string text, color_t bgcolor, color_t fgcolor)
+					: text(std::move(text)),
+					custom_format(new format{ bgcolor, fgcolor })	//make_unique
+				{}
+
+				cell& cell::operator=(const cell& rhs)
+				{
+					if (this != &rhs)
+					{
+						text = rhs.text;
+						custom_format.reset(rhs.custom_format ? new format{*rhs.custom_format} : nullptr);
+					}
+					return *this;
+				
+				}
+			//end struct cell
 			class es_header   /// Essence of the columns Header
 			{
 			public:
@@ -233,9 +268,8 @@ namespace nana
 
 			struct item_t
 			{
-				//typedef std::vector<nana::string> container;
                 using container=std::vector<cell>;
-				container texts;
+				container cells;
 				color_t bgcolor{0xFF000000};
 				color_t fgcolor{0xFF000000};
 				paint::image img;
@@ -255,7 +289,7 @@ namespace nana
 				}
 
 				item_t(const item_t& r)
-					:	texts(r.texts),
+					:	cells(r.cells),
 						bgcolor(r.bgcolor),
 						fgcolor(r.fgcolor),
 						img(r.img),
@@ -263,17 +297,16 @@ namespace nana
 						anyobj(r.anyobj ? new nana::any(*r.anyobj) : nullptr)
 				{}
 
+				item_t(container&& cont)
+					: cells(std::move(cont))
+				{
+					flags.selected = flags.checked = false;
+				}
 
 				item_t(nana::string&& s)
 				{
 					flags.selected = flags.checked = false;
-					texts.emplace_back(std::move(s));
-				}
-
-				item_t(container&& texts)
-					:	texts(std::move(texts))
-				{
-					flags.selected = flags.checked = false;
+					cells.emplace_back(std::move(s));
 				}
 
 				item_t(nana::string&& s, color_t bg, color_t fg)
@@ -281,13 +314,14 @@ namespace nana
 						fgcolor(fg)
 				{
 					flags.selected = flags.checked = false;
+					cells.emplace_back(std::move(s));
 				}
 
 				item_t& operator=(const item_t& r)
 				{
 					if (this != &r)
 					{
-						texts = r.texts;
+						cells = r.cells;
 						flags = r.flags;
 						anyobj.reset(r.anyobj ? new nana::any(*r.anyobj) : nullptr);
 						bgcolor = r.bgcolor;
@@ -394,20 +428,20 @@ namespace nana
 									//!comp(x, y) != comp(x, y)
 									auto & mx = cat.items[x];
 									auto & my = cat.items[y];
-									if (mx.texts.size() <= sorted_index_ || my.texts.size() <= sorted_index_)
+									if (mx.cells.size() <= sorted_index_ || my.cells.size() <= sorted_index_)
 									{
 										nana::string a;
-										if (mx.texts.size() > sorted_index_)
-											a = mx.texts[sorted_index_];
+										if (mx.cells.size() > sorted_index_)
+											a = mx.cells[sorted_index_].text;
 
 										nana::string b;
-										if (my.texts.size() > sorted_index_)
-											b = my.texts[sorted_index_];
+										if (my.cells.size() > sorted_index_)
+											b = my.cells[sorted_index_].text;
 
-										return weak_ordering_comp(a, mx.anyobj, b, my.anyobj, sorted_reverse_);
+										return weak_ordering_comp(a, mx.anyobj.get(), b, my.anyobj.get(), sorted_reverse_);
 									}
 
-									return weak_ordering_comp(mx.texts[sorted_index_], mx.anyobj, my.texts[sorted_index_], my.anyobj, sorted_reverse_);
+									return weak_ordering_comp(mx.cells[sorted_index_].text, mx.anyobj.get(), my.cells[sorted_index_].text, my.anyobj.get(), sorted_reverse_);
 								});
 						}
 					}
@@ -419,21 +453,21 @@ namespace nana
 									auto & item_x = cat.items[x];
 									auto & item_y = cat.items[y];
 
-									if (item_x.texts.size() <= sorted_index_ || item_y.texts.size() <= sorted_index_)
+									if (item_x.cells.size() <= sorted_index_ || item_y.cells.size() <= sorted_index_)
 									{
 										nana::string a;
-										if (item_x.texts.size() > sorted_index_)
-											a = item_x.texts[sorted_index_];
+										if (item_x.cells.size() > sorted_index_)
+											a = item_x.cells[sorted_index_].text;
 
 										nana::string b;
-										if (item_y.texts.size() > sorted_index_)
-											b = item_y.texts[sorted_index_];
+										if (item_y.cells.size() > sorted_index_)
+											b = item_y.cells[sorted_index_].text;
 
 										return (sorted_reverse_ ? a > b : a < b);
 									}
 
-									auto & a = item_x.texts[sorted_index_];
-									auto & b = item_y.texts[sorted_index_];
+									auto & a = item_x.cells[sorted_index_].text;
+									auto & b = item_y.cells[sorted_index_].text;
 									return (sorted_reverse_ ? a > b : a < b);
 								});
 						}
@@ -710,21 +744,49 @@ namespace nana
 					return n;
 				}
 
+				std::vector<cell>& get_cells(category_t * cat, size_type pos) const
+				{
+					if (!cat || pos >= cat->items.size())
+						throw std::out_of_range("nana::listbox: bad item position");
+
+					return cat->items[pos].cells;
+				}
+
 				nana::string text(category_t* cat, size_type pos, size_type col) const
 				{
-					if (pos < cat->items.size() && (col < cat->items[pos].texts.size()))
-						return cat->items[pos].texts[col];
+					if (pos < cat->items.size() && (col < cat->items[pos].cells.size()))
+						return cat->items[pos].cells[col].text;
 					return{};
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, cell&& str, size_type header_size)
-				{  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
-					if ((col < header_size) && (pos < cat->items.size()))
+				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
+				{
+					if ((col < columns) && (pos < cat->items.size()))
 					{
-						auto & cont = cat->items[pos].texts;
+						auto & cont = cat->items[pos].cells;
 						if (col < cont.size())
 						{
-							cont[col] = std::move(str);
+							cont[col] = std::move(cl);
+							if (sorted_index_ == col)
+								sort();
+						}
+						else
+						{	//If the index of specified sub item is over the number of sub items that item contained,
+							//it fills the non-exist items.
+							cont.resize(col);
+							cont.emplace_back(std::move(cl));
+						}
+					}
+				}
+
+				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type columns)
+				{
+					if ((col < columns) && (pos < cat->items.size()))
+					{
+						auto & cont = cat->items[pos].cells;
+						if (col < cont.size())
+						{
+							cont[col].text = std::move(str);
 							if (sorted_index_ == col)
 								sort();
 						}
@@ -2152,7 +2214,7 @@ namespace nana
 					{
 						const auto & header = essence_->header.column(index);
 
-						if((item.texts.size() > index) && (header.pixels > 5))
+						if ((item.cells.size() > index) && (header.pixels > 5))
 						{
 							int ext_w = 5;
 							if(first && essence_->checkable)
@@ -2177,7 +2239,9 @@ namespace nana
 								crook_renderer_.check(item.flags.checked ?  state::checked : state::unchecked);
 								crook_renderer_.draw(*graph, bgcolor, txtcolor, essence_->checkarea(item_xpos, y), estate);
 							}
-							nana::size ts = graph->text_extent_size(item.texts[index]);
+
+							auto & m_cell = item.cells[index];
+							nana::size ts = graph->text_extent_size(m_cell.text);
 
 							if ((0 == index) && essence_->if_image)
 							{
@@ -2190,10 +2254,22 @@ namespace nana
 								}
 								ext_w += 18;
 							}
-                            auto& c=item.texts[index];
-					        if (c.coustom_format) 
-                                graph->rectangle(item_xpos, y, header.pixels, essence_->item_size, c.coustom_format->bgcolor, true);
-							graph->string(item_xpos + ext_w, y + txtoff, c.coustom_format? c.coustom_format->fgcolor: txtcolor, c.txt);
+
+							auto cell_txtcolor = txtcolor;
+							if (m_cell.custom_format)
+							{
+								if (!item.flags.selected && !(m_cell.custom_format->bgcolor & 0xFF000000))
+								{
+									auto cell_bgcolor = m_cell.custom_format->bgcolor;
+									if (essence_t::state_t::highlighted == state)
+										cell_bgcolor = graph->mix(cell_bgcolor, 0x99DEFD, 0.8);
+									graph->rectangle(item_xpos, y, header.pixels, essence_->item_size, cell_bgcolor, true);
+								}
+
+								if (!(m_cell.custom_format->bgcolor & 0xFF000000))
+									cell_txtcolor = m_cell.custom_format->fgcolor;
+							}
+							graph->string(item_xpos + ext_w, y + txtoff, cell_txtcolor, m_cell.text);
 
 							if(ts.width + ext_w > header.pixels)
 							{
@@ -2670,9 +2746,16 @@ namespace nana
 					return ess_->header.cont().size();
 				}
 
-				item_proxy & item_proxy::text(size_type col, cell&& str)  ///\todo Lets decode optionaly return a struct with text, colors, and more difficult: font type with size
+				item_proxy& item_proxy::text(size_type col, cell cl)
 				{
-					ess_->lister.text(cat_, pos_.item, col, std::move(str), ess_->header.cont().size());
+					ess_->lister.text(cat_, pos_.item, col, std::move(cl), columns());
+					ess_->update();
+					return *this;
+				}
+
+				item_proxy& item_proxy::text(size_type col, nana::string str)
+				{
+					ess_->lister.text(cat_, pos_.item, col, std::move(str), columns());
 					ess_->update();
 					return *this;
 				}
@@ -2798,15 +2881,19 @@ namespace nana
 				{
 					return ess_->resolver;
 				}
+				auto item_proxy::_m_cells() const -> std::vector<cell>&
+				{
+					return ess_->lister.get_cells(cat_, pos_.item);
+				}
 
 				nana::any * item_proxy::_m_value(bool alloc_if_empty)
 				{
-					return ess_->lister.anyobj(pos_.cat, pos_.item, alloc_if_empty);
+					return ess_->lister.anyobj(pos_, alloc_if_empty);
 				}
 
 				const nana::any * item_proxy::_m_value() const
 				{
-					return ess_->lister.anyobj(pos_.cat, pos_.item, false);
+					return ess_->lister.anyobj(pos_, false);
 				}
 			//end class item_proxy
 

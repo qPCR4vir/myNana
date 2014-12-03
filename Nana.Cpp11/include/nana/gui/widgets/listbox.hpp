@@ -29,6 +29,30 @@ namespace nana
 		{
 			typedef std::size_t size_type;
 
+			struct cell
+			{
+				struct format
+				{
+					::nana::color_t bgcolor;
+					::nana::color_t fgcolor;
+
+					format(color_t bgcolor = 0xFF000000, color_t fgcolor = 0xFF000000);
+				};
+
+				using format_ptr = std::unique_ptr < format > ;
+
+				::nana::string	text;
+				format_ptr custom_format;
+
+				cell() = default;
+				cell(const cell&);
+				cell(nana::string text);
+				cell(nana::string text, const format&);
+				cell(nana::string text, color_t bgcolor, color_t fgcolor);
+
+				cell& operator=(const cell&);
+			};
+
 			struct index_pair
 			{
 				size_type cat;	//The pos of category
@@ -115,67 +139,6 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-            struct cell
-            {
-                struct format{
-                               color_t bgcolor{0xFF000000}, 
-                                       fgcolor{0xFF000000};    
-                               /*font, font_size, nana::aling al*/
-
-                               format (color_t bgcolor=0xFF000000,color_t  fgcolor=0xFF000000): 
-                                  bgcolor(bgcolor), fgcolor(fgcolor){};
-                             };
-                using pformat=std::unique_ptr<format>;
-                nana::string txt;
-                pformat      coustom_format; 
-
-                cell (nana::string text={}, pformat coustom_format={})
-                    :  txt(std::move(text)), 
-                       coustom_format(std::move(coustom_format))
-                    {}
-
-                cell (nana::string text, const format& format_)
-                    :  txt(std::move(text)), 
-                       coustom_format(std::make_unique<format>(format_))
-                    {}
-                cell (nana::string text, color_t bg,  color_t fg)
-                    :  txt(std::move(text)), 
-                    coustom_format(new format{bg,fg})//std::make_unique<format>{bg,fg})
-                    {}
-
-                cell (const cell& c)
-                    :  txt(c.txt), 
-                       coustom_format(/*new*/std::make_unique<format>(*(c.coustom_format.get())))
-                    {}
-
-                cell (cell&& c)//=default;  ??
-                    :  txt(std::move(c.txt)), 
-                       coustom_format(std::move(c.coustom_format))
-                    {}
-
-                operator nana::string()const{return txt;}
-
-                nana::string& operator =(nana::string text){txt=std::move(text);return txt;}
-
-                cell& operator =(const cell& c)
-                    { 
-                        txt=c.txt;
-                        coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
-                        return *this;
-                    }
-                cell& operator =( cell&& c)
-                    { 
-                        txt=c.txt;
-                        if (c.coustom_format) 
-                            coustom_format=std::make_unique<format>(*(c.coustom_format.get()));
-                        else
-                            coustom_format.reset();
-                        return *this;
-                    }
-                bool operator <(const cell&c){return txt<c.txt;}
-                bool operator >(const cell&c){return txt>c.txt;}
-            };
-
 
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
 			template<typename T>
@@ -235,8 +198,10 @@ namespace nana
 
 				size_type columns() const;
 
-				item_proxy & text(size_type col, cell&&);
-				::nana::string text(size_type col) const;
+				item_proxy&		text(size_type col, cell);
+				item_proxy&		text(size_type col, nana::string);
+				nana::string	text(size_type col) const;
+
 				void icon(const nana::paint::image&);
 
 				template<typename T>
@@ -331,6 +296,7 @@ namespace nana
 				essence_t * _m_ess() const;
 			private:
 				const nana::any & _m_resolver() const;
+				std::vector<cell> & _m_cells() const;
 				nana::any * _m_value(bool alloc_if_empty);
 				const nana::any * _m_value() const;
 			private:
@@ -420,6 +386,7 @@ namespace nana
 				bool operator!=(const cat_proxy&) const;
 			private:
 				const nana::any & _m_resolver() const;
+				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
 			private:
 				essence_t*	ess_{nullptr};
@@ -460,7 +427,6 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
-        using cell=drawerbase::listbox::cell;
 
 		      /// An interface that performs a translation between an object of type T and an item of listbox.
 		template<typename T>
@@ -473,6 +439,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using cat_proxy		= drawerbase::listbox::cat_proxy;
 		using item_proxy	= drawerbase::listbox::item_proxy;
 		using selection = drawerbase::listbox::selection;    ///<A container type for items.
+		using cell = drawerbase::listbox::cell;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);
