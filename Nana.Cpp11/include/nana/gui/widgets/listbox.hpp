@@ -326,13 +326,16 @@ namespace nana
 
 				/// Append an item at end of the category
 				template<typename T>
-				item_proxy append(const T& t)
+				item_proxy append(const T& t, bool track=false)
 				{
 					oresolver ores;
 					ores << t;
 					_m_append(ores.move_cells());
+                    item_proxy it{ ess_, index_pair(pos_, size() - 1) };
+                    if (track)
+                        it.value(t);
 
-					return{ ess_, index_pair(pos_, size() - 1) };
+					return it;
 				}
 
 				void append(std::initializer_list<nana::string>);
