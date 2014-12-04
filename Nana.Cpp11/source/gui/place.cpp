@@ -271,6 +271,16 @@ namespace nana
 		class repeated_array
 		{
 		public:
+
+			//A workaround for VC2013, becuase it does not generated an implicit declared move-constructor as defaulted.
+			repeated_array() = default;
+
+			repeated_array(repeated_array && other)
+				:	repeated_{other.repeated_},
+					values_(std::move(other.values_))
+			{
+			}
+
 			void assign(std::vector<number_t>&& c)
 			{
 				values_ = std::move(c);

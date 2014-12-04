@@ -300,7 +300,7 @@ namespace nana
 			return true;
 		}
 
-		msgstr = nana::charset(std::move(msgid));
+		msgstr = nana::charset(std::move(msgid), nana::unicode::utf8);
 		return false;
 	}
 
@@ -396,9 +396,9 @@ namespace nana
 			args_.emplace_back(arg->clone());
 	}
 
-	i18n_eval::i18n_eval(i18n_eval&& rhs)
-		: msgid_(std::move(rhs.msgid_)),
-		args_(std::move(rhs.args_))
+	//Workaround for VC2013, becuase it can't specified a default explicit move-constructor
+	i18n_eval::i18n_eval(i18n_eval&& other)
+		: msgid_(std::move(other.msgid_)), args_(std::move(other.args_))
 	{
 	}
 
