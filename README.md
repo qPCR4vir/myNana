@@ -1,6 +1,9 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This is a mirror of:
+
+http://nanapro.codeplex.com/
+
 
 ### What is this repository for? ###
 
