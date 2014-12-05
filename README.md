@@ -1,7 +1,4 @@
 This is a mirror of:
 
-http://nanapro.codeplex.com/
+[myNana](http://nanapro.codeplex.com/SourceControl/network/forks/qPCR4vir/myNana)
 
-by:
-
-[cnjinhao](http://www.codeplex.com/site/users/view/cnjinhao)
