@@ -106,6 +106,84 @@ namespace nana
 				std::size_t pos_{0};
 			};
 
+
+			class resolver
+			{
+				std::vector<cell>           cells_     ;
+                std::wstringstream          sstream_   ;
+				std::size_t                 pos_{0}    ;
+			public:
+                nana::listbox              *list_owner ;
+
+                resolver(const std::vector<cell>& cells={}, nana::listbox* list_owner={} )
+                    :  cells_(cells), list_owner(list_owner) {}
+
+                template <class Arg>
+                resolver& operator<<(const Arg& a)
+                {
+                    sstream_.str(L"");
+                    sstream_ << a;
+                    cells_.emplace_back(sstream_.str());
+                    return *this;
+                }
+
+                resolver& operator<< (const char* text)
+			    {
+				    cells_.emplace_back(std::wstring(charset(text)));
+				    return *this;
+			    }
+                resolver& operator<<(std::string text)
+			    {
+				    cells_.emplace_back(std::wstring(charset(text)));
+				    return *this;
+			    }
+                resolver& operator<<(cell cl)
+			    {
+				    cells_.emplace_back(std::move(cl));
+				    return *this;
+			    }
+
+
+                template <class Arg>
+                resolver& operator>>(const Arg& a)
+                {
+                    if (pos_ < cells_.size())
+				    {
+					    sstream_.str(cells_[pos_++].text);
+					    sstream_ >> n;
+				    }
+				    return *this;
+                }
+
+                resolver& operator>>(std::string& text)
+			    {
+				    if (pos_ < cells_.size())
+					    text = charset(cells_[pos_++].text);
+				    return *this;
+			    }
+
+			    resolver& operator>>(std::wstring& text)
+			    {
+				    if (pos_ < cells_.size())
+					    text = cells_[pos_++].text;
+				    return *this;
+			    }
+
+			    resolver& operator>>(cell& cl)
+			    {
+				    if (pos_ < cells_.size())
+					    cl = cells_[pos_++];
+				    return *this;
+			    }
+
+			    std::vector<cell>&&  move_cells()
+			    {
+				    return std::move(cells_);
+			    }
+
+			};
+
+
 			struct index_pair
 			{
 				size_type cat;	//The pos of category
