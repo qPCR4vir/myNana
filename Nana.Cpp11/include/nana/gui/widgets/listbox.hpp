@@ -231,8 +231,8 @@ namespace nana
 					auto && cells = ores.move_cells();
 					auto cols = columns();
 					cells.resize(cols);
-					for (auto pos = 0; pos < cols; ++i)
-						text(i, std::move(cells[pos]));
+					for (auto pos = 0; pos < cols; ++pos)
+						text(pos, std::move(cells[pos]));
 					
 					return *this;
 				}
@@ -306,7 +306,6 @@ namespace nana
 				//Undocumented method
 				essence_t * _m_ess() const;
 			private:
-				//const nana::any & _m_resolver() const;
 				std::vector<cell> & _m_cells() const;
 				nana::any * _m_value(bool alloc_if_empty);
 				const nana::any * _m_value() const;

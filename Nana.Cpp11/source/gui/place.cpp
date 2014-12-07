@@ -281,6 +281,17 @@ namespace nana
 			{
 			}
 
+			repeated_array& operator=(repeated_array&& other)
+			{
+				if(this != &other)
+				{
+					repeated_ = other.repeated_;
+					other.repeated_ = false;
+					values_ = std::move(other.values_);
+				}
+				return *this;
+			}
+
 			void assign(std::vector<number_t>&& c)
 			{
 				values_ = std::move(c);
@@ -362,9 +373,9 @@ namespace nana
 				return array_;
 			}
 
-			repeated_array& reparray()
+			repeated_array&& reparray()
 			{
-				return reparray_;
+				return std::move(reparray_);
 			}
 
 			std::vector<number_t>& parameters()
@@ -1985,7 +1996,7 @@ namespace nana
 			div->max_px = max_px;
 		}
 
-		div->gap = gap;
+		div->gap = std::move(gap);
 
 		//attach the field to the division
 		div->field = attached_field;

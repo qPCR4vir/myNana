@@ -69,6 +69,7 @@ namespace detail
 	public:
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);
+		bool event_msleave(core_window_t*);
 		void thread_context_destroy(core_window_t*);
 		void thread_context_lazy_refresh();
 		void update_cursor(core_window_t*);
@@ -85,7 +86,7 @@ namespace detail
 		bool emit(event_code, core_window_t*, const event_arg_interface&, bool ask_update, thread_context*);
 		bool emit_drawer(event_code, core_window_t*, const event_arg_interface&, thread_context*);
 	private:
-		bool _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg_interface&);
+		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg_interface&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);
 		void _m_except_handler();
 	private:
