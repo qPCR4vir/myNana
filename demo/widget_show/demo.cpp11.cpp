@@ -26,7 +26,7 @@
 
 namespace demo
 {
-	using namespace nana::gui;
+	using namespace nana;
 
 	class tab_page_listbox
 		: public panel<false>
@@ -36,7 +36,7 @@ namespace demo
 			: panel<false>(wd)
 		{
 			place_.bind(*this);
-			place_.div("<list vertical>");
+			place_.div("< <list> |30% <check margin=5> >");
 
 			listbox_.create(*this);
 			listbox_.append_header(STR("Supported compilers"), 200);
@@ -50,15 +50,16 @@ namespace demo
 
 			checkbox_.create(*this);
 			checkbox_.caption(STR("Checkable Listbox"));
-			checkbox_.make_event<events::click>([this]()
+			checkbox_.events().click([this]()
 				{
 					this->listbox_.checkable(this->checkbox_.checked());
 				});
 
-			place_.field("list")<<listbox_<<5<<place_.fixed(checkbox_, 30);
+			place_.field("list")<<listbox_; 
+            place_["check"]<<checkbox_;
 		}
 	private:
-		place place_;
+		place       place_;
 		listbox		listbox_;
 		checkbox	checkbox_;
 	};
@@ -92,10 +93,11 @@ namespace demo
 				treebox_.insert(node, i->name, i->name);
 				break;
 			}
-			treebox_.ext_event().expand = nana::make_fun(*this, &tab_page_treebox::_m_expand);
+            treebox_.events().expanded([this](const arg_treebox& a){_m_expand(a.widget, a.item, a.operated);});
+//( [&]( const nana::arg_treebox &tbox_arg_info ) { if (tbox_arg_info.operated) RefreshList(tbox_arg_info.item); });
 		}
 	private:
-		void _m_expand(nana::gui::window, item_proxy node, bool exp)
+		void _m_expand(nana::window, item_proxy node, bool exp)
 		{
 			if(!exp) return; //If this is contracted.
 
@@ -143,6 +145,12 @@ namespace demo
 			date_.create(*this, nana::rectangle(10, 10, 260, 200));
 			textbox_.create(*this, nana::rectangle(280, 10, 170, 23));
 			textbox_.tip_string(STR("Input a date:"));
+
+            date_.events().dbl_click([this]()
+            {
+                auto dt=date_.read().read();
+                textbox_.reset(charset(std::to_string(dt.year) + "-" + std::to_string(dt.month)+ "-" + std::to_string(dt.day)));
+            });
 		}
 	private:
 		date_chooser date_;
@@ -158,7 +166,7 @@ namespace demo
 		{
 			place_.bind(*this);
 
-			place_.div("<weight=5><vertical<check vertical><bottom vertical weight=50>><weight=5>");
+			place_.div("<weight=5><vertical <weight=5>< weight=150 gap=5 check vertical> <bottom vertical gap=5 weight=50>><weight=5>");
 
 			const nana::string str[6] = {
 					STR("Airbus"), STR("AHTOHOB"),
@@ -173,10 +181,10 @@ namespace demo
 				//Add the checkbox to the radio group. The radio group does not
 				//manage the life of checkboxs.
 				group_.add(*p);
-				place_.field("check")<<place_.fixed(*p, 20)<<5;
+				place_.field("check")<< *p ;
 
 				p->caption(str[i]);
-				p->make_event<events::click>([this]()
+				p->events().click([this]()
 					{
 						std::size_t index = this->group_.checked();
 						nana::string str = this->box_[index]->caption();
@@ -191,7 +199,7 @@ namespace demo
 
 			categorize_.create(*this);
 
-			place_.field("bottom")<<place_.fixed(label_, 20)<<5<<place_.fixed(categorize_, 20);
+			place_.field("bottom")<< label_ << categorize_ ;
 
 			std::map<nana::string, std::vector<nana::string>> map;
 			auto p = &(map[str[0]]);
@@ -243,7 +251,13 @@ namespace demo
 		{
 			this->caption(STR("This is a demo of Nana C++ Library"));
 			place_.bind(*this);
-			place_.div("vertical<weight=40%<weight=10><vertical <weight=10><table grid[6,4] gap = 10>>><tab weight=20><tab_frame>");
+			place_.div( "vertical <weight=40% <weight=10><vertical <weight=40 buttons    margin=8 gap=10>"
+                        "                                          <weight=40 comboxs    margin=8 gap=10>"
+                        "                                          <weight=40 labels     margin=8 gap=10>"
+                        "                                          <weight=40 progresses margin=8 gap=10>"
+                        "                      > >   "
+                        "         <weight=20 tab >   "
+                        "         <tab_frame>        "      );
 
 			_m_init_buttons();
 			_m_init_comboxs();
@@ -251,12 +265,12 @@ namespace demo
 			_m_init_progresses();
 			_m_init_tabbar();
 
-			this->make_event<events::unload>([this](const eventinfo& ei)
+			this->events().unload([this](const arg_unload& ei)
 				{
 					msgbox mb(this->handle(), STR("Question"), msgbox::yes_no);
 					mb.icon(mb.icon_question);
 					mb<<STR("Are you sure you want to exit the demo?");
-					ei.unload.cancel = (mb.pick_no == mb());
+					ei.cancel = (mb.pick_no == mb());
 				});
 
 			place_.collocate();
@@ -272,8 +286,8 @@ namespace demo
 			{
 				auto p = std::make_shared<button>(*this);
 				buttons_.push_back(p);
-				place_.field("table")<<place_.room(*p, 2, 1);
-				p->make_event<events::click>(mb);
+				place_.field("buttons")<<*p; 
+				p->events().click(mb);
 			}
 			
 			auto ptr = buttons_[0];
@@ -299,7 +313,7 @@ namespace demo
 			{
 				auto p = std::make_shared<combox>(*this);
 				comboxs_.push_back(p);
-				place_.field("table")<<place_.room(*p, 3, 1);
+				place_.field("comboxs")<<*p; //place_.room(*p, 3, 1);
 				p->push_back(STR("Item 0"));
 				p->push_back(STR("Item 1"));
 			}
@@ -310,25 +324,25 @@ namespace demo
 			auto ptr = comboxs_[0];
 			ptr->editable(true);
 			ptr->caption(STR("This is an editable combox"));
-			ptr->ext_event().selected = [this, mb](combox& cmb) mutable
+			ptr->events().selected( [this, mb](const nana::arg_combox& acmb) mutable
 			{
-				mb<<STR("The item ")<<cmb.option()<<STR(" is selected in editable combox");
+				mb<<STR("The item ")<<acmb.widget.option()<<STR(" is selected in editable combox");
 				mb();
 				//Clear the buffer, otherwise the mb shows the text generated in
 				//the last selected event.
 				mb.clear();
-			};
+			});
 
 			ptr = comboxs_[1];
 			ptr->caption(STR("This is an uneditable combox"));
-			ptr->ext_event().selected = [this, mb](combox& cmb) mutable
+			ptr->events().selected ( [this, mb](const nana::arg_combox& acmb) mutable
 			{
-				mb<<STR("The item ")<<cmb.option()<<STR(" is selected in uneditable combox");
+				mb<<STR("The item ")<<acmb.widget.option()<<STR(" is selected in uneditable combox");
 				mb();
 				//Clear the buffer, otherwise the mb shows the text generated in
 				//the last selected event.
 				mb.clear();
-			};
+			});
 		}
 
 		void _m_init_labels()
@@ -337,7 +351,7 @@ namespace demo
 			{
 				auto p = std::make_shared<label>(*this);
 				labels_.push_back(p);
-				place_.field("table")<<place_.room(*p, 3, 1);
+				place_.field("labels")<<*p; //place_.room(, 3, 1);
 			}
 
 			auto wd = labels_[0];
@@ -354,13 +368,13 @@ namespace demo
 			for(int i = 0; i < 2; ++i)
 			{
 				auto p = std::make_shared<progress>(*this);
-				place_.field("table")<<place_.room(*p, 3, 1);
+				place_.field("progresses")<<*p; //place_.room(, 3, 1);
 				progresses_.push_back(p);
 				p->unknown(i == 0);	//The first progress is unknown mode, the second is known mode.
 				tooltip_.set(*p, tipstr[i]);
 			}
 
-			timer_.make_tick([this]()
+			timer_.elapse([this](const nana::arg_elapse& a)
 			{
 				for(auto & p : this->progresses_)
 				{
@@ -374,10 +388,10 @@ namespace demo
 				}
 			});
 
-			timer_.enable(true);
+			timer_.interval(80);
+			timer_.start();
 			
 
-			timer_.interval(80);
 		}
 
 		void _m_init_tabbar()
@@ -402,10 +416,10 @@ namespace demo
 			}
 		}
 	private:
-		//A gird layout management
+		//A layout management
 		place place_;
-		nana::gui::timer timer_;
-		nana::gui::tooltip tooltip_;
+		nana::timer timer_;
+		nana::tooltip tooltip_;
 		std::vector<std::shared_ptr<button>> buttons_;
 		std::vector<std::shared_ptr<combox>> comboxs_;
 		std::vector<std::shared_ptr<label>>	labels_;
