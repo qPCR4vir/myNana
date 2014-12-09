@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Nana.Cpp11\temp\EditLayot_Form_Demo.cpp">
+    <ClCompile Include="..\demo\widget_show\demo.cpp11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
