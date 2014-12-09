@@ -1114,7 +1114,6 @@ namespace detail
 								brock.emit(event_code::mouse_wheel, scrolled_wd, arg, true, &context);
 								break;
 							}
-
 							scrolled_wd = scrolled_wd->parent;
 						}
 					}

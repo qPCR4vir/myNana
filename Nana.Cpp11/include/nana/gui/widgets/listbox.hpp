@@ -46,11 +46,13 @@ namespace nana
 
 				cell() = default;
 				cell(const cell&);
-				cell(nana::string text);
-				cell(nana::string text, const format&);
-				cell(nana::string text, color_t bgcolor, color_t fgcolor);
+				cell(cell&&);
+				cell(nana::string);
+				cell(nana::string, const format&);
+				cell(nana::string, color_t bgcolor, color_t fgcolor);
 
 				cell& operator=(const cell&);
+				cell& operator=(cell&&);
 			};
 
 			class oresolver
@@ -71,9 +73,11 @@ namespace nana
 
 				oresolver& operator<<(const char*);
 				oresolver& operator<<(const wchar_t*);
-				oresolver& operator<<(std::string);
-				oresolver& operator<<(std::wstring);
+				oresolver& operator<<(const std::string&);
+				oresolver& operator<<(const std::wstring&);
+				oresolver& operator<<(std::wstring&&);
 				oresolver& operator<<(cell);
+				oresolver& operator<<(std::nullptr_t);
 
 				std::vector<cell> && move_cells();
 			private:
@@ -101,6 +105,7 @@ namespace nana
 				iresolver& operator>>(std::string&);
 				iresolver& operator>>(std::wstring&);
 				iresolver& operator>>(cell&);
+				iresolver& operator>>(std::nullptr_t);
 			private:
 				const std::vector<cell>& cells_;
 				std::size_t pos_{0};
@@ -232,7 +237,12 @@ namespace nana
 					auto cols = columns();
 					cells.resize(cols);
 					for (auto pos = 0; pos < cols; ++pos)
-						text(pos, std::move(cells[pos]));
+					{
+						auto & el = cells[pos];
+						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
+							continue;
+						text(pos, std::move(el));
+					}
 					
 					return *this;
 				}
@@ -265,9 +275,9 @@ namespace nana
 				}
 
 				template<typename T>
-				item_proxy & value(const T& t)
+				item_proxy & value(T&& t)
 				{
-					*_m_value(true) = t;
+					*_m_value(true) = std::forward<T>(t);
 					return *this;
 				}
 
@@ -323,15 +333,18 @@ namespace nana
 				cat_proxy(essence_t*, size_type pos);
 				cat_proxy(essence_t*, category_t*);
 
-				/// Append an item at end of the category
+				/// Append an item at end of the category, set_value determines whether assign T object to the value of item.
 				template<typename T>
-				item_proxy append(const T& t)
+				item_proxy append(T&& t, bool set_value = false)
 				{
 					oresolver ores;
-					ores << t;
+					ores << std::forward<T>(t);
 					_m_append(ores.move_cells());
 
-					return{ ess_, index_pair(pos_, size() - 1) };
+					item_proxy iter{ ess_, index_pair(pos_, size() - 1) };
+					if (set_value)
+						iter.value(std::forward<T>(t));
+					return iter;
 				}
 
 				void append(std::initializer_list<nana::string>);
