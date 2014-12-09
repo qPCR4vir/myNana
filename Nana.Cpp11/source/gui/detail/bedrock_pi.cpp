@@ -37,11 +37,91 @@ namespace nana
 			bedrock::instance().evt_operation.cancel(evt);
 		}
 
-		bool bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::detail::event_arg_interface& event_arg)
+		void bedrock::event_expose(core_window_t * wd, bool exposed)
 		{
-			if (!this->wd_manager.available(wd))
-				return false;
+			if (nullptr == wd) return;
 
+			wd->visible = exposed;
+
+			arg_expose arg;
+			arg.exposed = exposed;
+			arg.window_handle = reinterpret_cast<window>(wd);
+			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
+			{
+				if (!exposed)
+				{
+					if (category::flags::root != wd->other.category)
+					{
+						//If the wd->parent is a lite_widget then find a parent until it is not a lite_widget
+						wd = wd->parent;
+
+						while (category::flags::lite_widget == wd->other.category)
+							wd = wd->parent;
+					}
+					else if (category::flags::frame == wd->other.category)
+						wd = wd_manager.find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
+				}
+
+				wd_manager.refresh_tree(wd);
+				wd_manager.map(wd);
+			}
+		}
+
+		void bedrock::event_move(core_window_t* wd, int x, int y)
+		{
+			if (wd)
+			{
+				arg_move arg;
+				arg.window_handle = reinterpret_cast<window>(wd);
+				arg.x = x;
+				arg.y = y;
+				if (emit(event_code::move, wd, arg, false, get_thread_context()))
+					wd_manager.update(wd, true, true);
+			}
+		}
+
+		bool bedrock::event_msleave(core_window_t* hovered)
+		{
+			if (wd_manager.available(hovered) && hovered->flags.enabled)
+			{
+				hovered->flags.action = mouse_action::normal;
+
+				arg_mouse arg;
+				arg.evt_code = event_code::mouse_leave;
+				arg.window_handle = reinterpret_cast<window>(hovered);
+				arg.pos.x = arg.pos.y = 0;
+				arg.left_button = arg.right_button = arg.mid_button = false;
+				arg.ctrl = arg.shift = false;
+				emit(event_code::mouse_leave, hovered, arg, true, get_thread_context());
+				return true;
+			}
+			return false;
+		}
+
+		void bedrock::update_cursor(core_window_t * wd)
+		{
+			internal_scope_guard isg;
+			if (wd_manager.available(wd))
+			{
+				auto * thrd = get_thread_context(wd->thread_id);
+				if (nullptr == thrd)
+					return;
+
+				auto pos = native_interface::cursor_position();
+				auto native_handle = native_interface::find_window(pos.x, pos.y);
+				if (!native_handle)
+					return;
+
+				native_interface::calc_window_point(native_handle, pos);
+				if (wd != wd_manager.find_window(native_handle, pos.x, pos.y))
+					return;
+
+				set_cursor(wd, wd->predef_cursor, thrd);
+			}
+		}
+
+		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::detail::event_arg_interface& event_arg)
+		{
 			switch (evt_code)
 			{
 			case event_code::click:
@@ -54,7 +134,7 @@ namespace nana
 			{
 				auto arg = dynamic_cast<const arg_mouse*>(&event_arg);
 				if (nullptr == arg)
-					return false;
+					return;
 
 				void(::nana::detail::drawer::*drawer_event_fn)(const arg_mouse&);
 				::nana::basic_event<arg_mouse>* evt_addr;
@@ -101,12 +181,12 @@ namespace nana
 			case event_code::mouse_wheel:
 			{
 				auto arg = dynamic_cast<const arg_wheel*>(&event_arg);
-				if (nullptr == arg)
-					return false;
-
-				wd->drawer.mouse_wheel(*arg);
-				if (!draw_only)
-					wd->together.attached_events->mouse_wheel.emit(*arg);
+				if (arg)
+				{
+					wd->drawer.mouse_wheel(*arg);
+					if (!draw_only)
+						wd->together.attached_events->mouse_wheel.emit(*arg);
+				}
 				break;
 			}
 			case event_code::key_press:
@@ -116,7 +196,7 @@ namespace nana
 			{
 				auto arg = dynamic_cast<const arg_keyboard*>(&event_arg);
 				if (nullptr == arg)
-					return false;
+					return;
 
 				void(::nana::detail::drawer::*drawer_event_fn)(const arg_keyboard&);
 				::nana::basic_event<arg_keyboard>* evt_addr;
@@ -151,84 +231,77 @@ namespace nana
 				if (!draw_only)
 				{
 					auto arg = dynamic_cast<const arg_expose*>(&event_arg);
-					if (nullptr == arg)
-						return false;
-
-					wd->together.attached_events->expose.emit(*arg);
+					if (arg)
+						wd->together.attached_events->expose.emit(*arg);
 				}
 				break;
 			case event_code::focus:
 			{
 				auto arg = dynamic_cast<const arg_focus*>(&event_arg);
-				if (nullptr == arg)
-					return false;
-
-				wd->drawer.focus(*arg);
-				if (!draw_only)
-					wd->together.attached_events->focus.emit(*arg);
+				if (arg)
+				{
+					wd->drawer.focus(*arg);
+					if (!draw_only)
+						wd->together.attached_events->focus.emit(*arg);
+				}
 				break;
 			}
 			case event_code::move:
 			{
 				auto arg = dynamic_cast<const arg_move*>(&event_arg);
-				if (nullptr == arg)
-					return false;
-
-				wd->drawer.move(*arg);
-				if (!draw_only)
-					wd->together.attached_events->move.emit(*arg);
+				if (arg)
+				{
+					wd->drawer.move(*arg);
+					if (!draw_only)
+						wd->together.attached_events->move.emit(*arg);
+				}
 				break;
 			}
 			case event_code::resizing:
 			{
 				auto arg = dynamic_cast<const arg_resizing*>(&event_arg);
-				if (nullptr == arg)
-					return false;
-
-				wd->drawer.resizing(*arg);
-				if (!draw_only)
-					wd->together.attached_events->resizing.emit(*arg);
+				if (arg)
+				{
+					wd->drawer.resizing(*arg);
+					if (!draw_only)
+						wd->together.attached_events->resizing.emit(*arg);
+				}
 				break;
 			}
 			case event_code::resized:
 			{
 				auto arg = dynamic_cast<const arg_resized*>(&event_arg);
-				if (nullptr == arg)
-					return false;
-
-				wd->drawer.resized(*arg);
-				if (!draw_only)
-					wd->together.attached_events->resized.emit(*arg);
+				if (arg)
+				{
+					wd->drawer.resized(*arg);
+					if (!draw_only)
+						wd->together.attached_events->resized.emit(*arg);
+				}
 				break;
 			}
 			case event_code::unload:
 				if (!draw_only)
 				{
 					auto arg = dynamic_cast<const arg_unload*>(&event_arg);
-					if ((nullptr == arg) || (wd->other.category != category::flags::root))
-						return false;
-
-					auto evt_ptr = dynamic_cast<events_root_extension*>(wd->together.attached_events);
-					if (nullptr == evt_ptr)
-						return false;
-
-					evt_ptr->unload.emit(*arg);
+					if (arg && (wd->other.category == category::flags::root))
+					{
+						auto evt_ptr = dynamic_cast<events_root_extension*>(wd->together.attached_events);
+						if (evt_ptr)
+							evt_ptr->unload.emit(*arg);
+					}
 				}
 				break;
 			case event_code::destroy:
 				if (!draw_only)
 				{
 					auto arg = dynamic_cast<const arg_destroy*>(&event_arg);
-					if (nullptr == arg)
-						return false;
-
-					wd->together.attached_events->destroy.emit(*arg);
+					if (arg)
+						wd->together.attached_events->destroy.emit(*arg);
 				}
 				break;
 			default:
 				throw std::runtime_error("Invalid event code");
 			}
-			return true;
 		}
 
 		void bedrock::_m_except_handler()

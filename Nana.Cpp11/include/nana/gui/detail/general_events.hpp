@@ -376,7 +376,14 @@ namespace nana
 
 	struct arg_wheel : public arg_mouse
 	{
-		bool upwards;
+		enum class wheel{
+			vertical,
+			horizontal
+		};
+
+		wheel	which;		///<which wheel is rotated
+		bool	upwards;	///< true if the wheel is rotated to the top/left, depends on which. false otherwise.
+		unsigned distance;	//expressed in multiples or divisions of 120
 	};
 
 	struct arg_dropfiles : public detail::event_arg_interface

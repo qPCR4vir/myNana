@@ -95,7 +95,7 @@ namespace nana
 		template<typename T>
 		any & operator=(T && rhs)
 		{
-			typedef typename std::remove_const<T>::type type;
+			typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type type;
 			type* obj = get<type>();
 			if(nullptr == obj)
 			{

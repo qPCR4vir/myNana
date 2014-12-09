@@ -34,21 +34,28 @@ namespace nana
 
 				cell::cell(const cell& rhs)
 					:	text(rhs.text),
-						custom_format(rhs.custom_format ? new format(*rhs.custom_format) : nullptr)
+						custom_format{ rhs.custom_format ? new format(*rhs.custom_format) : nullptr }
 				{}
+
+				//A workaround that VS2013 does not support to define an explicit default move constructor
+				cell::cell(cell&& other)
+					:	text(std::move(other.text)),
+						custom_format{ std::move(other.custom_format) }
+				{
+				}
 
 				cell::cell(nana::string text)
 					: text(std::move(text))
 				{}
 
 				cell::cell(nana::string text, const format& fmt)
-					: text(std::move(text)),
-					custom_format(new format{ fmt })	//make_unique
+					:	text(std::move(text)),
+						custom_format(new format{ fmt })	//make_unique
 				{}
 
 				cell::cell(nana::string text, color_t bgcolor, color_t fgcolor)
-					: text(std::move(text)),
-					custom_format(new format{ bgcolor, fgcolor })	//make_unique
+					:	text(std::move(text)),
+						custom_format{ new format{ bgcolor, fgcolor } }	//make_unique
 				{}
 
 				cell& cell::operator=(const cell& rhs)
@@ -59,7 +66,16 @@ namespace nana
 						custom_format.reset(rhs.custom_format ? new format{*rhs.custom_format} : nullptr);
 					}
 					return *this;
-				
+				}
+
+				cell& cell::operator=(cell&& other)
+				{
+					if (this != &other)
+					{
+						text = std::move(other.text);
+						custom_format = std::move(other.custom_format);
+					}
+					return *this;
 				}
 			//end struct cell
 
@@ -146,13 +162,19 @@ namespace nana
 				return *this;
 			}
 
-			oresolver& oresolver::operator<<(std::string text)
+			oresolver& oresolver::operator<<(const std::string& text)
 			{
 				cells_.emplace_back(std::wstring(charset(text)));
 				return *this;
 			}
 
-			oresolver& oresolver::operator<<(std::wstring text)
+			oresolver& oresolver::operator<<(const std::wstring& text)
+			{
+				cells_.emplace_back(text);
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::wstring&& text)
 			{
 				cells_.emplace_back(std::move(text));
 				return *this;
@@ -161,6 +183,13 @@ namespace nana
 			oresolver& oresolver::operator<<(cell cl)
 			{
 				cells_.emplace_back(std::move(cl));
+				return *this;
+			}
+
+			oresolver& oresolver::operator<<(std::nullptr_t)
+			{
+				cells_.emplace_back();
+				cells_.back().text.assign(1, nana::char_t(0));	//means invalid cell
 				return *this;
 			}
 
@@ -309,6 +338,12 @@ namespace nana
 			{
 				if (pos_ < cells_.size())
 					cl = cells_[pos_++];
+				return *this;
+			}
+
+			iresolver& iresolver::operator>>(std::nullptr_t)
+			{
+				++pos_;
 				return *this;
 			}
 			//end class iresolver/oresolver
@@ -3126,13 +3161,6 @@ namespace nana
 					return pos_;
 				}
 
-				/*
-				const nana::any & item_proxy::_m_resolver() const	//deperecated
-				{
-					return ess_->resolver;
-				}
-				*/
-
 				auto item_proxy::_m_cells() const -> std::vector<cell>&
 				{
 					return ess_->lister.get_cells(cat_, pos_.item);
@@ -3357,6 +3385,16 @@ namespace nana
 
 				void cat_proxy::_m_append(std::vector<cell> && cells)
 				{
+					//check invalid cells
+					for (auto & cl : cells)
+					{
+						if (cl.text.size() == 1 && cl.text[0] == nana::char_t(0))
+						{
+							cl.text.clear();
+							cl.custom_format.reset();
+						}
+					}
+
 					internal_scope_guard lock;
 
 					cat_->sorted.push_back(cat_->items.size());

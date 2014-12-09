@@ -117,15 +117,9 @@ namespace nana{
 
 			struct condition_tag
 			{
-				core_window_t*	mouse_window;		//the latest window that mouse pressed
-				core_window_t*	mousemove_window;	//the latest window that mouse moved
-				bool		tabstop_focus_changed;	//KeyDown may set it true, if it is true KeyChar will ignore the message
-				
-				condition_tag()
-					:	mouse_window(nullptr),
-						mousemove_window(nullptr),
-						tabstop_focus_changed(false)
-				{}
+				core_window_t*	pressed{nullptr};			//The handle to a window which is being pressed
+				core_window_t*	hovered{nullptr};	//the latest window that mouse moved
+				bool		tabstop_focus_changed{false};	//KeyDown may set it true, if it is true KeyChar will ignore the message
 			}condition;
 
 			root_misc(core_window_t * wd, unsigned width, unsigned height)
@@ -137,11 +131,6 @@ namespace nana{
 		class root_register
 		{
 		public:
-			root_register()
-				:	recent_(nullptr),
-					misc_ptr_(nullptr)
-			{}
-
 			root_misc* insert(native_window_type wd, const root_misc& misc)
 			{
 				recent_ = wd;
@@ -174,8 +163,8 @@ namespace nana{
 			}
 		private:
 			//Cached
-			mutable native_window_type	recent_;
-			mutable root_misc *			misc_ptr_;
+			mutable native_window_type	recent_{nullptr};
+			mutable root_misc *			misc_ptr_{nullptr};
 
 			std::map<native_window_type, root_misc> table_;
 		};

@@ -29,62 +29,49 @@ namespace nana
 			::tm modified_time;
 			bool directory;
 			nana::long_long_t bytes;
-		};
 
-		class fs_resolver: public listbox::resolver_interface<item_fs>
-		{
-			static std::ostream& _m_stream2(std::stringstream& ss, unsigned v)
+			friend listbox::iresolver& operator>>(listbox::iresolver& ires, item_fs& m)
 			{
-				if(v < 10)	ss<<'0';
-				return (ss<<v);
+				nana::string type;
+				ires>>m.name>>type>>type;
+				m.directory = (type == STR("Directory"));
+				return ires;
 			}
 
-			nana::string decode(std::size_t i, const item_fs& item) const
+			friend listbox::oresolver& operator<<(listbox::oresolver& ores, const item_fs& item)
 			{
-				switch(i)
-				{
-				case 0:
-					return item.name;
-				case 1:
-					{
-						std::stringstream ss;
-						ss<<(item.modified_time.tm_year + 1900)<<'-';
-						_m_stream2(ss, item.modified_time.tm_mon + 1)<<'-';
-						_m_stream2(ss, item.modified_time.tm_mday)<<' ';
+				std::wstringstream tm;
+				tm<<(item.modified_time.tm_year + 1900)<<'-';
+				_m_add(tm, item.modified_time.tm_mon + 1)<<'-';
+				_m_add(tm, item.modified_time.tm_mday)<<' ';
 
-						_m_stream2(ss, item.modified_time.tm_hour)<<':';
-						_m_stream2(ss, item.modified_time.tm_min)<<':';
-						_m_stream2(ss, item.modified_time.tm_sec);
-						return nana::charset(ss.str());
-					}
-				case 2:
-					if(false == item.directory)
-					{
-						auto pos = item.name.find_last_of(STR('.'));
-						if(pos != item.name.npos && (pos + 1 < item.name.size()))
-							return item.name.substr(pos + 1);
-						return STR("File");
-					}
-					return STR("Directory");
-				case 3:
-					if(false == item.directory)
-						return _m_trans(item.bytes);
-					return nana::string();
+				_m_add(tm, item.modified_time.tm_hour)<<':';
+				_m_add(tm, item.modified_time.tm_min)<<':';
+				_m_add(tm, item.modified_time.tm_sec);
+
+				ores<<item.name<<tm.str();
+				if(!item.directory)
+				{
+					auto pos = item.name.find_last_of(STR('.'));
+					if(pos != item.name.npos && (pos + 1 < item.name.size()))
+						ores<<item.name.substr(pos + 1);
+					else
+						ores<<STR("File");
+
+					ores<<_m_trans(item.bytes);
 				}
-				return nana::string();
+				else
+					ores<<STR("Directory");
+				return ores;
 			}
 
-			void encode(item_fs& item, std::size_t i, const nana::string& s) const
+		private:
+			static std::wstringstream& _m_add(std::wstringstream& ss, unsigned v)
 			{
-				switch(i)
-				{
-				case 0:
-					item.name = s;
-					break;
-				case 2:
-					item.directory = (s == STR("Directory"));
-					break;
-				}
+				if(v < 10)
+					ss<<L'0';
+				ss<<v;
+				return ss;
 			}
 
 			static nana::string _m_trans(std::size_t bytes)
@@ -112,10 +99,9 @@ namespace nana
 				}
 				ss<<bytes<<" Bytes";
 				return nana::charset(ss.str());
-				
 			}
 		};
-		
+
 		struct pred_sort_fs
 		{
 			bool operator()(const item_fs& a, const item_fs& b) const
@@ -606,7 +592,6 @@ namespace nana
 			ls_file_.auto_draw(false);
 
 			ls_file_.clear();
-			ls_file_.resolver(fs_resolver());
 
 			std::vector<nana::string>* ext_types = cb_types_.anyobj<std::vector<nana::string> >(cb_types_.option());
 			auto cat = ls_file_.at(0);
