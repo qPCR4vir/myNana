@@ -29,7 +29,6 @@
 #elif defined(NANA_LINUX)
 #include PLATFORM_SPEC_HPP
 #include <nana/system/platform.hpp>
-#include <iostream>
 #endif
 
 namespace nana
