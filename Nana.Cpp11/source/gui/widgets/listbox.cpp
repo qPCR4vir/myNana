@@ -79,6 +79,15 @@ namespace nana
 				}
 			//end struct cell
 
+			//A workaround, MinGW does not yet provide std::to_wstring
+			template<typename Int>
+			std::wstring to_wstring(Int n)
+			{
+				std::wstringstream ss;
+				ss << n;
+				return ss.str();
+			}
+
 			//definition of iresolver/oresolver
 			oresolver& oresolver::operator<<(bool n)
 			{
@@ -87,66 +96,77 @@ namespace nana
 			}
 			oresolver& oresolver::operator<<(short n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned short n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(int n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned int n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 			oresolver& oresolver::operator<<(long long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(float f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(double f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long double f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				//A workaround, MinGW does not yet provide std::to_wstring
+				cells_.emplace_back(to_wstring(f));
 				return *this;
 			}
 
