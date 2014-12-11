@@ -67,7 +67,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\demo\widget_show\demo.cpp11.cpp" />
+    <ClCompile Include="..\demo\widget_show\demo.simple.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CD759333-0410-4B1C-B44F-67FC91B1D372}</ProjectGuid>
