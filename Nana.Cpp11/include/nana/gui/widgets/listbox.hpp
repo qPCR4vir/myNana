@@ -416,7 +416,11 @@ namespace nana
 				item_proxy append(T&& t, bool set_value = false)
 				{
 					oresolver ores;
-					ores << std::forward<T>(t);
+					if (set_value)
+						ores << t;	//copy it if it is rvalue and set_value is true.
+					else
+						ores << std::forward<T>(t);
+
 					_m_append(ores.move_cells());
 
 					item_proxy iter{ ess_, index_pair(pos_, size() - 1) };

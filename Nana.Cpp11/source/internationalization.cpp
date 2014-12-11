@@ -14,6 +14,7 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
 #include <fstream>
+#include <sstream>
 #include <memory>
 
 namespace nana
@@ -83,7 +84,7 @@ namespace nana
 						if (read_ptr_ == end_ptr_ || '"' != *read_ptr_)
 							break;
 					}
-					
+
 					if (reach_right_quota)
 						return token::string;
 				}
@@ -159,7 +160,7 @@ namespace nana
 					return;
 
 				std::string msgid = std::move(tknizer.get_str());
-				
+
 				if (!utf8)
 					msgid = nana::charset(std::move(msgid)).to_bytes(nana::unicode::utf8);
 
@@ -169,7 +170,7 @@ namespace nana
 					return;
 
 				nana::string str;
-				
+
 				if (utf8)
 					str = nana::charset(std::move(tknizer.get_str()), nana::unicode::utf8);
 				else
@@ -218,7 +219,7 @@ namespace nana
 			i18n_eval eval;
 
 			eval_window() = default;
-			
+
 			eval_window(i18n_eval&& arg)
 				: eval(std::move(arg))
 			{}
@@ -286,18 +287,23 @@ namespace nana
 
 	void internationalization::set(std::string msgid, nana::string msgstr)
 	{
-		auto ptr = internationalization_parts::get_data_ptr();
+		auto & ptr = internationalization_parts::get_data_ptr();
+		if (!ptr)
+			ptr = std::make_shared<internationalization_parts::data>();
 		ptr->table[msgid].swap(msgstr);
 	}
 
 	bool internationalization::_m_get(std::string& msgid, nana::string& msgstr) const
 	{
 		auto impl = internationalization_parts::get_data_ptr();
-		auto i = impl->table.find(msgid);
-		if (i != impl->table.end())
+		if (impl)
 		{
-			msgstr = i->second;
-			return true;
+			auto i = impl->table.find(msgid);
+			if (i != impl->table.end())
+			{
+				msgstr = i->second;
+				return true;
+			}
 		}
 
 		msgstr = nana::charset(std::move(msgid), nana::unicode::utf8);
@@ -329,11 +335,17 @@ namespace nana
 					erase_n = str.size() - offset;
 
 				//If there is not a parameter for %argNNN, the %argNNN will be erased.
-				auto arg = static_cast<std::size_t>(std::stoi(str.substr(offset + 4, arg_n)));
+
+				//a workaround, MinGW does not provide std::stoi
+				std::wstringstream ss;
+				std::size_t arg;
+				ss<<str.substr(offset + 4, arg_n);
+				ss>>arg;
+
 				if (arg_strs && arg < arg_strs->size())
 					str.replace(offset, erase_n, (*arg_strs)[arg]);
 				else
-					str.erase(offset, erase_n);	
+					str.erase(offset, erase_n);
 			}
 			else
 				offset += 4;
