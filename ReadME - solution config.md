@@ -1,3 +1,6 @@
+This repo is no more active.
+My current contributions to nana are [here](https://github.com/qPCR4vir/nana), which is a fork of [the current nana](https://github.com/cnjinhao/nana)
+
 # Install myNana
 1. go to [myNana master](https://nanapro.codeplex.com/SourceControl/network/forks/qPCR4vir/myNana)
 2. Download or clone the branch master into your working directory of choise (for example: C:\Prog\ExtLib\Nana) 
